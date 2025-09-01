@@ -1,0 +1,2 @@
+// This file is no longer needed with Fabric.js implementation and can be considered for deletion in future prompts.
+// For now, it's kept to avoid breaking imports if they exist, but its content is cleared.
