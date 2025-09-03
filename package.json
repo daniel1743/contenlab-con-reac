@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
+  "overrides": {
+    "react-error-overlay": "6.0.9"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,6 +15,7 @@
     "@emotion/is-prop-valid": "^1.2.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.3",
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -30,12 +34,14 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
+    "dotenv": "^17.2.2",
     "emoji-picker-react": "^4.9.4",
     "fabric": "^5.3.0",
     "framer-motion": "^10.16.4",
     "html2canvas": "^1.4.1",
     "konva": "^9.3.11",
     "lucide-react": "^0.285.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",

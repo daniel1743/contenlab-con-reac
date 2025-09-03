@@ -90,14 +90,18 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden rounded-2xl bg-white text-gray-900">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[580px]">
-          <div className="hidden lg:flex flex-col justify-center items-center p-8 bg-gradient-to-br from-purple-50 to-pink-50">
+      <DialogContent className="max-w-4xl lg:max-w-4xl md:max-w-3xl sm:max-w-md w-full max-h-[90vh] sm:max-h-[95vh] p-0 overflow-hidden rounded-2xl bg-white text-gray-900 flex flex-col">
+        
+        {/* Grid principal con altura controlada */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 flex-1 min-h-0">
+          
+          {/* Panel Izquierdo - Imagen (oculto en móvil) */}
+          <div className="hidden lg:flex flex-col justify-center items-center p-6 bg-gradient-to-br from-purple-50 to-pink-50">
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }}
             >
-              <img  className="w-full max-w-xs" alt="Ilustración de una persona analizando el crecimiento en redes sociales" src="https://images.unsplash.com/photo-1675023112817-52b789fd2ef0" />
+              <img className="w-full max-w-xs" alt="Ilustración de una persona analizando el crecimiento en redes sociales" src="https://images.unsplash.com/photo-1675023112817-52b789fd2ef0" />
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="text-center mt-6 space-y-2">
               <h2 className="text-2xl font-bold text-gray-800">Desbloquea tu Potencial Creador</h2>
@@ -105,85 +109,120 @@ const AuthModal = ({ isOpen, onClose }) => {
             </motion.div>
           </div>
 
-          <div className="p-8 flex flex-col justify-center bg-white">
-            <DialogHeader className="mb-6 text-center lg:text-left">
-              <DialogTitle className="text-2xl font-bold text-gradient">Accede a ContentLab Premium</DialogTitle>
-            </DialogHeader>
+          {/* Panel Derecho - Formulario con estructura de 3 secciones */}
+          <div className="flex flex-col bg-white min-h-0">
+            
+            {/* Header - fijo arriba */}
+            <div className="flex-shrink-0 p-6 pb-4 border-b border-gray-100">
+              <DialogHeader className="text-center lg:text-left">
+                <DialogTitle className="text-2xl font-bold text-gradient">Accede a ContentLab Premium</DialogTitle>
+              </DialogHeader>
+            </div>
 
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100 rounded-lg">
-                <TabsTrigger value="login" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md">Iniciar Sesión</TabsTrigger>
-                <TabsTrigger value="register" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md">Crear Cuenta</TabsTrigger>
-              </TabsList>
+            {/* Contenido scrolleable - crece para llenar espacio */}
+            <div className="flex-1 overflow-y-auto p-6 pt-4 pb-4">
+              <Tabs defaultValue="login" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100 rounded-lg">
+                  <TabsTrigger value="login" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md">Iniciar Sesión</TabsTrigger>
+                  <TabsTrigger value="register" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white rounded-md">Crear Cuenta</TabsTrigger>
+                </TabsList>
 
-              <motion.div key="social-buttons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <Button variant="outline" className="w-full border-gray-300 hover:bg-gray-50 text-gray-700" onClick={() => handleAuthAttempt(() => handleSocialAuth('google'))}>
-                    <GoogleIcon />
-                    <span className="ml-2">Google</span>
-                  </Button>
-                  <Button variant="outline" className="w-full border-gray-300 hover:bg-gray-50 text-gray-700" onClick={() => handleAuthAttempt(() => handleSocialAuth('facebook'))}>
-                    <FacebookIcon />
-                    <span className="ml-2">Facebook</span>
-                  </Button>
-                </div>
-                <div className="relative mb-4">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-300" /></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-500">O continúa con</span></div>
-                </div>
-              </motion.div>
+                <motion.div key="social-buttons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <Button variant="outline" className="w-full border-gray-300 hover:bg-gray-50 text-gray-700" onClick={() => handleAuthAttempt(() => handleSocialAuth('google'))}>
+                      <GoogleIcon />
+                      <span className="ml-2">Google</span>
+                    </Button>
+                    <Button variant="outline" className="w-full border-gray-300 hover:bg-gray-50 text-gray-700" onClick={() => handleAuthAttempt(() => handleSocialAuth('facebook'))}>
+                      <FacebookIcon />
+                      <span className="ml-2">Facebook</span>
+                    </Button>
+                  </div>
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-300" /></div>
+                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-500">O continúa con</span></div>
+                  </div>
+                </motion.div>
 
-              <AnimatePresence mode="wait">
-                <TabsContent key="login" value="login" asChild>
-    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-700">Email</Label>
-                      <div className="relative"><Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" /><Input id="email" type="email" placeholder="tu@email.com" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-gray-700">Contraseña</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                <AnimatePresence mode="wait">
+                  <TabsContent key="login" value="login" asChild>
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-gray-700">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="email" type="email" placeholder="tu@email.com" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
                       </div>
-                    </div>
-                    <Button onClick={() => handleAuthAttempt(() => handleEmailAuth('login'))} disabled={isLoading} className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">{isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}</Button>
-                  </motion.div>
-                </TabsContent>
-                <TabsContent key="register" value="register" asChild>
-    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-700">Nombre completo</Label>
-                      <div className="relative"><User className="absolute left-3 top-3 h-4 w-4 text-gray-400" /><Input id="name" type="text" placeholder="Tu nombre" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={name} onChange={(e) => setName(e.target.value)} /></div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email-register" className="text-gray-700">Email</Label>
-                      <div className="relative"><Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" /><Input id="email-register" type="email" placeholder="tu@email.com" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password-register" className="text-gray-700">Contraseña</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input id="password-register" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-gray-700">Contraseña</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={password} onChange={(e) => setPassword(e.target.value)} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password-register" className="text-gray-700">Confirmar Contraseña</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input id="confirm-password-register" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                      <Button onClick={() => handleAuthAttempt(() => handleEmailAuth('login'))} disabled={isLoading} className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">
+                        {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                      </Button>
+                    </motion.div>
+                  </TabsContent>
+                  
+                  <TabsContent key="register" value="register" asChild>
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-gray-700">Nombre completo</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="name" type="text" placeholder="Tu nombre" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={name} onChange={(e) => setName(e.target.value)} />
+                        </div>
                       </div>
-                    </div>
-                    <Button onClick={() => handleAuthAttempt(() => handleEmailAuth('register'))} disabled={isLoading} className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">{isLoading ? 'Creando cuenta...' : 'Crear Cuenta Premium'}</Button>
-                  </motion.div>
-                </TabsContent>
-              </AnimatePresence>
-            </Tabs>
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">Al continuar, aceptas nuestros <a href="#" className="underline hover:text-purple-600">términos</a> y <a href="#" className="underline hover:text-purple-600">política de privacidad</a>.</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="email-register" className="text-gray-700">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="email-register" type="email" placeholder="tu@email.com" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password-register" className="text-gray-700">Contraseña</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="password-register" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={password} onChange={(e) => setPassword(e.target.value)} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password-register" className="text-gray-700">Confirmar Contraseña</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input id="confirm-password-register" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <Button onClick={() => handleAuthAttempt(() => handleEmailAuth('register'))} disabled={isLoading} className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">
+                        {isLoading ? 'Creando cuenta...' : 'Crear Cuenta Premium'}
+                      </Button>
+                    </motion.div>
+                  </TabsContent>
+                </AnimatePresence>
+              </Tabs>
+            </div>
+            
+            {/* Footer - fijo abajo, SIEMPRE VISIBLE */}
+            <div className="flex-shrink-0 p-6 pt-4 bg-white border-t border-gray-100">
+              <p className="text-center text-sm text-gray-500">
+                Al continuar, aceptas nuestros{' '}
+                <a href="#" className="underline hover:text-purple-600 font-medium">términos</a>
+                {' '}y{' '}
+                <a href="#" className="underline hover:text-purple-600 font-medium">política de privacidad</a>.
+              </p>
             </div>
           </div>
         </div>

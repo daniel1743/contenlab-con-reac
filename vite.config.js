@@ -1,3 +1,4 @@
+import 'dotenv/config'; 
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { createLogger, defineConfig } from 'vite';
