@@ -20,7 +20,8 @@ import {
   Youtube, 
   Facebook, 
   Instagram as InstagramIcon,
-  RotateCw
+  RotateCw,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -155,10 +156,11 @@ const contentDurations = [
   { value: 'long', label: '🎞️ Largo (15min+)' }
 ];
 
-const Tools = ({ onSectionChange, onGenerate, onCopyDownload }) => {
+const Tools = ({ onSectionChange, onAuthClick }) => {
   // 🔍 DEBUG TEMPORAL - Variables de entorno
   console.log('🔍 Todas las variables:', import.meta.env);
   console.log('🔍 API Key específica:', import.meta.env.VITE_GOOGLE_API_KEY);
+  
   const [selectedTheme, setSelectedTheme] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
@@ -180,179 +182,259 @@ const Tools = ({ onSectionChange, onGenerate, onCopyDownload }) => {
     setSelectedStyle(''); // Reset style when theme changes
   }, []);
 
-  // 🆕 FUNCIÓN PARA GENERAR TODOS LOS DATOS SUPLEMENTARIOS
-// 🆕 FUNCIÓN MEJORADA PARA GENERAR DATOS SUPLEMENTARIOS
-const generateAllSupplementaryData = async () => {
-  console.log('🚀 Generando datos suplementarios...');
-  
-  try {
-    // 1. Generar títulos SEO
-    try {
-      console.log('📝 Generando títulos SEO...');
-      const titlesResponse = await generateSEOTitles(contentTopic);
-      console.log('📝 Respuesta títulos:', titlesResponse);
-      
-      // Intentar parsear como JSON, si falla, usar como string
-      try {
-        const titlesArray = JSON.parse(titlesResponse);
-        setRealTitles(Array.isArray(titlesArray) ? titlesArray : [titlesResponse]);
-      } catch (parseError) {
-        console.log('⚠️ Títulos no son JSON válido, usando como texto');
-        setRealTitles([titlesResponse]);
-      }
-    } catch (error) {
-      console.error('❌ Error generando títulos:', error);
-      setRealTitles([]); // Usar array vacío como fallback
-    }
-
-    // 2. Generar palabras clave
-    try {
-      console.log('🔑 Generando keywords...');
-      const keywordsResponse = await generateKeywords(contentTopic);
-      console.log('🔑 Respuesta keywords:', keywordsResponse);
-      
-      try {
-        const keywordsArray = JSON.parse(keywordsResponse);
-        setRealKeywords(Array.isArray(keywordsArray) ? keywordsArray : []);
-      } catch (parseError) {
-        console.log('⚠️ Keywords no son JSON válido, usando fallback');
-        setRealKeywords([{keyword: keywordsResponse, trend: 85}]);
-      }
-    } catch (error) {
-      console.error('❌ Error generando keywords:', error);
-      setRealKeywords([]);
-    }
-
-    // 3. Generar datos de tendencias
-    try {
-      console.log('📊 Generando tendencias...');
-      const trendsResponse = await generateTrends(contentTopic);
-      console.log('📊 Respuesta tendencias:', trendsResponse);
-      
-      try {
-        const trendsData = JSON.parse(trendsResponse);
-        setRealTrendData(trendsData);
-      } catch (parseError) {
-        console.log('⚠️ Tendencias no son JSON válido, usando fallback');
-        setRealTrendData({
-          popularity: [65, 59, 80, 81, 56, 95],
-          months: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"]
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error generando tendencias:', error);
-      setRealTrendData(null);
-    }
-
-    // 4. Generar sugerencias por plataforma
-    try {
-      console.log('💡 Generando sugerencias...');
-      const platforms = ['youtube', 'tiktok', 'instagram', 'facebook'];
-      const suggestions = {};
-      
-      for (const platform of platforms) {
-        try {
-          const suggestion = await generatePlatformSuggestions(contentTopic, platform);
-          suggestions[platform] = suggestion;
-          console.log(`💡 ${platform}:`, suggestion);
-        } catch (error) {
-          console.error(`❌ Error generando sugerencia para ${platform}:`, error);
-          suggestions[platform] = `Sugerencias para ${platform} no disponibles`;
-        }
-      }
-      
-      setPlatformSuggestions(suggestions);
-    } catch (error) {
-      console.error('❌ Error generando sugerencias:', error);
-      setPlatformSuggestions({});
-    }
-
-    console.log('✅ Datos suplementarios completados');
-
-  } catch (error) {
-    console.error('💥 Error general en generateAllSupplementaryData:', error);
-    // Los estados mantienen sus valores por defecto o previos
-  }
-};
-
-
-  // 🚀 FUNCIÓN PRINCIPAL CON GEMINI REAL
-// 🚀 FUNCIÓN PRINCIPAL MEJORADA
-const handleGenerateContent = useCallback(async () => {
-  if (!contentTopic.trim() || !selectedTheme || !selectedStyle || !selectedDuration) {
-    toast({
-      title: 'Error',
-      description: 'Por favor completa todos los campos para generar contenido.',
-      variant: 'destructive',
-    });
-    return;
-  }
-  
-  setIsGenerating(true);
-  setGeneratedContent('');
-  console.log('🎯 Iniciando generación de contenido...');
-
-  try {
-    // 🎯 LLAMADA REAL A GEMINI API
-    console.log('🤖 Llamando a Gemini API para script principal...');
-    const generatedScript = await generateViralScript(
-      selectedTheme, 
-      selectedStyle, 
-      selectedDuration, 
-      contentTopic
-    );
+  // 🆕 FUNCIÓN PARA GENERAR DATOS SUPLEMENTARIOS
+  const generateAllSupplementaryData = async () => {
+    console.log('🚀 Generando datos suplementarios...');
     
-    console.log('✅ Script generado:', generatedScript);
-    setGeneratedContent(generatedScript);
-    
-    toast({
-      title: '🤖 ¡Contenido generado con Gemini AI!',
-      description: 'Generando datos adicionales...',
-    });
-
-    // 🚀 GENERAR DATOS ADICIONALES CON GEMINI (sin bloquear la UI)
     try {
-      await generateAllSupplementaryData();
-    } catch (supplementaryError) {
-      console.error('⚠️ Error en datos suplementarios (no crítico):', supplementaryError);
-      // No mostrar error al usuario, el contenido principal ya se generó
-    }
-
-    // Guardar en Supabase
-    if (user) {
+      // 1. Generar títulos SEO
       try {
-        const { error } = await supabase
-          .from('generated_content')
-          .insert({
-            user_id: user.id,
-            theme: selectedTheme,
-            style: selectedStyle,
-            topic: contentTopic,
-            content: generatedScript,
-          });
+        console.log('📝 Generando títulos SEO...');
+        const titlesResponse = await generateSEOTitles(contentTopic);
+        console.log('📝 Respuesta títulos:', titlesResponse);
         
-        if (!error) {
-          toast({
-            title: '¡También guardado!',
-            description: 'Contenido guardado en tu historial.',
+        try {
+          const titlesArray = JSON.parse(titlesResponse);
+          setRealTitles(Array.isArray(titlesArray) ? titlesArray : [titlesResponse]);
+        } catch (parseError) {
+          console.log('⚠️ Títulos no son JSON válido, usando como texto');
+          setRealTitles([titlesResponse]);
+        }
+      } catch (error) {
+        console.error('❌ Error generando títulos:', error);
+        setRealTitles([]); // Usar array vacío como fallback
+      }
+
+      // 2. Generar palabras clave
+      try {
+        console.log('🔑 Generando keywords...');
+        const keywordsResponse = await generateKeywords(contentTopic);
+        console.log('🔑 Respuesta keywords:', keywordsResponse);
+        
+        try {
+          const keywordsArray = JSON.parse(keywordsResponse);
+          setRealKeywords(Array.isArray(keywordsArray) ? keywordsArray : []);
+        } catch (parseError) {
+          console.log('⚠️ Keywords no son JSON válido, usando fallback');
+          setRealKeywords([{keyword: keywordsResponse, trend: 85}]);
+        }
+      } catch (error) {
+        console.error('❌ Error generando keywords:', error);
+        setRealKeywords([]);
+      }
+
+      // 3. Generar datos de tendencias
+      try {
+        console.log('📊 Generando tendencias...');
+        const trendsResponse = await generateTrends(contentTopic);
+        console.log('📊 Respuesta tendencias:', trendsResponse);
+        
+        try {
+          const trendsData = JSON.parse(trendsResponse);
+          setRealTrendData(trendsData);
+        } catch (parseError) {
+          console.log('⚠️ Tendencias no son JSON válido, usando fallback');
+          setRealTrendData({
+            popularity: [65, 59, 80, 81, 56, 95],
+            months: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"]
           });
         }
       } catch (error) {
-        console.error("Error saving generated content:", error);
+        console.error('❌ Error generando tendencias:', error);
+        setRealTrendData(null);
       }
-    }
 
-  } catch (error) {
-    console.error('💥 Error generating content:', error);
+      // 4. Generar sugerencias por plataforma
+      try {
+        console.log('💡 Generando sugerencias...');
+        const platforms = ['youtube', 'tiktok', 'instagram', 'facebook'];
+        const suggestions = {};
+        
+        for (const platform of platforms) {
+          try {
+            const suggestion = await generatePlatformSuggestions(contentTopic, platform);
+            suggestions[platform] = suggestion;
+            console.log(`💡 ${platform}:`, suggestion);
+          } catch (error) {
+            console.error(`❌ Error generando sugerencia para ${platform}:`, error);
+            suggestions[platform] = `Sugerencias para ${platform} no disponibles`;
+          }
+        }
+        
+        setPlatformSuggestions(suggestions);
+      } catch (error) {
+        console.error('❌ Error generando sugerencias:', error);
+        setPlatformSuggestions({});
+      }
+
+      console.log('✅ Datos suplementarios completados');
+
+    } catch (error) {
+      console.error('💥 Error general en generateAllSupplementaryData:', error);
+    }
+  };
+
+  // 🔒 FUNCIONES RESTRINGIDAS - Solo para usuarios logueados
+  const handleCopy = useCallback(() => {
+    if (!generatedContent) {
+      toast({
+        title: 'No hay contenido',
+        description: 'Primero genera contenido para poder copiarlo.',
+        variant: 'destructive'
+      });
+      return;
+    }
     
-    toast({
-      title: 'Error al generar contenido',
-      description: 'Error con Gemini AI. Usando contenido de ejemplo.',
-      variant: 'destructive'
-    });
+    // ⚡ RESTRICCIÓN: Solo para usuarios logueados
+    if (!user) {
+      toast({
+        title: 'Función Pro',
+        description: 'Debes iniciar sesión para copiar contenido.',
+        variant: 'destructive',
+      });
+      onAuthClick(); // 🔥 Mostrar modal solo aquí
+      return;
+    }
     
-    // Fallback al contenido mock
-    const fallbackContent = `## Error - Contenido de ejemplo para: ${contentTopic}
+    // ✅ Acción para usuarios logueados
+    navigator.clipboard.writeText(generatedContent);
+    toast({ title: '¡Copiado!', description: 'Contenido copiado al portapapeles' });
+  }, [generatedContent, user, toast, onAuthClick]);
+
+  const cleanScript = useCallback(() => {
+    if (!generatedContent) return;
+    
+    // ⚡ RESTRICCIÓN: Solo para usuarios logueados
+    if (!user) {
+      toast({
+        title: 'Función Pro',
+        description: 'Debes iniciar sesión para limpiar el guión.',
+        variant: 'destructive',
+      });
+      onAuthClick(); // 🔥 Mostrar modal solo aquí
+      return;
+    }
+    
+    // ✅ Acción para usuarios logueados
+    let cleaned = generatedContent
+      .replace(/\[HOOK INICIAL\]/g, '')
+      .replace(/\[DESARROLLO\]/g, '')
+      .replace(/### (.*)\n/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/#️⃣ Hashtags:/g, '')
+      .replace(/#\w+/g, '')
+      .trim();
+    setGeneratedContent(cleaned);
+    toast({ title: 'Guión Limpiado', description: 'Se han eliminado las etiquetas y hashtags.' });
+  }, [generatedContent, user, toast, onAuthClick]);
+
+  const handleDownload = useCallback(() => {
+    if (!generatedContent) {
+      toast({
+        title: 'No hay contenido',
+        description: 'Primero genera contenido para descargar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // ⚡ RESTRICCIÓN: Solo para usuarios logueados
+    if (!user) {
+      toast({
+        title: 'Función Pro',
+        description: 'Debes iniciar sesión para descargar contenido.',
+        variant: 'destructive',
+      });
+      onAuthClick(); // 🔥 Mostrar modal solo aquí
+      return;
+    }
+    
+    // ✅ Acción para usuarios logueados - Descargar archivo
+    const element = document.createElement('a');
+    const file = new Blob([generatedContent], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `contentlab-script-${Date.now()}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    toast({ title: '¡Descargado!', description: 'Contenido descargado correctamente.' });
+  }, [generatedContent, user, toast, onAuthClick]);
+
+  // ✅ FUNCIÓN LIBRE - Sin restricciones de usuario
+  const handleGenerateContent = useCallback(async () => {
+    if (!contentTopic.trim() || !selectedTheme || !selectedStyle || !selectedDuration) {
+      toast({
+        title: 'Error',
+        description: 'Por favor completa todos los campos para generar contenido.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+    setGeneratedContent('');
+    console.log('🎯 Iniciando generación de contenido...');
+
+    try {
+      // 🎯 LLAMADA REAL A GEMINI API
+      console.log('🤖 Llamando a Gemini API para script principal...');
+      const generatedScript = await generateViralScript(
+        selectedTheme, 
+        selectedStyle, 
+        selectedDuration, 
+        contentTopic
+      );
+      
+      console.log('✅ Script generado:', generatedScript);
+      setGeneratedContent(generatedScript);
+      
+      toast({
+        title: '🤖 ¡Contenido generado con Gemini AI!',
+        description: 'Generando datos adicionales...',
+      });
+
+      // 🚀 GENERAR DATOS ADICIONALES CON GEMINI (sin bloquear la UI)
+      try {
+        await generateAllSupplementaryData();
+      } catch (supplementaryError) {
+        console.error('⚠️ Error en datos suplementarios (no crítico):', supplementaryError);
+      }
+
+      // Guardar en Supabase solo si el usuario está autenticado
+      if (user) {
+        try {
+          const { error } = await supabase
+            .from('generated_content')
+            .insert({
+              user_id: user.id,
+              theme: selectedTheme,
+              style: selectedStyle,
+              topic: contentTopic,
+              content: generatedScript,
+            });
+          
+          if (!error) {
+            toast({
+              title: '¡También guardado!',
+              description: 'Contenido guardado en tu historial.',
+            });
+          }
+        } catch (error) {
+          console.error("Error saving generated content:", error);
+        }
+      }
+
+    } catch (error) {
+      console.error('💥 Error generating content:', error);
+      
+      toast({
+        title: 'Error al generar contenido',
+        description: 'Error con Gemini AI. Usando contenido de ejemplo.',
+        variant: 'destructive'
+      });
+      
+      // Fallback al contenido mock
+      const fallbackContent = `## Error - Contenido de ejemplo para: ${contentTopic}
 
 **Nota**: Error al conectar con Gemini AI.
 
@@ -364,54 +446,16 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 
 ### #️⃣ Hashtags:
 #${contentTopic.replace(/\s+/g, '')} #${selectedTheme} #Viral`;
-    
-    setGeneratedContent(fallbackContent);
-    
-  } finally {
-    setIsGenerating(false);
-    console.log('🏁 Generación de contenido finalizada');
-  }
-}, [contentTopic, selectedTheme, selectedStyle, selectedDuration, toast, user]);
-
-
-  // CORREGIDO: Limpiar script requiere suscripción
-  const cleanScript = useCallback(() => {
-    if (!generatedContent) return;
-
-    // Verificar suscripción AQUÍ
-    if (!onCopyDownload || !onCopyDownload()) return;
-
-    let cleaned = generatedContent
-      .replace(/\[HOOK INICIAL\]/g, '')
-      .replace(/\[DESARROLLO\]/g, '')
-      .replace(/### (.*)\n/g, '')
-      .replace(/\*\*/g, '')
-      .replace(/#️⃣ Hashtags:/g, '')
-      .replace(/#\w+/g, '')
-      .trim();
-    setGeneratedContent(cleaned);
-    toast({ title: 'Guión Limpiado', description: 'Se han eliminado las etiquetas y hashtags.' });
-  }, [generatedContent, onCopyDownload, toast]);
-
-  // CORREGIDO: Copiar requiere suscripción
-  const handleCopy = useCallback(() => {
-    if (!generatedContent) {
-      toast({
-        title: 'No hay contenido',
-        description: 'Primero genera contenido para poder copiarlo.',
-        variant: 'destructive'
-      });
-      return;
+      
+      setGeneratedContent(fallbackContent);
+      
+    } finally {
+      setIsGenerating(false);
+      console.log('🏁 Generación de contenido finalizada');
     }
+  }, [contentTopic, selectedTheme, selectedStyle, selectedDuration, toast, user]);
 
-    // Verificar suscripción AQUÍ
-    if (!onCopyDownload || !onCopyDownload()) return;
-
-    navigator.clipboard.writeText(generatedContent);
-    toast({ title: '¡Copiado!', description: 'Contenido copiado al portapapeles' });
-  }, [generatedContent, onCopyDownload, toast]);
-
-  // CORREGIDO: Reproducir requiere suscripción
+  // Reproducir (libre para todos)
   const handleReplayScript = useCallback(() => {
     if (!generatedContent) {
       toast({
@@ -421,9 +465,6 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       });
       return;
     }
-
-    // Verificar suscripción AQUÍ
-    if (!onCopyDownload || !onCopyDownload()) return;
 
     toast({ 
       title: '🎬 Reproduciendo Guión', 
@@ -436,7 +477,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       contentArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
       contentArea.focus();
     }
-  }, [generatedContent, onCopyDownload, toast]);
+  }, [generatedContent, toast]);
 
   const handleNotImplemented = useCallback(() => {
     toast({
@@ -637,22 +678,23 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 
           {/* Botones de acción */}
           <div className="flex gap-3">
-          <Button 
-  onClick={handleGenerateContent} 
-  disabled={isGenerating || !selectedTheme || !selectedStyle || !contentTopic} 
-  className="flex-1 gradient-primary hover:opacity-90 transition-opacity flex items-center justify-center"
->
-  {isGenerating ? (
-    <Wand2 className="w-4 h-4 mr-2 animate-spin" />
-  ) : (
-    <Zap className="w-4 h-4 mr-2" />
-  )}
-  <span>
-    {isGenerating ? 'Generando con Gemini AI...' : 'Generar Contenido IA'}
-  </span>
-</Button>
+            {/* ✅ GENERADOR: Libre para todos */}
+            <Button 
+              onClick={handleGenerateContent} 
+              disabled={isGenerating || !selectedTheme || !selectedStyle || !contentTopic} 
+              className="flex-1 gradient-primary hover:opacity-90 transition-opacity flex items-center justify-center"
+            >
+              {isGenerating ? (
+                <Wand2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4 mr-2" />
+              )}
+              <span>
+                {isGenerating ? 'Generando con Gemini AI...' : 'Generar Contenido IA'}
+              </span>
+            </Button>
 
-            {/* Botón Reproducir Guión */}
+            {/* ✅ REPRODUCIR: Libre para todos */}
             <Button
               type="button"
               variant="outline"
@@ -667,21 +709,13 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             </Button>
           </div>
 
-          {/* Mensaje CTA para usuarios no logueados */}
-          {generatedContent && !user && (
-            <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-4">
-              <p className="text-sm text-gray-300 text-center">
-                💡 <strong>¿Te gusta el resultado?</strong> Inicia sesión para copiar, limpiar y guardar tu contenido.
-              </p>
-            </div>
-          )}
-          
           {/* Área de contenido generado */}
           {generatedContent && (
             <div className="space-y-4 pt-4">
               <div className="flex justify-between items-center">
                 <Label className="text-white">Contenido generado con Gemini AI:</Label>
                 <div className="flex gap-2">
+                  {/* 🔒 LIMPIAR: Solo usuarios logueados */}
                   <Button 
                     onClick={cleanScript} 
                     variant="outline" 
@@ -689,8 +723,10 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     className="border-purple-500/20 hover:bg-purple-500/10"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Limpiar Guión
+                    Limpiar {!user && "🔒"}
                   </Button>
+                  
+                  {/* 🔒 COPIAR: Solo usuarios logueados */}
                   <Button 
                     onClick={handleCopy} 
                     variant="outline" 
@@ -698,7 +734,18 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     className="border-purple-500/20 hover:bg-purple-500/10"
                   >
                     <Clipboard className="w-4 h-4 mr-2" />
-                    Copiar Todo
+                    Copiar {!user && "🔒"}
+                  </Button>
+                  
+                  {/* 🔒 DESCARGAR: Solo usuarios logueados */}
+                  <Button 
+                    onClick={handleDownload} 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-purple-500/20 hover:bg-purple-500/10"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar {!user && "🔒"}
                   </Button>
                 </div>
               </div>
@@ -706,7 +753,6 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 value={generatedContent} 
                 onChange={(e) => setGeneratedContent(e.target.value)} 
                 className="glass-effect border-purple-500/20 rounded-lg p-4 h-64 whitespace-pre-wrap font-mono" 
-                readOnly={!user}
               />
             </div>
           )}
@@ -784,10 +830,23 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     variant="ghost" 
                     size="icon" 
                     onClick={() => {
-                      if (!onCopyDownload || !onCopyDownload()) return;
-                      const titleText = typeof title === 'string' ? title.replace('{tema}', contentTopic || 'tu tema') : title;
+                      // 🔒 RESTRICCIÓN: Solo para usuarios logueados
+                      if (!user) {
+                        toast({
+                          title:'Función Pro', 
+                          description: 'Debes iniciar sesión para copiar títulos.', 
+                          variant:'destructive'
+                        });
+                        onAuthClick(); // 🔥 Mostrar modal
+                        return;
+                      }
+                      
+                      // ✅ Acción para usuarios logueados
+                      const titleText = typeof title === 'string' 
+                        ? title.replace('{tema}', contentTopic || 'tu tema') 
+                        : title;
                       navigator.clipboard.writeText(titleText); 
-                      toast({title:'¡Copiado!'});
+                      toast({title:'¡Título copiado!'});
                     }}
                   >
                     <Clipboard className="w-4 h-4"/>

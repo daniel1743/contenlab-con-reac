@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,17 +18,19 @@ function App() {
   const { session, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const isAuthenticated = !!session;
+  
+  // CAMBIO 1: El estado inicial de la sección activa siempre será 'landing'.
   const [activeSection, setActiveSection] = useState('landing');
   const [freeUsageCount, setFreeUsageCount] = useState(0);
-  const isAuthenticated = !!session;
 
+  // CAMBIO 2: El efecto ahora solo se encarga de redirigir al usuario a 'landing' CUANDO CIERRA SESIÓN.
+  // Ya no fuerza al usuario a ir al dashboard después de iniciar sesión.
   useEffect(() => {
-    if (isAuthenticated) {
-      setActiveSection('dashboard');
-    } else {
+    if (!isAuthenticated && activeSection !== 'landing') {
       setActiveSection('landing');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeSection]);
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -63,21 +64,22 @@ function App() {
       );
     }
 
+    // Aseguramos que las secciones protegidas solo se muestren si el usuario está autenticado.
     switch (activeSection) {
       case 'landing':
         return <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
       case 'dashboard':
-        return <Dashboard onSectionChange={handleSectionChange} />;
-      case 'tools':
-        return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} />;
-      case 'calendar':
-        return <Calendar />;
-      case 'chat':
-        return <Chat />;
-      case 'thumbnail-editor':
-        return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} />;
-      default:
         return isAuthenticated ? <Dashboard onSectionChange={handleSectionChange} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
+      case 'tools':
+        return isAuthenticated ? <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
+      case 'calendar':
+        return isAuthenticated ? <Calendar /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
+      case 'chat':
+        return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
+      case 'thumbnail-editor':
+        return isAuthenticated ? <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
+      default:
+        return <LandingPage onAuthClick={() => setShowAuthModal(true)} />;
     }
   };
 
@@ -89,7 +91,7 @@ function App() {
         <meta property="og:title" content="ContentLab Premium - Suite Profesional de Creación de Contenido" />
         <meta property="og:description" content="Transforma tu presencia digital con herramientas profesionales de IA, analytics avanzados y un editor de miniaturas de nivel profesional." />
       </Helmet>
-
+      
       <div className="min-h-screen flex flex-col bg-gray-900 text-white">
         {activeSection !== 'thumbnail-editor' && (
           <Navbar
@@ -100,7 +102,7 @@ function App() {
             freeUsageCount={freeUsageCount}
           />
         )}
-
+        
         <main className={`flex-grow ${activeSection !== 'landing' && activeSection !== 'thumbnail-editor' ? 'pt-20' : 'pt-0'}`}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -115,9 +117,9 @@ function App() {
             </motion.div>
           </AnimatePresence>
         </main>
-
+        
         {activeSection === 'landing' && !loading && <Footer />}
-
+        
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
@@ -131,7 +133,7 @@ function App() {
             setShowAuthModal(true);
           }}
         />
-
+        
         {activeSection !== 'thumbnail-editor' && <FakeNotifications />}
       </div>
     </>

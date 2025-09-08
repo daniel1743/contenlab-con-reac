@@ -1,8 +1,24 @@
+/* === IMPORTACIONES Y CONFIGURACIÓN DE TAILWIND === */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* === CONFIGURACIÓN GLOBAL Y RESETEO MODERNO === */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+  font-family: 'Inter', sans-serif;
+  color: white; /* Color por defecto */
+  overflow-x: hidden; /* Mantenemos esto como seguro */
+}
+
+/* ... (El resto de tu CSS, incluyendo los estilos del avatar y utilidades, se queda igual) ... */
+
+/* === VARIABLES DE COLOR Y ESTILOS BASE (DE TU CÓDIGO) === */
 :root {
   --background: 220 13% 6%;
   --foreground: 210 40% 98%;
@@ -30,13 +46,7 @@
   border-color: hsl(var(--border));
 }
 
-body {
-  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
-  font-family: 'Inter', sans-serif;
-  color: hsl(var(--foreground));
-  min-height: 100vh;
-}
-
+/* === CLASES DE UTILIDAD PERSONALIZADAS (DE TU CÓDIGO) === */
 .glass-effect {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
@@ -66,6 +76,16 @@ body {
   box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);
 }
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* === ANIMACIONES PERSONALIZADAS (DE TU CÓDIGO) === */
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
@@ -84,11 +104,89 @@ body {
   to { box-shadow: 0 0 40px rgba(139, 92, 246, 0.8); }
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* === ESTILOS DE LOS AROS DEL AVATAR (NUEVOS Y CORREGIDOS) === */
+.avatar-ring-wrapper {
+  position: relative;
+  display: inline-flex;
+  border-radius: 9999px;
+  width: calc(32px + 6px); 
+  height: calc(32px + 6px);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.avatar-ring-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Plan GRATIS: Aro púrpura más grueso y robusto */
+.avatar-ring-free::before {
+  border: 3px solid transparent;
+  background: linear-gradient(#A78BFA, #A78BFA) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Plan ESTÁNDAR: Aro tricolor más grueso y con colores más intensos */
+.avatar-ring-standard::before {
+  border: 3px solid transparent;
+  background: linear-gradient(45deg, #DC2626, #16A34A, #F59E0B) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: subtle-rotate 45s linear infinite;
+  background-origin: border-box;
+}
+
+/* Plan PREMIUM: Aro dorado más grueso, intenso y con brillo */
+.avatar-ring-premium::before {
+  border: 3px solid transparent;
+  background: linear-gradient(45deg, #F59E0B, #FFD700, #FBBF24, #B45309) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: subtle-rotate 20s linear infinite;
+  background-origin: border-box;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7)); 
+}
+
+/* Chispitas para el aro Premium */
+.avatar-ring-premium::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  border-radius: 9999px;
+  background-image: radial-gradient(circle at center, rgba(255,255,255,0.8) 1px, transparent 1px),
+                    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.6) 1px, transparent 1px),
+                    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.7) 1px, transparent 1px);
+  background-size: 15px 15px;
+  animation: sparkle-move 10s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+/* Animaciones para los aros */
+@keyframes subtle-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sparkle-move {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
 }
