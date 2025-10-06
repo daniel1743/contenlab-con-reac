@@ -34,7 +34,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler // ✅ IMPORTANTE
 } from 'chart.js';
+
+// ✅ REGISTRO COMPLETO
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler);
 
 // 🚀 IMPORT DE SERVICIOS GEMINI
 import { 
@@ -156,7 +160,7 @@ const contentDurations = [
   { value: 'long', label: '🎞️ Largo (15min+)' }
 ];
 
-const Tools = ({ onSectionChange, onAuthClick }) => {
+const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
   // 🔍 DEBUG TEMPORAL - Variables de entorno
   console.log('🔍 Todas las variables:', import.meta.env);
   console.log('🔍 API Key específica:', import.meta.env.VITE_GOOGLE_API_KEY);
@@ -274,48 +278,44 @@ const Tools = ({ onSectionChange, onAuthClick }) => {
     }
   };
 
-  // 🔒 FUNCIONES RESTRINGIDAS - Solo para usuarios logueados
-  const handleCopy = useCallback(() => {
-    if (!generatedContent) {
-      toast({
-        title: 'No hay contenido',
-        description: 'Primero genera contenido para poder copiarlo.',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    // ⚡ RESTRICCIÓN: Solo para usuarios logueados
-    if (!user) {
-      toast({
-        title: 'Función Pro',
-        description: 'Debes iniciar sesión para copiar contenido.',
-        variant: 'destructive',
-      });
-      onAuthClick(); // 🔥 Mostrar modal solo aquí
-      return;
-    }
-    
-    // ✅ Acción para usuarios logueados
-    navigator.clipboard.writeText(generatedContent);
-    toast({ title: '¡Copiado!', description: 'Contenido copiado al portapapeles' });
-  }, [generatedContent, user, toast, onAuthClick]);
+  // ✅ FUNCIONES AHORA LIBRES - Se eliminó la restricción de usuario
+ // Quedará así
+const handleCopy = useCallback(() => {
+  if (!generatedContent) {
+    toast({
+      title: 'No hay contenido',
+      description: 'Primero genera contenido para poder copiarlo.',
+      variant: 'destructive'
+    });
+    return;
+  }
+
+  if (!user) {
+    // 👉 Si no hay usuario logueado, mostramos modal de suscripción
+    onSubscriptionClick?.();
+    return;
+  }
+
+  // ✅ Solo usuarios logueados pueden copiar
+  navigator.clipboard.writeText(generatedContent);
+  toast({ title: '¡Copiado!', description: 'Contenido copiado al portapapeles' });
+}, [generatedContent, user, toast, onSubscriptionClick]);
+
 
   const cleanScript = useCallback(() => {
     if (!generatedContent) return;
     
-    // ⚡ RESTRICCIÓN: Solo para usuarios logueados
-    if (!user) {
-      toast({
-        title: 'Función Pro',
-        description: 'Debes iniciar sesión para limpiar el guión.',
-        variant: 'destructive',
-      });
-      onAuthClick(); // 🔥 Mostrar modal solo aquí
-      return;
-    }
-    
-    // ✅ Acción para usuarios logueados
+    // padding
+    // padding
+    // padding
+    // padding
+    // padding
+    // padding
+    // padding
+    // padding
+    // padding
+    // padding
+    // ✅ Acción para todos los usuarios
     let cleaned = generatedContent
       .replace(/\[HOOK INICIAL\]/g, '')
       .replace(/\[DESARROLLO\]/g, '')
@@ -337,19 +337,14 @@ const Tools = ({ onSectionChange, onAuthClick }) => {
       });
       return;
     }
-    
-    // ⚡ RESTRICCIÓN: Solo para usuarios logueados
+
     if (!user) {
-      toast({
-        title: 'Función Pro',
-        description: 'Debes iniciar sesión para descargar contenido.',
-        variant: 'destructive',
-      });
-      onAuthClick(); // 🔥 Mostrar modal solo aquí
+      // 👉 Si no hay usuario logueado, mostramos modal de suscripción
+      onSubscriptionClick?.();
       return;
     }
-    
-    // ✅ Acción para usuarios logueados - Descargar archivo
+
+    // ✅ Solo usuarios logueados pueden descargar
     const element = document.createElement('a');
     const file = new Blob([generatedContent], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
@@ -358,7 +353,7 @@ const Tools = ({ onSectionChange, onAuthClick }) => {
     element.click();
     document.body.removeChild(element);
     toast({ title: '¡Descargado!', description: 'Contenido descargado correctamente.' });
-  }, [generatedContent, user, toast, onAuthClick]);
+  }, [generatedContent, user, toast, onSubscriptionClick]);
 
   // ✅ FUNCIÓN LIBRE - Sin restricciones de usuario
   const handleGenerateContent = useCallback(async () => {
@@ -715,7 +710,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               <div className="flex justify-between items-center">
                 <Label className="text-white">Contenido generado con Gemini AI:</Label>
                 <div className="flex gap-2">
-                  {/* 🔒 LIMPIAR: Solo usuarios logueados */}
+                  {/* ✅ LIMPIAR: Libre para todos */}
                   <Button 
                     onClick={cleanScript} 
                     variant="outline" 
@@ -723,10 +718,10 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     className="border-purple-500/20 hover:bg-purple-500/10"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Limpiar {!user && "🔒"}
+                    Limpiar
                   </Button>
                   
-                  {/* 🔒 COPIAR: Solo usuarios logueados */}
+                  {/* ✅ COPIAR: Libre para todos */}
                   <Button 
                     onClick={handleCopy} 
                     variant="outline" 
@@ -734,10 +729,10 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     className="border-purple-500/20 hover:bg-purple-500/10"
                   >
                     <Clipboard className="w-4 h-4 mr-2" />
-                    Copiar {!user && "🔒"}
+                    Copiar
                   </Button>
                   
-                  {/* 🔒 DESCARGAR: Solo usuarios logueados */}
+                  {/* ✅ DESCARGAR: Libre para todos */}
                   <Button 
                     onClick={handleDownload} 
                     variant="outline" 
@@ -745,7 +740,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     className="border-purple-500/20 hover:bg-purple-500/10"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Descargar {!user && "🔒"}
+                    Descargar
                   </Button>
                 </div>
               </div>
@@ -830,18 +825,12 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     variant="ghost" 
                     size="icon" 
                     onClick={() => {
-                      // 🔒 RESTRICCIÓN: Solo para usuarios logueados
-                      if (!user) {
-                        toast({
-                          title:'Función Pro', 
-                          description: 'Debes iniciar sesión para copiar títulos.', 
-                          variant:'destructive'
-                        });
-                        onAuthClick(); // 🔥 Mostrar modal
-                        return;
-                      }
-                      
-                      // ✅ Acción para usuarios logueados
+                      // padding
+                      // padding
+                      // padding
+                      // padding
+                      // padding
+                      // ✅ Acción para todos los usuarios
                       const titleText = typeof title === 'string' 
                         ? title.replace('{tema}', contentTopic || 'tu tema') 
                         : title;

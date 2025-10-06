@@ -1,15 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// ✅ CORREGIDO: Usar import.meta.env para Vite (NO process.env)
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_API_KEY);
-
-
+// Usar la API key correcta de Gemini
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 // Función base para generar contenido
 const generateContent = async (prompt) => {
   try {
     console.log('🤖 Llamando a Gemini API...');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Usar el modelo correcto: gemini-pro (versión estable)
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();

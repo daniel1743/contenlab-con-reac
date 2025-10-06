@@ -8,5 +8,9 @@ export const templates = [
 ];
 
 export const fonts = [
-    'Impact', 'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Montserrat', 'Bebas Neue'
+    'Impact', 'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia',
+    'Palatino', 'Garamond', 'Trebuchet MS', 'Arial Black',
+    // Google Fonts profesionales para miniaturas
+    'Anton', 'Bebas Neue', 'Montserrat', 'Oswald', 'Poppins', 'Roboto', 'Inter',
+    'Raleway', 'Russo One', 'Bangers', 'Righteous', 'Permanent Marker'
 ];

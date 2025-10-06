@@ -5,6 +5,7 @@ import PricingSection from '@/components/PricingSection';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import BrandsCarousel from '@/components/BrandsCarousel';
 
+
 // Importar iconos animados modernos
 import { 
   Sparkles, 
@@ -27,10 +28,12 @@ import {
   Megaphone
 } from 'lucide-react';
 
-const LandingPage = ({ onAuthClick }) => {
+
+const LandingPage = ({ onSectionChange }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const { scrollYProgress } = useViewportScroll();
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+
 
   // Iconos animados para módulos únicos
   const AnimatedIcon = ({ Icon, delay = 0, color = "text-white" }) => (
@@ -53,6 +56,7 @@ const LandingPage = ({ onAuthClick }) => {
       <Icon className="w-8 h-8" />
     </motion.div>
   );
+
 
   // Módulos únicos con nombres profesionales
   const modules = [
@@ -100,6 +104,7 @@ const LandingPage = ({ onAuthClick }) => {
     }
   ];
 
+
   // Estadísticas con contexto emocional y sus iconos
   const emotionalStats = [
     { 
@@ -132,6 +137,7 @@ const LandingPage = ({ onAuthClick }) => {
     }
   ];
 
+
   // Tipos de creadores específicos
   const creatorTypes = [
     {
@@ -154,8 +160,16 @@ const LandingPage = ({ onAuthClick }) => {
     }
   ];
 
+
+  // Función para navegación usando el sistema de secciones existente
+  const handleFreeTrial = () => {
+    onSectionChange('tools'); // Cambia a la sección tools usando el callback del App.jsx
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden pt-[72px]">
+
 
       {/* Fondo degradado animado tipo Astra */}
       <div className="absolute inset-0 -z-10">
@@ -167,6 +181,7 @@ const LandingPage = ({ onAuthClick }) => {
           style={{ position: "absolute", top: 0, left: 0 }}
         />
       </div>
+
 
       {/* Fondo animado mejorado */}
       <div className="absolute inset-0">
@@ -209,6 +224,7 @@ const LandingPage = ({ onAuthClick }) => {
         />
       </div>
 
+
       {/* Hero Section con narrativa emocional */}
       <section className="relative min-h-screen flex items-center justify-center">
         <div className="relative z-10 text-center space-y-12 px-4 max-w-7xl mx-auto">
@@ -234,6 +250,7 @@ const LandingPage = ({ onAuthClick }) => {
               </span>
             </motion.h1>
 
+
             <motion.p 
               className="text-xl md:text-2xl text-gray-300 max-w-5xl mx-auto leading-relaxed font-light"
               initial={{ opacity: 0, y: 20 }}
@@ -246,6 +263,7 @@ const LandingPage = ({ onAuthClick }) => {
               <span className="text-pink-400 font-semibold">conectar con impacto</span>.
             </motion.p>
 
+
             <motion.div 
               className="flex flex-col sm:flex-row gap-6 justify-center items-center"
               initial={{ opacity: 0, y: 20 }}
@@ -253,7 +271,8 @@ const LandingPage = ({ onAuthClick }) => {
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               <motion.button 
-                onClick={onAuthClick}
+              
+                onClick={handleFreeTrial}
                 className="group relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-semibold text-lg overflow-hidden"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -266,9 +285,10 @@ const LandingPage = ({ onAuthClick }) => {
                 />
                 <span className="relative z-10 flex items-center gap-2">
                   <Wand2 className="w-5 h-5" />
-                  Comenzar a crear
+                  Probar Gratis
                 </span>
               </motion.button>
+
 
               <motion.button 
                 className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/20 transition-all duration-300"
@@ -282,6 +302,7 @@ const LandingPage = ({ onAuthClick }) => {
               </motion.button>
             </motion.div>
           </motion.div>
+
 
           {/* Estadísticas con iconos animados y contexto emocional */}
           <motion.div 
@@ -315,6 +336,7 @@ const LandingPage = ({ onAuthClick }) => {
         </div>
       </section>
 
+
       {/* Sección "¿Para quién es esto?" */}
       <section className="py-24 px-4 relative">
         <div className="max-w-7xl mx-auto">
@@ -332,6 +354,7 @@ const LandingPage = ({ onAuthClick }) => {
               Cada creador tiene una voz única. Descubre cómo ContentLab se adapta a tu estilo.
             </p>
           </motion.div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {creatorTypes.map((type, index) => {
@@ -366,6 +389,7 @@ const LandingPage = ({ onAuthClick }) => {
         </div>
       </section>
 
+
       {/* Módulos destacados con nombres únicos */}
       <section className="py-24 px-4 relative">
         <div className="max-w-7xl mx-auto">
@@ -383,6 +407,7 @@ const LandingPage = ({ onAuthClick }) => {
               Cada módulo está diseñado para potenciar un aspecto único de tu creatividad.
             </p>
           </motion.div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {modules.map((module, index) => {
@@ -434,6 +459,7 @@ const LandingPage = ({ onAuthClick }) => {
         </div>
       </section>
 
+
       {/* Historia del flujo de trabajo */}
       <section className="py-24 px-4 relative">
         <div className="max-w-7xl mx-auto">
@@ -451,6 +477,8 @@ const LandingPage = ({ onAuthClick }) => {
               Tu viaje creativo, reimaginado en tres pasos fluidos.
             </p>
           </motion.div>
+
+
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -514,10 +542,13 @@ const LandingPage = ({ onAuthClick }) => {
         </div>
       </section>
 
+
+
       {/* Integrar componentes existentes */}
-      <PricingSection onAuthClick={onAuthClick} />
+      <PricingSection />
       <TestimonialsCarousel />
       <BrandsCarousel />
+
 
       {/* CTA Final mejorado */}
       <section className="py-24 px-4 relative">
@@ -548,7 +579,7 @@ const LandingPage = ({ onAuthClick }) => {
             </p>
             
             <motion.button 
-              onClick={onAuthClick}
+              onClick={handleFreeTrial}
               className="group relative px-12 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-bold text-xl overflow-hidden"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -581,5 +612,6 @@ const LandingPage = ({ onAuthClick }) => {
     </div>
   );
 };
+
 
 export default LandingPage;

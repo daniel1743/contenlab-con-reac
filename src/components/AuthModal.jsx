@@ -51,9 +51,17 @@ const AuthModal = ({ isOpen, onClose }) => {
       }
       const { error } = await signUp(email, password, { data: { full_name: name } });
       if (error) {
-        toast({ variant: "destructive", title: "Error de Registro", description: error.message });
+        console.error('Error de registro:', error);
+        toast({ 
+          variant: "destructive", 
+          title: "Error de Registro", 
+          description: error.message || 'No se pudo crear la cuenta. Verifica tus datos e intenta nuevamente.' 
+        });
       } else {
-        toast({ title: "¡Cuenta creada!", description: "Revisa tu email para verificar tu cuenta." });
+        toast({ 
+          title: "¡Cuenta creada!", 
+          description: "Revisa tu email para verificar tu cuenta. Si no lo ves, revisa tu carpeta de spam." 
+        });
         onClose();
       }
     } else {
@@ -149,7 +157,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                   </div>
                 </motion.div>
                 
-                <AnimatePresence mode="wait">
+                <AnimatePresence>
                   <TabsContent key="login" value="login" asChild>
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="space-y-4">
                       {/* Formulario de Iniciar Sesión */}

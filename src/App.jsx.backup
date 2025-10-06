@@ -24,12 +24,10 @@ function App() {
   const [activeSection, setActiveSection] = useState('landing');
   // padding
 
-  // Secciones que requieren autenticación obligatoria
-  const protectedSections = ['dashboard', 'calendar', 'chat'];
-  
-  // Redirigir a 'landing' solo si el usuario cierra sesión en una sección protegida
+  // El efecto ahora solo se encarga de redirigir al usuario a 'landing' CUANDO CIERRA SESIÓN.
+  // Ya no fuerza al usuario a ir al dashboard después de iniciar sesión.
   useEffect(() => {
-    if (!isAuthenticated && protectedSections.includes(activeSection)) {
+    if (!isAuthenticated && activeSection !== 'landing') {
       setActiveSection('landing');
     }
   }, [isAuthenticated, activeSection]);
@@ -75,7 +73,7 @@ function App() {
       case 'dashboard':
         return isAuthenticated ? <Dashboard onSectionChange={handleSectionChange} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'tools':
-        return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} onSubscriptionClick={() => setShowSubscriptionModal(true)} />;
+        return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
       case 'calendar':
         return isAuthenticated ? <Calendar /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'chat':
