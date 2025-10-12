@@ -64,7 +64,7 @@ const cardVariants = {
 
 const TestimonialCard = ({ name, role, comment, rating, avatar }) => (
   <motion.div
-    className="w-full max-w-sm mx-auto bg-gray-800 bg-opacity-70 rounded-3xl p-8 flex flex-col items-center text-center cursor-pointer glass-effect border border-purple-500/30 shadow-lg"
+    className="w-full max-w-sm mx-auto h-[420px] bg-gray-800 bg-opacity-70 rounded-3xl p-8 flex flex-col items-center text-center cursor-pointer glass-effect border border-purple-500/30 shadow-lg"
     initial="offscreen"
     whileInView="onscreen"
     viewport={{ once: true, amount: 0.3 }}
@@ -74,12 +74,12 @@ const TestimonialCard = ({ name, role, comment, rating, avatar }) => (
     <img
       src={avatar}
       alt={name}
-      className="w-20 h-20 rounded-full object-cover border-4 border-purple-400 shadow-md mb-6"
+      className="w-20 h-20 rounded-full object-cover border-4 border-purple-400 shadow-md mb-6 flex-shrink-0"
     />
-    <h3 className="text-white font-semibold text-xl mb-1">{name}</h3>
-    <p className="text-purple-300 text-sm mb-4">{role}</p>
-    <p className="text-gray-300 italic mb-6 leading-relaxed">"{comment}"</p>
-    <div className="flex space-x-1 text-yellow-400">
+    <h3 className="text-white font-semibold text-xl mb-1 flex-shrink-0">{name}</h3>
+    <p className="text-purple-300 text-sm mb-4 flex-shrink-0">{role}</p>
+    <p className="text-gray-300 italic mb-6 leading-relaxed flex-grow flex items-center">"{comment}"</p>
+    <div className="flex space-x-1 text-yellow-400 flex-shrink-0">
       {[...Array(rating)].map((_, i) => (
         <Star key={i} className="w-6 h-6 fill-current" />
       ))}
@@ -89,7 +89,7 @@ const TestimonialCard = ({ name, role, comment, rating, avatar }) => (
 
 const TestimonialsCarousel = () => {
   return (
-    <section className="py-20 overflow-hidden bg-gray-900">
+    <section className="py-20 bg-gray-900">
       <div className="max-w-7xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -107,22 +107,24 @@ const TestimonialsCarousel = () => {
         </motion.div>
       </div>
 
-      <Carousel
-        responsive={responsive}
-        infinite
-        autoPlay
-        autoPlaySpeed={4500}
-        keyBoardControl
-        customTransition="transform 600ms cubic-bezier(0.45, 0, 0.55, 1)"
-        containerClass="carousel-container"
-        removeArrowOnDeviceType={["tablet", "mobile"]}
-        itemClass="carousel-item-padding-40-px"
-        arrows={false}
-      >
-        {testimonialsData.map((testimonial, index) => (
-          <TestimonialCard key={index} {...testimonial} />
-        ))}
-      </Carousel>
+      <div className="py-8">
+        <Carousel
+          responsive={responsive}
+          infinite
+          autoPlay
+          autoPlaySpeed={4500}
+          keyBoardControl
+          customTransition="transform 600ms cubic-bezier(0.45, 0, 0.55, 1)"
+          containerClass="carousel-container"
+          removeArrowOnDeviceType={["tablet", "mobile"]}
+          itemClass="carousel-item-padding-40-px py-4"
+          arrows={false}
+        >
+          {testimonialsData.map((testimonial, index) => (
+            <TestimonialCard key={index} {...testimonial} />
+          ))}
+        </Carousel>
+      </div>
     </section>
   );
 };
