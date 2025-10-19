@@ -95,3 +95,4 @@ dist-ssr
 # 3. Rotar TODAS las API keys inmediatamente
 # 4. Agregar .env a .gitignore (ya está arriba)
 # 5. git push
+nul

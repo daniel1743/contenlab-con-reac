@@ -3,7 +3,7 @@ import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X, MessageSquare, Home, Crown } from 'lucide-react';
+import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X, MessageSquare, Home, Crown, Inbox, FolderOpen } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -36,13 +36,15 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     }
   });
 
-  // Quedará así
+  // Navegación actualizada con nuevas secciones
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, authRequired: true },
-    { id: 'tools', label: 'Herramientas', icon: Wrench }, // ❌ quitamos authRequired
+    { id: 'inbox', label: 'Mensajes', icon: Inbox, authRequired: true },
     { id: 'calendar', label: 'Calendario', icon: Calendar, authRequired: true },
-    { id: 'chat', label: 'Chat', icon: MessageSquare, authRequired: true },
+    { id: 'library', label: 'Biblioteca', icon: FolderOpen, authRequired: true },
+    { id: 'tools', label: 'Herramientas', icon: Wrench },
+    { id: 'chat', label: 'Chat IA', icon: MessageSquare, authRequired: true },
   ];
 
   // Lógica de navegación modificada
@@ -157,7 +159,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                       <User className="mr-2 h-4 w-4" />
                       <span>Perfil</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => toast({title: 'Función no implementada'})}>
+                    <DropdownMenuItem onClick={() => onSectionChange('settings')}>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Configuración</span>
                     </DropdownMenuItem>

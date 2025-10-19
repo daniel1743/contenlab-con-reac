@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import AuthModal from '@/components/AuthModal';
@@ -7,12 +6,16 @@ import Dashboard from '@/components/Dashboard';
 import Tools from '@/components/Tools';
 import Calendar from '@/components/Calendar';
 import Chat from '@/components/Chat';
+import Inbox from '@/components/Inbox';
+import ContentLibrary from '@/components/ContentLibrary';
+import Settings from '@/components/Settings';
 import Footer from '@/components/Footer';
 import LandingPage from '@/components/LandingPage';
 import FakeNotifications from '@/components/FakeNotifications';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ThumbnailEditor from '@/components/thumbnail-editor/ThumbnailEditor';
 import SubscriptionModal from '@/components/SubscriptionModal';
+import SEOHead from '@/components/SEOHead';
 
 function App() {
   const { session, loading } = useAuth();
@@ -25,14 +28,17 @@ function App() {
   // padding
 
   // Secciones que requieren autenticación obligatoria
-  const protectedSections = ['dashboard', 'calendar', 'chat'];
-  
+  const protectedSections = useMemo(() =>
+    ['dashboard', 'calendar', 'chat', 'inbox', 'library', 'settings'],
+    []
+  );
+
   // Redirigir a 'landing' solo si el usuario cierra sesión en una sección protegida
   useEffect(() => {
     if (!isAuthenticated && protectedSections.includes(activeSection)) {
       setActiveSection('landing');
     }
-  }, [isAuthenticated, activeSection]);
+  }, [isAuthenticated, activeSection, protectedSections]);
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -74,12 +80,18 @@ function App() {
         return <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'dashboard':
         return isAuthenticated ? <Dashboard onSectionChange={handleSectionChange} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
-      case 'tools':
-        return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} onSubscriptionClick={() => setShowSubscriptionModal(true)} />;
+      case 'inbox':
+        return isAuthenticated ? <Inbox /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'calendar':
         return isAuthenticated ? <Calendar /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'library':
+        return isAuthenticated ? <ContentLibrary /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'tools':
+        return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} onSubscriptionClick={() => setShowSubscriptionModal(true)} />;
       case 'chat':
         return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'settings':
+        return isAuthenticated ? <Settings /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'thumbnail-editor':
         return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
       default:
@@ -87,15 +99,28 @@ function App() {
     }
   };
 
+  // Determinar qué schemas de structured data incluir según la sección
+  const getSchemas = () => {
+    const baseSchemas = ['organization', 'website'];
+
+    switch (activeSection) {
+      case 'landing':
+        return [...baseSchemas, 'webApplication', 'faqPage', 'softwareApplication'];
+      case 'tools':
+      case 'thumbnail-editor':
+        return [...baseSchemas, 'webApplication'];
+      case 'pricing':
+        return [...baseSchemas, 'webApplication', 'softwareApplication'];
+      default:
+        return baseSchemas;
+    }
+  };
+
   return (
     <>
-      <Helmet>
-        <title>ContentLab Premium - Suite Profesional de Creación de Contenido</title>
-        <meta name="description" content="Plataforma todo-en-uno para creadores de contenido digital. Herramientas profesionales de IA, análisis de tendencias y editor de miniaturas avanzado." />
-        <meta property="og:title" content="ContentLab Premium - Suite Profesional de Creación de Contenido" />
-        <meta property="og:description" content="Transforma tu presencia digital con herramientas profesionales de IA, analytics avanzados y un editor de miniaturas de nivel profesional." />
-      </Helmet>
-      
+      {/* SEO Head dinámico según la sección activa */}
+      <SEOHead page={activeSection} schemas={getSchemas()} />
+
       <div className="min-h-screen flex flex-col bg-gray-900 text-white">
         {activeSection !== 'thumbnail-editor' && (
           <Navbar

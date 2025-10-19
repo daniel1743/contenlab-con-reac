@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, useTransform, useViewportScroll } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useTransform, useScroll, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import PricingSection from '@/components/PricingSection';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
@@ -7,15 +7,15 @@ import BrandsCarousel from '@/components/BrandsCarousel';
 
 
 // Importar iconos animados modernos
-import { 
-  Sparkles, 
-  TrendingUp, 
-  Zap, 
-  Target, 
-  Users, 
-  BarChart3, 
-  Lightbulb, 
-  Activity, 
+import {
+  Sparkles,
+  TrendingUp,
+  Zap,
+  Target,
+  Users,
+  BarChart3,
+  Lightbulb,
+  Activity,
   Briefcase,
   Brain,
   Compass,
@@ -25,15 +25,143 @@ import {
   Shield,
   Wand2,
   Eye,
-  Megaphone
+  Megaphone,
+  MessageSquare,
+  Inbox,
+  FolderOpen,
+  Settings,
+  Calendar,
+  Send,
+  Download,
+  Bell,
+  Search
 } from 'lucide-react';
 
 
 const LandingPage = ({ onSectionChange }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
-  const { scrollYProgress } = useViewportScroll();
+  const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
+  // Hook para contador animado
+  function AnimatedCounter({ value, suffix = '' }) {
+    const ref = useRef(null);
+    const motionValue = useMotionValue(0);
+    const springValue = useSpring(motionValue, { duration: 3000 });
+    const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+    useEffect(() => {
+      if (isInView) {
+        const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+        animate(motionValue, numericValue, { duration: 2 });
+      }
+    }, [isInView, value, motionValue]);
+
+    useEffect(() => {
+      springValue.on("change", (latest) => {
+        if (ref.current) {
+          ref.current.textContent = latest.toFixed(0) + suffix;
+        }
+      });
+    }, [springValue, suffix]);
+
+    return <span ref={ref}>{value}</span>;
+  }
+
+  // Componente Typed Text
+  const TypedText = ({ texts, typingSpeed = 100, deletingSpeed = 50, pauseTime = 2000 }) => {
+    const [displayText, setDisplayText] = useState('');
+    const [textIndex, setTextIndex] = useState(0);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+      const currentText = texts[textIndex];
+
+      const timeout = setTimeout(() => {
+        if (!isDeleting) {
+          if (displayText.length < currentText.length) {
+            setDisplayText(currentText.slice(0, displayText.length + 1));
+          } else {
+            setTimeout(() => setIsDeleting(true), pauseTime);
+          }
+        } else {
+          if (displayText.length > 0) {
+            setDisplayText(currentText.slice(0, displayText.length - 1));
+          } else {
+            setIsDeleting(false);
+            setTextIndex((prev) => (prev + 1) % texts.length);
+          }
+        }
+      }, isDeleting ? deletingSpeed : typingSpeed);
+
+      return () => clearTimeout(timeout);
+    }, [displayText, isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime]);
+
+    return (
+      <span>
+        {displayText}
+        <motion.span
+          animate={{ opacity: [1, 0] }}
+          transition={{ duration: 0.8, repeat: Infinity }}
+          className="inline-block w-0.5 h-8 md:h-12 bg-purple-400 ml-1"
+        />
+      </span>
+    );
+  };
+
+  // Componente Ripple Button
+  const RippleButton = ({ children, onClick, className }) => {
+    const [ripples, setRipples] = useState([]);
+
+    const addRipple = (e) => {
+      const button = e.currentTarget;
+      const rect = button.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+
+      const newRipple = {
+        x,
+        y,
+        size,
+        key: Date.now()
+      };
+
+      setRipples([...ripples, newRipple]);
+
+      setTimeout(() => {
+        setRipples((prev) => prev.filter((ripple) => ripple.key !== newRipple.key));
+      }, 600);
+
+      if (onClick) onClick(e);
+    };
+
+    return (
+      <motion.button
+        onClick={addRipple}
+        className={`${className} relative overflow-hidden`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {ripples.map((ripple) => (
+          <motion.span
+            key={ripple.key}
+            className="absolute bg-white/30 rounded-full"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+              width: ripple.size,
+              height: ripple.size,
+            }}
+            initial={{ scale: 0, opacity: 1 }}
+            animate={{ scale: 2, opacity: 0 }}
+            transition={{ duration: 0.6 }}
+          />
+        ))}
+        <span className="relative z-10">{children}</span>
+      </motion.button>
+    );
+  };
 
   // Iconos animados para módulos únicos
   const AnimatedIcon = ({ Icon, delay = 0, color = "text-white" }) => (
@@ -58,49 +186,55 @@ const LandingPage = ({ onSectionChange }) => {
   );
 
 
-  // Módulos únicos con nombres profesionales
+  // Módulos reales implementados en ContentLab
   const modules = [
-    { 
-      icon: Eye, 
-      name: 'TrendScope', 
-      description: 'Análisis de tendencias con IA para detectar contenido viral antes que tu competencia',
-      color: 'from-violet-600 to-purple-600',
-      accent: 'violet'
-    },
-    { 
-      icon: Compass, 
-      name: 'EthniMap', 
-      description: 'Sectorización inteligente para identificar y conquistar nichos éticos inexplorados',
-      color: 'from-emerald-600 to-teal-600',
-      accent: 'emerald'
-    },
-    { 
-      icon: Flame, 
-      name: 'PulseRank', 
-      description: 'Optimización SEO emocional que viraliza sin perder profundidad ni autenticidad',
-      color: 'from-orange-600 to-red-600',
-      accent: 'orange'
-    },
-    { 
-      icon: Heart, 
-      name: 'StoryForge', 
-      description: 'Narrativa emocional que transforma datos en historias que conectan y conmueven',
-      color: 'from-pink-600 to-rose-600',
-      accent: 'pink'
-    },
-    { 
-      icon: Palette, 
-      name: 'VisualCraft', 
-      description: 'Editor de miniaturas con IA que crea diseños irresistibles en segundos',
-      color: 'from-blue-600 to-cyan-600',
-      accent: 'blue'
-    },
-    { 
-      icon: Brain, 
-      name: 'InsightHub', 
-      description: 'Dashboard inteligente que convierte métricas complejas en decisiones claras',
+    {
+      icon: BarChart3,
+      name: 'Dashboard Inteligente',
+      description: 'Analytics avanzados con predicciones IA, alertas en tiempo real y métricas de todas tus plataformas',
       color: 'from-indigo-600 to-purple-600',
-      accent: 'indigo'
+      accent: 'indigo',
+      section: 'dashboard'
+    },
+    {
+      icon: Inbox,
+      name: 'Bandeja Unificada',
+      description: 'Gestiona mensajes, comentarios y DMs de todas tus redes sociales desde un solo lugar',
+      color: 'from-blue-600 to-cyan-600',
+      accent: 'blue',
+      section: 'inbox'
+    },
+    {
+      icon: Calendar,
+      name: 'Calendario Avanzado',
+      description: 'Programa, filtra y exporta tus publicaciones con sistema de categorías y vista multi-plataforma',
+      color: 'from-purple-600 to-pink-600',
+      accent: 'purple',
+      section: 'calendar'
+    },
+    {
+      icon: FolderOpen,
+      name: 'Biblioteca de Contenido',
+      description: 'Organiza todos tus assets en carpetas inteligentes con búsqueda, favoritos y tracking de uso',
+      color: 'from-emerald-600 to-teal-600',
+      accent: 'emerald',
+      section: 'library'
+    },
+    {
+      icon: Palette,
+      name: 'Editor de Miniaturas',
+      description: 'Crea diseños profesionales con IA, plantillas y herramientas avanzadas de edición',
+      color: 'from-pink-600 to-rose-600',
+      accent: 'pink',
+      section: 'tools'
+    },
+    {
+      icon: MessageSquare,
+      name: 'Chat con IA',
+      description: 'Asistente inteligente para generar ideas, títulos virales y estrategias de contenido',
+      color: 'from-violet-600 to-purple-600',
+      accent: 'violet',
+      section: 'chat'
     }
   ];
 
@@ -171,52 +305,66 @@ const LandingPage = ({ onSectionChange }) => {
     <div className="min-h-screen bg-gray-900 relative overflow-hidden pt-[72px]">
 
 
-      {/* Fondo degradado animado tipo Astra */}
+      {/* Fondo degradado animado */}
       <div className="absolute inset-0 -z-10">
         <motion.div
-          className="w-full h-full bg-gradient-to-br from-violet-800 via-purple-700 to-pink-700"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          style={{ position: "absolute", top: 0, left: 0 }}
+          className="w-full h-full"
+          style={{
+            background: 'linear-gradient(-45deg, #8b5cf6, #6b21a8, #ec4899, #be185d)',
+            backgroundSize: '400% 400%',
+            position: "absolute",
+            top: 0,
+            left: 0
+          }}
+          animate={{
+            backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
         />
       </div>
 
 
-      {/* Fondo animado mejorado */}
+      {/* Fondo animado mejorado con Parallax */}
       <div className="absolute inset-0">
-        <motion.div 
+        <motion.div
           className="absolute top-20 left-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-          animate={{ 
+          style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
+          animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.6, 0.3]
           }}
-          transition={{ 
+          transition={{
             duration: 8,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute bottom-20 right-20 w-[500px] h-[500px] bg-pink-500/10 rounded-full blur-3xl"
-          animate={{ 
+          style={{ y: useTransform(scrollYProgress, [0, 1], [0, 200]) }}
+          animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.4, 0.7, 0.4]
           }}
-          transition={{ 
+          transition={{
             duration: 10,
             repeat: Infinity,
             ease: "easeInOut",
             delay: 2
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-violet-500/5 to-cyan-500/5 rounded-full blur-3xl"
-          animate={{ 
+          style={{ y: useTransform(scrollYProgress, [0, 1], [0, -100]) }}
+          animate={{
             rotate: [0, 360],
             scale: [1, 1.1, 1]
           }}
-          transition={{ 
+          transition={{
             duration: 20,
             repeat: Infinity,
             ease: "linear"
@@ -234,15 +382,15 @@ const LandingPage = ({ onSectionChange }) => {
             transition={{ duration: 0.8 }} 
             className="space-y-8"
           >
-            {/* Headline narrativo actualizado */}
-            <motion.h1 
+            {/* Headline narrativo con Typed Text */}
+            <motion.h1
               className="text-6xl md:text-8xl font-black leading-tight"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.2 }}
             >
               <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Impulsa tu voz
+                <TypedText texts={['Impulsa tu voz', 'Amplifica tu alcance', 'Transforma tu contenido']} />
               </span>
               <br />
               <span className="text-white font-light">
@@ -270,36 +418,21 @@ const LandingPage = ({ onSectionChange }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              <motion.button 
-              
+              <RippleButton
                 onClick={handleFreeTrial}
-                className="group relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-semibold text-lg overflow-hidden"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="group px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-semibold text-lg"
               >
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '0%' }}
-                  transition={{ duration: 0.3 }}
-                />
-                <span className="relative z-10 flex items-center gap-2">
-                  <Wand2 className="w-5 h-5" />
-                  Probar Gratis
-                </span>
-              </motion.button>
+                <Wand2 className="w-5 h-5 inline mr-2" />
+                Probar Gratis
+              </RippleButton>
 
-
-              <motion.button 
+              <RippleButton
+                onClick={() => {}}
                 className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/20 transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
-                <span className="flex items-center gap-2">
-                  <Eye className="w-5 h-5" />
-                  Ver Demo
-                </span>
-              </motion.button>
+                <Eye className="w-5 h-5 inline mr-2" />
+                Ver Demo
+              </RippleButton>
             </motion.div>
           </motion.div>
 
@@ -322,7 +455,7 @@ const LandingPage = ({ onSectionChange }) => {
               >
                 <AnimatedIcon Icon={stat.Icon} delay={index * 0.1} color={stat.color} />
                 <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-2">
-                  {stat.value}
+                  <AnimatedCounter value={stat.value} suffix={stat.value.includes('K') ? 'K+' : stat.value.includes('%') ? '%' : ''} />
                 </div>
                 <div className="text-white font-semibold text-sm md:text-base mb-1">
                   {stat.label}
@@ -422,6 +555,7 @@ const LandingPage = ({ onSectionChange }) => {
                   onHoverStart={() => setHoveredCard(index)}
                   onHoverEnd={() => setHoveredCard(null)}
                   whileHover={{ scale: 1.02 }}
+                  onClick={() => onSectionChange(module.section)}
                   className="group cursor-pointer"
                 >
                   <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-violet-500/30 transition-all duration-500">
@@ -459,6 +593,157 @@ const LandingPage = ({ onSectionChange }) => {
         </div>
       </section>
 
+
+      {/* NUEVA SECCIÓN: Funcionalidades Destacadas */}
+      <section className="py-24 px-4 relative bg-gradient-to-b from-transparent via-purple-900/10 to-transparent">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-6">
+              Todo lo que Necesitas en un Solo Lugar
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Gestión completa de redes sociales con herramientas profesionales
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Inbox Feature */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              onClick={() => onSectionChange('inbox')}
+              className="group cursor-pointer"
+            >
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-blue-500/30 transition-all duration-300">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Inbox className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Bandeja Unificada</h3>
+                    <p className="text-sm text-blue-300">Ahorra 5+ horas semanales</p>
+                  </div>
+                </div>
+
+                <ul className="space-y-3 mb-6">
+                  {[
+                    { icon: MessageSquare, text: 'Mensajes de todas las plataformas' },
+                    { icon: Bell, text: 'Notificaciones en tiempo real' },
+                    { icon: Send, text: 'Respuestas rápidas con IA' },
+                    { icon: Eye, text: 'Filtros inteligentes' }
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-center gap-3 text-gray-300">
+                      <item.icon className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm">{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex items-center gap-2 text-blue-400 group-hover:gap-3 transition-all">
+                  <span className="text-sm font-medium">Explorar Inbox</span>
+                  <span>→</span>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Content Library Feature */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              onClick={() => onSectionChange('library')}
+              className="group cursor-pointer"
+            >
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-emerald-500/30 transition-all duration-300">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <FolderOpen className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Biblioteca de Contenido</h3>
+                    <p className="text-sm text-emerald-300">Organización profesional</p>
+                  </div>
+                </div>
+
+                <ul className="space-y-3 mb-6">
+                  {[
+                    { icon: FolderOpen, text: 'Carpetas inteligentes' },
+                    { icon: Search, text: 'Búsqueda instantánea' },
+                    { icon: Heart, text: 'Sistema de favoritos' },
+                    { icon: Download, text: 'Exportación masiva' }
+                  ].map((item, idx) => {
+                    const ItemIcon = item.icon;
+                    return (
+                      <li key={idx} className="flex items-center gap-3 text-gray-300">
+                        <ItemIcon className="w-4 h-4 text-emerald-400" />
+                        <span className="text-sm">{item.text}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-3 transition-all">
+                  <span className="text-sm font-medium">Explorar Biblioteca</span>
+                  <span>→</span>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Settings Feature */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              onClick={() => onSectionChange('settings')}
+              className="group cursor-pointer"
+            >
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-purple-500/30 transition-all duration-300">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Settings className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Centro de Control</h3>
+                    <p className="text-sm text-purple-300">Personalización total</p>
+                  </div>
+                </div>
+
+                <ul className="space-y-3 mb-6">
+                  {[
+                    { icon: Users, text: 'Conecta todas tus cuentas' },
+                    { icon: Bell, text: 'Notificaciones personalizadas' },
+                    { icon: Shield, text: 'Seguridad avanzada' },
+                    { icon: BarChart3, text: 'Gestión de suscripción' }
+                  ].map((item, idx) => {
+                    const ItemIcon = item.icon;
+                    return (
+                      <li key={idx} className="flex items-center gap-3 text-gray-300">
+                        <ItemIcon className="w-4 h-4 text-purple-400" />
+                        <span className="text-sm">{item.text}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                <div className="flex items-center gap-2 text-purple-400 group-hover:gap-3 transition-all">
+                  <span className="text-sm font-medium">Explorar Configuración</span>
+                  <span>→</span>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
       {/* Historia del flujo de trabajo */}
       <section className="py-24 px-4 relative">

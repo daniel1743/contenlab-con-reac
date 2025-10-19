@@ -1,0 +1,78 @@
+# robots.txt para ContentLab Premium
+# Última actualización: 2025-10-18
+
+# ========================================
+# REGLAS PARA TODOS LOS BOTS
+# ========================================
+User-agent: *
+Allow: /
+
+# ========================================
+# RUTAS BLOQUEADAS (Privadas)
+# ========================================
+# API routes (si las tienes)
+Disallow: /api/
+
+# Rutas de administración
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /settings/
+
+# Archivos de autenticación
+Disallow: /auth/
+Disallow: /login/
+Disallow: /signup/
+
+# Rutas privadas de usuario
+Disallow: /user/
+Disallow: /profile/
+Disallow: /calendar/
+Disallow: /inbox/
+Disallow: /library/
+
+# Archivos técnicos
+Disallow: /*.json$
+Disallow: /dist/
+Disallow: /src/
+
+# ========================================
+# REGLAS ESPECÍFICAS PARA GOOGLEBOT
+# ========================================
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+# ========================================
+# REGLAS PARA BINGBOT
+# ========================================
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+# ========================================
+# BLOQUEAR BOTS MALICIOSOS
+# ========================================
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# ========================================
+# SITEMAP
+# ========================================
+# IMPORTANTE: Actualizar con tu dominio real
+Sitemap: https://tudominio.com/sitemap.xml
+
+# ========================================
+# NOTAS DE CONFIGURACIÓN
+# ========================================
+# 1. Reemplazar "tudominio.com" con tu dominio real
+# 2. Este archivo debe estar en /public para que Vite lo copie a /dist
+# 3. Después del deploy, verificar en: https://tudominio.com/robots.txt
+# 4. Enviar a Google Search Console después de configurar
