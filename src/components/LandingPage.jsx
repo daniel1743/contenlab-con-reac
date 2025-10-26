@@ -220,22 +220,24 @@ const LandingPage = ({ onSectionChange }) => {
       accent: 'emerald',
       section: 'library'
     },
-    {
-      icon: Palette,
-      name: 'Editor de Miniaturas',
-      description: 'Crea diseños profesionales con IA, plantillas y herramientas avanzadas de edición',
-      color: 'from-pink-600 to-rose-600',
-      accent: 'pink',
-      section: 'tools'
-    },
-    {
-      icon: MessageSquare,
-      name: 'Chat con IA',
-      description: 'Asistente inteligente para generar ideas, títulos virales y estrategias de contenido',
-      color: 'from-violet-600 to-purple-600',
-      accent: 'violet',
-      section: 'chat'
-    }
+    // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
+    // {
+    //   icon: Palette,
+    //   name: 'Editor de Miniaturas',
+    //   description: 'Crea diseños profesionales con IA, plantillas y herramientas avanzadas de edición',
+    //   color: 'from-pink-600 to-rose-600',
+    //   accent: 'pink',
+    //   section: 'tools'
+    // },
+    // COMENTADO TEMPORALMENTE - Chat sin backend funcional (solo UI mock, mensajes hardcoded)
+    // {
+    //   icon: MessageSquare,
+    //   name: 'Chat con IA',
+    //   description: 'Asistente inteligente para generar ideas, títulos virales y estrategias de contenido',
+    //   color: 'from-violet-600 to-purple-600',
+    //   accent: 'violet',
+    //   section: 'chat'
+    // }
   ];
 
 

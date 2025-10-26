@@ -5,7 +5,8 @@ import AuthModal from '@/components/AuthModal';
 import Dashboard from '@/components/Dashboard';
 import Tools from '@/components/Tools';
 import Calendar from '@/components/Calendar';
-import Chat from '@/components/Chat';
+// COMENTADO TEMPORALMENTE - Chat sin backend funcional (solo UI mock)
+// import Chat from '@/components/Chat';
 import Inbox from '@/components/Inbox';
 import ContentLibrary from '@/components/ContentLibrary';
 import Settings from '@/components/Settings';
@@ -13,7 +14,8 @@ import Footer from '@/components/Footer';
 import LandingPage from '@/components/LandingPage';
 import FakeNotifications from '@/components/FakeNotifications';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import ThumbnailEditor from '@/components/thumbnail-editor/ThumbnailEditor';
+// COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
+// import ThumbnailEditor from '@/components/thumbnail-editor/ThumbnailEditor';
 import SubscriptionModal from '@/components/SubscriptionModal';
 import SEOHead from '@/components/SEOHead';
 
@@ -29,7 +31,7 @@ function App() {
 
   // Secciones que requieren autenticación obligatoria
   const protectedSections = useMemo(() =>
-    ['dashboard', 'calendar', 'chat', 'inbox', 'library', 'settings'],
+    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings'], // chat comentado temporalmente
     []
   );
 
@@ -88,12 +90,14 @@ function App() {
         return isAuthenticated ? <ContentLibrary /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'tools':
         return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} onSubscriptionClick={() => setShowSubscriptionModal(true)} />;
-      case 'chat':
-        return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      // COMENTADO TEMPORALMENTE - Chat sin backend funcional (mensajes hardcoded, no hay persistencia)
+      // case 'chat':
+      //   return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'settings':
         return isAuthenticated ? <Settings /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
-      case 'thumbnail-editor':
-        return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
+      // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado vs Canva (no usable en producción)
+      // case 'thumbnail-editor':
+      //   return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
       default:
         return <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
     }
@@ -107,7 +111,7 @@ function App() {
       case 'landing':
         return [...baseSchemas, 'webApplication', 'faqPage', 'softwareApplication'];
       case 'tools':
-      case 'thumbnail-editor':
+      // case 'thumbnail-editor': // COMENTADO TEMPORALMENTE
         return [...baseSchemas, 'webApplication'];
       case 'pricing':
         return [...baseSchemas, 'webApplication', 'softwareApplication'];
@@ -122,7 +126,7 @@ function App() {
       <SEOHead page={activeSection} schemas={getSchemas()} />
 
       <div className="min-h-screen flex flex-col bg-gray-900 text-white">
-        {activeSection !== 'thumbnail-editor' && (
+        {/* activeSection !== 'thumbnail-editor' && */ (
           <Navbar
             isAuthenticated={isAuthenticated}
             onAuthClick={() => setShowAuthModal(true)}
@@ -131,8 +135,8 @@ function App() {
             // padding
           />
         )}
-        
-        <main className={`flex-grow ${activeSection !== 'landing' && activeSection !== 'thumbnail-editor' ? 'pt-20' : 'pt-0'}`}>
+
+        <main className={`flex-grow ${activeSection !== 'landing' /* && activeSection !== 'thumbnail-editor' */ ? 'pt-20' : 'pt-0'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
@@ -140,7 +144,7 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className={activeSection !== 'landing' && activeSection !== 'thumbnail-editor' ? 'container mx-auto px-4 py-8' : ''}
+              className={activeSection !== 'landing' /* && activeSection !== 'thumbnail-editor' */ ? 'container mx-auto px-4 py-8' : ''}
             >
               {renderContent()}
             </motion.div>
@@ -162,8 +166,8 @@ function App() {
             setShowAuthModal(true);
           }}
         />
-        
-        {activeSection !== 'thumbnail-editor' && <FakeNotifications />}
+
+        {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
       </div>
     </>
   );

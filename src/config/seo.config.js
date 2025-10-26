@@ -11,15 +11,15 @@
 export const siteConfig = {
   // IMPORTANTE: Reemplazar con tu dominio real
   url: 'https://tudominio.com',
-  name: 'ContentLab Premium',
-  title: 'ContentLab Premium - Plataforma de Creación de Contenido con IA',
+  name: 'ViralCraft',
+  title: 'ViralCraft - Plataforma de Creación de Contenido con IA',
   description: 'Genera contenido viral optimizado con IA, crea miniaturas profesionales y optimiza tu SEO. Herramientas premium para YouTubers, TikTokers y creadores digitales.',
   locale: 'es_ES',
   language: 'es',
 
   // Información de la empresa
   company: {
-    name: 'ContentLab Premium',
+    name: 'ViralCraft',
     email: 'contacto@tudominio.com',
     phone: '+1-234-567-8900',
     address: {
@@ -33,7 +33,7 @@ export const siteConfig = {
 
   // Redes sociales
   social: {
-    twitter: '@contentlab',
+    twitter: '@viralcraft',
     facebook: 'https://facebook.com/contentlab',
     instagram: 'https://instagram.com/contentlab',
     youtube: 'https://youtube.com/@contentlab',
@@ -52,7 +52,7 @@ export const siteConfig = {
 // ===== META TAGS POR PÁGINA =====
 export const pageMetadata = {
   landing: {
-    title: 'ContentLab Premium - Crea Contenido Viral con IA',
+    title: 'ViralCraft - Crea Contenido Viral con IA',
     description: 'Plataforma todo-en-uno para creadores de contenido. Genera scripts virales, crea miniaturas profesionales y optimiza tu SEO con inteligencia artificial.',
     keywords: [
       'generador de contenido con IA',
@@ -70,7 +70,7 @@ export const pageMetadata = {
   },
 
   tools: {
-    title: 'Generador de Contenido Viral con IA - ContentLab',
+    title: 'Generador de Contenido Viral con IA - ViralCraft',
     description: 'Genera scripts virales optimizados con múltiples IA (Gemini, Claude, GPT-4). Análisis de SEO, keywords y sugerencias por plataforma en segundos.',
     keywords: [
       'generador de scripts con IA',
@@ -85,24 +85,25 @@ export const pageMetadata = {
     canonical: '/#tools'
   },
 
-  thumbnailEditor: {
-    title: 'Editor de Miniaturas Profesional - ContentLab',
-    description: 'Editor de miniaturas avanzado con IA. Biblioteca Unsplash, remover fondos, filtros profesionales, Google Fonts y herramientas de diseño.',
-    keywords: [
-      'editor de miniaturas youtube',
-      'crear thumbnails profesionales',
-      'diseño de miniaturas',
-      'remover fondo con IA',
-      'editor online gratuito',
-      'herramientas de diseño',
-      'miniaturas para youtube',
-      'diseño gráfico online'
-    ],
-    canonical: '/#thumbnail-editor'
-  },
+  // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
+  // thumbnailEditor: {
+  //   title: 'Editor de Miniaturas Profesional - ContentLab',
+  //   description: 'Editor de miniaturas avanzado con IA. Biblioteca Unsplash, remover fondos, filtros profesionales, Google Fonts y herramientas de diseño.',
+  //   keywords: [
+  //     'editor de miniaturas youtube',
+  //     'crear thumbnails profesionales',
+  //     'diseño de miniaturas',
+  //     'remover fondo con IA',
+  //     'editor online gratuito',
+  //     'herramientas de diseño',
+  //     'miniaturas para youtube',
+  //     'diseño gráfico online'
+  //   ],
+  //   canonical: '/#thumbnail-editor'
+  // },
 
   dashboard: {
-    title: 'Dashboard - ContentLab Premium',
+    title: 'Dashboard - ViralCraft',
     description: 'Panel de control con analíticas avanzadas, estadísticas de rendimiento y gestión de contenido en tiempo real.',
     keywords: [
       'dashboard de creadores',
@@ -115,7 +116,7 @@ export const pageMetadata = {
   },
 
   pricing: {
-    title: 'Planes y Precios - ContentLab Premium',
+    title: 'Planes y Precios - ViralCraft',
     description: 'Planes flexibles para creadores de contenido. Desde Free hasta Enterprise. Prueba gratis todas las funcionalidades premium.',
     keywords: [
       'precios contentlab',
@@ -140,7 +141,7 @@ export const openGraphConfig = {
     image: `${siteConfig.url}${siteConfig.images.ogImage}`,
     imageWidth: 1200,
     imageHeight: 630,
-    imageAlt: 'ContentLab Premium - Plataforma de Creación de Contenido con IA'
+    imageAlt: 'ViralCraft - Plataforma de Creación de Contenido con IA'
   }
 };
 
@@ -155,7 +156,7 @@ export const twitterConfig = {
     title: siteConfig.title,
     description: siteConfig.description,
     image: `${siteConfig.url}${siteConfig.images.twitterImage}`,
-    imageAlt: 'ContentLab Premium - Plataforma de Creación de Contenido'
+    imageAlt: 'ViralCraft - Plataforma de Creación de Contenido'
   }
 };
 
@@ -232,12 +233,12 @@ export const structuredData = {
     },
     featureList: [
       'Generación de contenido viral con IA',
-      'Editor de miniaturas profesional',
+      // COMENTADO TEMPORALMENTE: 'Editor de miniaturas profesional',
       'Análisis de SEO y keywords',
       'Calendario editorial',
       'Dashboard de analíticas',
       'Biblioteca de contenido',
-      'Chat con IA',
+      // COMENTADO TEMPORALMENTE: 'Chat con IA',
       'Múltiples proveedores de IA (Gemini, Claude, GPT-4)'
     ]
   },
@@ -272,50 +273,51 @@ export const structuredData = {
     mainEntity: [
       {
         '@type': 'Question',
-        name: '¿Qué es ContentLab Premium?',
+        name: '¿Qué es ViralCraft?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'ContentLab Premium es una plataforma todo-en-uno para creadores de contenido que combina múltiples herramientas de IA para generar contenido viral, crear miniaturas profesionales y optimizar SEO.'
+          text: 'ViralCraft es una plataforma todo-en-uno para creadores de contenido que combina múltiples herramientas de IA para generar contenido viral, crear miniaturas profesionales y optimizar SEO.'
         }
       },
       {
         '@type': 'Question',
-        name: '¿ContentLab es gratis?',
+        name: '¿ViralCraft es gratis?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, ContentLab ofrece un plan gratuito con acceso a herramientas básicas de generación de contenido y editor de miniaturas. Los planes Premium y Enterprise ofrecen funcionalidades avanzadas.'
+          text: 'Sí, ViralCraft ofrece un plan gratuito con acceso a herramientas básicas de generación de contenido y editor de miniaturas. Los planes Premium y Enterprise ofrecen funcionalidades avanzadas.'
         }
       },
       {
         '@type': 'Question',
-        name: '¿Qué IAs utiliza ContentLab?',
+        name: '¿Qué IAs utiliza ViralCraft?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'ContentLab integra múltiples proveedores de IA incluyendo Google Gemini, Claude (Anthropic), GPT-4 (OpenAI), DeepSeek y Cohere, con sistema de fallback automático para máxima disponibilidad.'
+          text: 'ViralCraft integra múltiples proveedores de IA incluyendo Google Gemini, Claude (Anthropic), GPT-4 (OpenAI), DeepSeek y Cohere, con sistema de fallback automático para máxima disponibilidad.'
+        }
+      },
+      // COMENTADO TEMPORALMENTE - ThumbnailEditor no disponible
+      // {
+      //   '@type': 'Question',
+      //   name: '¿Puedo crear miniaturas para YouTube?',
+      //   acceptedAnswer: {
+      //     '@type': 'Answer',
+      //     text: 'Sí, ContentLab incluye un editor de miniaturas profesional con acceso a Unsplash, herramientas de remover fondos con IA, filtros profesionales y Google Fonts.'
+      //   }
+      // },
+      {
+        '@type': 'Question',
+        name: '¿ViralCraft ayuda con el SEO de mis videos?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Absolutamente. ViralCraft genera títulos optimizados para SEO, keywords relevantes, análisis de tendencias y sugerencias específicas por plataforma (YouTube, TikTok, Instagram).'
         }
       },
       {
         '@type': 'Question',
-        name: '¿Puedo crear miniaturas para YouTube?',
+        name: '¿Necesito conocimientos técnicos para usar ViralCraft?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, ContentLab incluye un editor de miniaturas profesional con acceso a Unsplash, herramientas de remover fondos con IA, filtros profesionales y Google Fonts.'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: '¿ContentLab ayuda con el SEO de mis videos?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Absolutamente. ContentLab genera títulos optimizados para SEO, keywords relevantes, análisis de tendencias y sugerencias específicas por plataforma (YouTube, TikTok, Instagram).'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: '¿Necesito conocimientos técnicos para usar ContentLab?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'No. ContentLab está diseñado para ser intuitivo y fácil de usar. Solo selecciona tu tema, estilo y duración, y la IA generará contenido optimizado en segundos.'
+          text: 'No. ViralCraft está diseñado para ser intuitivo y fácil de usar. Solo selecciona tu tema, estilo y duración, y la IA generará contenido optimizado en segundos.'
         }
       }
     ]
@@ -338,12 +340,13 @@ export const structuredData = {
         name: 'Herramientas',
         item: `${siteConfig.url}/#tools`
       },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: 'Editor de Miniaturas',
-        item: `${siteConfig.url}/#thumbnail-editor`
-      }
+      // COMENTADO TEMPORALMENTE - ThumbnailEditor no disponible
+      // {
+      //   '@type': 'ListItem',
+      //   position: 3,
+      //   name: 'Editor de Miniaturas',
+      //   item: `${siteConfig.url}/#thumbnail-editor`
+      // }
     ]
   }
 };

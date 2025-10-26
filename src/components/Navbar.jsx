@@ -40,11 +40,12 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, authRequired: true },
+    { id: 'tools', label: 'Centro Creativo', icon: Wrench },
     { id: 'inbox', label: 'Mensajes', icon: Inbox, authRequired: true },
     { id: 'calendar', label: 'Calendario', icon: Calendar, authRequired: true },
     { id: 'library', label: 'Biblioteca', icon: FolderOpen, authRequired: true },
-    { id: 'tools', label: 'Herramientas', icon: Wrench },
-    { id: 'chat', label: 'Chat IA', icon: MessageSquare, authRequired: true },
+    // COMENTADO TEMPORALMENTE - Chat sin backend funcional
+    // { id: 'chat', label: 'Chat IA', icon: MessageSquare, authRequired: true },
   ];
 
   // Lógica de navegación modificada
@@ -101,7 +102,12 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gradient">ContentLab Premium</span>
+            <div className="relative">
+              <span className="text-xl font-bold text-gradient">ViralCraft</span>
+              <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
+                BETA
+              </span>
+            </div>
           </motion.div>
 
           <div className="hidden md:flex items-center space-x-8">

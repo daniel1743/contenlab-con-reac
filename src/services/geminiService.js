@@ -21,13 +21,43 @@ const generateContent = async (prompt) => {
 };
 
 // 1. Generar contenido viral completo
-export const generateViralScript = async (theme, style, duration, topic) => {
+export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null) => {
+  // 🆕 Construir el contexto de personalidad si está disponible
+  let personalityContext = '';
+  if (creatorPersonality && creatorPersonality.role) {
+    const roleLabels = {
+      actor: 'Actor/Actriz profesional',
+      terror_master: 'Maestro del Terror',
+      news_anchor: 'Presentador de Noticias',
+      storyteller: 'Contador de Historias',
+      educator: 'Educador/Profesor',
+      comedian: 'Comediante',
+      tech_reviewer: 'Revisor de Tecnología',
+      lifestyle_vlogger: 'Vlogger de Estilo de Vida',
+      gaming_streamer: 'Streamer de Gaming',
+      fitness_coach: 'Coach de Fitness',
+      food_creator: 'Creador Gastronómico',
+      travel_explorer: 'Explorador de Viajes'
+    };
+
+    personalityContext = `
+
+🎭 PERSONALIDAD DEL CREADOR:
+- Rol: ${roleLabels[creatorPersonality.role] || creatorPersonality.role}
+- Estilo de presentación: ${creatorPersonality.style}
+- Audiencia objetivo: ${creatorPersonality.audience}
+- Objetivo del contenido: ${creatorPersonality.goals}
+
+⚠️ IMPORTANTE: Adapta el guión para que refleje esta personalidad específica. El tono, lenguaje y estructura deben ser coherentes con el rol y estilo del creador.
+`;
+  }
+
   const prompt = `
 Actúa como un experto creador de contenido viral para redes sociales.
-
-DATOS:
+${personalityContext}
+DATOS DEL CONTENIDO:
 - Temática: ${theme}
-- Estilo: ${style}  
+- Estilo: ${style}
 - Duración: ${duration}
 - Tema específico: ${topic}
 
@@ -36,22 +66,23 @@ GENERA UN GUIÓN COMPLETO CON:
 ## Contenido para: ${topic}
 
 ### 🎯 Hook Inicial (0-5 segundos):
-[Hook que enganche inmediatamente]
+[Hook que enganche inmediatamente${personalityContext ? ', usando el estilo y tono del creador' : ''}]
 
 ### 📝 Desarrollo:
-[Estructura del contenido optimizada para ${duration}]
+[Estructura del contenido optimizada para ${duration}${personalityContext ? ', coherente con la personalidad del creador' : ''}]
 
 ### 🚀 Call to Action:
-[CTA que genere engagement]
+[CTA que genere engagement${personalityContext ? ', alineado con los objetivos del creador' : ''}]
 
 ### #️⃣ Hashtags:
 [5 hashtags relevantes]
 
 REQUISITOS:
 - Optimizado para viralidad
-- Lenguaje conversacional
+- Lenguaje conversacional${personalityContext ? ' que refleje la personalidad del creador' : ''}
 - Estilo ${style}
 - Duración ${duration}
+${personalityContext ? '- Totalmente adaptado al perfil y audiencia del creador' : ''}
 `;
 
   return await generateContent(prompt);

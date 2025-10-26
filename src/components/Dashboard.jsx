@@ -305,7 +305,7 @@ const Dashboard = ({ onSectionChange }) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `contentlab-report-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `viralcraft-report-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       toast({
         title: '✅ CSV Descargado',
@@ -708,7 +708,8 @@ const Dashboard = ({ onSectionChange }) => {
           </CardContent>
         </Card>
 
-        <Card className="glass-effect border-purple-500/20 hover:shadow-glow-pink transition-all duration-300">
+        {/* COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado, no usable en producción */}
+        {/* <Card className="glass-effect border-purple-500/20 hover:shadow-glow-pink transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-white flex items-center">
               <Play className="w-5 h-5 mr-2 text-purple-400" />
@@ -721,7 +722,7 @@ const Dashboard = ({ onSectionChange }) => {
               Crear Miniatura
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
       </motion.div>
     </div>
   );
