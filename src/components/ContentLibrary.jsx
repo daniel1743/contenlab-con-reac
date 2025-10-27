@@ -1,188 +1,285 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  FolderOpen,
-  Upload,
   Search,
   Grid3x3,
   List,
-  Image as ImageIcon,
-  Video,
-  FileText,
-  Download,
   Trash2,
-  Edit2,
-  Copy,
-  Share2,
-  Star,
-  Filter,
-  Plus,
-  FolderPlus,
-  MoreVertical,
   Eye,
-  Calendar
+  Calendar,
+  Sparkles,
+  TrendingUp,
+  Target,
+  Lock,
+  Crown,
+  Clock,
+  Zap,
+  Star,
+  Hash,
+  Copy,
+  Download,
+  Share2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-const ContentLibrary = () => {
+const ContentLibrary = ({ onSubscriptionClick }) => {
   const { toast } = useToast();
-  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const { user } = useAuth();
+  const [viewMode, setViewMode] = useState('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState('all');
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
-  const [uploadType, setUploadType] = useState('image');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Datos de ejemplo de carpetas
-  const folders = [
-    { id: 'all', name: 'Todos los archivos', count: 24, icon: FolderOpen },
-    { id: 'images', name: 'Imágenes', count: 12, icon: ImageIcon },
-    { id: 'videos', name: 'Videos', count: 6, icon: Video },
-    { id: 'documents', name: 'Documentos', count: 6, icon: FileText },
-    { id: 'favorites', name: 'Favoritos', count: 8, icon: Star },
-  ];
+  // Simular plan del usuario (cambiar por lógica real de Supabase)
+  const userPlan = 'free'; // 'free' o 'premium'
+  const historyLimit = userPlan === 'premium' ? 20 : 5;
 
-  // Datos de ejemplo de contenido
-  const [content, setContent] = useState([
+  // Datos de ejemplo de historial de generaciones (ordenados por fecha reciente)
+  const [forgedContent, setForgedContent] = useState([
     {
       id: 1,
-      name: 'thumbnail-tutorial-ia.jpg',
-      type: 'image',
-      size: '2.4 MB',
-      folder: 'images',
-      url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400',
-      uploadDate: '2025-01-10',
-      favorite: true,
-      usedIn: ['YouTube', 'Instagram']
+      title: 'Cómo Ganar Dinero con TikTok en 2025',
+      topic: 'Monetización',
+      platform: 'TikTok',
+      createdAt: '2025-01-15 14:23',
+      type: 'viral_script',
+      locked: false,
+      preview: 'Descubre las 5 estrategias probadas para monetizar tu cuenta de TikTok desde cero...',
+      data: {
+        hook: '¿Sabías que puedes ganar $5000 al mes con TikTok sin mostrar tu cara?',
+        script: 'Hoy te voy a revelar las 5 estrategias exactas que use para generar ingresos pasivos...',
+        hashtags: ['#tiktokmoney', '#monetizacion', '#dinerofacil', '#emprendimiento', '#sidehustle'],
+        bestTime: '18:00 - 21:00',
+        engagement: '85% retención estimada',
+        duration: '45-60 segundos'
+      }
     },
     {
       id: 2,
-      name: 'video-intro-2025.mp4',
-      type: 'video',
-      size: '45.2 MB',
-      folder: 'videos',
-      url: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=400',
-      uploadDate: '2025-01-09',
-      favorite: false,
-      usedIn: ['YouTube']
+      title: 'Auditoría: Mi Canal de Cocina',
+      topic: 'Análisis de Contenido',
+      platform: 'YouTube',
+      createdAt: '2025-01-14 09:15',
+      type: 'content_audit',
+      locked: false,
+      preview: 'Análisis completo de tu canal con 3 insights críticos y plan de acción...',
+      data: {
+        insights: [
+          'Tus thumbnails tienen bajo CTR (2.1% vs 4.5% promedio)',
+          'Los primeros 8 segundos pierden 60% de audiencia',
+          'Títulos demasiado genéricos, falta curiosidad'
+        ],
+        actions: [
+          'Rediseña thumbnails con contraste alto y texto grande',
+          'Crea hook explosivo en los primeros 3 segundos',
+          'Usa fórmulas de títulos virales: "Secreto", "Nadie te cuenta", "Error"'
+        ],
+        score: 62,
+        potential: '+180% alcance estimado'
+      }
     },
     {
       id: 3,
-      name: 'guion-video-tendencias.docx',
-      type: 'document',
-      size: '124 KB',
-      folder: 'documents',
-      url: null,
-      uploadDate: '2025-01-08',
-      favorite: true,
-      usedIn: []
+      title: 'Ideas Virales para Instagram Reels',
+      topic: 'Ideas de Contenido',
+      platform: 'Instagram',
+      createdAt: '2025-01-13 16:42',
+      type: 'idea_generation',
+      locked: false,
+      preview: '10 conceptos de Reels con alta probabilidad de viralidad en tu nicho...',
+      data: {
+        ideas: [
+          '3 errores que cometes al editar Reels (todos los hacemos)',
+          'POV: Cuando descubres este truco de edición',
+          'El algoritmo odia esto... pero funciona',
+          'Antes vs Después de usar esta técnica',
+          'Lo que nadie te dice sobre crecer en Instagram'
+        ],
+        trends: ['Transiciones rápidas', 'Audio trending: "Aesthetic"', 'Texto en pantalla'],
+        viralProbability: '78%'
+      }
     },
     {
       id: 4,
-      name: 'banner-promocion.png',
-      type: 'image',
-      size: '1.8 MB',
-      folder: 'images',
-      url: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400',
-      uploadDate: '2025-01-07',
-      favorite: false,
-      usedIn: ['Facebook', 'Twitter']
+      title: 'Estrategia de Crecimiento Q1 2025',
+      topic: 'Planificación',
+      platform: 'Multi-plataforma',
+      createdAt: '2025-01-12 11:30',
+      type: 'strategy',
+      locked: false,
+      preview: 'Plan de 90 días para alcanzar 50k seguidores con contenido orgánico...',
+      data: {
+        goals: ['50k seguidores', '1M impresiones/mes', '10% engagement rate'],
+        tactics: [
+          'Publicar 3x/día en horarios pico',
+          'Colaborar con 5 creadores de tu nicho',
+          'Lanzar serie semanal "Detrás de cámaras"'
+        ],
+        budget: '$0 (100% orgánico)',
+        timeline: '90 días'
+      }
     },
     {
       id: 5,
-      name: 'logo-contentlab.svg',
-      type: 'image',
-      size: '45 KB',
-      folder: 'images',
-      url: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400',
-      uploadDate: '2025-01-06',
-      favorite: true,
-      usedIn: ['Instagram', 'YouTube', 'Twitter']
+      title: 'SEO para YouTube: Tutorial Completo',
+      topic: 'Optimización',
+      platform: 'YouTube',
+      createdAt: '2025-01-11 08:20',
+      type: 'seo_optimization',
+      locked: false,
+      preview: 'Keywords de alto volumen y baja competencia + optimización de metadatos...',
+      data: {
+        keywords: ['tutorial youtube 2025', 'como hacer videos virales', 'edicion de video gratis'],
+        titleFormula: 'Keyword + Beneficio + Urgencia',
+        description: 'Plantilla optimizada con timestamps y enlaces estratégicos',
+        tags: ['#youtube', '#tutorial', '#seo', '#videoviral', '#contenido']
+      }
     },
+    // TARJETAS BLOQUEADAS PARA FREE (id > 5)
     {
       id: 6,
-      name: 'tutorial-completo.mp4',
-      type: 'video',
-      size: '120.5 MB',
-      folder: 'videos',
-      url: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=400',
-      uploadDate: '2025-01-05',
-      favorite: false,
-      usedIn: ['YouTube']
+      title: 'Análisis de Competencia: Top 10 Creadores',
+      topic: 'Inteligencia Competitiva',
+      platform: 'TikTok',
+      createdAt: '2025-01-10 19:45',
+      type: 'competitive_analysis',
+      locked: true,
+      preview: 'Descubre qué estrategias usan los líderes de tu nicho para dominar...',
+      data: null
     },
+    {
+      id: 7,
+      title: 'Script para Video de Ventas',
+      topic: 'Conversión',
+      platform: 'YouTube',
+      createdAt: '2025-01-09 14:10',
+      type: 'sales_script',
+      locked: true,
+      preview: 'Guion persuasivo para convertir espectadores en clientes (CTR 12%)...',
+      data: null
+    },
+    {
+      id: 8,
+      title: 'Calendario de Contenido: Febrero 2025',
+      topic: 'Planificación',
+      platform: 'Multi-plataforma',
+      createdAt: '2025-01-08 10:05',
+      type: 'content_calendar',
+      locked: true,
+      preview: '28 ideas de contenido listas para publicar + horarios óptimos...',
+      data: null
+    },
+    {
+      id: 9,
+      title: 'Hooks Virales: 50 Fórmulas Probadas',
+      topic: 'Copywriting',
+      platform: 'Multi-plataforma',
+      createdAt: '2025-01-07 16:30',
+      type: 'hook_library',
+      locked: true,
+      preview: 'Biblioteca de primeros segundos que generan +80% retención...',
+      data: null
+    },
+    {
+      id: 10,
+      title: 'Optimización de Thumbnails con IA',
+      topic: 'Diseño',
+      platform: 'YouTube',
+      createdAt: '2025-01-06 12:15',
+      type: 'thumbnail_optimization',
+      locked: true,
+      preview: 'A/B testing automatizado de miniaturas para maximizar CTR...',
+      data: null
+    }
   ]);
 
-  const getFileIcon = (type) => {
+  const filteredContent = useMemo(() => {
+    return forgedContent.filter(item =>
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.topic.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [forgedContent, searchTerm]);
+
+  const accessibleContent = filteredContent.filter((_, idx) => idx < historyLimit);
+  const lockedContent = filteredContent.filter((_, idx) => idx >= historyLimit);
+
+  const handleCardClick = useCallback((item) => {
+    if (item.locked && userPlan === 'free') {
+      toast({
+        title: '🔒 Contenido Premium',
+        description: 'Actualiza a Premium para acceder a todo tu historial ilimitado.',
+        variant: 'destructive'
+      });
+      if (onSubscriptionClick) {
+        onSubscriptionClick();
+      }
+      return;
+    }
+
+    setSelectedItem(item);
+    setIsDetailModalOpen(true);
+  }, [userPlan, toast, onSubscriptionClick]);
+
+  const handleDelete = useCallback((id, e) => {
+    e.stopPropagation();
+    setForgedContent(prev => prev.filter(item => item.id !== id));
+    toast({
+      title: '🗑️ Forjado eliminado',
+      description: 'El contenido ha sido eliminado de tu historial',
+    });
+  }, [toast]);
+
+  const handleCopy = useCallback((text, e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    toast({
+      title: '📋 Copiado',
+      description: 'Contenido copiado al portapapeles',
+    });
+  }, [toast]);
+
+  const getTypeIcon = (type) => {
     switch (type) {
-      case 'image': return <ImageIcon className="w-5 h-5 text-blue-400" />;
-      case 'video': return <Video className="w-5 h-5 text-pink-400" />;
-      case 'document': return <FileText className="w-5 h-5 text-green-400" />;
-      default: return <FileText className="w-5 h-5 text-gray-400" />;
+      case 'viral_script': return <Sparkles className="w-5 h-5 text-purple-400" />;
+      case 'content_audit': return <Target className="w-5 h-5 text-blue-400" />;
+      case 'idea_generation': return <Zap className="w-5 h-5 text-yellow-400" />;
+      case 'strategy': return <TrendingUp className="w-5 h-5 text-green-400" />;
+      case 'seo_optimization': return <Hash className="w-5 h-5 text-pink-400" />;
+      default: return <Sparkles className="w-5 h-5 text-gray-400" />;
     }
   };
 
-  const filteredContent = content.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFolder = selectedFolder === 'all' ||
-                         (selectedFolder === 'favorites' && item.favorite) ||
-                         item.folder === selectedFolder;
-    return matchesSearch && matchesFolder;
-  });
-
-  const handleToggleFavorite = useCallback((id) => {
-    setContent(prev => prev.map(item =>
-      item.id === id ? { ...item, favorite: !item.favorite } : item
-    ));
-  }, []);
-
-  const handleDelete = useCallback((id) => {
-    setContent(prev => prev.filter(item => item.id !== id));
-    toast({
-      title: '🗑️ Archivo eliminado',
-      description: 'El archivo ha sido eliminado de tu biblioteca',
-    });
-  }, [toast]);
-
-  const handleUpload = useCallback(() => {
-    setIsUploadModalOpen(false);
-    toast({
-      title: '✅ Archivo subido',
-      description: 'El archivo se ha agregado a tu biblioteca',
-    });
-  }, [toast]);
-
-  const handleDownload = useCallback((item) => {
-    toast({
-      title: '📥 Descargando...',
-      description: `Descargando ${item.name}`,
-    });
-  }, [toast]);
-
-  const handleCopy = useCallback((item) => {
-    navigator.clipboard.writeText(item.url || item.name);
-    toast({
-      title: '📋 Copiado',
-      description: 'Enlace copiado al portapapeles',
-    });
-  }, [toast]);
+  const getTypeLabel = (type) => {
+    const labels = {
+      viral_script: 'Guion Viral',
+      content_audit: 'Auditoría',
+      idea_generation: 'Ideas',
+      strategy: 'Estrategia',
+      seo_optimization: 'SEO',
+      competitive_analysis: 'Competencia',
+      sales_script: 'Ventas',
+      content_calendar: 'Calendario',
+      hook_library: 'Hooks',
+      thumbnail_optimization: 'Thumbnails'
+    };
+    return labels[type] || 'Contenido';
+  };
 
   const stats = {
-    totalFiles: content.length,
-    images: content.filter(c => c.type === 'image').length,
-    videos: content.filter(c => c.type === 'video').length,
-    documents: content.filter(c => c.type === 'document').length,
-    totalSize: content.reduce((acc, item) => {
-      const size = parseFloat(item.size);
-      return acc + (item.size.includes('MB') ? size : size / 1024);
-    }, 0).toFixed(1)
+    total: forgedContent.length,
+    accessible: Math.min(forgedContent.length, historyLimit),
+    locked: Math.max(0, forgedContent.length - historyLimit),
+    thisWeek: forgedContent.filter(item => {
+      const date = new Date(item.createdAt);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return date >= weekAgo;
+    }).length
   };
 
   return (
@@ -193,9 +290,12 @@ const ContentLibrary = () => {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <h1 className="text-4xl font-bold text-gradient">Biblioteca de Contenido</h1>
+        <div className="flex items-center justify-center gap-3">
+          <Sparkles className="w-10 h-10 text-purple-400" />
+          <h1 className="text-4xl font-bold text-gradient">Mis Forjados</h1>
+        </div>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          Gestiona todos tus archivos, imágenes, videos y documentos en un solo lugar
+          Tu historial completo de creaciones y estrategias generadas con IA
         </p>
       </motion.div>
 
@@ -204,373 +304,424 @@ const ContentLibrary = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-5 gap-4"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4"
       >
         <Card className="glass-effect border-purple-500/20">
           <CardContent className="p-4 text-center">
-            <FolderOpen className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-            <p className="text-2xl font-bold text-white">{stats.totalFiles}</p>
-            <p className="text-xs text-gray-400">Total</p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-effect border-blue-500/20">
-          <CardContent className="p-4 text-center">
-            <ImageIcon className="w-6 h-6 mx-auto mb-2 text-blue-400" />
-            <p className="text-2xl font-bold text-blue-400">{stats.images}</p>
-            <p className="text-xs text-gray-400">Imágenes</p>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-effect border-pink-500/20">
-          <CardContent className="p-4 text-center">
-            <Video className="w-6 h-6 mx-auto mb-2 text-pink-400" />
-            <p className="text-2xl font-bold text-pink-400">{stats.videos}</p>
-            <p className="text-xs text-gray-400">Videos</p>
+            <Sparkles className="w-6 h-6 mx-auto mb-2 text-purple-400" />
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+            <p className="text-xs text-gray-400">Total Forjados</p>
           </CardContent>
         </Card>
 
         <Card className="glass-effect border-green-500/20">
           <CardContent className="p-4 text-center">
-            <FileText className="w-6 h-6 mx-auto mb-2 text-green-400" />
-            <p className="text-2xl font-bold text-green-400">{stats.documents}</p>
-            <p className="text-xs text-gray-400">Documentos</p>
+            <Eye className="w-6 h-6 mx-auto mb-2 text-green-400" />
+            <p className="text-2xl font-bold text-green-400">{stats.accessible}</p>
+            <p className="text-xs text-gray-400">Accesibles</p>
           </CardContent>
         </Card>
 
-        <Card className="glass-effect border-yellow-500/20">
+        {userPlan === 'free' && stats.locked > 0 && (
+          <Card className="glass-effect border-yellow-500/20">
+            <CardContent className="p-4 text-center">
+              <Lock className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
+              <p className="text-2xl font-bold text-yellow-400">{stats.locked}</p>
+              <p className="text-xs text-gray-400">Bloqueados</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="glass-effect border-blue-500/20">
           <CardContent className="p-4 text-center">
-            <Download className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
-            <p className="text-2xl font-bold text-yellow-400">{stats.totalSize} MB</p>
-            <p className="text-xs text-gray-400">Espacio usado</p>
+            <Clock className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+            <p className="text-2xl font-bold text-blue-400">{stats.thisWeek}</p>
+            <p className="text-xs text-gray-400">Esta Semana</p>
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Plan Limit Warning */}
+      {userPlan === 'free' && stats.locked > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="glass-effect border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-amber-500/10">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <Crown className="w-6 h-6 text-yellow-400" />
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-300">
+                      Plan Free: {stats.accessible}/{historyLimit} forjados accesibles
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Tienes {stats.locked} forjados bloqueados. Actualiza a Premium para acceso ilimitado.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={onSubscriptionClick}
+                  className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:opacity-90 text-black font-semibold"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Actualizar a Premium
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Toolbar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.3 }}
         className="flex flex-wrap gap-4 justify-between items-center glass-effect p-4 rounded-xl border border-purple-500/20"
       >
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="gradient-primary hover:opacity-90"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Subir Archivo
-          </Button>
-          <Button
-            onClick={() => setIsFolderModalOpen(true)}
-            variant="outline"
-            className="border-purple-500/20 hover:bg-purple-500/10"
-          >
-            <FolderPlus className="w-4 h-4 mr-2" />
-            Nueva Carpeta
-          </Button>
-        </div>
-
-        <div className="flex gap-2 items-center">
-          <div className="relative">
+        <div className="flex gap-2 items-center flex-1">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Buscar archivos..."
+              placeholder="Buscar en tus forjados..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64 bg-gray-800/50 border-purple-500/20 text-white"
+              className="pl-10 bg-gray-800/50 border-purple-500/20 text-white"
             />
           </div>
+        </div>
 
-          <div className="flex gap-1 border border-purple-500/20 rounded-lg p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className={viewMode === 'grid' ? 'bg-purple-600' : ''}
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={viewMode === 'list' ? 'bg-purple-600' : ''}
-            >
-              <List className="w-4 h-4" />
-            </Button>
-          </div>
+        <div className="flex gap-1 border border-purple-500/20 rounded-lg p-1">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className={viewMode === 'grid' ? 'bg-purple-600' : ''}
+          >
+            <Grid3x3 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+            className={viewMode === 'list' ? 'bg-purple-600' : ''}
+          >
+            <List className="w-4 h-4" />
+          </Button>
         </div>
       </motion.div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Folders Sidebar */}
-        <div className="lg:col-span-1">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="glass-effect border-purple-500/20">
-              <CardHeader>
-                <CardTitle className="text-white text-sm">Carpetas</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="space-y-1">
-                  {folders.map((folder) => {
-                    const Icon = folder.icon;
-                    return (
-                      <button
-                        key={folder.id}
-                        onClick={() => setSelectedFolder(folder.id)}
-                        className={`w-full flex items-center justify-between p-3 text-left transition-all hover:bg-purple-500/10 ${
-                          selectedFolder === folder.id ? 'bg-purple-500/20 border-r-2 border-purple-500' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className={`w-4 h-4 ${selectedFolder === folder.id ? 'text-purple-400' : 'text-gray-400'}`} />
-                          <span className={`text-sm ${selectedFolder === folder.id ? 'text-white font-medium' : 'text-gray-300'}`}>
-                            {folder.name}
-                          </span>
+      {/* Content Grid/List */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        {filteredContent.length > 0 ? (
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+            {filteredContent.map((item, index) => {
+              const isLocked = index >= historyLimit && userPlan === 'free';
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * index }}
+                  whileHover={{ scale: isLocked ? 1 : 1.02 }}
+                  className="group relative"
+                >
+                  <Card
+                    onClick={() => handleCardClick(item)}
+                    className={`glass-effect border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer overflow-hidden ${
+                      isLocked ? 'opacity-60' : ''
+                    }`}
+                  >
+                    {/* Lock Overlay */}
+                    {isLocked && (
+                      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 flex items-center justify-center">
+                        <div className="text-center space-y-2">
+                          <Lock className="w-12 h-12 mx-auto text-yellow-400" />
+                          <p className="text-sm font-semibold text-yellow-300">Premium</p>
+                          <p className="text-xs text-gray-400 px-4">Actualiza para desbloquear</p>
                         </div>
-                        <span className={`text-xs ${selectedFolder === folder.id ? 'text-purple-400' : 'text-gray-500'}`}>
-                          {folder.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                      </div>
+                    )}
 
-        {/* Content Grid/List */}
-        <div className="lg:col-span-3">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            {filteredContent.length > 0 ? (
-              viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredContent.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      whileHover={{ scale: 1.02 }}
-                      className="group"
-                    >
-                      <Card className="glass-effect border-purple-500/20 hover:border-purple-500/40 transition-all overflow-hidden">
-                        <div className="relative aspect-video bg-gray-800/50 overflow-hidden">
-                          {item.url ? (
-                            <img
-                              src={item.url}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              {getFileIcon(item.type)}
-                            </div>
-                          )}
-
-                          {/* Overlay Actions */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDownload(item)}
-                              className="bg-white/10 hover:bg-white/20"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCopy(item)}
-                              className="bg-white/10 hover:bg-white/20"
-                            >
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(item.id)}
-                              className="bg-red-500/20 hover:bg-red-500/40"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="mt-1">
+                            {getTypeIcon(item.type)}
                           </div>
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-base text-white line-clamp-2">
+                              {item.title}
+                            </CardTitle>
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                                {getTypeLabel(item.type)}
+                              </span>
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">
+                                {item.platform}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                          {/* Favorite Star */}
-                          <button
-                            onClick={() => handleToggleFavorite(item.id)}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                        {!isLocked && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDelete(item.id, e)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
                           >
-                            <Star className={`w-4 h-4 ${item.favorite ? 'text-yellow-400 fill-yellow-400' : 'text-white'}`} />
-                          </button>
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="pt-0">
+                      <CardDescription className="text-gray-300 text-sm line-clamp-2 mb-3">
+                        {item.preview}
+                      </CardDescription>
+
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3 h-3" />
+                          <span>{item.createdAt}</span>
                         </div>
-
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-gray-400">{item.size}</span>
-                                <span className="text-xs text-gray-500">•</span>
-                                <span className="text-xs text-gray-400">{item.uploadDate}</span>
-                              </div>
-                              {item.usedIn.length > 0 && (
-                                <div className="flex gap-1 mt-2 flex-wrap">
-                                  {item.usedIn.map((platform, idx) => (
-                                    <span key={idx} className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">
-                                      {platform}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            {getFileIcon(item.type)}
+                        {!isLocked && (
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            <span>Ver detalle</span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredContent.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      whileHover={{ x: 4 }}
-                    >
-                      <Card className="glass-effect border-purple-500/20 hover:border-purple-500/40 transition-all">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                              <div className="w-12 h-12 rounded bg-gray-800/50 flex items-center justify-center flex-shrink-0">
-                                {getFileIcon(item.type)}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                                <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                  <span className="text-xs text-gray-400">{item.size}</span>
-                                  <span className="text-xs text-gray-400">{item.uploadDate}</span>
-                                  {item.usedIn.length > 0 && (
-                                    <div className="flex gap-1">
-                                      {item.usedIn.map((platform, idx) => (
-                                        <span key={idx} className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">
-                                          {platform}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleToggleFavorite(item.id)}
-                                className="hover:bg-purple-500/20"
-                              >
-                                <Star className={`w-4 h-4 ${item.favorite ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'}`} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownload(item)}
-                                className="hover:bg-purple-500/20"
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCopy(item)}
-                                className="hover:bg-purple-500/20"
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(item.id)}
-                                className="hover:bg-red-500/20"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-400" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <Card className="glass-effect border-purple-500/20 min-h-[400px] flex items-center justify-center">
-                <CardContent className="text-center">
-                  <FolderOpen className="w-16 h-16 mx-auto mb-4 text-purple-400 opacity-30" />
-                  <h3 className="text-xl font-semibold text-white mb-2">No hay archivos</h3>
-                  <p className="text-gray-400 mb-4">Sube tu primer archivo para comenzar</p>
-                  <Button onClick={() => setIsUploadModalOpen(true)} className="gradient-primary">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Subir Archivo
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Upload Modal */}
-      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="bg-gray-900 border-purple-500/20 text-white">
-          <DialogHeader>
-            <DialogTitle>Subir Archivo</DialogTitle>
-            <DialogDescription>Sube imágenes, videos o documentos a tu biblioteca</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Tipo de archivo</Label>
-              <Select value={uploadType} onValueChange={setUploadType}>
-                <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="image">Imagen</SelectItem>
-                  <SelectItem value="video">Video</SelectItem>
-                  <SelectItem value="document">Documento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="border-2 border-dashed border-purple-500/30 rounded-lg p-8 text-center hover:border-purple-500/50 transition-colors cursor-pointer">
-              <Upload className="w-12 h-12 mx-auto mb-4 text-purple-400" />
-              <p className="text-sm text-gray-300 mb-2">Arrastra archivos aquí o haz clic para seleccionar</p>
-              <p className="text-xs text-gray-500">Tamaño máximo: 100MB</p>
-            </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
+        ) : (
+          <Card className="glass-effect border-purple-500/20 min-h-[400px] flex items-center justify-center">
+            <CardContent className="text-center">
+              <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-400 opacity-30" />
+              <h3 className="text-xl font-semibold text-white mb-2">No hay forjados aún</h3>
+              <p className="text-gray-400">Comienza a crear contenido para ver tu historial aquí</p>
+            </CardContent>
+          </Card>
+        )}
+      </motion.div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUploadModalOpen(false)} className="border-purple-500/20">
-              Cancelar
-            </Button>
-            <Button onClick={handleUpload} className="gradient-primary">
-              Subir Archivo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {isDetailModalOpen && selectedItem && (
+          <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-gray-900 border-purple-500/20 text-white">
+              <DialogHeader>
+                <div className="flex items-start gap-3 mb-2">
+                  {getTypeIcon(selectedItem.type)}
+                  <div className="flex-1 min-w-0">
+                    <DialogTitle className="text-2xl text-gradient">
+                      {selectedItem.title}
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400 mt-1">
+                      {selectedItem.topic} • {selectedItem.platform} • {selectedItem.createdAt}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                {/* Preview */}
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-300 mb-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Resumen
+                  </h3>
+                  <p className="text-gray-300 text-sm">{selectedItem.preview}</p>
+                </div>
+
+                {/* Detailed Data */}
+                {selectedItem.data && (
+                  <>
+                    {selectedItem.data.hook && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-yellow-300 mb-2 flex items-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          Hook
+                        </h3>
+                        <Card className="glass-effect border-yellow-500/20 bg-yellow-500/5">
+                          <CardContent className="p-3">
+                            <p className="text-sm text-gray-200">{selectedItem.data.hook}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleCopy(selectedItem.data.hook, e)}
+                              className="mt-2 text-xs"
+                            >
+                              <Copy className="w-3 h-3 mr-1" />
+                              Copiar
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {selectedItem.data.script && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-purple-300 mb-2 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          Guion Completo
+                        </h3>
+                        <Card className="glass-effect border-purple-500/20">
+                          <CardContent className="p-3">
+                            <p className="text-sm text-gray-200 whitespace-pre-line">{selectedItem.data.script}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleCopy(selectedItem.data.script, e)}
+                              className="mt-2 text-xs"
+                            >
+                              <Copy className="w-3 h-3 mr-1" />
+                              Copiar
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {selectedItem.data.hashtags && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-blue-300 mb-2 flex items-center gap-2">
+                          <Hash className="w-4 h-4" />
+                          Hashtags
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedItem.data.hashtags.map((tag, idx) => (
+                            <span
+                              key={idx}
+                              className="text-xs px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedItem.data.insights && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-red-300 mb-2 flex items-center gap-2">
+                          <Target className="w-4 h-4" />
+                          Insights Críticos
+                        </h3>
+                        <ul className="space-y-2">
+                          {selectedItem.data.insights.map((insight, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-red-400 mt-1">•</span>
+                              <span className="text-sm text-gray-300">{insight}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {selectedItem.data.actions && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-green-300 mb-2 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" />
+                          Plan de Acción
+                        </h3>
+                        <ul className="space-y-2">
+                          {selectedItem.data.actions.map((action, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-green-400 font-bold mt-1">{idx + 1}.</span>
+                              <span className="text-sm text-gray-300">{action}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {selectedItem.data.ideas && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-yellow-300 mb-2 flex items-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          Ideas Virales
+                        </h3>
+                        <div className="space-y-2">
+                          {selectedItem.data.ideas.map((idea, idx) => (
+                            <Card key={idx} className="glass-effect border-yellow-500/20 bg-yellow-500/5">
+                              <CardContent className="p-2">
+                                <p className="text-xs text-gray-200">{idea}</p>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Additional Metadata */}
+                    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-purple-500/20">
+                      {selectedItem.data.bestTime && (
+                        <div>
+                          <p className="text-xs text-gray-500">Mejor Horario</p>
+                          <p className="text-sm text-white font-medium">{selectedItem.data.bestTime}</p>
+                        </div>
+                      )}
+                      {selectedItem.data.engagement && (
+                        <div>
+                          <p className="text-xs text-gray-500">Engagement</p>
+                          <p className="text-sm text-green-400 font-medium">{selectedItem.data.engagement}</p>
+                        </div>
+                      )}
+                      {selectedItem.data.duration && (
+                        <div>
+                          <p className="text-xs text-gray-500">Duración</p>
+                          <p className="text-sm text-white font-medium">{selectedItem.data.duration}</p>
+                        </div>
+                      )}
+                      {selectedItem.data.viralProbability && (
+                        <div>
+                          <p className="text-xs text-gray-500">Prob. Viral</p>
+                          <p className="text-sm text-purple-400 font-medium">{selectedItem.data.viralProbability}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <DialogFooter className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="border-purple-500/20"
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  onClick={(e) => {
+                    const fullText = JSON.stringify(selectedItem.data, null, 2);
+                    handleCopy(fullText, e);
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar Todo
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

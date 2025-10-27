@@ -94,7 +94,7 @@ function App() {
       case 'calendar':
         return isAuthenticated ? <Calendar /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'library':
-        return isAuthenticated ? <ContentLibrary /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <ContentLibrary onSubscriptionClick={() => setShowSubscriptionModal(true)} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'tools':
         return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} onSubscriptionClick={() => setShowSubscriptionModal(true)} />;
       // COMENTADO TEMPORALMENTE - Chat sin backend funcional (mensajes hardcoded, no hay persistencia)
