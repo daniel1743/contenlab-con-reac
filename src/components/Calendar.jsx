@@ -2,7 +2,31 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, Youtube, Instagram, Twitter, Facebook, Edit2, Trash2, Copy, Download, Search, Sparkles, BarChart3, AlertCircle } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Calendar as CalendarIcon,
+  Clock,
+  Youtube,
+  Instagram,
+  Twitter,
+  Facebook,
+  Linkedin,
+  Tiktok,
+  Edit2,
+  Trash2,
+  Copy,
+  Download,
+  Search,
+  Sparkles,
+  BarChart3,
+  AlertCircle,
+  Zap,
+  Target,
+  TrendingUp,
+  Share2
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
