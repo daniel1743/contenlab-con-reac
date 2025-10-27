@@ -26,16 +26,18 @@ import {
   X,
   ArrowUp,
   Minus,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -43,7 +45,7 @@ import {
 } from 'chart.js';
 
 // ✅ REGISTRO COMPLETO
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 // 🚀 IMPORT DE SERVICIOS GEMINI
 import { 
@@ -228,11 +230,18 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 🆕 ESTADOS PARA LAS 3 VERSIONES DEL CONTENIDO
+  const [contentAnalisis, setContentAnalisis] = useState('');
+  const [contentLimpio, setContentLimpio] = useState('');
+  const [contentSugerencias, setContentSugerencias] = useState('');
+  const [activeTab, setActiveTab] = useState('limpio');
+
   // 🆕 NUEVOS ESTADOS PARA DATOS REALES DE GEMINI
   const [realTitles, setRealTitles] = useState([]);
   const [realKeywords, setRealKeywords] = useState([]);
   const [realTrendData, setRealTrendData] = useState(null);
   const [platformSuggestions, setPlatformSuggestions] = useState({});
+  const [youtubeEngagement, setYoutubeEngagement] = useState(null);
 
   // 🆕 ESTADOS PARA PERSONALIDAD DEL CREADOR
   const [showPersonalityModal, setShowPersonalityModal] = useState(false);
@@ -453,6 +462,13 @@ const handleCopy = useCallback(() => {
     setGeneratedContent('');
     console.log('🎯 Iniciando generación de contenido...');
 
+    // 🆕 MENSAJES DE CARGA PROFESIONALES
+    toast({
+      title: '🚀 ViralCraft está trabajando para ti',
+      description: 'Espera un momento... Nuestro editor senior está analizando tu temática y creando el mejor ángulo narrativo posible.',
+      duration: 4000,
+    });
+
     try {
       // 🎯 LLAMADA REAL A GEMINI API CON PERSONALIDAD DEL CREADOR
       console.log('🤖 Llamando a Gemini API para script principal...');
@@ -467,18 +483,41 @@ const handleCopy = useCallback(() => {
       );
 
       console.log('✅ Script generado:', generatedScript);
+
+      // 🆕 PARSEAR LAS 3 VERSIONES DEL CONTENIDO
+      const analisisMatch = generatedScript.match(/---INICIO_ANALISIS---([\s\S]*?)---FIN_ANALISIS---/);
+      const limpioMatch = generatedScript.match(/---INICIO_LIMPIO---([\s\S]*?)---FIN_LIMPIO---/);
+      const sugerenciasMatch = generatedScript.match(/---INICIO_SUGERENCIAS---([\s\S]*?)---FIN_SUGERENCIAS---/);
+
+      if (analisisMatch) setContentAnalisis(analisisMatch[1].trim());
+      if (limpioMatch) setContentLimpio(limpioMatch[1].trim());
+      if (sugerenciasMatch) setContentSugerencias(sugerenciasMatch[1].trim());
+
+      // Mantener el contenido completo para compatibilidad
       setGeneratedContent(generatedScript);
 
       toast({
-        title: creatorPersonality.role ? '🎭 ¡Contenido personalizado con tu perfil!' : '🤖 ¡Contenido generado con Gemini AI!',
+        title: '✨ ViralCraft está creando tu guión profesional',
         description: creatorPersonality.role
-          ? 'Script adaptado a tu estilo y audiencia. Generando datos adicionales...'
-          : 'Generando datos adicionales...',
+          ? 'Adaptando el contenido a tu estilo único y audiencia. En breve recibirás un análisis estratégico completo...'
+          : 'Nuestro motor de IA está diseñando tu contenido viral. Prepárate para recibir algo grandioso...',
+        duration: 5000,
       });
 
       // 🚀 GENERAR DATOS ADICIONALES CON GEMINI (sin bloquear la UI)
       try {
+        toast({
+          title: '🎯 Optimizando tu contenido',
+          description: 'Generando títulos SEO, keywords y análisis de tendencias. Esto tomará solo unos segundos más...',
+          duration: 3000,
+        });
         await generateAllSupplementaryData();
+
+        toast({
+          title: '✅ ¡Tu contenido viral está listo!',
+          description: 'ViralCraft ha terminado. Revisa los 3 paneles profesionales y continúa a tu Craft Viral cuando estés listo.',
+          duration: 6000,
+        });
       } catch (supplementaryError) {
         console.error('⚠️ Error en datos suplementarios (no crítico):', supplementaryError);
       }
@@ -509,10 +548,10 @@ const handleCopy = useCallback(() => {
 
     } catch (error) {
       console.error('💥 Error generating content:', error);
-      
+
       toast({
-        title: 'Error al generar contenido',
-        description: 'Error con Gemini AI. Usando contenido de ejemplo.',
+        title: '⚠️ Ups, algo no salió bien',
+        description: 'ViralCraft encontró un problema al generar tu contenido. Estamos usando un ejemplo mientras lo solucionamos.',
         variant: 'destructive'
       });
       
@@ -884,7 +923,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 <Zap className="w-4 h-4 mr-2" />
               )}
               <span>
-                {isGenerating ? 'Generando con Gemini AI...' : 'Generar Contenido IA'}
+                {isGenerating ? 'ViralCraft está creando tu guión...' : 'Generar Contenido Viral'}
               </span>
             </Button>
 
@@ -903,51 +942,193 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             </Button>
           </div>
 
-          {/* Área de contenido generado */}
+          {/* 🆕 ÁREA DE CONTENIDO GENERADO - 3 PANELES PROFESIONALES */}
           {generatedContent && (
-            <div className="space-y-4 pt-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-white">Contenido generado con Gemini AI:</Label>
-                <div className="flex gap-2">
-                  {/* ✅ LIMPIAR: Libre para todos */}
-                  <Button 
-                    onClick={cleanScript} 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-purple-500/20 hover:bg-purple-500/10"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Limpiar
-                  </Button>
-                  
-                  {/* ✅ COPIAR: Libre para todos */}
-                  <Button 
-                    onClick={handleCopy} 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-purple-500/20 hover:bg-purple-500/10"
-                  >
-                    <Clipboard className="w-4 h-4 mr-2" />
-                    Copiar
-                  </Button>
-                  
-                  {/* ✅ DESCARGAR: Libre para todos */}
-                  <Button 
-                    onClick={handleDownload} 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-purple-500/20 hover:bg-purple-500/10"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Descargar
-                  </Button>
-                </div>
+            <div className="space-y-6 pt-4">
+              {/* Tabs para las 3 versiones - REORDENADAS */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" id="content-tabs">
+                <TabsList className="grid w-full grid-cols-3 glass-effect">
+                  <TabsTrigger value="limpio">📝 Guión Limpio (Text-to-Speech)</TabsTrigger>
+                  <TabsTrigger value="sugerencias">💡 Sugerencias Prácticas</TabsTrigger>
+                  <TabsTrigger value="analisis">📊 Análisis Estratégico</TabsTrigger>
+                </TabsList>
+
+                {/* PANEL 1: GUIÓN LIMPIO PARA TEXT-TO-SPEECH (AHORA PRIMERO) */}
+                <TabsContent value="limpio" className="mt-4">
+                  <Card className="glass-effect border-green-500/20">
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-white flex items-center">
+                          📝 Guión Listo para Narración
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => {
+                              navigator.clipboard.writeText(contentLimpio);
+                              toast({title: '✅ Guión copiado', description: 'Listo para pegar en tu app de text-to-speech'});
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-green-500/20 hover:bg-green-500/10"
+                          >
+                            <Clipboard className="w-4 h-4 mr-2" />
+                            Copiar
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const element = document.createElement('a');
+                              const file = new Blob([contentLimpio], { type: 'text/plain' });
+                              element.href = URL.createObjectURL(file);
+                              element.download = `guion-limpio-${Date.now()}.txt`;
+                              document.body.appendChild(element);
+                              element.click();
+                              document.body.removeChild(element);
+                              toast({title: '✅ Descargado'});
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-green-500/20 hover:bg-green-500/10"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Descargar
+                          </Button>
+                        </div>
+                      </div>
+                      <CardDescription>
+                        Narración fluida sin formato - Lista para copiar y pegar en apps de voz
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
+                        <p className="text-base text-gray-100 leading-relaxed font-sans">
+                          {contentLimpio || 'Generando versión limpia...'}
+                        </p>
+                      </div>
+
+                      {/* BOTÓN CONTINUAR A SUGERENCIAS */}
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={() => setActiveTab('sugerencias')}
+                          className="gradient-primary hover:opacity-90"
+                          size="lg"
+                        >
+                          Continuar a Sugerencias Prácticas
+                          <ChevronRight className="w-5 h-5 ml-2" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* PANEL 2: SUGERENCIAS PRÁCTICAS (AHORA SEGUNDO) */}
+                <TabsContent value="sugerencias" className="mt-4">
+                  <Card className="glass-effect border-blue-500/20">
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-white flex items-center">
+                          💡 Sugerencias y Recursos Prácticos
+                        </CardTitle>
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(contentSugerencias);
+                            toast({title: '✅ Sugerencias copiadas'});
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="border-blue-500/20 hover:bg-blue-500/10"
+                        >
+                          <Clipboard className="w-4 h-4 mr-2" />
+                          Copiar
+                        </Button>
+                      </div>
+                      <CardDescription>
+                        Recursos gratuitos, editores, música y alertas importantes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
+                        <pre className="whitespace-pre-wrap text-sm text-gray-200 font-sans">
+                          {contentSugerencias || 'Generando sugerencias...'}
+                        </pre>
+                      </div>
+
+                      {/* BOTÓN CONTINUAR A ANÁLISIS */}
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={() => setActiveTab('analisis')}
+                          className="gradient-primary hover:opacity-90"
+                          size="lg"
+                        >
+                          Ver Análisis Estratégico Completo
+                          <ChevronRight className="w-5 h-5 ml-2" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* PANEL 3: ANÁLISIS ESTRATÉGICO (AHORA TERCERO) */}
+                <TabsContent value="analisis" className="mt-4">
+                  <Card className="glass-effect border-purple-500/20">
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-white flex items-center">
+                          📊 Análisis Estratégico Completo
+                        </CardTitle>
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(contentAnalisis || generatedContent);
+                            toast({title: '✅ Análisis copiado'});
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="border-purple-500/20 hover:bg-purple-500/10"
+                        >
+                          <Clipboard className="w-4 h-4 mr-2" />
+                          Copiar
+                        </Button>
+                      </div>
+                      <CardDescription>
+                        Incluye análisis inicial, variantes de títulos, justificaciones y KPIs
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
+                        <pre className="whitespace-pre-wrap text-sm text-gray-200 font-sans">
+                          {contentAnalisis || generatedContent}
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              {/* BOTÓN CONTINUAR A TU CRAFT VIRAL */}
+              <div className="flex justify-center pt-4">
+                <Button
+                  onClick={() => {
+                    // Guardar datos en sessionStorage para el Dashboard
+                    sessionStorage.setItem('craftViralData', JSON.stringify({
+                      titles: realTitles,
+                      keywords: realKeywords,
+                      topic: contentTopic,
+                      theme: selectedTheme,
+                      style: selectedStyle,
+                      duration: selectedDuration
+                    }));
+                    // Navegar al Dashboard (Craft Viral)
+                    if (onSectionChange) {
+                      onSectionChange('dashboard');
+                    }
+                  }}
+                  className="gradient-primary hover:opacity-90 text-lg px-8 py-6"
+                  size="lg"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Continuar a tu Craft Viral
+                  <ChevronRight className="w-5 h-5 ml-2" />
+                </Button>
               </div>
-              <Textarea 
-                value={generatedContent} 
-                onChange={(e) => setGeneratedContent(e.target.value)} 
-                className="glass-effect border-purple-500/20 rounded-lg p-4 h-64 whitespace-pre-wrap font-mono" 
-              />
             </div>
           )}
         </CardContent>
@@ -1488,6 +1669,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           </Card>
         </div>
       )}
+
     </div>
   );
 };

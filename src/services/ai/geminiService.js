@@ -15,7 +15,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ===== CONFIGURACIÓN =====
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-pro'; // Modelo estable actual
+const GEMINI_MODEL = 'gemini-2.0-flash-exp'; // Modelo Gemini 2.0 Flash Experimental
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // ===== VERIFICAR SI ESTÁ CONFIGURADO =====
@@ -73,39 +73,140 @@ export const generateContent = async (prompt, options = {}) => {
 // ===== FUNCIONES ESPECIALIZADAS (Compatibilidad con versión anterior) =====
 
 /**
- * Generar contenido viral completo
+ * Generar contenido viral completo con análisis estratégico profesional
+ * Sigue las directrices de ACTUALIZAR_DOMINIO.md
  */
-export const generateViralScript = async (theme, style, duration, topic) => {
+export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null) => {
+  // Construir contexto de personalidad si está disponible
+  let personalityContext = '';
+  if (creatorPersonality && creatorPersonality.role) {
+    const roleLabels = {
+      actor: 'Actor/Actriz profesional',
+      terror_master: 'Maestro del Terror',
+      news_anchor: 'Presentador de Noticias',
+      storyteller: 'Contador de Historias',
+      educator: 'Educador/Profesor',
+      comedian: 'Comediante',
+      tech_reviewer: 'Revisor de Tecnología',
+      lifestyle_vlogger: 'Vlogger de Estilo de Vida',
+      gaming_streamer: 'Streamer de Gaming',
+      fitness_coach: 'Coach de Fitness',
+      food_creator: 'Creador Gastronómico',
+      travel_explorer: 'Explorador de Viajes'
+    };
+
+    personalityContext = `
+
+### PERFIL DEL CLIENTE:
+- Rol: ${roleLabels[creatorPersonality.role] || creatorPersonality.role}
+- Estilo de presentación: ${creatorPersonality.style}
+- Audiencia objetivo: ${creatorPersonality.audience}
+- Objetivo del contenido: ${creatorPersonality.goals}
+`;
+  }
+
+  // System Prompt + User Prompt siguiendo las directrices
   const prompt = `
-Actúa como un experto creador de contenido viral para redes sociales.
+Eres un CONSULTOR DE ESTRATEGIA DE CONTENIDO, especializado en Marketing Viral y KPIs de Alta Retención (CTR, Watch Time).
 
-DATOS:
-- Temática: ${theme}
+Tu tarea principal es tomar una temática y un perfil de audiencia, y generar un guion corto y un análisis estratégico detallado para un cliente profesional.
+
+REGLAS DE SALIDA OBLIGATORIAS:
+1. Nunca generes solo el guion.
+2. Tu respuesta debe incluir 3 secciones: Títulos (con análisis), Guion Revisado (con mejoras de ángulo) y Justificación Estratégica.
+3. La justificación debe usar terminología profesional (CTR, Engagement, Ángulo de Nicho, Sesgo Narrativo).
+4. Debes identificar la debilidad del guion simple y corregirla.
+
+---
+
+Analiza la siguiente temática y perfil de cliente. Genera el contenido solicitado, asegurando la máxima calidad profesional:
+${personalityContext}
+
+### TEMÁTICA SOLICITADA:
+- Tópico: ${topic}
+- Formato: Guion para video ${duration}
 - Estilo: ${style}
-- Duración: ${duration}
-- Tema específico: ${topic}
+- Categoría: ${theme}
 
-GENERA UN GUIÓN COMPLETO CON:
+### TAREA PRINCIPAL:
+Genera 3 opciones de Título y un Guion Revisado que eviten el resumen simple y, en su lugar, se enfoquen en un ángulo narrativo único que maximice el engagement.
 
-## Contenido para: ${topic}
+---
 
-### 🎯 Hook Inicial (0-5 segundos):
-[Hook que enganche inmediatamente]
+### FORMATO DE SALIDA ESTRUCTURADO:
 
-### 📝 Desarrollo:
-[Estructura del contenido optimizada para ${duration}]
+---
 
-### 🚀 Call to Action:
-[CTA que genere engagement]
+### RESULTADO DE ANÁLISIS ESTRATÉGICO
 
-### #️⃣ Hashtags:
-[5 hashtags relevantes]
+---
 
-REQUISITOS:
-- Optimizado para viralidad
-- Lenguaje conversacional
-- Estilo ${style}
-- Duración ${duration}
+#### 1. OPCIONES DE TÍTULOS Y ANÁLISIS DE IMPACTO
+
+**Opción A (SEO):**
+- Título: [Título enfocado en términos clave de búsqueda]
+- Justificación: Optimización para búsqueda de nicho de alto valor. [Explica qué keywords captura]
+
+**Opción B (CTR):**
+- Título: [Título emocional con pregunta o gatillo psicológico]
+- Justificación: Maximiza la tasa de clics en las primeras horas críticas. [Explica qué emoción activa]
+
+**Opción C (Controversia Controlada):**
+- Título: [Título que expone un fallo o genera debate]
+- Justificación: Diseñado para iniciar debate y aumentar el tiempo de retención. [Explica el balance riesgo-credibilidad]
+
+---
+
+#### 2. GUIÓN REVISADO (Con Ángulo de Nicho)
+
+**[0-5 seg] HOOK:**
+[Línea que NO solo presenta el tema, sino que expone inmediatamente POR QUÉ es relevante AHORA]
+${personalityContext ? '[Adaptado al tono y estilo del creador]' : ''}
+
+**Análisis del Hook:** [Explica qué técnica de engagement usa]
+
+**[5-35 seg] DESARROLLO (Pivote narrativo):**
+1. Contexto Estratégico: [Por qué este tema es relevante]
+2. Punto Ciego/Error Común: [Lo que otros no cuentan]
+3. Insights Accionables: [Información que el usuario puede aplicar]
+${personalityContext ? '[Coherente con la personalidad del creador]' : ''}
+
+**Ángulo Narrativo:** [Explica qué hace diferente este guión vs. contenido genérico]
+
+**[35-${duration === 'short' ? '60' : duration === 'medium' ? '180' : '300'} seg] CTA AVANZADO:**
+[Pregunta compleja con dos posibles respuestas que exija que el usuario escriba un párrafo para explicar su postura. EVITAR preguntas binarias sí/no]
+
+**Análisis del CTA:** [Explica por qué maximiza engagement cualificado]
+
+**HASHTAGS JERÁRQUICOS:**
+- Alto Volumen: [2 hashtags con +100K publicaciones]
+- Nicho Específico: [3 hashtags ultra-específicos con 1K-10K publicaciones]
+
+**Análisis de Hashtags:** [Explica cómo esta mezcla asegura vida útil prolongada]
+
+---
+
+#### 3. JUSTIFICACIÓN DE LA METODOLOGÍA
+
+**DEBILIDAD DEL GUION BÁSICO:**
+[Explicación de por qué el resumen simple falla con la audiencia. Identifica el error común que otros creadores cometen]
+
+**SOLUCIÓN APLICADA:**
+[Detalle del cambio de ángulo narrativo y su beneficio en el engagement. Usa terminología de marketing]
+
+**KPIs OPTIMIZADOS:**
+- CTR Esperado: [Estimación]
+- Retención Estimada: [Estimación]
+- Engagement Cualificado: [Estimación]
+
+**DECISIONES ESTRATÉGICAS:**
+1. [Decisión 1 y justificación]
+2. [Decisión 2 y justificación]
+3. [Decisión 3 y justificación]
+
+---
+
+IMPORTANTE: Este no es un guión genérico. Es un DOCUMENTO ESTRATÉGICO que demuestra pensamiento editorial profesional.
 `;
 
   return await generateContent(prompt);

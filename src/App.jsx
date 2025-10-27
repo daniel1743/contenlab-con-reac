@@ -7,7 +7,8 @@ import Tools from '@/components/Tools';
 import Calendar from '@/components/Calendar';
 // COMENTADO TEMPORALMENTE - Chat sin backend funcional (solo UI mock)
 // import Chat from '@/components/Chat';
-import Inbox from '@/components/Inbox';
+// COMENTADO TEMPORALMENTE - Inbox sin sistema de mensajería backend
+// import Inbox from '@/components/Inbox';
 import ContentLibrary from '@/components/ContentLibrary';
 import Settings from '@/components/Settings';
 import Footer from '@/components/Footer';
@@ -82,8 +83,9 @@ function App() {
         return <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'dashboard':
         return isAuthenticated ? <Dashboard onSectionChange={handleSectionChange} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
-      case 'inbox':
-        return isAuthenticated ? <Inbox /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      // COMENTADO TEMPORALMENTE - Inbox sin sistema de mensajería backend
+      // case 'inbox':
+      //   return isAuthenticated ? <Inbox /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'calendar':
         return isAuthenticated ? <Calendar /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'library':

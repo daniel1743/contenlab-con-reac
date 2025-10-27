@@ -41,7 +41,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     { id: 'landing', label: 'Inicio', icon: Home },
     { id: 'dashboard', label: 'Mi Craft Viral', icon: BarChart3, authRequired: true },
     { id: 'tools', label: 'Centro Creativo', icon: Wrench },
-    { id: 'inbox', label: 'Mensajes', icon: Inbox, authRequired: true },
+    // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
+    // { id: 'inbox', label: 'Mensajes', icon: Inbox, authRequired: true },
     { id: 'calendar', label: 'Calendario', icon: Calendar, authRequired: true },
     { id: 'library', label: 'Biblioteca', icon: FolderOpen, authRequired: true },
     // COMENTADO TEMPORALMENTE - Chat sin backend funcional

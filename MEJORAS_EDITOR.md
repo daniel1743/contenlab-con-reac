@@ -1,187 +1,70 @@
-# 🎨 Mejoras Implementadas en el Editor de Miniaturas
+Estrategia de Contenido para el Profesional ExigenteUn usuario que está acostumbrado a las herramientas de análisis profesional y a la IA avanzada espera tres cosas: Análisis Estratégico, Datos Específicos y Justificación de la Metodología.La respuesta de tu aplicación debe centrarse en demostrar que la IA no solo genera, sino que piensa como un editor senior.1. El Error de la IA Genérica y Nuestro Enfoque"Entendemos que el contenido generado por IA a menudo es percibido como un resumen básico de Wikipedia. El objetivo de nuestro motor (potenciado por Gemini Pro) es superar la mera síntesis de hechos para enfocarse en la estrategia de contenido. Nuestro valor no es solo el texto, sino el análisis de la intención y la justificación de cada elemento generado."2. Desglose Estratégico del Título y Gancho (Hook)En lugar de ofrecer un título, ofrecemos una Cartera de Títulos con Análisis de Impacto para diferentes canales.ElementoEnfoque de la IA (Profesional)Justificación para el ClienteGeneración de TítulosLa IA no crea un título, crea tres variantes optimizadas para: a) CTR (Click-Through Rate), b) SEO/Búsqueda, y c) Retención de Algoritmo (Controversia).Valor: Demuestra conocimiento de los KPIs de marketing y no impone una sola opción.Ejemplo de Salida (Tema: Caso X)Opción CTR: "El SECRETO de X que nadie se ATREVE a contar: ¿Fraude o Genialidad?" Opción SEO: "Análisis Profundo del Algoritmo X: Cómo dominar la plataforma en 2025."“Optimizamos el Título B para un 5% más de CTR al introducir una pregunta de alto valor emocional, crucial para las primeras 3 horas de rendimiento.”3. Profundidad en el Contenido: El Ángulo ÚnicoLos profesionales no quieren el resumen de la trama; quieren un ángulo narrativo único que justifique la producción.Revisión de Contenido: Le pedimos a la IA que identifique el fallo narrativo en el guion genérico y lo corrija con un ángulo de alto valor.Ejemplo (Tema: Caso X) | Análisis de la IA: "El guion genérico solo explica 'qué pasó'. Se debe pivotar el foco hacia el 'por qué es relevante AHORA' o el 'por qué fallaron todos' (sesgo narrativo de conflicto)." |Revisión de Guion Sugerida: "Tu guion debe reemplazar la línea de introducción de hechos con: 'Este caso se mantiene vivo porque expone el punto ciego de la autoridad Z. Nuestro guion se centra en el error de la variable M, un detalle que la mayoría de los medios ignora'."Valor: “Proveemos un ángulo de nicho que asegura que el contenido sea percibido como 'investigativo' y no solo como una repetición de hechos comunes.”4. Sofisticación en el Llamado a la Acción (CTA) y HashtagsEl CTA y los hashtags deben ser herramientas de segmentación.ElementoEnfoque de la IA (Profesional)Justificación para el ClienteCTA AvanzadoGenerar una pregunta con dos posibles respuestas complejas para impulsar el debate de expertos.Valor: Esto maximiza el engagement cualificado. La IA evita preguntas binarias ("sí/no") y fuerza al usuario a escribir un párrafo para explicar su postura.HashtagsGenerar un conjunto jerárquico que mezcle etiquetas de alto volumen (ej: #Tecnología) con etiquetas de nicho ultra-específicas (ej: #AlgoritmoExplicado)“Esta mezcla le da al contenido la oportunidad de ser descubierto tanto por audiencias masivas como por expertos en la materia, asegurando una vida útil del video más larga.”Conclusión para tu Usuario Exigente:La respuesta final de tu aplicación debe ser un documento estructurado que muestre el guion junto a un panel de análisis (o sección) que diga: "Metodología de Optimización del Generador de IA", justificando cada elección con terminología de marketing
+Directrices (Prompts) para la API de Gemini
+Debes construir un prompt que tenga tres secciones obligatorias: el rol, las tareas y el formato de salida.
 
-## ✅ Funcionalidades Añadidas
+1. ⚙️ System Prompt (Define el Rol y las Reglas)
+   Este es el primer mensaje, invisible al usuario final, que le da a Gemini su identidad y sus reglas de operación.
 
-### 1. 📸 **Biblioteca de Imágenes Gratis (Unsplash)**
-- **Qué hace:** Busca y añade imágenes profesionales gratis desde Unsplash
-- **Cómo usar:**
-  1. Abre el editor de miniaturas
-  2. Ve a la pestaña "Elementos"
-  3. Clic en "Imágenes Gratis"
-  4. Busca cualquier término (ej: "business", "tech", "nature")
-  5. Clic en cualquier imagen para añadirla al canvas
+Eres un CONSULTOR DE ESTRATEGIA DE CONTENIDO, especializado en Marketing Viral y KPIs de Alta Retención (CTR, Watch Time).
 
-- **API Key:** Ya incluida (50 búsquedas/hora gratis)
-- **Obtener tu propia key:** https://unsplash.com/developers
+Tu tarea principal es tomar una temática y un perfil de audiencia, y generar un guion corto y un análisis estratégico detallado para un cliente profesional.
 
----
+REGLAS DE SALIDA OBLIGATORIAS:
 
-### 2. ✍️ **Tipografías Profesionales de Google Fonts**
-- **Qué hace:** Añade 12 tipografías profesionales optimizadas para miniaturas
-- **Fuentes disponibles:**
-  - Anton (Display bold)
-  - Bebas Neue (Display ultra)
-  - Montserrat (Sans-serif moderna)
-  - Oswald (Sans-serif condensada)
-  - Poppins (Sans-serif geométrica)
-  - Roboto (Sans-serif versátil)
-  - Inter (Sans-serif tech)
-  - Raleway (Sans-serif elegante)
-  - Russo One (Display impactante)
-  - Bangers (Display comic)
-  - Righteous (Display retro)
-  - Permanent Marker (Handwriting)
+1.  Nunca generes solo el guion.
+2.  Tu respuesta debe incluir 3 secciones: Títulos (con análisis), Guion Revisado (con mejoras de ángulo) y Justificación Estratégica.
+3.  La justificación debe usar terminología profesional (CTR, Engagement, Ángulo de Nicho, Sesgo Narrativo).
+4.  Debes identificar la debilidad del guion simple y corregirla.
+5.  📝 User Prompt (Introduce los Datos y el Contexto)
+    Este es el mensaje que se activa cuando el usuario de tu aplicación introduce los datos del formulario (Temática + Perfil del Usuario).
 
-- **Cómo usar:**
-  1. Añade un texto al canvas
-  2. Selecciona el texto
-  3. En el panel de propiedades (derecha), despliega "Fuente"
-  4. Elige cualquier fuente de la lista
+Analiza la siguiente temática y perfil de cliente. Genera el contenido solicitado, asegurando la máxima calidad profesional:
 
----
+### PERFIL DEL CLIENTE:
 
-### 3. 🎨 **Filtros de Imagen Profesionales**
-- **Qué hace:** Aplica filtros profesionales a las imágenes (como Instagram)
-- **Filtros disponibles:**
-  - **Brillo** (ajusta luminosidad)
-  - **Contraste** (aumenta diferencia entre claros/oscuros)
-  - **Saturación** (intensidad de colores)
-  - **Desenfoque** (efecto blur)
+- Rol: Analista Senior de True Crime
+- Audiencia: Consumidores de nicho con alta familiaridad con casos históricos.
+- Objetivo: Generar debate cualificado sobre el fallo policial.
 
-- **Presets rápidos:**
-  - 📸 **Vintage:** Look retro con menos saturación
-  - 🌈 **Vívido:** Colores intensos y vibrantes
-  - ⚫ **B&N:** Blanco y negro elegante
-  - ✨ **Suave:** Colores suaves con ligero blur
+### TEMÁTICA SOLICITADA:
 
-- **Cómo usar:**
-  1. Añade una imagen al canvas
-  2. Selecciona la imagen
-  3. En la pestaña "Elementos", clic en "Filtros"
-  4. Usa los presets o ajusta manualmente con los sliders
+- Tópico: El caso de [Temática del Usuario, ej: el misterio de la Dalia Negra].
+- Formato: Guion para video corto (45 segundos).
+
+### TAREA PRINCIPAL:
+
+Genera 3 opciones de Título y un Guion Revisado que eviten el resumen simple y, en su lugar, se enfoquen en la narrativa de "fallo sistémico" para atraer al público exigente. 3. 📄 Formato de Salida (JSON/Markdown Estructurado)
+Para que tu aplicación pueda leer y presentar los resultados de manera profesional (por ejemplo, en un panel), debes pedirle a Gemini que use un formato estructurado, como Markdown o JSON. Esto es un requisito de diseño crítico para una aplicación no básica.
+
+Ejemplo de Solicitud de Salida Estructurada (Idealmente JSON, pero usando Markdown para este ejemplo):
+
+Markdown
 
 ---
 
-### 4. ✂️ **Remover Fondo con IA (Remove.bg)**
-- **Qué hace:** Elimina el fondo de imágenes automáticamente usando IA
-- **Cómo usar:**
-  1. Añade una imagen con persona/objeto al canvas
-  2. Selecciona la imagen
-  3. En "Herramientas IA", clic en "Remover Fondo"
-  4. Espera unos segundos (procesamiento en la nube)
-  5. ¡Listo! Fondo transparente
-
-- **API Key incluida:** Modo demo (limitado)
-- **Obtener tu propia key (50 gratis/mes):** https://remove.bg/api
-- **Configuración:**
-  1. Registrate en remove.bg
-  2. Obtén tu API key
-  3. Edita `src/components/thumbnail-editor/BackgroundRemover.jsx`
-  4. Reemplaza `const REMOVE_BG_API_KEY = 'demo';` por tu key
+### RESULTADO DE ANÁLISIS ESTRATÉGICO
 
 ---
 
-## 📊 Comparación: Antes vs Ahora
+#### 1. OPCIONES DE TÍTULOS Y ANÁLISIS DE IMPACTO
 
-| Característica | Antes | Ahora |
-|----------------|-------|-------|
-| Fuentes disponibles | 14 básicas | **26 profesionales** |
-| Biblioteca de imágenes | ❌ Ninguna | ✅ Millones (Unsplash) |
-| Filtros de imagen | ❌ Ninguno | ✅ 4 filtros + presets |
-| Remover fondo | ❌ Manual | ✅ Automático con IA |
-| **Nivel profesional** | 40% | **80%** 🎉 |
+| Opción           | Título Generado                     | Justificación Estratégica                                       |
+| :--------------- | :---------------------------------- | :-------------------------------------------------------------- |
+| A (SEO)          | [Título enfocado en términos clave] | Optimización para búsqueda de nicho de alto valor.              |
+| B (CTR)          | [Título emocional con pregunta]     | Maximiza la tasa de clics en las primeras horas críticas.       |
+| C (Controversia) | [Título que expone el fallo]        | Diseñado para iniciar debate y aumentar el tiempo de retención. |
 
----
+#### 2. GUIÓN REVISADO (Con Ángulo de Nicho)
 
-## 🚀 Cómo Probar las Mejoras
+**[0-3 seg] HOOK:** [Línea que ataca el ángulo genérico]
 
-### Paso 1: Asegúrate de tener tu proyecto corriendo
-```bash
-npm run dev
-```
+**[3-25 seg] DESARROLLO (Pivote narrativo):** [Narrativa centrada en el fallo o el sesgo].
 
-### Paso 2: Abre el editor de miniaturas
-1. Ve a "Herramientas"
-2. Clic en "Editor de Miniaturas"
+**[25-45 seg] CTA AVANZADO:** [Pregunta compleja que exige un comentario detallado].
 
-### Paso 3: Prueba cada función
-1. **Imágenes gratis:** Busca "technology" y añade una imagen
-2. **Filtros:** Selecciona la imagen y aplica el preset "Vívido"
-3. **Texto con fuente pro:** Añade texto y elige "Bebas Neue"
-4. **Remover fondo:** Busca "person", añade imagen, remueve fondo
+#### 3. JUSTIFICACIÓN DE LA METODOLOGÍA
 
----
+**DEBILIDAD DEL GUION BÁSICO:** [Explicación de por qué el resumen simple falla con la audiencia.]
 
-## 🔑 Configuración de API Keys (Opcional)
-
-Si quieres usar tus propias API keys para más requests:
-
-### 1. Crea un archivo `.env` en la raíz del proyecto:
-```bash
-cp .env.example .env
-```
-
-### 2. Edita `.env` y añade tus keys:
-```env
-VITE_UNSPLASH_ACCESS_KEY=tu_key_de_unsplash
-VITE_REMOVEBG_API_KEY=tu_key_de_removebg
-```
-
-### 3. Actualiza los componentes para usar las variables de entorno:
-
-**UnsplashLibrary.jsx:**
-```javascript
-const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY || 'FjW5lZF8W3usjwKT9-jEj3GvdBLy39EkUKFGmCvJHuA';
-```
-
-**BackgroundRemover.jsx:**
-```javascript
-const REMOVE_BG_API_KEY = import.meta.env.VITE_REMOVEBG_API_KEY || 'demo';
-```
-
----
-
-## 🎯 Próximas Mejoras Sugeridas (Opcional)
-
-Si quieres seguir mejorando el editor:
-
-1. **Iconos y stickers gratis** (API de flaticon.com)
-2. **Plantillas prediseñadas** (templates listos para usar)
-3. **Gradientes personalizados** (generador de gradientes)
-4. **Efectos de texto** (sombras, bordes, gradientes en texto)
-5. **Historial de proyectos** (guardar y cargar diseños)
-6. **Exportación múltiple** (PNG, JPG, WebP)
-7. **Redimensionado inteligente** (adaptar a diferentes redes)
-
----
-
-## ✨ Veredicto Final
-
-**Nivel de profesionalismo:** ⭐⭐⭐⭐ (4/5)
-
-Tu editor ahora es **80% tan profesional como Canva** para thumbnails específicos.
-
-**Ventajas vs Canva:**
-- ✅ Completamente gratis (sin marcas de agua)
-- ✅ Sin límites de proyectos
-- ✅ Open source y personalizable
-- ✅ IA integrada (Gemini + Remove.bg)
-
-**Desventajas vs Canva:**
-- ❌ Menos elementos gráficos (iconos, stickers)
-- ❌ Sin colaboración en tiempo real
-- ❌ Sin animaciones
-
-**Perfecto para:** YouTubers, creadores de contenido, emprendedores digitales que necesitan thumbnails profesionales sin pagar suscripciones.
-
----
-
-## 📝 Notas Finales
-
-- **Tiempo de implementación:** ~45 minutos
-- **Archivos modificados:** 8
-- **Archivos nuevos:** 5
-- **Líneas de código añadidas:** ~600
-- **Dependencias nuevas:** 0 (todo usa librerías existentes)
-
-**¿Dudas?** Revisa el código o pregunta específicamente por alguna función.
+**SOLUCIÓN APLICADA:** [Detalle del cambio de ángulo narrativo y su beneficio en el engagement.]
+Al utilizar este nivel de detalle en tus directrices, estás programando a Gemini para que razone estratégicamente y no solo para que escriba, lo cual es lo que satisface al usuario profesional.

@@ -6,13 +6,13 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 // Función base para generar contenido
 const generateContent = async (prompt) => {
   try {
-    console.log('🤖 Llamando a Gemini API...');
-    // Usar el modelo correcto: gemini-pro (versión estable)
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    console.log('🤖 Llamando a Gemini 2.0 Flash API...');
+    // Usar el modelo Gemini 2.0 Flash Experimental
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    console.log('✅ Respuesta recibida de Gemini');
+    console.log('✅ Respuesta recibida de Gemini 2.0');
     return text;
   } catch (error) {
     console.error('❌ Error calling Gemini API:', error);
@@ -20,8 +20,81 @@ const generateContent = async (prompt) => {
   }
 };
 
-// 1. Generar contenido viral completo
+// 1. Generar contenido viral completo con análisis estratégico profesional
 export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null) => {
+
+  // 🎯 DEFINIR ROL PROFESIONAL SEGÚN LA TEMÁTICA
+  const systemRolesByTheme = {
+    true_crime: {
+      role: 'Creador de Documentales de True Crime con un PhD en Sociología Cultural',
+      expertise: 'ANALIZAR EL IMPACTO SOCIAL Y MEDIÁTICO de un crimen',
+      contentRule: 'Tu guion debe evitar los detalles macabros (el "crimen en sí") y, en su lugar, analizar la "construcción del mito" y cómo el caso refleja problemas modernos (cosificación, histeria mediática, corrupción).',
+      approach: 'Enfócate en el análisis sociológico, no en la narrativa sangrienta'
+    },
+    terror: {
+      role: 'Director de Cine de Terror con especialización en Psicología del Miedo',
+      expertise: 'CREAR TENSIÓN PSICOLÓGICA Y ATMOSFÉRICA',
+      contentRule: 'Tu guion debe construir terror psicológico usando sugerencias visuales, sonidos ambientales y pausas dramáticas. Evita el gore explícito y enfócate en "lo que NO se ve".',
+      approach: 'El terror más efectivo está en la mente del espectador'
+    },
+    tech: {
+      role: 'Ingeniero de Software Senior con habilidad para explicar conceptos complejos de forma simple',
+      expertise: 'TRADUCIR TECNOLOGÍA COMPLEJA A LENGUAJE COTIDIANO',
+      contentRule: 'Tu guion debe usar analogías del mundo real, ejemplos visuales y evitar jerga técnica innecesaria. Explica el "por qué importa" antes del "cómo funciona".',
+      approach: 'Si tu abuela no lo entiende, simplifícalo más'
+    },
+    lifestyle: {
+      role: 'Coach de Estilo de Vida certificado con experiencia en cambio de hábitos',
+      expertise: 'INSPIRAR TRANSFORMACIÓN PERSONAL REALISTA',
+      contentRule: 'Tu guion debe presentar pasos accionables y alcanzables. Evita promesas exageradas y enfócate en cambios sostenibles con evidencia científica.',
+      approach: 'Transformación real, no motivación vacía'
+    },
+    business: {
+      role: 'Consultor de Negocios MBA con experiencia en estrategia corporativa',
+      expertise: 'DESGLOSAR ESTRATEGIAS EMPRESARIALES COMPLEJAS',
+      contentRule: 'Tu guion debe incluir frameworks probados, casos de estudio reales y métricas de éxito. Evita teoría abstracta y enfócate en aplicación práctica.',
+      approach: 'Estrategia accionable con ROI medible'
+    },
+    cocina: {
+      role: 'Chef Profesional con especialización en Técnicas Culinarias y Química de Alimentos',
+      expertise: 'ENSEÑAR COCINA EXPLICANDO EL "POR QUÉ" DETRÁS DE CADA TÉCNICA',
+      contentRule: 'Tu guion debe explicar la ciencia detrás de cada paso (temperatura, tiempo, reacciones químicas). Evita recetas mecánicas y enfócate en entender el proceso.',
+      approach: 'Enseña a pescar, no solo a cocinar un plato'
+    },
+    entertainment: {
+      role: 'Crítico de Entretenimiento con formación en Análisis Cultural',
+      expertise: 'ANALIZAR TENDENCIAS Y FENÓMENOS DE LA CULTURA POP',
+      contentRule: 'Tu guion debe contextualizar por qué algo es relevante culturalmente. Evita reseñas superficiales y enfócate en impacto social y significado más profundo.',
+      approach: 'Más allá del "me gustó" o "no me gustó"'
+    },
+    noticias: {
+      role: 'Periodista Investigativo con ética profesional y verificación de hechos',
+      expertise: 'PRESENTAR NOTICIAS CON CONTEXTO Y MÚLTIPLES PERSPECTIVAS',
+      contentRule: 'Tu guion debe presentar hechos verificados, fuentes confiables y múltiples ángulos. Evita sensacionalismo y enfócate en contexto histórico y consecuencias.',
+      approach: 'Informa, no inflames'
+    },
+    viaje: {
+      role: 'Documentalista de Viajes con enfoque en Culturas e Historia Local',
+      expertise: 'MOSTRAR EL ALMA DEL DESTINO, NO SOLO LOS LUGARES TURÍSTICOS',
+      contentRule: 'Tu guion debe incluir historia local, personas reales y experiencias auténticas. Evita guías turísticas genéricas y enfócate en "vivir como local".',
+      approach: 'Descubre culturas, no solo tomes fotos'
+    },
+    ciencia_ficcion: {
+      role: 'Escritor de Ciencia Ficción con formación en Física Teórica',
+      expertise: 'CREAR MUNDOS ESPECULATIVOS CON BASE CIENTÍFICA SÓLIDA',
+      contentRule: 'Tu guion debe balancear imaginación con plausibilidad científica. Evita violar leyes físicas sin explicación y enfócate en "qué pasaría si" creíble.',
+      approach: 'Ficción basada en ciencia, no magia disfrazada'
+    }
+  };
+
+  // Seleccionar rol según temática o usar genérico
+  const systemRole = systemRolesByTheme[theme] || {
+    role: 'Creador de Contenido Profesional con experiencia en Marketing Viral',
+    expertise: 'CREAR CONTENIDO OPTIMIZADO PARA ENGAGEMENT Y VIRALIDAD',
+    contentRule: 'Tu guion debe capturar atención en los primeros 3 segundos, mantener interés con narrativa estructurada y terminar con CTA accionable.',
+    approach: 'Contenido que genera conversación y compartidos'
+  };
+
   // 🆕 Construir el contexto de personalidad si está disponible
   let personalityContext = '';
   if (creatorPersonality && creatorPersonality.role) {
@@ -42,47 +115,248 @@ export const generateViralScript = async (theme, style, duration, topic, creator
 
     personalityContext = `
 
-🎭 PERSONALIDAD DEL CREADOR:
-- Rol: ${roleLabels[creatorPersonality.role] || creatorPersonality.role}
+🎭 PERSONALIDAD DEL CREADOR (Aplicar sobre el rol base):
+- Rol adicional: ${roleLabels[creatorPersonality.role] || creatorPersonality.role}
 - Estilo de presentación: ${creatorPersonality.style}
 - Audiencia objetivo: ${creatorPersonality.audience}
 - Objetivo del contenido: ${creatorPersonality.goals}
-
-⚠️ IMPORTANTE: Adapta el guión para que refleje esta personalidad específica. El tono, lenguaje y estructura deben ser coherentes con el rol y estilo del creador.
 `;
   }
 
+  // Convertir duración a minutos para timestamps
+  const durationMap = {
+    'short': 1,      // 1 minuto (60 segundos)
+    'medium': 5,     // 5 minutos (300 segundos)
+    'long': 15       // 15 minutos (900 segundos)
+  };
+  const totalMinutes = durationMap[duration] || 5;
+
   const prompt = `
-Actúa como un experto creador de contenido viral para redes sociales.
+═══════════════════════════════════════════════════════════════
+🎯 SYSTEM PROMPT (Regla de Oro de la IA)
+═══════════════════════════════════════════════════════════════
+
+Eres un ${systemRole.role}.
+
+TU MISIÓN: ${systemRole.expertise}
+
+REGLA DE CONTENIDO OBLIGATORIA:
+${systemRole.contentRule}
+
+ENFOQUE: ${systemRole.approach}
 ${personalityContext}
-DATOS DEL CONTENIDO:
+
+═══════════════════════════════════════════════════════════════
+📝 INSTRUCCIÓN DE FORMATO
+═══════════════════════════════════════════════════════════════
+
+Tu objetivo es generar 3 VERSIONES DISTINTAS del contenido:
+1. VERSIÓN ANALÍTICA (con explicaciones y análisis estratégico)
+2. VERSIÓN LIMPIA (guión listo para text-to-speech, sin formato)
+3. VERSIÓN DE SUGERENCIAS PRÁCTICAS (recomendaciones de recursos y herramientas)
+
+⚠️ IMPORTANTE: El usuario está sin ideas y necesita que le RESUELVAS LA VIDA. Debe poder copiar y pegar directamente. Todo debe estar COMPLETO y LISTO PARA USAR.
+
+═══════════════════════════════════════════════════════════════
+📊 DATOS DEL PROYECTO
+═══════════════════════════════════════════════════════════════
 - Temática: ${theme}
 - Estilo: ${style}
 - Duración: ${duration}
 - Tema específico: ${topic}
 
-GENERA UN GUIÓN COMPLETO CON:
+═══════════════════════════════════════════════════════════════
+🎯 METODOLOGÍA DE GENERACIÓN PROFESIONAL
+═══════════════════════════════════════════════════════════════
 
-## Contenido para: ${topic}
+Tu respuesta debe incluir:
 
-### 🎯 Hook Inicial (0-5 segundos):
-[Hook que enganche inmediatamente${personalityContext ? ', usando el estilo y tono del creador' : ''}]
+## 1. ANÁLISIS ESTRATÉGICO INICIAL
 
-### 📝 Desarrollo:
-[Estructura del contenido optimizada para ${duration}${personalityContext ? ', coherente con la personalidad del creador' : ''}]
+### 🔍 Ángulo Único Identificado:
+[Explica POR QUÉ este tema es relevante AHORA. No expliques solo "qué es", sino "por qué importa en este momento específico"]
+[Identifica el punto ciego o error común que la mayoría de creadores ignoran sobre este tema]
 
-### 🚀 Call to Action:
-[CTA que genere engagement${personalityContext ? ', alineado con los objetivos del creador' : ''}]
+### 🎬 Fallos Narrativos a Evitar:
+[Lista 2-3 errores comunes que hacen que el contenido sobre "${topic}" sea genérico]
 
-### #️⃣ Hashtags:
-[5 hashtags relevantes]
+---
 
-REQUISITOS:
-- Optimizado para viralidad
-- Lenguaje conversacional${personalityContext ? ' que refleje la personalidad del creador' : ''}
-- Estilo ${style}
-- Duración ${duration}
-${personalityContext ? '- Totalmente adaptado al perfil y audiencia del creador' : ''}
+## 2. CARTERA DE TÍTULOS OPTIMIZADOS
+
+Genera 3 variantes profesionales con análisis de impacto:
+
+### 📈 Variante A - Optimización CTR (Click-Through Rate):
+**Título:** [Título diseñado para máximo CTR con gatillos emocionales]
+**Justificación:** [Explica qué elemento psicológico activa y por qué funcionará en las primeras 3 horas]
+
+### 🔍 Variante B - Optimización SEO/Búsqueda:
+**Título:** [Título con palabras clave de alto volumen de búsqueda]
+**Justificación:** [Explica qué términos de búsqueda captura y audiencia long-tail que atrae]
+
+### 🔥 Variante C - Retención Algorítmica (Controversia Controlada):
+**Título:** [Título que genera debate pero mantiene credibilidad]
+**Justificación:** [Explica cómo genera engagement sin perder autoridad]
+
+**🎯 Recomendación:** [Indica cuál variante usar según el objetivo del creador]
+
+---
+
+## 3. GUIÓN COMPLETO CON TIMESTAMPS (${totalMinutes} minutos)
+
+⚠️ IMPORTANTE: Genera un guión DETALLADO con contenido ESPECÍFICO. El usuario debe poder leerlo directamente en cámara SIN tener que pensar.
+
+### 📺 ESTRUCTURA CON TIEMPOS EXACTOS:
+
+**[0:00 - 0:15] HOOK EXPLOSIVO:**
+- **Título Sugerido (Alto CTR):** [Título específico ya listo para usar]
+- **Guión exacto:** [Escribe exactamente lo que dirá el creador palabra por palabra. Debe ser un hook que enganche INMEDIATAMENTE exponiendo por qué es relevante AHORA]
+- **Análisis del Hook:** [Explica qué técnica de engagement usa]
+
+---
+
+**[0:15 - ${Math.floor(totalMinutes * 0.3 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.3 * 60)}` : `${Math.floor((totalMinutes * 0.3 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.3 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 1: CONTEXTO/SETUP**
+- **Título de Sección:** [Título específico para esta parte]
+- **Guión completo:** [Escribe palabra por palabra el contenido COMPLETO de esta sección. Incluye:
+  • Contexto estratégico
+  • Por qué es relevante ahora
+  • Datos o estadísticas específicas si aplica]
+- **Notas de producción:** [Sugerencias visuales, música, b-roll recomendado]
+
+---
+
+**[${Math.floor(totalMinutes * 0.3 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.3 * 60)}` : `${Math.floor((totalMinutes * 0.3 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.3 * 60) % 60)).padStart(2, '0')}`} - ${Math.floor(totalMinutes * 0.7 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.7 * 60)}` : `${Math.floor((totalMinutes * 0.7 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.7 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 2: DESARROLLO/PUNTO CIEGO**
+- **Título de Sección:** [Título específico]
+- **Guión completo:** [Escribe palabra por palabra. Debe incluir:
+  • El punto ciego o error común que otros ignoran
+  • Análisis profundo según tu rol (sociológico, técnico, cultural, etc.)
+  • Ejemplos concretos o casos de estudio]
+- **Ángulo Único:** [Explica qué hace diferente este contenido]
+
+---
+
+**[${Math.floor(totalMinutes * 0.7 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.7 * 60)}` : `${Math.floor((totalMinutes * 0.7 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.7 * 60) % 60)).padStart(2, '0')}`} - ${Math.floor(totalMinutes * 0.9 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.9 * 60)}` : `${Math.floor((totalMinutes * 0.9 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.9 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 3: RELEVANCIA MODERNA/INSIGHTS**
+- **Título de Sección:** [Título específico]
+- **Guión completo:** [Escribe palabra por palabra. Debe conectar el tema con la actualidad, tendencias 2025, o aplicación práctica]
+- **Insights Accionables:** [Lista 2-3 conclusiones clave que el espectador puede aplicar]
+
+---
+
+**[${Math.floor(totalMinutes * 0.9 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.9 * 60)}` : `${Math.floor((totalMinutes * 0.9 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.9 * 60) % 60)).padStart(2, '0')}`} - ${totalMinutes}:00] CTA Y CIERRE**
+- **Guión del CTA:** [Escribe exactamente la pregunta compleja que generará debate. EVITA preguntas binarias sí/no]
+- **Cierre:** [Frase final memorable]
+- **Análisis del CTA:** [Por qué este CTA maximiza engagement cualificado]
+
+---
+
+### #️⃣ Hashtags Jerárquicos (Mezcla Estratégica):
+
+**Alto Volumen (Alcance Masivo):**
+[2 hashtags con +100K publicaciones]
+
+**Nicho Específico (Expertos/Long-tail):**
+[3 hashtags ultra-específicos con 1K-10K publicaciones]
+
+**Análisis de Hashtags:** [Explica cómo esta mezcla asegura vida útil prolongada del contenido]
+
+---
+
+## 4. PANEL DE OPTIMIZACIÓN - METODOLOGÍA IA
+
+### 📊 KPIs Optimizados:
+- **CTR Esperado:** [Estimación basada en elementos del título]
+- **Retención Estimada:** [Basada en estructura del hook y desarrollo]
+- **Engagement Cualificado:** [Basado en complejidad del CTA]
+
+### 🎯 Decisiones Estratégicas Tomadas:
+1. [Decisión 1 y su justificación con terminología de marketing]
+2. [Decisión 2 y su justificación con terminología de marketing]
+3. [Decisión 3 y su justificación con terminología de marketing]
+
+### ⚠️ Alertas y Recomendaciones:
+[Advertencias sobre qué evitar y recomendaciones adicionales para maximizar resultados]
+
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+📋 FORMATO DE SALIDA (TRES VERSIONES SEPARADAS)
+═══════════════════════════════════════════════════════════════
+
+Debes generar exactamente 3 secciones separadas claramente con estos delimitadores:
+
+---INICIO_ANALISIS---
+
+[Aquí va el análisis estratégico completo con todas las explicaciones, análisis del hook, ángulo narrativo, justificaciones, etc.]
+
+---FIN_ANALISIS---
+
+---INICIO_LIMPIO---
+
+⚠️ CRÍTICO: Esta es la versión que el usuario LEERÁ DIRECTAMENTE en cámara o pegará en una app de text-to-speech.
+
+REQUISITOS OBLIGATORIOS:
+- SIN títulos, SIN marcadores como "[0:00]", SIN indicadores como "Hook:", "Sección 1:", etc.
+- SOLO narración fluida de principio a fin
+- Debe sonar NATURAL como si fuera una conversación
+- Incluye pausas dramáticas marcadas con "..." donde sea apropiado
+- Transiciones suaves entre secciones (sin decir "ahora pasamos a...")
+- El usuario debe poder leerlo palabra por palabra SIN editar nada
+
+FORMATO:
+Escribe el guión completo como un ÚNICO bloque de texto narrativo que fluya naturalmente desde el hook inicial hasta el CTA final.
+
+Ejemplo de estructura (ADAPTA al tema y estilo solicitado):
+
+"[Hook inicial que enganche] ... [Pausa dramática] [Desarrollo natural conectando ideas] ... [Transición orgánica] [Punto ciego o análisis profundo] ... [Conexión con relevancia actual] [CTA final con pregunta compleja]"
+
+---FIN_LIMPIO---
+
+---INICIO_SUGERENCIAS---
+
+💡 RECOMENDACIONES PRÁCTICAS PARA "${topic}" (${theme})
+
+⚠️ IMPORTANTE: Estas sugerencias deben ser ESPECÍFICAS para el tema "${topic}" en la categoría ${theme}, NO genéricas.
+
+**📸 RECURSOS VISUALES GRATUITOS (Específicos para este tema):**
+- Recuerda que en Pexels puedes encontrar... [busca términos específicos relacionados con "${topic}"]
+- En Pixabay tienes disponible... [tipo de imágenes/videos que complementen el contenido]
+- Unsplash ofrece... [recursos visuales de alta calidad para este tema específico]
+- Para ${theme === 'true_crime' ? 'True Crime' : theme === 'terror' ? 'Terror' : theme}, también revisa... [recurso especializado]
+
+**🎬 EDITORES Y HERRAMIENTAS GRATUITAS:**
+- Para ${theme} deberás usar... [editor específico recomendado y por qué]
+- ${duration === 'short' ? 'Para videos cortos, CapCut o InShot son ideales porque...' : duration === 'medium' ? 'Para videos medianos, DaVinci Resolve te permite...' : 'Para contenido largo, Premiere Rush o Kdenlive te dan...'}
+- Para efectos visuales de ${theme}: [herramienta específica]
+
+**🎵 MÚSICA Y AUDIO (Crítico para ${theme}):**
+- ⚠️ Recuerda NO usar música con copyright
+- Para ${theme === 'terror' ? 'contenido de terror, busca música ambiental oscura y tensa' : theme === 'true_crime' ? 'True Crime, usa música investigativa y dramática' : theme === 'tech' ? 'tecnología, música electrónica moderna' : `${theme}, música que complemente el tono`}
+- Epidemic Sound tiene biblioteca de ${theme}... [categoría específica]
+- YouTube Audio Library: busca... [términos específicos]
+- Artlist.io (premium) tiene colección especializada en... [género]
+
+**📅 ESTRATEGIA DE PUBLICACIÓN PARA ${theme}:**
+- Mejor día/hora para ${theme}: [días y horarios específicos basados en la categoría]
+- Plataforma principal recomendada: ${theme === 'tech' ? 'YouTube y LinkedIn' : theme === 'true_crime' ? 'YouTube y TikTok' : theme === 'cocina' ? 'Instagram y TikTok' : 'YouTube y redes principales'}
+- Frecuencia recomendada: [basada en la temática]
+
+**💰 RECURSOS PREMIUM (Si tienes presupuesto):**
+- Si cuentas con más recursos, una membresía en... [plataforma específica] te dará... [ventaja concreta]
+- Para ${theme}, ${duration === 'long' ? 'considera Adobe Creative Cloud para producción profesional' : 'Envato Elements te da acceso a...'}
+- Herramientas premium que marcan diferencia: [lista específica]
+
+**⚠️ ALERTAS CRÍTICAS PARA ${theme}:**
+- ⚠️ Recuerda NO... [error #1 específico para esta temática que reduce alcance]
+- ⚠️ Para ${theme} DEBERÁS... [requisito #1 obligatorio para esta categoría]
+- ⚠️ Evita... [práctica común que mata engagement en ${theme}]
+- ⚠️ ${theme === 'true_crime' ? 'Nunca sensacionalices el dolor de las víctimas' : theme === 'noticias' ? 'Verifica SIEMPRE tus fuentes antes de publicar' : theme === 'cocina' ? 'Incluye SIEMPRE las cantidades exactas' : 'Mantén consistencia en tu estilo'}
+
+**🎯 TIP EXTRA PARA ${theme}:**
+[Consejo único y valioso específico para esta categoría que pocos conocen]
+
+---FIN_SUGERENCIAS---
+
+IMPORTANTE: Debes generar las TRES secciones completas. No omitas ninguna.
 `;
 
   return await generateContent(prompt);
@@ -118,41 +392,141 @@ export const generatePlatformSuggestions = async (topic, platform) => {
   return prompts[platform] || prompts.youtube;
 };
 
-// 4. Generar títulos SEO optimizados
+// 4. Generar títulos SEO optimizados con análisis profesional
 export const generateSEOTitles = async (topic) => {
   const prompt = `
-Genera 5 títulos SEO optimizados y virales para el tema "${topic}".
+Actúa como un ESTRATEGA DE TÍTULOS PROFESIONAL especializado en optimización de CTR y SEO.
 
-Formato de respuesta (JSON):
-[
-  "10 Secretos de ${topic} que Nadie te Contó",
-  "La Verdad INCÓMODA sobre ${topic}",
-  "Así es como ${topic} Cambiará tu Vida en 2025",
-  "El ERROR #1 que Cometes con ${topic}",
-  "Expertos Analizan: ¿Es ${topic} una Estafa?"
-]
+TEMA: "${topic}"
 
-Responde SOLO con el array JSON válido.
+═══════════════════════════════════════════════════════════════
+🎯 TAREA: CARTERA DE TÍTULOS CON ANÁLISIS PROFESIONAL
+═══════════════════════════════════════════════════════════════
+
+Genera exactamente 3 variantes de títulos (NO 5, solo 3) con análisis estratégico para cada una:
+
+## 1. VARIANTE CTR (Click-Through Rate)
+**Título:** [Título diseñado para máximo CTR usando gatillos psicológicos]
+**Gatillos Activados:** [Lista qué emociones/curiosidades activa]
+**CTR Estimado:** [Porcentaje estimado: Alto/Medio/Bajo]
+**Mejor Para:** [Qué plataforma y audiencia funciona mejor]
+
+## 2. VARIANTE SEO (Optimización de Búsqueda)
+**Título:** [Título con keywords de alto volumen y long-tail]
+**Keywords Principales:** [Lista las palabras clave incluidas]
+**Volumen de Búsqueda:** [Estimación: Alto/Medio/Bajo]
+**Intent de Búsqueda:** [Informacional/Transaccional/Navegacional]
+
+## 3. VARIANTE RETENCIÓN (Algoritmo + Controversia)
+**Título:** [Título que genera debate manteniendo credibilidad]
+**Engagement Esperado:** [Alto/Medio - justifica por qué]
+**Riesgo de Polarización:** [Bajo/Controlado - explica cómo se mantiene el balance]
+**Duración de Relevancia:** [Corta/Media/Larga plazo]
+
+═══════════════════════════════════════════════════════════════
+📊 PANEL DE RECOMENDACIÓN
+═══════════════════════════════════════════════════════════════
+
+**Título Recomendado:** [1, 2 o 3 - indica cuál y por qué]
+**Justificación Estratégica:** [Explica según objetivos de marketing]
+**A/B Testing Sugerido:** [Qué variantes comparar y qué métrica observar]
+
+FORMATO IMPORTANTE: Responde en markdown estructurado, NO en JSON. El análisis debe ser legible y profesional.
 `;
 
   return await generateContent(prompt);
 };
 
-// 5. Generar palabras clave con tendencias
+// 5. Generar palabras clave con análisis de competencia profesional
 export const generateKeywords = async (topic) => {
   const prompt = `
-Genera 5 palabras clave relevantes con porcentajes de tendencia para "${topic}".
+Actúa como un ESPECIALISTA EN SEO y ANÁLISIS DE KEYWORDS con experiencia en investigación de competencia.
 
-Formato JSON:
-[
-  {"keyword": "tendencias ${topic}", "trend": 88},
-  {"keyword": "cómo funciona ${topic}", "trend": 85},
-  {"keyword": "${topic} 2025", "trend": 92},
-  {"keyword": "mejor ${topic} principiantes", "trend": 78},
-  {"keyword": "${topic} vs competidor", "trend": 75}
-]
+TEMA: "${topic}"
 
-Responde SOLO con el array JSON válido.
+═══════════════════════════════════════════════════════════════
+🔍 TAREA: ANÁLISIS PROFESIONAL DE KEYWORDS
+═══════════════════════════════════════════════════════════════
+
+Genera un análisis estratégico de palabras clave dividido en 3 niveles:
+
+## 1. KEYWORDS DE ALTO VOLUMEN (Alcance Masivo)
+Genera 2 keywords principales:
+
+**Keyword 1:**
+- Término: [keyword de alto volumen]
+- Volumen Estimado: [ej: 100K+ búsquedas/mes]
+- Dificultad SEO: [Alta/Media/Baja - 1-100]
+- Intent: [Informacional/Comercial/Transaccional]
+- Oportunidad: [Por qué vale la pena competir por esta keyword]
+
+**Keyword 2:**
+- Término: [keyword de alto volumen]
+- Volumen Estimado: [ej: 80K+ búsquedas/mes]
+- Dificultad SEO: [Alta/Media/Baja - 1-100]
+- Intent: [Informacional/Comercial/Transaccional]
+- Oportunidad: [Por qué vale la pena competir por esta keyword]
+
+---
+
+## 2. KEYWORDS DE NICHO (Long-tail con Alta Conversión)
+Genera 3 keywords específicas:
+
+**Keyword 1:**
+- Término: [long-tail keyword específica]
+- Volumen Estimado: [ej: 5K-10K búsquedas/mes]
+- Dificultad SEO: [Baja - fácil de rankear]
+- Intent: [Usuario buscando solución específica]
+- Ventaja Competitiva: [Por qué es más fácil posicionarse]
+
+**Keyword 2:**
+- Término: [long-tail keyword específica]
+- Volumen Estimado: [ej: 5K-10K búsquedas/mes]
+- Dificultad SEO: [Baja - fácil de rankear]
+- Intent: [Usuario buscando solución específica]
+- Ventaja Competitiva: [Por qué es más fácil posicionarse]
+
+**Keyword 3:**
+- Término: [long-tail keyword ultra-específica]
+- Volumen Estimado: [ej: 1K-5K búsquedas/mes]
+- Dificultad SEO: [Muy Baja - casi sin competencia]
+- Intent: [Usuario con necesidad muy específica]
+- Ventaja Competitiva: [Audiencia cualificada]
+
+---
+
+## 3. KEYWORDS TRENDING (Oportunidades Emergentes 2025)
+Genera 2 keywords con potencial de crecimiento:
+
+**Keyword 1:**
+- Término: [keyword emergente relacionada con 2025]
+- Tendencia: [Crecimiento estimado en %]
+- Estacionalidad: [Todo el año / Temporal]
+- Ventana de Oportunidad: [Cuánto tiempo será relevante]
+
+**Keyword 2:**
+- Término: [keyword emergente relacionada con 2025]
+- Tendencia: [Crecimiento estimado en %]
+- Estacionalidad: [Todo el año / Temporal]
+- Ventana de Oportunidad: [Cuánto tiempo será relevante]
+
+═══════════════════════════════════════════════════════════════
+📊 ESTRATEGIA DE IMPLEMENTACIÓN
+═══════════════════════════════════════════════════════════════
+
+### 🎯 Priorización Recomendada:
+1. [Primera keyword a atacar y por qué]
+2. [Segunda keyword a atacar y por qué]
+3. [Tercera keyword a atacar y por qué]
+
+### 🔄 Análisis de Competencia:
+[Identifica qué tipo de contenido está rankeando actualmente para estas keywords]
+[Sugiere cómo diferenciarse de la competencia]
+
+### ⚠️ Alertas SEO:
+[Advierte sobre keywords demasiado competitivas o con bajo ROI]
+
+FORMATO: Responde en markdown estructurado y profesional, NO en JSON simple.
 `;
 
   return await generateContent(prompt);
