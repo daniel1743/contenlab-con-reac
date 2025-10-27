@@ -7,7 +7,7 @@ import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X,
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount }) => {
+const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount, onSubscriptionClick }) => {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
@@ -139,8 +139,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
               <div className={`avatar-ring-wrapper ${getAvatarRingClass(userPlan)}`}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 rounded-full" type="button"> 
-                      <Avatar className="h-8 w-8">
+                    <Button variant="ghost" className="h-8 w-8 rounded-full cursor-pointer hover:opacity-80 transition-opacity" type="button">
+                      <Avatar className="h-8 w-8 cursor-pointer">
                         <AvatarImage alt={user.user_metadata?.full_name || 'Avatar de usuario'} src={user.user_metadata?.avatar_url} />
                         <AvatarFallback className="bg-purple-600">{getAvatarFallback(user.user_metadata?.full_name, user.email)}</AvatarFallback>
                       </Avatar>
@@ -188,8 +188,27 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                       </div>
                     </DropdownMenuItem>
 
+                    <DropdownMenuSeparator />
+
+                    {/* Actualizar Plan - Solo si NO es premium */}
+                    {userPlan !== 'premium' && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          onSubscriptionClick?.();
+                        }}
+                        className="cursor-pointer bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 border border-yellow-500/30"
+                      >
+                        <Crown className="mr-2 h-4 w-4 text-yellow-400" />
+                        <span className="text-xs font-bold text-yellow-400">Actualizar Plan</span>
+                        <Sparkles className="ml-auto h-3 w-3 text-yellow-400 animate-pulse" />
+                      </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuSeparator />
+
                     {/* Insignias */}
-                    <DropdownMenuItem onClick={() => onSectionChange('badges')}>
+                    <DropdownMenuItem onClick={() => onSectionChange('badges')} className="cursor-pointer">
                       <Award className="mr-2 h-4 w-4 text-purple-400" />
                       <span className="text-xs">Insignias</span>
                       <span className="ml-auto text-xs text-gray-400">{userBadges}/10</span>
@@ -198,19 +217,19 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Mis Forjados (Historial) */}
-                    <DropdownMenuItem onClick={() => onSectionChange('history')}>
+                    <DropdownMenuItem onClick={() => onSectionChange('history')} className="cursor-pointer">
                       <History className="mr-2 h-4 w-4" />
                       <span className="text-xs">Mis Forjados</span>
                     </DropdownMenuItem>
 
                     {/* Cambiar Identidad (Perfil) */}
-                    <DropdownMenuItem onClick={() => onSectionChange('profile')}>
+                    <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer">
                       <UserCog className="mr-2 h-4 w-4" />
                       <span className="text-xs">Cambiar Identidad</span>
                     </DropdownMenuItem>
 
                     {/* Notificaciones */}
-                    <DropdownMenuItem onClick={() => onSectionChange('notifications')}>
+                    <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="cursor-pointer">
                       <Bell className="mr-2 h-4 w-4" />
                       <span className="text-xs">Notificaciones</span>
                     </DropdownMenuItem>
@@ -218,7 +237,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Cerrar Portal (Cerrar Sesión) */}
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400">
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400 cursor-pointer">
                       <DoorOpen className="mr-2 h-4 w-4" />
                       <span className="text-xs font-semibold">Cerrar Portal</span>
                     </DropdownMenuItem>

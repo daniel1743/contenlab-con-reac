@@ -19,6 +19,11 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 // import ThumbnailEditor from '@/components/thumbnail-editor/ThumbnailEditor';
 import SubscriptionModal from '@/components/SubscriptionModal';
 import SEOHead from '@/components/SEOHead';
+// Nuevas secciones del menú de perfil
+import Badges from '@/components/Badges';
+import History from '@/components/History';
+import Profile from '@/components/Profile';
+import Notifications from '@/components/Notifications';
 
 function App() {
   const { session, loading } = useAuth();
@@ -32,7 +37,7 @@ function App() {
 
   // Secciones que requieren autenticación obligatoria
   const protectedSections = useMemo(() =>
-    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings'], // chat comentado temporalmente
+    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications'], // chat comentado temporalmente
     []
   );
 
@@ -97,6 +102,14 @@ function App() {
       //   return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'settings':
         return isAuthenticated ? <Settings /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'badges':
+        return isAuthenticated ? <Badges /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'history':
+        return isAuthenticated ? <History /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'profile':
+        return isAuthenticated ? <Profile /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+      case 'notifications':
+        return isAuthenticated ? <Notifications /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado vs Canva (no usable en producción)
       // case 'thumbnail-editor':
       //   return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
@@ -134,6 +147,7 @@ function App() {
             onAuthClick={() => setShowAuthModal(true)}
             activeSection={activeSection}
             onSectionChange={handleSectionChange}
+            onSubscriptionClick={() => setShowSubscriptionModal(true)}
             // padding
           />
         )}
