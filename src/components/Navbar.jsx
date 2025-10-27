@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X, MessageSquare, Home, Crown, Inbox, FolderOpen, Coins, Award, History, UserCog, Bell, DoorOpen, Zap } from 'lucide-react';
+import { BarChart3, Wrench, Calendar, Menu, X, Home, FolderOpen, Coins, Award, History, UserCog, Bell, DoorOpen, Zap } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount }) => {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
+  const menuButtonRef = useRef(null);
   const { toast } = useToast();
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
@@ -37,6 +39,32 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       setIsMobileMenuOpen(false);
     }
   });
+
+  // Cierra el menú móvil al hacer clic fuera o con Escape
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const handleClickOutside = (event) => {
+      const clickedOutsideMenu = mobileMenuRef.current && !mobileMenuRef.current.contains(event.target);
+      const clickedOutsideButton = menuButtonRef.current && !menuButtonRef.current.contains(event.target);
+      if (clickedOutsideMenu && clickedOutsideButton) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
 
   // Navegación actualizada con nuevas secciones
   const navigationItems = [
@@ -189,7 +217,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     </DropdownMenuItem>
 
                     {/* Insignias */}
-                    <DropdownMenuItem onClick={() => onSectionChange('badges')}>
+                    <DropdownMenuItem onSelect={() => onSectionChange('badges')}>
                       <Award className="mr-2 h-4 w-4 text-purple-400" />
                       <span className="text-xs">Insignias</span>
                       <span className="ml-auto text-xs text-gray-400">{userBadges}/10</span>
@@ -198,19 +226,19 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Mis Forjados (Historial) */}
-                    <DropdownMenuItem onClick={() => onSectionChange('history')}>
+                    <DropdownMenuItem onSelect={() => onSectionChange('history')}>
                       <History className="mr-2 h-4 w-4" />
                       <span className="text-xs">Mis Forjados</span>
                     </DropdownMenuItem>
 
                     {/* Cambiar Identidad (Perfil) */}
-                    <DropdownMenuItem onClick={() => onSectionChange('profile')}>
+                    <DropdownMenuItem onSelect={() => onSectionChange('profile')}>
                       <UserCog className="mr-2 h-4 w-4" />
                       <span className="text-xs">Cambiar Identidad</span>
                     </DropdownMenuItem>
 
                     {/* Notificaciones */}
-                    <DropdownMenuItem onClick={() => onSectionChange('notifications')}>
+                    <DropdownMenuItem onSelect={() => onSectionChange('notifications')}>
                       <Bell className="mr-2 h-4 w-4" />
                       <span className="text-xs">Notificaciones</span>
                     </DropdownMenuItem>
@@ -218,7 +246,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Cerrar Portal (Cerrar Sesión) */}
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400">
+                    <DropdownMenuItem onSelect={handleLogout} className="text-red-400 focus:text-red-400">
                       <DoorOpen className="mr-2 h-4 w-4" />
                       <span className="text-xs font-semibold">Cerrar Portal</span>
                     </DropdownMenuItem>
@@ -246,6 +274,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
               type="button" // ✅ importante
               className="md:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              ref={menuButtonRef}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-menu"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -255,11 +286,13 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
         <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
+            id="mobile-nav-menu"
             className="md:hidden border-t border-purple-500/20 overflow-hidden"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
+            ref={mobileMenuRef}
           >
             <div className="py-4 space-y-2 px-4">
               {navigationItems.map((item) => { // Renderiza todos los items en el menú móvil
