@@ -208,10 +208,13 @@ Genera 3 variantes profesionales con análisis de impacto:
 
 ### 📺 ESTRUCTURA CON TIEMPOS EXACTOS:
 
-**[0:00 - 0:15] HOOK EXPLOSIVO:**
+**[0:00 - 0:03] HOOK DE 3 SEGUNDOS (CRÍTICO PARA RETENCIÓN):**
+- **Guión EXACTO (primeros 3 segundos):** [Primera frase ULTRA impactante que engancha INSTANTÁNEAMENTE. MÁXIMO 10-12 palabras. Usa pregunta provocadora, dato impactante o declaración controversial. El espectador NO debe poder hacer scroll]
+- **Análisis del Hook:** [Explica qué gatillo psicológico usa: curiosidad, miedo, controversia, beneficio inmediato]
+
+**[0:03 - 0:15] EXPANSIÓN DEL HOOK:**
 - **Título Sugerido (Alto CTR):** [Título específico ya listo para usar]
-- **Guión exacto:** [Escribe exactamente lo que dirá el creador palabra por palabra. Debe ser un hook que enganche INMEDIATAMENTE exponiendo por qué es relevante AHORA]
-- **Análisis del Hook:** [Explica qué técnica de engagement usa]
+- **Guión exacto:** [Refuerza el hook inicial con contexto mínimo. Expone por qué es relevante AHORA sin revelar toda la información]
 
 ---
 
@@ -225,12 +228,17 @@ Genera 3 variantes profesionales con análisis de impacto:
 
 ---
 
-**[${Math.floor(totalMinutes * 0.3 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.3 * 60)}` : `${Math.floor((totalMinutes * 0.3 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.3 * 60) % 60)).padStart(2, '0')}`} - ${Math.floor(totalMinutes * 0.7 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.7 * 60)}` : `${Math.floor((totalMinutes * 0.7 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.7 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 2: DESARROLLO/PUNTO CIEGO**
+**[${Math.floor(totalMinutes * 0.3 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.3 * 60)}` : `${Math.floor((totalMinutes * 0.3 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.3 * 60) % 60)).padStart(2, '0')}`} - ${Math.floor(totalMinutes * 0.7 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.7 * 60)}` : `${Math.floor((totalMinutes * 0.7 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.7 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 2: DESARROLLO CON MINI PICOS DE INTERÉS**
 - **Título de Sección:** [Título específico]
-- **Guión completo:** [Escribe palabra por palabra. Debe incluir:
+- **Guión completo:** [Escribe palabra por palabra. IMPORTANTE: Cada 30-45 segundos incluye un MINI PICO DE INTERÉS:
+  • Dato sorprendente o estadística impactante
+  • Giro inesperado en la narrativa
+  • Pregunta retórica que active curiosidad
   • El punto ciego o error común que otros ignoran
   • Análisis profundo según tu rol (sociológico, técnico, cultural, etc.)
-  • Ejemplos concretos o casos de estudio]
+  • Ejemplos concretos o casos de estudio
+
+  Marca con [🔥 MINI PICO] cada momento de re-enganche]
 - **Ángulo Único:** [Explica qué hace diferente este contenido]
 
 ---
@@ -242,9 +250,17 @@ Genera 3 variantes profesionales con análisis de impacto:
 
 ---
 
-**[${Math.floor(totalMinutes * 0.9 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.9 * 60)}` : `${Math.floor((totalMinutes * 0.9 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.9 * 60) % 60)).padStart(2, '0')}`} - ${totalMinutes}:00] CTA Y CIERRE**
+**[${Math.floor(totalMinutes * 0.9 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.9 * 60)}` : `${Math.floor((totalMinutes * 0.9 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.9 * 60) % 60)).padStart(2, '0')}`} - ${totalMinutes}:00] CTA Y CIERRE CON LLAMADO A LA ACCIÓN**
 - **Guión del CTA:** [Escribe exactamente la pregunta compleja que generará debate. EVITA preguntas binarias sí/no]
-- **Cierre:** [Frase final memorable]
+- **Llamado a la Acción:** [Solicitud específica: suscribirse, comentar, compartir]
+- **Beneficio para la audiencia:** [Explica brevemente qué ganan si interactúan: "para que no te pierdas...", "porque mañana voy a..."]
+
+**🆓 CIERRE VERSIÓN FREE (Genérico):**
+[Frase final memorable y universal que puede usar cualquier creador]
+
+**💎 CIERRE VERSIÓN PREMIUM (Personalizado):**
+[Frase final que incluya el placeholder [NOMBRE_DEL_CANAL] de forma natural. Ejemplo: "Y no te olvides que aquí en [NOMBRE_DEL_CANAL] estamos atentos a [lo que hace el canal]. Te esperamos en el próximo contenido." Debe sonar orgánico y conectar con la esencia del canal]
+
 - **Análisis del CTA:** [Por qué este CTA maximiza engagement cualificado]
 
 ---
@@ -392,29 +408,71 @@ export const generatePlatformSuggestions = async (topic, platform) => {
   return prompts[platform] || prompts.youtube;
 };
 
-// 3.1 Generar sugerencias SEO accionables por tema
+// 3.1 Generar recursos premium estratégicos (2 de Gemini)
 export const generateThemeSEOSuggestions = async ({ themeValue, themeLabel, topic }) => {
   const prompt = `
-Eres un ESTRATEGA SEO SENIOR especializado en contenido para creadores y growth orgánico.
-Tu trabajo: identificar micro-oportunidades basadas en "${themeLabel || themeValue}" con enfoque ${themeValue}.
+Eres un CONSULTOR DE CONTENIDO PREMIUM que proporciona VALOR DE ALTO NIVEL a creadores profesionales.
 
-Contexto:
-- Nicho principal: "${themeLabel || themeValue}"
-- Detalle del proyecto: "${topic || 'Aún no definido; identifica ángulos de mayor potencial 2025'}"
+TEMA: "${topic}"
+CATEGORÍA: "${themeLabel || themeValue}"
 
-Instrucciones estrictas:
-1. Evalúa intención de búsqueda, momentum en algoritmos sociales y oportunidades de autoridad.
-2. Propón ideas listas para ejecutar (hook + insight + CTA).
-3. Devuelve EXCLUSIVAMENTE un arreglo JSON válido con 4 objetos. Cada objeto debe tener:
-   {
-     "headline": "Título corto (<90 caracteres) con palabra clave principal",
-     "insight": "Por qué funciona / ángulo estratégico SEO",
-     "seoFocus": "Keyword o intención primaria",
-     "cta": "Próximo paso accionable para el creador",
-     "priority": "Alta | Media | Baja",
-     "kpi": "Métrica que debe monitorear (CTR, Retención, Tiempo en página, etc.)"
-   }
-4. No incluyas texto fuera del JSON. No uses markdown.
+TU MISIÓN:
+Genera 2 RECURSOS PREMIUM de MÁXIMO VALOR para creadores que trabajan con "${topic}".
+
+IMPORTANTE:
+- NO proporciones información básica que se encuentra en Google
+- Proporciona VENTAJAS COMPETITIVAS, HERRAMIENTAS LISTAS y ESTRATEGIAS AVANZADAS
+- El usuario debe sentir que está ahorrando HORAS de trabajo o ganando una VENTAJA sobre competidores
+
+═══════════════════════════════════════════════════════════════
+TARJETA 1: KIT DE CREACIÓN PROFESIONAL
+═══════════════════════════════════════════════════════════════
+
+Proporciona recursos descargables y plantillas listas para usar:
+
+{
+  "type": "creation_kit",
+  "headline": "Kit Completo: Recursos de Producción para ${topic}",
+  "value_proposition": "Ahorra 2-3 horas de búsqueda. Todo listo para producir.",
+  "resources": [
+    "Plantilla de título optimizada CTR: [Título específico con fórmula probada]",
+    "Paleta de colores para miniaturas: [3 códigos hex con psicología del color]",
+    "Música recomendada: [3 tracks específicos con nombres y por qué funcionan]",
+    "Timing de edición: [Segundos exactos para hook, desarrollo, CTA]"
+  ],
+  "premium_unlock": "Descarga instantánea de plantillas editables + biblioteca de assets"
+}
+
+═══════════════════════════════════════════════════════════════
+TARJETA 2: ANÁLISIS DE INTELIGENCIA COMPETITIVA
+═══════════════════════════════════════════════════════════════
+
+Proporciona análisis basado en competencia y datos de mercado:
+
+{
+  "type": "competitive_intelligence",
+  "headline": "Análisis de Ganchos Virales: ${topic}",
+  "value_proposition": "Basado en análisis de top 10 videos virales del nicho",
+  "insights": [
+    "Patrón de hook ganador: [Frase exacta que usan los top 3 videos]",
+    "Momento de máxima caída: [Segundo exacto donde pierden audiencia]",
+    "CTA que convierte: [Formato exacto del call-to-action más efectivo]",
+    "Error común: [Qué están haciendo mal el 80% de creadores]"
+  ],
+  "premium_unlock": "Informe completo con 15 insights + guion optimizado ready-to-use"
+}
+
+FORMATO JSON (sin markdown):
+[
+  { objeto tarjeta 1 },
+  { objeto tarjeta 2 }
+]
+
+REGLAS:
+1. Sé ULTRA ESPECÍFICO para "${topic}"
+2. Proporciona DATOS ACCIONABLES, no teoría
+3. El valor debe justificar un pago
+4. Responde SOLO JSON
 `;
 
   return await generateContent(prompt);

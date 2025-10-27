@@ -3,7 +3,7 @@ import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X, MessageSquare, Home, Crown, Inbox, FolderOpen } from 'lucide-react';
+import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X, MessageSquare, Home, Crown, Inbox, FolderOpen, Coins, Award, History, UserCog, Bell, DoorOpen, Zap } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -14,7 +14,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
 
-  const userPlan = 'premium'; // Cambia a 'standard' o 'free' para probar
+  const userPlan = 'free'; // Cambia a 'standard', 'premium' o 'free' para probar
+  const userCredits = userPlan === 'free' ? 5 : userPlan === 'premium' ? 200 : 100;
+  const userBadges = 3; // De 10 desbloqueables por niveles de uso
 
   const getAvatarRingClass = (plan) => {
     switch (plan) {
@@ -144,34 +146,81 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 glass-effect border-purple-500/20" align="end" forceMount>
+                  <DropdownMenuContent className="w-64 glass-effect border-purple-500/20" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
+                      <div className="flex flex-col space-y-2">
                         <p className="text-sm font-medium leading-none">{user.user_metadata?.full_name || 'Usuario'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>
-                        <div className="flex items-center pt-2">
-                          <Crown className="mr-2 h-4 w-4 text-yellow-400" />
-                          <p className="text-xs font-semibold uppercase text-gray-400">
-                            Plan {userPlan}
-                          </p>
-                        </div>
                       </div>
                     </DropdownMenuLabel>
+
                     <DropdownMenuSeparator />
+
+                    {/* Plan/Poderes */}
+                    <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center">
+                          <Zap className="mr-2 h-4 w-4 text-yellow-400" />
+                          <span className="text-xs font-semibold">Plan/Poderes</span>
+                        </div>
+                        <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${
+                          userPlan === 'premium'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                        }`}>
+                          {userPlan}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    {/* Créditos */}
+                    <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center">
+                          <Coins className="mr-2 h-4 w-4 text-green-400" />
+                          <span className="text-xs font-semibold">Créditos</span>
+                        </div>
+                        <span className="text-xs font-bold text-green-400">
+                          {userCredits}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    {/* Insignias */}
+                    <DropdownMenuItem onClick={() => onSectionChange('badges')}>
+                      <Award className="mr-2 h-4 w-4 text-purple-400" />
+                      <span className="text-xs">Insignias</span>
+                      <span className="ml-auto text-xs text-gray-400">{userBadges}/10</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    {/* Mis Forjados (Historial) */}
+                    <DropdownMenuItem onClick={() => onSectionChange('history')}>
+                      <History className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Mis Forjados</span>
+                    </DropdownMenuItem>
+
+                    {/* Cambiar Identidad (Perfil) */}
                     <DropdownMenuItem onClick={() => onSectionChange('profile')}>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Perfil</span>
+                      <UserCog className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Cambiar Identidad</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onSectionChange('settings')}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Configuración</span>
+
+                    {/* Notificaciones */}
+                    <DropdownMenuItem onClick={() => onSectionChange('notifications')}>
+                      <Bell className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Notificaciones</span>
                     </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Cerrar sesión</span>
+
+                    {/* Cerrar Portal (Cerrar Sesión) */}
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400">
+                      <DoorOpen className="mr-2 h-4 w-4" />
+                      <span className="text-xs font-semibold">Cerrar Portal</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

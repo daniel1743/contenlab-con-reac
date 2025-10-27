@@ -27,7 +27,11 @@ import {
   ArrowUp,
   Minus,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Crown,
+  Star,
+  CheckCircle2
 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -67,6 +71,12 @@ import {
 import {
   getTrendingHashtags
 } from '@/services/twitterService';
+
+// 💎 IMPORT DE SERVICIOS PREMIUM
+import {
+  generateSEOOptimizerCard,
+  generateProStrategyCard
+} from '@/services/premiumCardsService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -254,6 +264,9 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
   const [realTrendData, setRealTrendData] = useState(null);
   const [platformSuggestions, setPlatformSuggestions] = useState({});
   const [youtubeEngagement, setYoutubeEngagement] = useState(null);
+  const [premiumCards, setPremiumCards] = useState([]);
+  const [loadingPremium, setLoadingPremium] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // 🆕 ESTADOS PARA PERSONALIDAD DEL CREADOR
   const [showPersonalityModal, setShowPersonalityModal] = useState(false);
@@ -289,6 +302,132 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
     setSelectedTheme(value);
     setSelectedStyle(''); // Reset style when theme changes
   }, []);
+
+  // 💎 FUNCIÓN FALLBACK PARA TARJETAS PREMIUM
+  const getFallbackPremiumCards = useCallback((topic) => [
+    {
+      type: 'creation_kit',
+      headline: `Kit Completo: Recursos de Producción para ${topic}`,
+      value_proposition: 'Ahorra 2-3 horas de búsqueda. Todo listo para producir.',
+      resources: [
+        `Plantilla de título optimizada CTR para ${topic}`,
+        'Paleta de colores profesional para miniaturas',
+        '3 tracks de música libres de derechos seleccionados',
+        'Timing perfecto de edición (hook, desarrollo, CTA)'
+      ],
+      premium_unlock: 'Descarga instantánea de plantillas editables + biblioteca de assets',
+      isLocked: false,
+      icon: '🎁'
+    },
+    {
+      type: 'competitive_intelligence',
+      headline: `Análisis de Ganchos Virales: ${topic}`,
+      value_proposition: 'Basado en análisis de top 10 videos virales del nicho',
+      insights: [
+        'Patrón de hook que genera +50% retención',
+        'Momento crítico donde el 80% abandona (evítalo)',
+        'CTA que convierte 3x más que el promedio',
+        'Error que cometen el 90% de creadores del nicho'
+      ],
+      premium_unlock: 'Informe completo con 15 insights + guion optimizado ready-to-use',
+      isLocked: true,
+      icon: '🧠'
+    },
+    {
+      type: 'seo_optimizer',
+      headline: `Optimizador SEO Premium: ${topic}`,
+      value_proposition: '3 títulos de alto CTR + hashtags de nicho comprobados',
+      optimized_titles: [
+        `El SECRETO de ${topic} que NADIE te cuenta`,
+        `${topic}: La VERDAD que cambiará tu perspectiva`,
+        `Cómo ${topic} puede transformar tu contenido en 2025`
+      ],
+      niche_hashtags: ['#viralcontent', '#contentcreator', '#trending2025', `#${topic.replace(/\s+/g, '')}`],
+      ctr_boost: '+25-40% más clics que títulos genéricos',
+      premium_unlock: 'Análisis completo de 50 videos + generador de títulos IA personalizado',
+      isLocked: true,
+      icon: '🎯'
+    },
+    {
+      type: 'pro_strategy',
+      headline: `Estrategia Pro: Monetización ${topic}`,
+      value_proposition: 'Protege tus ingresos + plan de acción para máximo ROI',
+      financial_warnings: ['✅ Tema seguro para monetización estándar'],
+      action_plan: [
+        'Publica martes/miércoles 2-4 PM para máximo alcance',
+        'Coloca CTA de suscripción en minuto 1:30',
+        'Fija comentario con link a contenido exclusivo',
+        'Diversifica ingresos con Patreon/membresías'
+      ],
+      revenue_protection: 'Consultoría valorada en $300 - evita pérdidas de $500+/mes',
+      premium_unlock: 'Calendario completo de publicación + estrategia de diversificación de ingresos',
+      isLocked: true,
+      icon: '💰'
+    }
+  ], []);
+
+  // 🆕 EFECTO PARA CARGAR 4 TARJETAS PREMIUM (SOLO 1ª LLAMA API, resto genérico)
+  useEffect(() => {
+    const loadPremiumCards = async () => {
+      if (!contentTopic || !selectedTheme) return;
+
+      setLoadingPremium(true);
+      try {
+        console.log('💎 Cargando tarjetas premium para:', contentTopic, selectedTheme);
+
+        // Obtener el label del tema seleccionado
+        const selectedThemeOption = contentOptions.find(opt => opt.value === selectedTheme);
+        const themeLabel = selectedThemeOption?.label || selectedTheme;
+
+        const fallbackCards = getFallbackPremiumCards(contentTopic);
+        const cards = [];
+
+        // ✅ TARJETA 1: Kit de Creación (Gemini) - DESBLOQUEADA - LLAMA API
+        try {
+          const geminiResponse = await generateThemeSEOSuggestions({
+            themeValue: selectedTheme,
+            themeLabel: themeLabel,
+            topic: contentTopic
+          });
+
+          console.log('🎁 Respuesta Gemini (GRATIS):', geminiResponse);
+          const geminiCards = JSON.parse(geminiResponse);
+
+          if (Array.isArray(geminiCards) && geminiCards.length > 0) {
+            cards.push({
+              ...geminiCards[0],
+              isLocked: false,
+              icon: '🎁'
+            });
+          } else {
+            cards.push(fallbackCards[0]);
+          }
+        } catch (error) {
+          console.error('❌ Error cargando tarjeta gratis:', error);
+          cards.push(fallbackCards[0]);
+        }
+
+        // 🔒 TARJETAS 2, 3, 4: BLOQUEADAS - SOLO FALLBACK (AHORRO DE TOKENS)
+        console.log('🔒 Tarjetas bloqueadas: usando contenido genérico para ahorrar tokens');
+        cards.push(fallbackCards[1]); // Inteligencia Competitiva
+        cards.push(fallbackCards[2]); // Optimizador SEO
+        cards.push(fallbackCards[3]); // Estrategia Pro
+
+        console.log('✅ Total de tarjetas cargadas:', cards.length, '(1 API + 3 genéricas)');
+        setPremiumCards(cards);
+
+      } catch (error) {
+        console.error('❌ Error general cargando tarjetas premium:', error);
+        setPremiumCards(getFallbackPremiumCards(contentTopic));
+      } finally {
+        setLoadingPremium(false);
+      }
+    };
+
+    // Debounce: esperar 1.5 segundos después de que el usuario deje de escribir
+    const timeoutId = setTimeout(loadPremiumCards, 1500);
+    return () => clearTimeout(timeoutId);
+  }, [contentTopic, selectedTheme, youtubeEngagement]);
 
   // 🆕 FUNCIÓN PARA GENERAR DATOS SUPLEMENTARIOS
   const generateAllSupplementaryData = async () => {
@@ -978,13 +1117,19 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 
           <div className="space-y-2">
             <Label htmlFor="topic-input">4. Describe tu Idea o Prompt</Label>
-            <Input 
+            <Input
               id="topic-input"
               name="topic"
-              placeholder="Ej: El caso de la mansión embrujada, Los mejores destinos de playa..." 
-              value={contentTopic} 
-              onChange={(e) => setContentTopic(e.target.value)} 
-              className="glass-effect border-purple-500/20" 
+              placeholder="Ej: El caso de la mansión embrujada, Los mejores destinos de playa..."
+              value={contentTopic}
+              onChange={(e) => setContentTopic(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleGenerateContent();
+                }
+              }}
+              className="glass-effect border-purple-500/20"
             />
           </div>
 
@@ -1730,6 +1875,305 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* 💎 TARJETAS PREMIUM CON SCROLL INFINITO - RECURSOS DE ALTO VALOR */}
+      {premiumCards.length > 0 && (
+        <div className="mt-12">
+          <div className="text-center space-y-4 mb-8">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30 mb-4">
+              <span className="text-2xl">💎</span>
+              <span className="text-sm font-semibold text-yellow-400">PREMIUM</span>
+            </div>
+            <h2 className="text-4xl font-bold text-gradient">
+              Recursos Estratégicos de Alto Valor
+            </h2>
+            <p className="text-gray-300 max-w-2xl mx-auto text-lg">
+              Herramientas profesionales y análisis experto para <span className="text-white font-semibold">"{contentTopic}"</span>
+            </p>
+            <p className="text-sm text-gray-500">
+              1 recurso desbloqueado | 3 recursos premium disponibles con suscripción
+            </p>
+          </div>
+
+          <div className="relative overflow-hidden">
+            {/* Contenedor con scroll horizontal automático infinito */}
+            <div className="flex gap-6 pb-6 animate-scroll-infinite">
+              {/* Triplicar tarjetas premium para efecto infinito suave */}
+              {[...premiumCards, ...premiumCards, ...premiumCards].map((card, index) => (
+                <div
+                  key={`${card.type}-${index}`}
+                  className="flex-shrink-0 w-[420px] snap-start"
+                  onClick={() => card.isLocked && setShowPremiumModal(true)}
+                >
+                  <Card className={`glass-effect border-purple-500/20 h-full transition-all duration-300 relative overflow-hidden ${
+                    card.isLocked
+                      ? 'hover:scale-105 cursor-pointer hover:border-yellow-500/50'
+                      : 'hover:scale-105 hover:border-purple-500/40'
+                  }`}>
+
+                    {/* 🔒 Overlay de bloqueo para tarjetas premium - 100% OSCURO */}
+                    {card.isLocked && (
+                      <div className="absolute inset-0 bg-black z-10 flex items-center justify-center">
+                        <div className="text-center space-y-3">
+                          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-glow-pink animate-pulse-glow">
+                            <Lock className="w-8 h-8 text-white" />
+                          </div>
+                          <div className="px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30">
+                            <span className="text-sm font-bold text-yellow-400">🔓 CONTENIDO PREMIUM</span>
+                          </div>
+                          <p className="text-xs text-gray-300 px-4">
+                            Haz clic para desbloquear
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-2xl">
+                            {card.icon || '💎'}
+                          </div>
+                          <div>
+                            <CardTitle className="text-white text-lg leading-tight">
+                              {card.headline}
+                            </CardTitle>
+                            <CardDescription className="text-xs mt-1 text-yellow-400">
+                              {card.value_proposition}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        {!card.isLocked && (
+                          <div className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
+                            ✓ GRATIS
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {/* TARJETA 1: Kit de Creación */}
+                      {card.type === 'creation_kit' && card.resources && (
+                        <div className="space-y-3">
+                          {card.resources.map((resource, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <div className="w-5 h-5 bg-purple-500/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-xs text-purple-400">✓</span>
+                              </div>
+                              <p className="text-gray-300 text-sm leading-relaxed">{resource}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* TARJETA 2: Inteligencia Competitiva */}
+                      {card.type === 'competitive_intelligence' && card.insights && (
+                        <div className="space-y-3">
+                          {card.insights.map((insight, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <div className="w-5 h-5 bg-yellow-500/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-xs text-yellow-400">💡</span>
+                              </div>
+                              <p className="text-gray-300 text-sm leading-relaxed">{insight}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* TARJETA 3: Optimizador SEO */}
+                      {card.type === 'seo_optimizer' && (
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-xs font-semibold text-purple-400 mb-2">📝 Títulos Optimizados:</h4>
+                            {card.optimized_titles && card.optimized_titles.map((title, idx) => (
+                              <p key={idx} className="text-gray-300 text-sm mb-1.5 pl-3 border-l-2 border-purple-500/30">
+                                {title}
+                              </p>
+                            ))}
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-purple-400 mb-2">#️⃣ Hashtags de Nicho:</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {card.niche_hashtags && card.niche_hashtags.slice(0, 5).map((tag, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded border border-blue-500/20">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {card.ctr_boost && (
+                            <div className="flex items-center gap-2 text-xs text-green-400 pt-2 border-t border-purple-500/20">
+                              <TrendingUp className="w-4 h-4" />
+                              <span>{card.ctr_boost}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* TARJETA 4: Estrategia Pro */}
+                      {card.type === 'pro_strategy' && (
+                        <div className="space-y-4">
+                          {card.financial_warnings && card.financial_warnings.length > 0 && (
+                            <div className="space-y-2">
+                              {card.financial_warnings.map((warning, idx) => (
+                                <div key={idx} className="px-3 py-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
+                                  {warning}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="text-xs font-semibold text-purple-400 mb-2">🎯 Plan de Acción:</h4>
+                            {card.action_plan && card.action_plan.map((action, idx) => (
+                              <div key={idx} className="flex items-start gap-2 mb-2">
+                                <span className="text-xs text-green-400 mt-0.5">►</span>
+                                <p className="text-gray-300 text-sm">{action}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {card.revenue_protection && (
+                            <div className="flex items-center gap-2 text-xs text-green-400 pt-2 border-t border-purple-500/20">
+                              <span className="font-semibold">💰 {card.revenue_protection}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Premium Unlock Badge */}
+                      {card.premium_unlock && (
+                        <div className="pt-4 border-t border-purple-500/20">
+                          <div className="flex items-start gap-2">
+                            <Lock className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                              <span className="text-yellow-400 font-semibold">Premium:</span> {card.premium_unlock}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </div>
+
+            {/* Gradientes laterales para efecto fade */}
+            <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-[#0a0a0f] to-transparent pointer-events-none"></div>
+            <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[#0a0a0f] to-transparent pointer-events-none"></div>
+          </div>
+
+          {/* Indicador de carga */}
+          {loadingPremium && (
+            <div className="text-center mt-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full border border-purple-500/20">
+                <RotateCw className="w-4 h-4 animate-spin text-purple-400" />
+                <span className="text-sm text-purple-400">Generando recursos premium para "{contentTopic}"...</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 💎 MODAL PREMIUM - Pequeño y Sutil */}
+      {showPremiumModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowPremiumModal(false)}
+        >
+          <div
+            className="bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 rounded-xl max-w-md w-full max-h-[90vh] border border-yellow-500/30 shadow-xl overflow-y-auto animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header compacto */}
+            <div className="relative bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 p-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Crown className="w-6 h-6 text-white" />
+                <h2 className="text-xl font-bold text-white">
+                  Desbloquea Premium
+                </h2>
+              </div>
+              <p className="text-white/90 text-xs">
+                Acceso completo a todas las herramientas profesionales
+              </p>
+
+              {/* Botón cerrar */}
+              <button
+                onClick={() => setShowPremiumModal(false)}
+                className="absolute top-2 right-2 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
+
+            {/* Contenido compacto */}
+            <div className="p-5 space-y-4">
+              {/* Beneficios resumidos */}
+              <div className="space-y-2">
+                {[
+                  { text: 'Generador de contenido viral', detail: '20 peticiones/día' },
+                  { text: 'Personalización de narración/guion', detail: '✨ NUEVO' },
+                  { text: 'Auditoría de contenido', detail: null },
+                  { text: 'Dashboard interactivo', detail: '20 consultas/día' },
+                  { text: 'Alertas de tendencias', detail: null },
+                  { text: '10 palabras clave por petición', detail: null },
+                  { text: 'Mapa de oportunidades virales', detail: null },
+                  { text: 'Evaluación de tono narrativo', detail: null },
+                  { text: 'Indicadores de seguridad narrativa', detail: null },
+                  { text: 'Sugerencia de disclaimers éticos', detail: null }
+                ].map((benefit, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-2 text-xs text-gray-300">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      <span>{benefit.text}</span>
+                    </div>
+                    {benefit.detail && (
+                      <span className={`text-[10px] font-semibold whitespace-nowrap ${
+                        benefit.detail === '✨ NUEVO' ? 'text-yellow-400' : 'text-green-400'
+                      }`}>
+                        {benefit.detail}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Pricing compacto */}
+              <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg p-4 text-center">
+                <div className="text-gray-400 text-xs line-through">$20.00/mes</div>
+                <div className="text-3xl font-bold text-gradient">$10.00</div>
+                <div className="text-gray-300 text-xs mt-1">por mes</div>
+                <div className="flex items-center justify-center gap-1 text-green-400 text-xs mt-2">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="font-semibold">Ahorra 50%</span>
+                </div>
+              </div>
+
+              {/* CTA Buttons compactos */}
+              <div className="space-y-2">
+                <Button
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-3 text-sm shadow-lg transition-all hover:scale-105"
+                  onClick={() => {
+                    toast({
+                      title: "🚀 ¡Próximamente!",
+                      description: "El sistema de suscripciones estará disponible muy pronto.",
+                    });
+                    setShowPremiumModal(false);
+                  }}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Activar Premium
+                </Button>
+
+                <button
+                  className="w-full text-xs text-gray-400 hover:text-gray-300 py-2 transition-colors"
+                  onClick={() => setShowPremiumModal(false)}
+                >
+                  Continuar con plan gratuito
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
