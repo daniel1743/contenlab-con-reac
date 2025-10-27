@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,13 +48,25 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 // 🚀 IMPORT DE SERVICIOS GEMINI
-import { 
-  generateViralScript, 
-  generateSEOTitles, 
-  generateKeywords, 
-  generatePlatformSuggestions, 
-  generateTrends 
+import {
+  generateViralScript,
+  generateSEOTitles,
+  generateKeywords,
+  generatePlatformSuggestions,
+  generateTrends,
+  generateThemeSEOSuggestions
 } from '@/services/geminiService';
+
+// 📊 IMPORT DE SERVICIOS YOUTUBE
+import {
+  getEngagementData,
+  getWeeklyTrends
+} from '@/services/youtubeService';
+
+// 🐦 IMPORT DE SERVICIOS TWITTER/X
+import {
+  getTrendingHashtags
+} from '@/services/twitterService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -319,25 +331,23 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
         setRealKeywords([]);
       }
 
-      // 3. Generar datos de tendencias
+      // 3. Obtener datos REALES de tendencias semanales de YouTube
       try {
-        console.log('📊 Generando tendencias...');
-        const trendsResponse = await generateTrends(contentTopic);
-        console.log('📊 Respuesta tendencias:', trendsResponse);
-        
-        try {
-          const trendsData = JSON.parse(trendsResponse);
-          setRealTrendData(trendsData);
-        } catch (parseError) {
-          console.log('⚠️ Tendencias no son JSON válido, usando fallback');
-          setRealTrendData({
-            popularity: [65, 59, 80, 81, 56, 95],
-            months: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"]
-          });
-        }
+        console.log('📊 Obteniendo tendencias semanales de YouTube API...');
+        const weeklyData = await getWeeklyTrends(contentTopic);
+        setRealTrendData({
+          days: weeklyData.days,
+          views: weeklyData.views,
+          isSimulated: weeklyData.isSimulated
+        });
+        console.log('📊 Tendencias semanales:', weeklyData.isSimulated ? 'Simulado' : 'Real', weeklyData);
       } catch (error) {
-        console.error('❌ Error generando tendencias:', error);
-        setRealTrendData(null);
+        console.error('❌ Error obteniendo tendencias:', error);
+        setRealTrendData({
+          days: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+          views: [4200, 5800, 7300, 6100, 8900, 5400, 3800],
+          isSimulated: true
+        });
       }
 
       // 4. Generar sugerencias por plataforma
@@ -361,6 +371,23 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
       } catch (error) {
         console.error('❌ Error generando sugerencias:', error);
         setPlatformSuggestions({});
+      }
+
+      // 5. Obtener datos REALES de engagement de YouTube
+      try {
+        console.log('📊 Obteniendo datos de engagement de YouTube API...');
+        const engagementData = await getEngagementData(contentTopic);
+        setYoutubeEngagement(engagementData);
+        console.log('📊 Engagement de YouTube:', engagementData.isSimulated ? 'Simulado' : 'Real', engagementData);
+      } catch (error) {
+        console.error('❌ Error obteniendo engagement:', error);
+        setYoutubeEngagement({
+          likes: 2500,
+          comments: 250,
+          shares: 150,
+          saves: 80,
+          isSimulated: true
+        });
       }
 
       console.log('✅ Datos suplementarios completados');
@@ -601,7 +628,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     }
   }, [generatedContent, toast]);
 
-  // 🆕 GENERADOR DE HASHTAGS
+  // 🆕 GENERADOR DE HASHTAGS CON TWITTER/X API
   const handleGenerateHashtags = useCallback(async () => {
     if (!hashtagTopic.trim() || !hashtagPlatform) {
       toast({
@@ -614,30 +641,47 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 
     setIsGeneratingHashtags(true);
     try {
-      // TODO: Conectar con API real
-      // const hashtags = await generateHashtagsAPI(hashtagTopic, hashtagPlatform);
+      console.log('🐦 Obteniendo hashtags de Twitter/X API...');
 
-      // Simulación temporal
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const mockHashtags = [
+      // Obtener hashtags reales de Twitter/X
+      const twitterHashtags = await getTrendingHashtags(hashtagTopic, hashtagPlatform);
+
+      // Formatear para la UI
+      const formattedHashtags = twitterHashtags.map(h => ({
+        tag: h.tag,
+        volume: h.volume >= 1000000
+          ? `${(h.volume / 1000000).toFixed(1)}M`
+          : h.volume >= 1000
+          ? `${Math.floor(h.volume / 1000)}K`
+          : h.volume.toString(),
+        trend: h.trend === 'rising' ? 'up' : h.trend === 'falling' ? 'down' : 'stable',
+        score: h.engagement || Math.floor(Math.random() * 30) + 70
+      }));
+
+      setGeneratedHashtags(formattedHashtags);
+      toast({
+        title: '✅ Hashtags obtenidos de Twitter/X',
+        description: `${formattedHashtags.length} hashtags optimizados para ${hashtagPlatform}`
+      });
+
+      console.log('🐦 Hashtags generados:', formattedHashtags);
+    } catch (error) {
+      console.error('❌ Error obteniendo hashtags:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron generar los hashtags. Usando datos alternativos.',
+        variant: 'destructive'
+      });
+
+      // Fallback con datos simulados
+      const fallbackHashtags = [
         { tag: `#${hashtagTopic.replace(/\s+/g, '')}`, volume: '2.5M', trend: 'up', score: 95 },
         { tag: `#${hashtagTopic.split(' ')[0]}2025`, volume: '890K', trend: 'up', score: 88 },
         { tag: `#Viral${hashtagTopic.split(' ')[0]}`, volume: '1.2M', trend: 'stable', score: 82 },
         { tag: `#${hashtagPlatform}${hashtagTopic.split(' ')[0]}`, volume: '650K', trend: 'up', score: 78 },
         { tag: `#${hashtagTopic.split(' ')[0]}Tips`, volume: '420K', trend: 'stable', score: 75 }
       ];
-
-      setGeneratedHashtags(mockHashtags);
-      toast({
-        title: '✅ Hashtags generados',
-        description: `${mockHashtags.length} hashtags optimizados para ${hashtagPlatform}`
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron generar los hashtags',
-        variant: 'destructive'
-      });
+      setGeneratedHashtags(fallbackHashtags);
     } finally {
       setIsGeneratingHashtags(false);
     }
@@ -756,23 +800,58 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
   
   const currentStyles = contentOptions.find(option => option.value === selectedTheme)?.styles || [];
 
-  // 🆕 DATOS DE GRÁFICO CON GEMINI O FALLBACK
+  // 🆕 DATOS DE GRÁFICO CON YOUTUBE API (Tendencias por día)
+  const views = realTrendData?.views || [4200, 5800, 7300, 6100, 8900, 5400, 3800];
+  const minView = Math.min(...views);
+  const maxView = Math.max(...views);
+
+  // Generar colores graduales: rojo (bajo) → naranja → amarillo → verde (alto)
+  const barColors = views.map(view => {
+    const normalized = (view - minView) / (maxView - minView); // 0 a 1
+
+    if (normalized < 0.33) {
+      // Rojo a Naranja
+      const intensity = normalized / 0.33;
+      return `rgba(${255}, ${Math.floor(69 + intensity * 96)}, ${Math.floor(58 * intensity)}, 0.8)`;
+    } else if (normalized < 0.66) {
+      // Naranja a Amarillo
+      const intensity = (normalized - 0.33) / 0.33;
+      return `rgba(${255}, ${Math.floor(165 + intensity * 90)}, ${Math.floor(58 + intensity * 52)}, 0.8)`;
+    } else {
+      // Amarillo a Verde
+      const intensity = (normalized - 0.66) / 0.34;
+      return `rgba(${Math.floor(255 - intensity * 221)}, ${Math.floor(255 - intensity * 58)}, ${Math.floor(110 - intensity * 16)}, 0.8)`;
+    }
+  });
+
   const trendChartData = {
-    labels: realTrendData?.months || ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+    labels: realTrendData?.days || ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
     datasets: [{
-      label: 'Popularidad del Tema',
-      data: realTrendData?.popularity || [65, 59, 80, 81, 56, 95],
-      backgroundColor: 'rgba(139, 92, 246, 0.5)',
-      borderColor: '#8B5CF6',
-      borderWidth: 1,
+      label: 'Visualizaciones Promedio',
+      data: views,
+      backgroundColor: barColors,
+      borderColor: barColors.map(color => color.replace('0.8', '1')),
+      borderWidth: 2,
     }],
   };
 
   const trendChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false, }, },
-    scales: { x: { ticks: { color: '#ffffff' } }, y: { ticks: { color: '#ffffff' } } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${context.parsed.y.toLocaleString()} visualizaciones`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: '#ffffff', font: { size: 12 } } },
+      y: { ticks: { color: '#ffffff', callback: (value) => value.toLocaleString() } }
+    },
   };
 
   // Fallback para títulos y keywords
@@ -840,7 +919,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           {/* Formulario con selects nativos */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="theme-select">1. Elige una temática</Label>
+              <Label htmlFor="theme-select">1. Elige la Categoría (O Nicho de Mercado)</Label>
               <select
                 id="theme-select"
                 name="theme"
@@ -858,7 +937,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="style-select">2. Elige un estilo</Label>
+              <Label htmlFor="style-select">2. Define el Tono (O Estilo)</Label>
               <select
                 id="style-select"
                 name="style"
@@ -879,7 +958,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration-select">3. Elige duración</Label>
+              <Label htmlFor="duration-select">3. Define el Formato (O Duración)</Label>
               <select
                 id="duration-select"
                 name="duration"
@@ -898,11 +977,11 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="topic-input">4. Describe tu idea o tema</Label>
+            <Label htmlFor="topic-input">4. Describe tu Idea o Prompt</Label>
             <Input 
               id="topic-input"
               name="topic"
-              placeholder="Ej: El caso de la mansión embrujada, Los mejores destinos de playa, etc." 
+              placeholder="Ej: El caso de la mansión embrujada, Los mejores destinos de playa..." 
               value={contentTopic} 
               onChange={(e) => setContentTopic(e.target.value)} 
               className="glass-effect border-purple-500/20" 
@@ -1103,32 +1182,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 </TabsContent>
               </Tabs>
 
-              {/* BOTÓN CONTINUAR A TU CRAFT VIRAL */}
-              <div className="flex justify-center pt-4">
-                <Button
-                  onClick={() => {
-                    // Guardar datos en sessionStorage para el Dashboard
-                    sessionStorage.setItem('craftViralData', JSON.stringify({
-                      titles: realTitles,
-                      keywords: realKeywords,
-                      topic: contentTopic,
-                      theme: selectedTheme,
-                      style: selectedStyle,
-                      duration: selectedDuration
-                    }));
-                    // Navegar al Dashboard (Craft Viral)
-                    if (onSectionChange) {
-                      onSectionChange('dashboard');
-                    }
-                  }}
-                  className="gradient-primary hover:opacity-90 text-lg px-8 py-6"
-                  size="lg"
-                >
-                  <Zap className="w-5 h-5 mr-2" />
-                  Continuar a tu Craft Viral
-                  <ChevronRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
+              {/* 🔄 BOTÓN MOVIDO - Ahora está después de Tendencias y Engagement */}
             </div>
           )}
         </CardContent>
@@ -1141,7 +1195,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <BarChart2 className="w-5 h-5 mr-2 text-blue-400"/>
-                📈 Tendencias del Tema (Gemini AI)
+                📈 Tendencias del Tema (ViralCraft IA)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1159,94 +1213,103 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           <Card className="glass-effect border-pink-500/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <Wand2 className="w-5 h-5 mr-2 text-pink-400"/>
-                💡 Sugerencias IA Personalizadas
+                <TrendingUp className="w-5 h-5 mr-2 text-pink-400"/>
+                📊 Análisis de Engagement: {contentTopic || 'Tu Tema'}
               </CardTitle>
+              <CardDescription className="text-gray-400">
+                Cómo está interactuando tu audiencia con este contenido
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="youtube">
-                <TabsList className="grid w-full grid-cols-4 glass-effect">
-                  <TabsTrigger value="youtube"><Youtube className="w-5 h-5"/></TabsTrigger>
-                  <TabsTrigger value="tiktok">TT</TabsTrigger>
-                  <TabsTrigger value="instagram"><InstagramIcon className="w-5 h-5"/></TabsTrigger>
-                  <TabsTrigger value="facebook"><Facebook className="w-5 h-5"/></TabsTrigger>
-                </TabsList>
-                
-                {/* 🚀 CONTENIDO REAL DE GEMINI */}
-                <TabsContent value="youtube" className="pt-2 text-sm text-gray-300">
-                  {platformSuggestions.youtube || 'Usa un hook fuerte en los primeros 5 segundos. Títulos con números o preguntas funcionan bien. Miniaturas con caras expresivas. Duración ideal: 8-12 minutos.'}
-                </TabsContent>
-                <TabsContent value="tiktok" className="pt-2 text-sm text-gray-300">
-                  {platformSuggestions.tiktok || '¡Ve al grano! Los primeros 3 segundos son cruciales. Usa texto en pantalla y sonidos de tendencia. El contenido debe ser corto y con un loop satisfactorio.'}
-                </TabsContent>
-                <TabsContent value="instagram" className="pt-2 text-sm text-gray-300">
-                  {platformSuggestions.instagram || 'Reels: sigue tendencias de audio. Stories: usa stickers interactivos. Feed: imágenes de alta calidad con una paleta de colores coherente.'}
-                </TabsContent>
-                <TabsContent value="facebook" className="pt-2 text-sm text-gray-300">
-                  {platformSuggestions.facebook || 'Videos más largos (3-5 min) funcionan bien. Comparte en grupos relevantes. Preguntas en la descripción para fomentar comentarios.'}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-effect border-green-500/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Copy className="w-5 h-5 mr-2 text-green-400"/>
-                🎯 Títulos SEO (Gemini AI)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {/* 🚀 TÍTULOS REALES DE GEMINI */}
-              {(realTitles.length > 0 ? realTitles : mockTitles).slice(0, 5).map((title, i) => (
-                <div key={i} className="flex items-center justify-between bg-black/20 p-2 rounded-md">
-                  <span className="text-sm">{typeof title === 'string' ? title.replace('{tema}', contentTopic || 'tu tema') : title}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => {
-                      // padding
-                      // padding
-                      // padding
-                      // padding
-                      // padding
-                      // ✅ Acción para todos los usuarios
-                      const titleText = typeof title === 'string' 
-                        ? title.replace('{tema}', contentTopic || 'tu tema') 
-                        : title;
-                      navigator.clipboard.writeText(titleText); 
-                      toast({title:'¡Título copiado!'});
+              <div className="h-64 flex items-center justify-center">
+                {youtubeEngagement ? (
+                  <Doughnut
+                    data={{
+                      labels: ['Me Gusta', 'Comentarios', 'Compartidos', 'Guardados'],
+                      datasets: [{
+                        data: [
+                          youtubeEngagement.likes || 0,
+                          youtubeEngagement.comments || 0,
+                          youtubeEngagement.shares || 0,
+                          youtubeEngagement.saves || 0
+                        ],
+                        backgroundColor: [
+                          'rgba(59, 130, 246, 0.8)', // Azul
+                          'rgba(236, 72, 153, 0.8)', // Rosa
+                          'rgba(34, 197, 94, 0.8)',  // Verde
+                          'rgba(251, 146, 60, 0.8)'  // Naranja
+                        ],
+                        borderColor: [
+                          'rgba(59, 130, 246, 1)',
+                          'rgba(236, 72, 153, 1)',
+                          'rgba(34, 197, 94, 1)',
+                          'rgba(251, 146, 60, 1)'
+                        ],
+                        borderWidth: 2
+                      }]
                     }}
-                  >
-                    <Clipboard className="w-4 h-4"/>
-                  </Button>
-                </div>
-              ))}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      cutout: '85%',
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: { color: '#fff', padding: 15, font: { size: 11 } }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              const label = context.label || '';
+                              const value = context.parsed || 0;
+                              return `${label}: ${value.toLocaleString()}`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <Youtube className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">Analizando engagement de YouTube...</p>
+                    <p className="text-xs mt-2">Datos simulados basados en tendencias del tema</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-yellow-500/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-yellow-400"/>
-                🔑 Palabras Clave (Gemini AI)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {/* 🚀 KEYWORDS REALES DE GEMINI */}
-              {(realKeywords.length > 0 ? realKeywords : mockKeywords).slice(0, 5).map((kw, i) => (
-                <div key={i} className="flex items-center justify-between bg-black/20 p-2 rounded-md">
-                  <span className="text-sm">{(kw.keyword || kw.kw || '').replace('{tema}', contentTopic || 'tema')}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-green-400">{kw.trend}%</span>
-                    <div className="w-16 h-2 bg-gray-700 rounded-full">
-                      <div className="h-2 bg-green-500 rounded-full" style={{width: `${kw.trend}%`}}></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        </div>
+      )}
+
+      {/* 🆕 BOTÓN CONTINUAR A TU CRAFT VIRAL */}
+      {generatedContent && (
+        <div className="flex justify-center pt-8">
+          <Button
+            onClick={() => {
+              // Guardar datos en sessionStorage para el Dashboard
+              sessionStorage.setItem('craftViralData', JSON.stringify({
+                titles: realTitles,
+                keywords: realKeywords,
+                topic: contentTopic,
+                theme: selectedTheme,
+                style: selectedStyle,
+                duration: selectedDuration,
+                generatedContent: generatedContent
+              }));
+              // Navegar al Dashboard (Craft Viral)
+              if (onSectionChange) {
+                onSectionChange('dashboard');
+              }
+            }}
+            className="gradient-primary hover:opacity-90 text-lg px-8 py-6"
+            size="lg"
+          >
+            <Zap className="w-5 h-5 mr-2" />
+            Continuar a tu Craft Viral
+            <ChevronRight className="w-5 h-5 ml-2" />
+          </Button>
         </div>
       )}
 

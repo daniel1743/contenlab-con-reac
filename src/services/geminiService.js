@@ -392,6 +392,34 @@ export const generatePlatformSuggestions = async (topic, platform) => {
   return prompts[platform] || prompts.youtube;
 };
 
+// 3.1 Generar sugerencias SEO accionables por tema
+export const generateThemeSEOSuggestions = async ({ themeValue, themeLabel, topic }) => {
+  const prompt = `
+Eres un ESTRATEGA SEO SENIOR especializado en contenido para creadores y growth orgánico.
+Tu trabajo: identificar micro-oportunidades basadas en "${themeLabel || themeValue}" con enfoque ${themeValue}.
+
+Contexto:
+- Nicho principal: "${themeLabel || themeValue}"
+- Detalle del proyecto: "${topic || 'Aún no definido; identifica ángulos de mayor potencial 2025'}"
+
+Instrucciones estrictas:
+1. Evalúa intención de búsqueda, momentum en algoritmos sociales y oportunidades de autoridad.
+2. Propón ideas listas para ejecutar (hook + insight + CTA).
+3. Devuelve EXCLUSIVAMENTE un arreglo JSON válido con 4 objetos. Cada objeto debe tener:
+   {
+     "headline": "Título corto (<90 caracteres) con palabra clave principal",
+     "insight": "Por qué funciona / ángulo estratégico SEO",
+     "seoFocus": "Keyword o intención primaria",
+     "cta": "Próximo paso accionable para el creador",
+     "priority": "Alta | Media | Baja",
+     "kpi": "Métrica que debe monitorear (CTR, Retención, Tiempo en página, etc.)"
+   }
+4. No incluyas texto fuera del JSON. No uses markdown.
+`;
+
+  return await generateContent(prompt);
+};
+
 // 4. Generar títulos SEO optimizados con análisis profesional
 export const generateSEOTitles = async (topic) => {
   const prompt = `
