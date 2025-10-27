@@ -50,9 +50,12 @@ const Calendar = () => {
     description: '',
     date: '',
     time: '',
-    platform: 'youtube',
+    platforms: ['youtube'],
     status: 'draft',
-    category: 'content'
+    category: 'content',
+    campaign: '',
+    primaryGoal: 'awareness',
+    contentType: 'video'
   });
 
   const monthNames = [
@@ -70,6 +73,95 @@ const Calendar = () => {
     announcement: { name: 'Anuncio', badge: 'bg-green-500/20 text-green-300 border-green-500/30' },
   };
 
+  const platformConfig = {
+    youtube: {
+      id: 'youtube',
+      label: 'YouTube',
+      icon: Youtube,
+      accent: 'text-red-500',
+      chip: 'bg-red-500/10 border-red-500/30 text-red-200',
+      peakTimes: ['Martes 18:00', 'Jueves 16:00'],
+      contentPlays: ['Videos evergreen', 'Transmisiones en directo'],
+      boost: 'Optimiza SEO con keywords de alto score (VidIQ) y programa estrenos con recordatorios cruzados.'
+    },
+    instagram: {
+      id: 'instagram',
+      label: 'Instagram',
+      icon: Instagram,
+      accent: 'text-pink-500',
+      chip: 'bg-pink-500/10 border-pink-500/30 text-pink-200',
+      peakTimes: ['Mi�rcoles 13:00', 'Domingo 19:00'],
+      contentPlays: ['Reels educativos', 'Carruseles narrativa'],
+      boost: 'Activa historias teaser autom�ticas antes y despu�s del post principal.'
+    },
+    twitter: {
+      id: 'twitter',
+      label: 'X (Twitter)',
+      icon: Twitter,
+      accent: 'text-blue-400',
+      chip: 'bg-blue-500/10 border-blue-500/30 text-blue-200',
+      peakTimes: ['Martes 09:00', 'Jueves 11:00'],
+      contentPlays: ['Hilos expertos', 'Alertas en tiempo real'],
+      boost: 'Despliega secuencias programadas de 3 tweets con CTA fijado siguiendo flujos de Hootsuite.'
+    },
+    facebook: {
+      id: 'facebook',
+      label: 'Facebook',
+      icon: Facebook,
+      accent: 'text-blue-600',
+      chip: 'bg-blue-600/10 border-blue-600/30 text-blue-100',
+      peakTimes: ['Mi�rcoles 18:00', 'S�bado 11:00'],
+      contentPlays: ['Lives cortos', 'Publicaciones de comunidad'],
+      boost: 'Segmenta audiencias lookalike y duplica autom�ticamente en grupos clave.'
+    },
+    linkedin: {
+      id: 'linkedin',
+      label: 'LinkedIn',
+      icon: Linkedin,
+      accent: 'text-sky-500',
+      chip: 'bg-sky-500/10 border-sky-500/30 text-sky-200',
+      peakTimes: ['Martes 08:30', 'Jueves 09:00'],
+      contentPlays: ['Art�culos largos', 'Posts de liderazgo'],
+      boost: 'Convierte el video en documento carrusel + lead form para captar contactos.'
+    },
+    tiktok: {
+      id: 'tiktok',
+      label: 'TikTok',
+      icon: Tiktok,
+      accent: 'text-emerald-400',
+      chip: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200',
+      peakTimes: ['Jueves 19:00', 'S�bado 21:00'],
+      contentPlays: ['Trends con hook', 'Clips ultra cortos'],
+      boost: 'Automatiza republicaci�n vertical y añade CTA interactivo en los primeros 3 segundos.'
+    }
+  };
+
+  const platformKeys = Object.keys(platformConfig);
+
+  const computeAiScore = (title = '', description = '', platforms = []) => {
+    const baseScore = Math.min(45, title.length * 1.2 + description.length * 0.4);
+    const platformBonus = platforms.length * 4;
+    return Math.min(99, Math.max(62, Math.round(65 + baseScore / 2 + platformBonus)));
+  };
+
+  const generateHashtags = (title = '', description = '') => {
+    const keywords = `${title} ${description}`
+      .toLowerCase()
+      .match(/[a-z\u00e1\u00e9\u00ed\u00f3\u00fa\u00f10-9]{4,}/g);
+    if (!keywords) return [];
+    return Array.from(new Set(keywords.slice(0, 6))).map(word =>
+      `#${word.normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`
+    );
+  };
+
+  const getOptimalTimeForPlatforms = (platforms = []) => {
+    if (!platforms.length) return null;
+    const slots = platforms
+      .map(platform => platformConfig[platform]?.peakTimes?.[0])
+      .filter(Boolean);
+    return slots.length ? slots[0] : null;
+  };
+
   // Eventos de ejemplo (ahora con estado)
   const [events, setEvents] = useState([
     {
@@ -77,58 +169,92 @@ const Calendar = () => {
       date: new Date(2025, 0, 15),
       title: 'Video YouTube: Tutorial IA',
       description: 'Tutorial completo sobre cómo usar IA para crear contenido viral',
-      platform: 'youtube',
+      platforms: ['youtube', 'instagram'],
       time: '10:00',
       status: 'scheduled',
-      category: 'content'
+      category: 'content',
+      campaign: 'IA Launch Sprint',
+      primaryGoal: 'awareness',
+      contentType: 'video',
+      aiScore: 88,
+      hashtags: ['#IA', '#Productividad', '#ContentLab']
     },
     {
       id: 2,
       date: new Date(2025, 0, 18),
       title: 'Post Instagram: Tips Productividad',
       description: '10 tips para aumentar tu productividad como creador',
-      platform: 'instagram',
+      platforms: ['instagram', 'tiktok'],
       time: '14:30',
       status: 'scheduled',
-      category: 'content'
+      category: 'content',
+      campaign: 'Rutinas Productivas',
+      primaryGoal: 'engagement',
+      contentType: 'reel',
+      aiScore: 92,
+      hashtags: ['#Productividad', '#Creador', '#Rutina']
     },
     {
       id: 3,
       date: new Date(2025, 0, 22),
       title: 'Thread Twitter: Tendencias',
       description: 'Análisis de las tendencias más importantes del mes',
-      platform: 'twitter',
+      platforms: ['twitter', 'linkedin'],
       time: '09:15',
       status: 'draft',
-      category: 'engagement'
+      category: 'engagement',
+      campaign: 'Radar Tendencias',
+      primaryGoal: 'thought_leadership',
+      contentType: 'thread',
+      aiScore: 76,
+      hashtags: ['#Tendencias', '#IA', '#ContentLab']
     },
     {
       id: 4,
       date: new Date(2025, 0, 25),
       title: 'Live Instagram: Q&A',
       description: 'Sesión de preguntas y respuestas con la comunidad',
-      platform: 'instagram',
+      platforms: ['instagram', 'facebook'],
       time: '19:00',
       status: 'scheduled',
-      category: 'engagement'
+      category: 'engagement',
+      campaign: 'Community Love',
+      primaryGoal: 'community',
+      contentType: 'live',
+      aiScore: 81,
+      hashtags: ['#Live', '#Preguntas', '#Comunidad']
     },
     {
       id: 5,
       date: new Date(2025, 0, 20),
       title: 'Promoción Producto Nuevo',
       description: 'Lanzamiento oficial del nuevo curso',
-      platform: 'facebook',
+      platforms: ['facebook', 'youtube', 'linkedin'],
       time: '12:00',
       status: 'scheduled',
-      category: 'promotion'
+      category: 'promotion',
+      campaign: 'Lanzamiento Elite',
+      primaryGoal: 'conversion',
+      contentType: 'promo',
+      aiScore: 90,
+      hashtags: ['#Lanzamiento', '#Marketing', '#Conversiones']
     },
   ]);
 
   // Filtrar eventos
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPlatform = filterPlatform === 'all' || event.platform === filterPlatform;
+    const haystack = [
+      event.title,
+      event.description,
+      event.campaign,
+      event.hashtags?.join(' ')
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    const matchesSearch = haystack.includes(searchTerm.toLowerCase());
+    const matchesPlatform =
+      filterPlatform === 'all' || event.platforms?.includes(filterPlatform);
     const matchesStatus = filterStatus === 'all' || event.status === filterStatus;
     return matchesSearch && matchesPlatform && matchesStatus;
   });
@@ -144,30 +270,70 @@ const Calendar = () => {
       return;
     }
 
+    if (!formData.platforms.length) {
+      toast({
+        title: '🌐 Selecciona plataformas',
+        description: 'Elige al menos una red para programar la publicación.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
+    const hashtags = generateHashtags(formData.title, formData.description);
+    const optimalTime = getOptimalTimeForPlatforms(formData.platforms) || formData.time;
+
     const newEvent = {
       id: Date.now(),
       title: formData.title,
       description: formData.description,
       date: new Date(formData.date),
       time: formData.time,
-      platform: formData.platform,
+      platforms: [...formData.platforms],
       status: formData.status,
-      category: formData.category
+      category: formData.category,
+      campaign: formData.campaign?.trim() || 'Campaña sin nombre',
+      primaryGoal: formData.primaryGoal,
+      contentType: formData.contentType,
+      aiScore,
+      hashtags: hashtags.length ? hashtags : ['#ContentLab'],
+      optimalTime
     };
 
     setEvents(prev => [...prev, newEvent]);
     setIsModalOpen(false);
     resetForm();
     toast({
-      title: '✅ Evento creado',
-      description: `${newEvent.title} programado para ${newEvent.date.toLocaleDateString('es-ES')}`,
+      title: '🚀 Evento creado',
+      description: `${newEvent.title} programado en ${newEvent.platforms.length} plataformas.`,
     });
-  }, [formData, toast]);
+  }, [computeAiScore, formData, generateHashtags, getOptimalTimeForPlatforms, toast]);
 
   const handleUpdateEvent = useCallback(() => {
+    if (!editingEvent) return;
+
+    const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
+    const hashtags = generateHashtags(formData.title, formData.description);
+    const optimalTime = getOptimalTimeForPlatforms(formData.platforms) || formData.time;
+
     setEvents(prev => prev.map(event =>
       event.id === editingEvent.id
-        ? { ...event, ...formData, date: new Date(formData.date) }
+        ? {
+            ...event,
+            title: formData.title,
+            description: formData.description,
+            date: new Date(formData.date),
+            time: formData.time,
+            platforms: [...formData.platforms],
+            status: formData.status,
+            category: formData.category,
+            campaign: formData.campaign?.trim() || 'Campaña sin nombre',
+            primaryGoal: formData.primaryGoal,
+            contentType: formData.contentType,
+            aiScore,
+            hashtags: hashtags.length ? hashtags : event.hashtags,
+            optimalTime
+          }
         : event
     ));
     setIsModalOpen(false);
@@ -177,7 +343,7 @@ const Calendar = () => {
       title: '✅ Evento actualizado',
       description: 'Los cambios se han guardado correctamente',
     });
-  }, [editingEvent, formData, toast]);
+  }, [computeAiScore, editingEvent, formData, generateHashtags, getOptimalTimeForPlatforms, toast]);
 
   const handleDeleteEvent = useCallback((eventId) => {
     setEvents(prev => prev.filter(event => event.id !== eventId));
@@ -192,7 +358,10 @@ const Calendar = () => {
       ...event,
       id: Date.now(),
       title: `${event.title} (Copia)`,
-      status: 'draft'
+      status: 'draft',
+      date: new Date(event.date),
+      platforms: [...(event.platforms || [])],
+      hashtags: [...(event.hashtags || [])]
     };
     setEvents(prev => [...prev, duplicated]);
     toast({
@@ -207,9 +376,12 @@ const Calendar = () => {
       description: '',
       date: '',
       time: '',
-      platform: 'youtube',
+      platforms: ['youtube'],
       status: 'draft',
-      category: 'content'
+      category: 'content',
+      campaign: '',
+      primaryGoal: 'awareness',
+      contentType: 'video'
     });
   };
 
@@ -220,9 +392,12 @@ const Calendar = () => {
       description: event.description || '',
       date: event.date.toISOString().split('T')[0],
       time: event.time,
-      platform: event.platform,
+      platforms: [...(event.platforms || [])],
       status: event.status,
-      category: event.category
+      category: event.category,
+      campaign: event.campaign || '',
+      primaryGoal: event.primaryGoal || 'awareness',
+      contentType: event.contentType || 'video'
     });
     setIsModalOpen(true);
   };
