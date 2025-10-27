@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import AuthModal from '@/components/AuthModal';
-import Dashboard from '@/components/Dashboard';
+import Dashboard from '@/components/DashboardDynamic';
 import Tools from '@/components/Tools';
 import Calendar from '@/components/Calendar';
 // COMENTADO TEMPORALMENTE - Chat sin backend funcional (solo UI mock)
