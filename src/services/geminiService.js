@@ -378,6 +378,80 @@ IMPORTANTE: Debes generar las TRES secciones completas. No omitas ninguna.
   return await generateContent(prompt);
 };
 
+export const generateExpertAdvisoryInsights = async (topic, context = {}) => {
+  const prompt = `
+Eres un estratega senior de SEO, analista de crecimiento y profesor certificado.
+Entrega 4 tarjetas premium para un dashboard de inteligencia de contenidos sobre "${topic}".
+Cada tarjeta debe aportar valor accionable, respaldado con insights profundos.
+
+Contexto adicional (JSON):
+${JSON.stringify(context, null, 2)}
+
+Formato de salida OBLIGATORIO (JSON puro sin comentarios ni texto adicional):
+[
+  {
+    "id": "seo-power",
+    "label": "Nombre corto de la tarjeta",
+    "title": "Título potente (máx. 60 caracteres)",
+    "subtitle": "Explicación breve de alto impacto",
+    "bullets": [
+      "Insight accionable 1 con dato específico o referencia",
+      "Insight accionable 2",
+      "Insight accionable 3"
+    ],
+    "cta": "Acción recomendable en una frase",
+    "icon": "Nombre de icono Lucide (p.ej. Lightbulb, Rocket, LineChart, Diamond)"
+  }
+]
+
+Reglas:
+- Usa solo JSON válido.
+- Evita texto genérico. Cada bullet debe aportar un consejo práctico y diferenciador.
+- Combina tácticas SEO, storytelling, contenido y monetización/retención.
+- Selecciona iconos de Lucide existentes.
+`;
+
+  try {
+    const raw = await generateContent(prompt);
+    const cleaned = raw
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed)) {
+      throw new Error('Formato inesperado en la respuesta de Gemini');
+    }
+
+    return parsed.map((card, index) => {
+      const normalizeList = (value) => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string') {
+          return value
+            .split('\n')
+            .map(item => item.replace(/^[-*]\s*/, '').trim())
+            .filter(Boolean);
+        }
+        return [];
+      };
+
+      return {
+        id: card.id || `insight-${index + 1}`,
+        label: card.label || card.title || `Insight ${index + 1}`,
+        title: card.title || `Insight estratégico ${index + 1}`,
+        subtitle: card.subtitle || '',
+        bullets: normalizeList(card.bullets || card.points),
+        cta: card.cta || card.action || '',
+        icon: card.icon || 'Sparkles'
+      };
+    });
+  } catch (error) {
+    console.error('Error generando insights con Gemini:', error);
+    throw error;
+  }
+};
+
 // 2. Generar datos de tendencias
 export const generateTrends = async (topic) => {
   const prompt = `

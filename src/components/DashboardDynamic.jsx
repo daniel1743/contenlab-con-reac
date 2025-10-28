@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,15 @@ import {
   Calendar,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  Lightbulb,
+  LineChart,
+  Diamond,
+  Rocket,
+  Compass,
+  GraduationCap,
+  ShieldCheck,
+  DollarSign
 } from 'lucide-react';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import {
@@ -37,6 +45,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { getAllTrending } from '@/services/trendingContentService';
+import { generateExpertAdvisoryInsights } from '@/services/geminiService';
 
 ChartJS.register(
   CategoryScale,
@@ -50,6 +59,75 @@ ChartJS.register(
   BarElement
 );
 
+const insightIconMap = {
+  Lightbulb,
+  LineChart,
+  Diamond,
+  Rocket,
+  Compass,
+  GraduationCap,
+  ShieldCheck,
+  DollarSign,
+  Sparkles,
+  BarChart3,
+  Target
+};
+
+const generateFallbackInsights = (topic) => [
+  {
+    id: 'seo-power',
+    label: 'SEO Power Move',
+    title: `Arquitectura semántica para "${topic}"`,
+    subtitle: 'Captura intención de búsqueda y autoridad topical',
+    bullets: [
+      'Construye un cluster de 4-6 piezas conectadas por keywords long-tail con intención informativa y transaccional.',
+      'Actualiza los encabezados H2/H3 incorporando entidades relacionadas (People, Location, Time) para mejorar E-E-A-T.',
+      'Implementa schema Article + FAQ con preguntas reales de Search Console para acelerar rich snippets.'
+    ],
+    cta: 'Agenda una auditoría mensual de keywords emergentes y refresca contenidos veteranos cada 45 días.',
+    icon: 'LineChart'
+  },
+  {
+    id: 'story-hook',
+    label: 'Storytelling Insight',
+    title: 'Hook emocional de 9 segundos',
+    subtitle: 'Conecta el pain point con una promesa visual',
+    bullets: [
+      'Abre con una estadística sorprendente o confesión personal que rompa la expectativa en segundos 0-3.',
+      'Usa el formato “Te equivocas si…” seguido de una demostración visual rápida que refuerce credibilidad.',
+      'Cierra el primer bloque con una pregunta abierta que invite a comentar y extienda la retención.'
+    ],
+    cta: 'Guioniza los hooks en batch y prueba dos versiones A/B por semana para detectar el tono ganador.',
+    icon: 'Lightbulb'
+  },
+  {
+    id: 'growth-play',
+    label: 'Growth Momentum',
+    title: 'Colaboraciones escalables',
+    subtitle: 'Apalanca audiencias afines sin diluir tu marca',
+    bullets: [
+      'Identifica creadores con autoridad media que cubran subtemas complementarios y ofrece micro colaboraciones en formato shorts/reels.',
+      'Crea un activo compartible (checklist, Notion dashboard) con branding dual para captar leads de ambas audiencias.',
+      'Distribuye el contenido colaborativo en newsletters y comunidades privadas para aumentar repetición omnicanal.'
+    ],
+    cta: 'Planifica un calendario de 4 colaboraciones por trimestre y mide CAC cruzado.',
+    icon: 'Rocket'
+  },
+  {
+    id: 'monetize',
+    label: 'ROI & Monetización',
+    title: 'Producto mínimo premium',
+    subtitle: 'Convierte demanda informativa en revenue recurrente',
+    bullets: [
+      'Detecta las dudas más repetidas en comentarios y empaquétalas en una masterclass en vivo de 60 minutos.',
+      'Incluye una toolkit descargable con templates exclusivos para justificar ticket y aumentar retención.',
+      'Activa un funnel de email con storytelling de caso de éxito y CTA hacia la masterclass + upsell de asesoría.'
+    ],
+    cta: 'Lanza el piloto con lista de espera y valida conversión antes de escalar campañas pagadas.',
+    icon: 'DollarSign'
+  }
+];
+
 const DashboardDynamic = ({ onSectionChange }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -59,6 +137,48 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [topicData, setTopicData] = useState(null);
   const [nichemMetrics, setNichemMetrics] = useState(null);
+  const [expertInsights, setExpertInsights] = useState([]);
+  const [isInsightsLoading, setIsInsightsLoading] = useState(false);
+
+  const fetchExpertInsights = useCallback(
+    async (topic, metricsContext = {}) => {
+      setIsInsightsLoading(true);
+      try {
+        const growthValue = parseFloat(metricsContext.weeklyGrowth);
+        const audienceMood = Number.isFinite(growthValue)
+          ? growthValue >= 25
+            ? 'explosivo'
+            : growthValue >= 15
+              ? 'en crecimiento sostenido'
+              : growthValue >= 5
+                ? 'estable en alza'
+                : 'estancado'
+          : 'desconocido';
+
+        const contextPayload = {
+          topic,
+          trendScore: metricsContext.trendScore,
+          weeklyGrowth: metricsContext.weeklyGrowth,
+          topCreators: metricsContext.topCreators?.slice?.(0, 3) || [],
+          audienceMood,
+          platformDistribution: metricsContext.platformDistribution || []
+        };
+
+        const insights = await generateExpertAdvisoryInsights(topic, contextPayload);
+        if (Array.isArray(insights) && insights.length) {
+          setExpertInsights(insights.slice(0, 4));
+        } else {
+          setExpertInsights(generateFallbackInsights(topic));
+        }
+      } catch (error) {
+        console.error('Error obteniendo insights premium:', error);
+        setExpertInsights(generateFallbackInsights(topic));
+      } finally {
+        setIsInsightsLoading(false);
+      }
+    },
+    []
+  );
 
   // Buscar tema cuando el usuario presiona Enter o click
   const handleSearch = async () => {
@@ -73,6 +193,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
     setIsLoading(true);
     setCurrentTopic(searchTopic);
+    setExpertInsights([]);
 
     try {
       // Obtener datos de múltiples fuentes
@@ -91,6 +212,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
       // Analizar y calcular métricas del nicho
       const metrics = analyzeNicheMetrics(trendingData.data, searchTopic);
       setNichemMetrics(metrics);
+      await fetchExpertInsights(searchTopic, metrics);
 
       toast({
         title: '✅ Tema analizado',
@@ -106,7 +228,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
       });
 
       // Mostrar datos de ejemplo si falla
-      setNichemMetrics(generateMockMetrics(searchTopic));
+      const fallbackMetrics = generateMockMetrics(searchTopic);
+      setNichemMetrics(fallbackMetrics);
+      await fetchExpertInsights(searchTopic, fallbackMetrics);
     } finally {
       setIsLoading(false);
     }
@@ -114,95 +238,220 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
   // Analizar métricas del nicho basado en datos reales
   const analyzeNicheMetrics = (data, topic) => {
-    const hasYouTube = data.youtube?.videos?.length > 0;
-    const hasNews = data.news?.articles?.length > 0;
+    const videos = data.youtube?.videos || [];
+    const channels = data.youtube?.channels || [];
+    const newsArticles = data.news?.articles || [];
 
-    // Calcular métricas basadas en datos reales
-    let totalCreators = 0;
-    let avgViews = 0;
-    let avgEngagement = 0;
-    let trendScore = 50;
-    let weeklyGrowth = 0;
+    const videoViews = videos
+      .map(video => Number(video.statistics?.viewCount || 0))
+      .filter(view => Number.isFinite(view) && view > 0);
 
-    if (hasYouTube) {
-      totalCreators = data.youtube.videos.length;
-      // Simular vistas promedio basado en el número de videos
-      avgViews = Math.floor(Math.random() * 500000) + 100000;
-      avgEngagement = (Math.random() * 10 + 2).toFixed(1);
-      trendScore = Math.floor(Math.random() * 40) + 60; // 60-100
-    }
+    const engagementRatios = videos
+      .map(video => {
+        const views = Number(video.statistics?.viewCount || 0);
+        if (!views) return null;
+        const likes = Number(video.statistics?.likeCount || 0);
+        const comments = Number(video.statistics?.commentCount || 0);
+        return ((likes + comments) / views) * 100;
+      })
+      .filter(value => Number.isFinite(value) && value >= 0);
 
-    if (hasNews) {
-      const newsCount = data.news.articles.length;
-      trendScore = Math.min(trendScore + (newsCount * 5), 100);
-      weeklyGrowth = (Math.random() * 30 + 10).toFixed(1);
-    }
+    const averageViews = videoViews.length
+      ? videoViews.reduce((acc, value) => acc + value, 0) / videoViews.length
+      : 0;
+
+    const averageEngagement = engagementRatios.length
+      ? engagementRatios.reduce((acc, value) => acc + value, 0) / engagementRatios.length
+      : 0;
+
+    const trendScore = calculateTrendScore(videos, averageViews, averageEngagement, newsArticles.length);
+    const weeklyGrowth = calculateWeeklyGrowth(videos);
 
     return {
       topic,
-      creatorsInNiche: totalCreators || Math.floor(Math.random() * 500) + 100,
-      avgViewsPerVideo: avgViews || Math.floor(Math.random() * 300000) + 50000,
-      avgEngagement: avgEngagement || (Math.random() * 8 + 3).toFixed(1),
-      trendScore: trendScore,
-      weeklyGrowth: weeklyGrowth || (Math.random() * 25 + 5).toFixed(1),
-      topCreators: extractTopCreators(data),
-      weeklyData: generateWeeklyData(),
-      platformDistribution: generatePlatformData(),
-      contentTypes: generateContentTypes(),
+      creatorsInNiche: channels.length || new Set(videos.map(video => video.channelId)).size,
+      creatorsRange: formatCompactRange(channels.length || videos.length),
+      avgViewsPerVideo: averageViews,
+      avgViewsRange: formatRangeFromValues(videoViews),
+      avgEngagement: averageEngagement,
+      avgEngagementRange: formatRangeFromValues(engagementRatios, { isPercentage: true }),
+      trendScore,
+      weeklyGrowth,
+      topCreators: extractTopCreators(videos, channels),
+      weeklyData: generateWeeklyData(videos),
+      platformDistribution: generatePlatformData(videos),
+      contentTypes: generateContentTypes(videos),
       fetchedAt: new Date().toISOString()
     };
   };
 
-  // Extraer top creadores de los datos
-  const extractTopCreators = (data) => {
-    const creators = [];
+  const extractTopCreators = (videos, channels) => {
+    if (!videos.length) return [];
 
-    if (data.youtube?.videos) {
-      data.youtube.videos.slice(0, 5).forEach(video => {
-        creators.push({
-          name: video.channelTitle,
-          followers: `${Math.floor(Math.random() * 900 + 100)}K`,
-          avgViews: `${Math.floor(Math.random() * 500 + 50)}K`,
-          engagement: `${(Math.random() * 10 + 2).toFixed(1)}%`,
-          platform: 'YouTube'
-        });
-      });
-    }
+    const channelStats = channels.reduce((acc, channel) => {
+      acc[channel.id] = channel;
+      return acc;
+    }, {});
 
-    return creators;
+    const groupedByChannel = videos.reduce((acc, video) => {
+      const channelId = video.channelId;
+      if (!channelId) return acc;
+      if (!acc[channelId]) acc[channelId] = [];
+      acc[channelId].push(video);
+      return acc;
+    }, {});
+
+    const creators = Object.entries(groupedByChannel).map(([channelId, channelVideos]) => {
+      const channelInfo = channelStats[channelId];
+      const subscriberCount = Number(channelInfo?.statistics?.subscriberCount || 0);
+
+      const viewsArray = channelVideos
+        .map(video => Number(video.statistics?.viewCount || 0))
+        .filter(Boolean);
+
+      const engagementArray = channelVideos
+        .map(video => {
+          const views = Number(video.statistics?.viewCount || 0);
+          if (!views) return null;
+          const likes = Number(video.statistics?.likeCount || 0);
+          const comments = Number(video.statistics?.commentCount || 0);
+          return ((likes + comments) / views) * 100;
+        })
+        .filter(value => Number.isFinite(value));
+
+      return {
+        id: channelId,
+        name: channelInfo?.title || channelVideos[0]?.channelTitle || 'Creador',
+        followers: formatCompactRange(subscriberCount),
+        avgViews: formatRangeFromValues(viewsArray),
+        engagement: formatRangeFromValues(engagementArray, { isPercentage: true }),
+        platform: 'YouTube',
+        channelUrl: channelInfo?.customUrl ? `https://www.youtube.com/${channelInfo.customUrl}` : `https://www.youtube.com/channel/${channelId}`
+      };
+    });
+
+    return creators
+      .sort((a, b) => {
+        const subsA = Number(channelStats[a.id]?.statistics?.subscriberCount || 0);
+        const subsB = Number(channelStats[b.id]?.statistics?.subscriberCount || 0);
+        return subsB - subsA;
+      })
+      .slice(0, 5);
   };
 
-  // Generar datos semanales
-  const generateWeeklyData = () => {
-    const days = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-    return days.map(day => ({
-      day,
-      views: Math.floor(Math.random() * 50000) + 10000,
-      engagement: Math.floor(Math.random() * 5000) + 1000
+  const generateWeeklyData = (videos) => {
+    const labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const accumulator = {
+      0: { views: 0, engagement: 0 },
+      1: { views: 0, engagement: 0 },
+      2: { views: 0, engagement: 0 },
+      3: { views: 0, engagement: 0 },
+      4: { views: 0, engagement: 0 },
+      5: { views: 0, engagement: 0 },
+      6: { views: 0, engagement: 0 }
+    };
+
+    videos.forEach(video => {
+      const publishedAt = video.publishedAt || video.contentDetails?.publishedAt;
+      const date = publishedAt ? new Date(publishedAt) : null;
+      if (!date || Number.isNaN(date.getTime())) return;
+      const day = (date.getUTCDay() + 6) % 7; // Ajustar para que Lunes sea el primer día
+
+      const views = Number(video.statistics?.viewCount || 0);
+      const likes = Number(video.statistics?.likeCount || 0);
+      const comments = Number(video.statistics?.commentCount || 0);
+
+      accumulator[day].views += views;
+      accumulator[day].engagement += likes + comments;
+    });
+
+    return labels.map((label, index) => ({
+      day: label,
+      views: accumulator[index].views,
+      engagement: accumulator[index].engagement
     }));
   };
 
-  // Generar distribución de plataformas
-  const generatePlatformData = () => {
+  const generatePlatformData = (videos) => {
+    if (!videos.length) {
+      return [
+        { platform: 'YouTube', percentage: 100 },
+        { platform: 'YouTube Shorts', percentage: 0 },
+        { platform: 'YouTube Live', percentage: 0 }
+      ];
+    }
+
+    const counters = {
+      longForm: 0,
+      shorts: 0,
+      live: 0
+    };
+
+    videos.forEach(video => {
+      const liveStatus = video?.contentDetails?.liveBroadcastContent || video?.snippet?.liveBroadcastContent;
+      if (liveStatus === 'live') {
+        counters.live += 1;
+        return;
+      }
+
+      const seconds = parseISODuration(video.contentDetails?.duration);
+      if (seconds && seconds <= 75) {
+        counters.shorts += 1;
+      } else {
+        counters.longForm += 1;
+      }
+    });
+
+    const total = counters.longForm + counters.shorts + counters.live || 1;
+
     return [
-      { platform: 'YouTube', percentage: Math.floor(Math.random() * 20) + 35 },
-      { platform: 'TikTok', percentage: Math.floor(Math.random() * 15) + 30 },
-      { platform: 'Instagram', percentage: Math.floor(Math.random() * 15) + 20 },
-      { platform: 'Twitter', percentage: Math.floor(Math.random() * 10) + 10 }
+      { platform: 'YouTube Long-form', percentage: Math.round((counters.longForm / total) * 100) },
+      { platform: 'YouTube Shorts', percentage: Math.round((counters.shorts / total) * 100) },
+      { platform: 'YouTube Live', percentage: Math.round((counters.live / total) * 100) }
     ];
   };
 
-  // Generar tipos de contenido
-  const generateContentTypes = () => {
-    return [
-      { type: 'Tutoriales', percentage: Math.floor(Math.random() * 15) + 30 },
-      { type: 'Reviews', percentage: Math.floor(Math.random() * 15) + 20 },
-      { type: 'Vlogs', percentage: Math.floor(Math.random() * 15) + 15 },
-      { type: 'Shorts', percentage: Math.floor(Math.random() * 10) + 25 }
-    ];
+  const generateContentTypes = (videos) => {
+    if (!videos.length) {
+      return [
+        { type: 'Investigación', percentage: 35 },
+        { type: 'Storytelling', percentage: 25 },
+        { type: 'Entrevistas', percentage: 20 },
+        { type: 'Actualidad', percentage: 20 }
+      ];
+    }
+
+    const CATEGORY_MAP = {
+      '1': 'Film & Animation',
+      '17': 'Vlogs / Estilo de vida',
+      '19': 'Viajes',
+      '20': 'Gaming',
+      '22': 'People & Blogs',
+      '23': 'Comedia',
+      '24': 'Entretenimiento',
+      '25': 'Noticias y política',
+      '26': 'Educación',
+      '27': 'How-to & Style',
+      '28': 'Ciencia y tecnología'
+    };
+
+    const counts = {};
+    videos.forEach(video => {
+      const categoryId = video.categoryId || video.statistics?.categoryId;
+      const key = CATEGORY_MAP[categoryId] || 'Contenido general';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    const total = Object.values(counts).reduce((acc, value) => acc + value, 0) || 1;
+    return Object.entries(counts)
+      .map(([type, count]) => ({
+        type,
+        percentage: Math.round((count / total) * 100)
+      }))
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 4);
   };
 
-  // Generar métricas mock si no hay conexión API
   const generateMockMetrics = (topic) => {
     return {
       topic,
@@ -475,6 +724,79 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Consejos Premium IA */}
+            <Card className="glass-effect border-purple-500/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-300" />
+                  Playbooks expertos para "{nichemMetrics.topic}"
+                </CardTitle>
+                <CardDescription>
+                  Recomendaciones generadas por nuestro estratega IA (Gemini) para accionar de inmediato
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isInsightsLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div
+                        key={`insight-skeleton-${index}`}
+                        className="h-full rounded-2xl border border-purple-500/20 bg-purple-500/10 animate-pulse"
+                      >
+                        <div className="h-full w-full rounded-2xl bg-gradient-to-br from-purple-400/5 via-purple-500/5 to-indigo-500/5" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {expertInsights.map((insight) => {
+                      const InsightIcon =
+                        insightIconMap[insight.icon] || Sparkles;
+                      return (
+                        <div
+                          key={insight.id}
+                          className="group relative h-full overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-600/10 via-indigo-500/5 to-gray-900/40 p-6 shadow-lg transition-transform duration-200 hover:-translate-y-1 hover:border-purple-400/40"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium uppercase tracking-wide text-purple-200/80">
+                              {insight.label}
+                            </span>
+                            <div className="rounded-full bg-purple-500/15 p-2">
+                              <InsightIcon className="w-5 h-5 text-purple-200" />
+                            </div>
+                          </div>
+                          <h4 className="mt-4 text-lg font-semibold text-white">
+                            {insight.title}
+                          </h4>
+                          {insight.subtitle && (
+                            <p className="mt-2 text-sm text-gray-300">
+                              {insight.subtitle}
+                            </p>
+                          )}
+                          <ul className="mt-4 space-y-2">
+                            {insight.bullets?.map((bullet, idx) => (
+                              <li
+                                key={`${insight.id}-bullet-${idx}`}
+                                className="flex items-start gap-2 text-sm text-gray-200"
+                              >
+                                <ShieldCheck className="mt-0.5 w-3.5 h-3.5 text-purple-300" />
+                                <span>{bullet}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {insight.cta && (
+                            <div className="mt-5 border-t border-purple-500/20 pt-3 text-xs font-medium text-purple-200/90">
+                              {insight.cta}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

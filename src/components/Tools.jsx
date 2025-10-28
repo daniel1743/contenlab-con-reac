@@ -241,10 +241,6 @@ const contentGoals = [
 ];
 
 const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
-  // 🔍 DEBUG TEMPORAL - Variables de entorno
-  console.log('🔍 Todas las variables:', import.meta.env);
-  console.log('🔍 API Key específica:', import.meta.env.VITE_GOOGLE_API_KEY);
-
   const [selectedTheme, setSelectedTheme] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');

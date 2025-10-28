@@ -14,37 +14,67 @@ const GoogleIcon = () => (
 const FakeNotifications = () => {
   const [notification, setNotification] = useState(null);
   const userNotifications = [
-    { name: 'Juan Pérez', action: 'está creando contenido', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-    { name: 'María G.', action: 'dejó un comentario', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-    { name: 'Carlos R.', action: 'analizó una tendencia', avatar: 'https://randomuser.me/api/portraits/men/46.jpg' },
-    { name: 'Ana López', action: 'exportó una miniatura', avatar: 'https://randomuser.me/api/portraits/women/68.jpg' },
-    { name: 'Luis Fer', action: 'mejoró un guion con IA', avatar: 'https://randomuser.me/api/portraits/men/75.jpg' }
+    // México 🇲🇽
+    { name: 'Ricardo Hernández', action: 'acaba de viralizar un reel', initials: 'RH', color: '#8b5cf6' },
+    { name: 'Lupita Morales', action: 'está armando un video bien chido', initials: 'LM', color: '#ec4899' },
+    { name: 'Javier el Chido', action: 'generó 3 thumbnails con IA', initials: 'JC', color: '#f59e0b' },
+    { name: 'Paty González', action: 'mejoró un guion para TikTok', initials: 'PG', color: '#10b981' },
+    { name: 'Miguel Ángel R.', action: 'exportó contenido pa\' Instagram', initials: 'MA', color: '#3b82f6' },
+    { name: 'Karla Sánchez', action: 'está analizando qué pega ahorita', initials: 'KS', color: '#ef4444' },
+
+    // Chile 🇨🇱
+    { name: 'Cristian Valenzuela', action: 'sacó terrible thumbnail bacán', initials: 'CV', color: '#8b5cf6' },
+    { name: 'Camila Fuentes', action: 'cachó una tendencia que pega caleta', initials: 'CF', color: '#ec4899' },
+    { name: 'Matías po weon', action: 'hizo un video pulento pa\' YouTube', initials: 'MW', color: '#f59e0b' },
+    { name: 'Javiera Rojas', action: 'generó ideas brigidas con IA', initials: 'JR', color: '#10b981' },
+    { name: 'Gonzalo Torres', action: 'subió 5 shorts al tiro', initials: 'GT', color: '#3b82f6' },
+    { name: 'Constanza Lagos', action: 'está viendo qué está de moda', initials: 'CL', color: '#ef4444' },
+
+    // Venezuela 🇻🇪
+    { name: 'José Ramírez', action: 'echó un video arrecho pa\' las redes', initials: 'JR', color: '#8b5cf6' },
+    { name: 'Andreina Silva', action: 'creó un thumbnail que quedó brutal', initials: 'AS', color: '#ec4899' },
+    { name: 'Carlos el Pana', action: 'analizó qué contenido está sonando', initials: 'CP', color: '#f59e0b' },
+    { name: 'Mariangel Díaz', action: 'generó 10 ideas con la IA chévere', initials: 'MD', color: '#10b981' },
+    { name: 'Luis Pérez', action: 'exportó un carrusel que está de pelos', initials: 'LP', color: '#3b82f6' },
+    { name: 'Gabriela Méndez', action: 'mejoró el copy pa\' que pegue más', initials: 'GM', color: '#ef4444' },
+
+    // Variedad general
+    { name: 'Daniel Ortega', action: 'descubrió un nicho sin explotar', initials: 'DO', color: '#06b6d4' },
+    { name: 'Sofía Martínez', action: 'optimizó su estrategia de contenido', initials: 'SM', color: '#a855f7' },
+    { name: 'Fernando López', action: 'programó posts para toda la semana', initials: 'FL', color: '#84cc16' },
+    { name: 'Valentina Ruiz', action: 'está probando un formato nuevo', initials: 'VR', color: '#f97316' },
+    { name: 'Diego Vargas', action: 'analizó competencia y sacó ideas', initials: 'DV', color: '#14b8a6' },
+    { name: 'Isabella Castro', action: 'creó 7 variaciones de un post', initials: 'IC', color: '#6366f1' },
+    { name: 'Alejandro Reyes', action: 'encontró keywords con alto tráfico', initials: 'AR', color: '#ec4899' },
+    { name: 'Daniela Flores', action: 'adaptó tendencia para su nicho', initials: 'DF', color: '#f59e0b' }
   ];
 
   useEffect(() => {
-    let timeoutId;
+    const timeouts = [];
 
     const showNotification = () => {
       const randomNotification = userNotifications[Math.floor(Math.random() * userNotifications.length)];
       setNotification(randomNotification);
 
-      setTimeout(() => {
+      const hideTimeout = setTimeout(() => {
         setNotification(null);
         scheduleNext();
       }, 5000);
+      timeouts.push(hideTimeout);
     };
 
     const scheduleNext = () => {
-      const randomInterval = Math.random() * (120000 - 20000) + 20000; // Shorter interval for demo
-      timeoutId = setTimeout(showNotification, randomInterval);
+      const randomInterval = Math.random() * (120000 - 20000) + 20000;
+      const nextTimeout = setTimeout(showNotification, randomInterval);
+      timeouts.push(nextTimeout);
     };
 
     // Show first notification faster
     const firstTimeout = setTimeout(showNotification, 5000);
+    timeouts.push(firstTimeout);
 
     return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(firstTimeout);
+      timeouts.forEach(clearTimeout);
     };
   }, []);
 
@@ -60,8 +90,9 @@ const FakeNotifications = () => {
             className="bg-[#1e293b] p-4 rounded-xl flex items-start space-x-4 border border-slate-700 shadow-2xl max-w-sm w-full"
           >
             <Avatar className="h-10 w-10 border-2 border-slate-600">
-              <AvatarImage src={notification.avatar} alt={notification.name} />
-              <AvatarFallback>{notification.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback style={{ backgroundColor: notification.color }} className="text-white font-semibold">
+                {notification.initials}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 <p className="text-sm text-slate-100">

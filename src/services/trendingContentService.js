@@ -155,23 +155,97 @@ export const getYouTubeTrending = async (userId, query, maxResults = 10) => {
     }
 
     // 2. Llamada a YouTube API
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.searchParams.append('key', API_KEYS.YOUTUBE);
-    url.searchParams.append('q', query);
-    url.searchParams.append('part', 'snippet');
-    url.searchParams.append('type', 'video');
-    url.searchParams.append('order', 'viewCount');
-    url.searchParams.append('maxResults', maxResults);
-    url.searchParams.append('relevanceLanguage', 'es');
+    const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
+    searchUrl.searchParams.append('key', API_KEYS.YOUTUBE);
+    searchUrl.searchParams.append('q', query);
+    searchUrl.searchParams.append('part', 'snippet');
+    searchUrl.searchParams.append('type', 'video');
+    searchUrl.searchParams.append('order', 'viewCount');
+    searchUrl.searchParams.append('maxResults', Math.min(maxResults, 25));
+    searchUrl.searchParams.append('relevanceLanguage', 'es');
 
-    const response = await fetch(url.toString());
+    const response = await fetch(searchUrl.toString());
     const data = await response.json();
 
     if (!response.ok || data.error) {
-      throw new Error(data.error?.message || 'Error en YouTube API');
+      throw new Error(data.error?.message || 'Error en YouTube API (search)');
     }
 
-    // 3. Formatear resultados
+    const videoIds = data.items
+      .map(item => item.id?.videoId)
+      .filter(Boolean);
+    const channelIds = [
+      ...new Set(
+        data.items
+          .map(item => item.snippet?.channelId)
+          .filter(Boolean)
+      )
+    ];
+
+    let videosStatisticsMap = {};
+    if (videoIds.length > 0) {
+      const videosUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+      videosUrl.searchParams.append('key', API_KEYS.YOUTUBE);
+      videosUrl.searchParams.append('id', videoIds.join(','));
+      videosUrl.searchParams.append('part', 'statistics,contentDetails,snippet');
+
+      const videosResponse = await fetch(videosUrl.toString());
+      const videosData = await videosResponse.json();
+
+      if (!videosResponse.ok || videosData.error) {
+        throw new Error(videosData.error?.message || 'Error en YouTube API (videos)');
+      }
+
+      videosStatisticsMap = videosData.items.reduce((acc, item) => {
+        acc[item.id] = {
+          statistics: item.statistics,
+          contentDetails: item.contentDetails,
+          snippet: item.snippet
+        };
+        return acc;
+      }, {});
+    }
+
+    let channelsMap = {};
+    if (channelIds.length > 0) {
+      const channelChunks = [];
+      for (let i = 0; i < channelIds.length; i += 50) {
+        channelChunks.push(channelIds.slice(i, i + 50));
+      }
+
+      const channelPromises = channelChunks.map(async chunk => {
+        const channelsUrl = new URL('https://www.googleapis.com/youtube/v3/channels');
+        channelsUrl.searchParams.append('key', API_KEYS.YOUTUBE);
+        channelsUrl.searchParams.append('id', chunk.join(','));
+        channelsUrl.searchParams.append('part', 'snippet,statistics,topicDetails');
+
+        const channelsResponse = await fetch(channelsUrl.toString());
+        const channelsData = await channelsResponse.json();
+
+        if (!channelsResponse.ok || channelsData.error) {
+          throw new Error(channelsData.error?.message || 'Error en YouTube API (channels)');
+        }
+
+        return channelsData.items;
+      });
+
+      const channelResults = await Promise.all(channelPromises);
+      channelsMap = channelResults.flat().reduce((acc, channel) => {
+        acc[channel.id] = {
+          id: channel.id,
+          title: channel.snippet?.title,
+          description: channel.snippet?.description,
+          country: channel.snippet?.country,
+          thumbnails: channel.snippet?.thumbnails,
+          statistics: channel.statistics,
+          topicDetails: channel.topicDetails,
+          customUrl: channel.snippet?.customUrl
+        };
+        return acc;
+      }, {});
+    }
+
+    // 3. Formatear resultados con estadísticas
     const formattedResults = {
       videos: data.items.map(item => ({
         videoId: item.id.videoId,
@@ -179,10 +253,15 @@ export const getYouTubeTrending = async (userId, query, maxResults = 10) => {
         description: item.snippet.description,
         thumbnail: item.snippet.thumbnails.high.url,
         channelTitle: item.snippet.channelTitle,
+        channelId: item.snippet.channelId,
         publishedAt: item.snippet.publishedAt,
         url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-        viralPotential: calculateViralScore(item.snippet.title)
+        viralPotential: calculateViralScore(item.snippet.title),
+        statistics: videosStatisticsMap[item.id.videoId]?.statistics || null,
+        contentDetails: videosStatisticsMap[item.id.videoId]?.contentDetails || null,
+        categoryId: videosStatisticsMap[item.id.videoId]?.snippet?.categoryId || null
       })),
+      channels: Object.values(channelsMap),
       totalResults: data.pageInfo.totalResults,
       fetchedAt: new Date().toISOString()
     };

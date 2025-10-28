@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -313,6 +313,20 @@ const Dashboard = ({ onSectionChange }) => {
   const [doughnutData, setDoughnutData] = useState(DEFAULT_DONUT_DATA);
   const [selectedNav, setSelectedNav] = useState('overview');
   const [timeRange, setTimeRange] = useState('30d');
+
+  // Ref para prevenir memory leaks en timeouts
+  const isMountedRef = useRef(true);
+  const pendingTimeoutsRef = useRef([]);
+
+  // Cleanup al desmontar
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      pendingTimeoutsRef.current.forEach(clearTimeout);
+      pendingTimeoutsRef.current = [];
+    };
+  }, []);
+
   const handleNavClick = useCallback(
     (item) => {
       setSelectedNav(item.id);
@@ -346,12 +360,15 @@ const Dashboard = ({ onSectionChange }) => {
           title: 'Generando reporte',
           description: 'Tu archivo PDF estara listo en unos segundos.',
         });
-        setTimeout(() => {
-          toast({
-            title: 'Reporte exportado',
-            description: 'Panel descargado con exito.',
-          });
+        const timeoutId = setTimeout(() => {
+          if (isMountedRef.current) {
+            toast({
+              title: 'Reporte exportado',
+              description: 'Panel descargado con exito.',
+            });
+          }
         }, 1800);
+        pendingTimeoutsRef.current.push(timeoutId);
       }
     },
     [stats, toast]

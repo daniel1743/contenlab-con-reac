@@ -13,7 +13,7 @@ import {
   Twitter,
   Facebook,
   Linkedin,
-  Tiktok,
+  Music2,
   Edit2,
   Trash2,
   Copy,
@@ -127,7 +127,7 @@ const Calendar = () => {
     tiktok: {
       id: 'tiktok',
       label: 'TikTok',
-      icon: Tiktok,
+      icon: Music2,
       accent: 'text-emerald-400',
       chip: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200',
       peakTimes: ['Jueves 19:00', 'S�bado 21:00'],
@@ -162,6 +162,57 @@ const Calendar = () => {
     return slots.length ? slots[0] : null;
   };
 
+  const goalOptions = [
+    { value: 'awareness', label: 'Awareness · Alcance' },
+    { value: 'engagement', label: 'Engagement · Comunidad' },
+    { value: 'conversion', label: 'Conversiones' },
+    { value: 'thought_leadership', label: 'Autoridad' },
+    { value: 'community', label: 'Fidelización' }
+  ];
+
+  const contentTypeOptions = [
+    { value: 'video', label: 'Video largo' },
+    { value: 'reel', label: 'Reel / Short' },
+    { value: 'thread', label: 'Hilo / Microblog' },
+    { value: 'live', label: 'Live / Streaming' },
+    { value: 'promo', label: 'Campaña / Promo' },
+    { value: 'blog', label: 'Blog / Newsletter' }
+  ];
+
+  const automationBlueprints = [
+    {
+      title: 'Sprint lanzamiento 360°',
+      description: 'Teaser + live + retargeting inspirado en flujos de Hootsuite.',
+      cadence: '7 días · 5 toques',
+      platforms: ['instagram', 'tiktok', 'youtube', 'linkedin']
+    },
+    {
+      title: 'Calendario evergreen',
+      description: 'Recircula pilares top mediante colas inteligentes y repost optimizado.',
+      cadence: '30 días · 12 activos',
+      platforms: ['youtube', 'facebook', 'twitter']
+    },
+    {
+      title: 'Autoridad express',
+      description: 'Hilos + carruseles + newsletter con insights potenciados por VidIQ.',
+      cadence: '14 días · 6 piezas',
+      platforms: ['linkedin', 'twitter', 'blog']
+    }
+  ];
+
+  const togglePlatformSelection = (platform) => {
+    setFormData((prev) => {
+      const exists = prev.platforms.includes(platform);
+      const platforms = exists
+        ? prev.platforms.filter(item => item !== platform)
+        : [...prev.platforms, platform];
+      return {
+        ...prev,
+        platforms
+      };
+    });
+  };
+
   // Eventos de ejemplo (ahora con estado)
   const [events, setEvents] = useState([
     {
@@ -177,7 +228,8 @@ const Calendar = () => {
       primaryGoal: 'awareness',
       contentType: 'video',
       aiScore: 88,
-      hashtags: ['#IA', '#Productividad', '#ContentLab']
+      hashtags: ['#IA', '#Productividad', '#ContentLab'],
+      optimalTime: 'Jueves 16:00'
     },
     {
       id: 2,
@@ -192,7 +244,8 @@ const Calendar = () => {
       primaryGoal: 'engagement',
       contentType: 'reel',
       aiScore: 92,
-      hashtags: ['#Productividad', '#Creador', '#Rutina']
+      hashtags: ['#Productividad', '#Creador', '#Rutina'],
+      optimalTime: 'Domingo 19:00'
     },
     {
       id: 3,
@@ -207,7 +260,8 @@ const Calendar = () => {
       primaryGoal: 'thought_leadership',
       contentType: 'thread',
       aiScore: 76,
-      hashtags: ['#Tendencias', '#IA', '#ContentLab']
+      hashtags: ['#Tendencias', '#IA', '#ContentLab'],
+      optimalTime: 'Martes 09:00'
     },
     {
       id: 4,
@@ -222,7 +276,8 @@ const Calendar = () => {
       primaryGoal: 'community',
       contentType: 'live',
       aiScore: 81,
-      hashtags: ['#Live', '#Preguntas', '#Comunidad']
+      hashtags: ['#Live', '#Preguntas', '#Comunidad'],
+      optimalTime: 'Miércoles 19:00'
     },
     {
       id: 5,
@@ -237,7 +292,8 @@ const Calendar = () => {
       primaryGoal: 'conversion',
       contentType: 'promo',
       aiScore: 90,
-      hashtags: ['#Lanzamiento', '#Marketing', '#Conversiones']
+      hashtags: ['#Lanzamiento', '#Marketing', '#Conversiones'],
+      optimalTime: 'Martes 08:30'
     },
   ]);
 
@@ -311,6 +367,15 @@ const Calendar = () => {
 
   const handleUpdateEvent = useCallback(() => {
     if (!editingEvent) return;
+
+    if (!formData.platforms.length) {
+      toast({
+        title: '🌐 Selecciona plataformas',
+        description: 'Necesitas al menos una red para actualizar la publicación.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
     const hashtags = generateHashtags(formData.title, formData.description);
@@ -414,7 +479,8 @@ const Calendar = () => {
       icalContent += `DTSTART:${dtStart}\n`;
       icalContent += `SUMMARY:${event.title}\n`;
       icalContent += `DESCRIPTION:${event.description || ''}\n`;
-      icalContent += `LOCATION:${event.platform}\n`;
+      icalContent += `LOCATION:${(event.platforms || []).join(', ')}\n`;
+      icalContent += `CATEGORIES:${event.campaign || ''}\n`;
       icalContent += `STATUS:${event.status.toUpperCase()}\n`;
       icalContent += `END:VEVENT\n`;
     });
@@ -473,18 +539,12 @@ const Calendar = () => {
   };
 
   const getPlatformIcon = (platform, size = 'w-4 h-4') => {
-    switch (platform) {
-      case 'youtube':
-        return <Youtube className={`${size} text-red-500`} />;
-      case 'instagram':
-        return <Instagram className={`${size} text-pink-500`} />;
-      case 'twitter':
-        return <Twitter className={`${size} text-blue-400`} />;
-      case 'facebook':
-        return <Facebook className={`${size} text-blue-600`} />;
-      default:
-        return <CalendarIcon className={`${size}`} />;
+    const config = platformConfig[platform];
+    if (config?.icon) {
+      const Icon = config.icon;
+      return <Icon className={`${size} ${config.accent}`} />;
     }
+    return <CalendarIcon className={`${size}`} />;
   };
 
   const navigateMonth = (direction) => {
@@ -493,6 +553,46 @@ const Calendar = () => {
 
   const days = getDaysInMonth(currentDate);
   const today = new Date();
+  const previewAiScore = computeAiScore(formData.title, formData.description, formData.platforms);
+  const previewOptimalTime = getOptimalTimeForPlatforms(formData.platforms);
+  const previewHashtags = generateHashtags(formData.title, formData.description).slice(0, 3);
+  const scheduledCount = filteredEvents.filter(event => event.status === 'scheduled').length;
+  const draftCount = filteredEvents.filter(event => event.status === 'draft').length;
+  const averageAiScore = filteredEvents.length
+    ? Math.round(
+        filteredEvents.reduce((acc, event) => acc + (event.aiScore || previewAiScore), 0) /
+          filteredEvents.length
+      )
+    : previewAiScore;
+  const platformUsage = platformKeys
+    .map((platform) => ({
+      platform,
+      label: platformConfig[platform]?.label || platform,
+      count: filteredEvents.reduce(
+        (acc, event) => acc + ((event.platforms || []).includes(platform) ? 1 : 0),
+        0
+      )
+    }))
+    .filter(item => item.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const peakMoments = filteredEvents
+    .filter(event => event.optimalTime)
+    .slice(0, 3)
+    .map(event => ({
+      id: event.id,
+      title: event.title,
+      optimalTime: event.optimalTime,
+      platforms: event.platforms
+    }));
+  const hashtagFrequency = filteredEvents.reduce((acc, event) => {
+    (event.hashtags || []).forEach((tag) => {
+      acc[tag] = (acc[tag] || 0) + 1;
+    });
+    return acc;
+  }, {});
+  const topHashtags = Object.entries(hashtagFrequency)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
 
   return (
     <div className="space-y-8">
@@ -584,10 +684,19 @@ const Calendar = () => {
                           {dayEvents.slice(0, 2).map((event) => (
                             <div
                               key={event.id}
-                              className="text-xs p-1 rounded bg-purple-500/20 text-purple-200 truncate flex items-center space-x-1"
+                              className="text-xs p-1 rounded bg-purple-500/20 text-purple-200 truncate flex items-center gap-1"
                             >
-                              {getPlatformIcon(event.platform)}
-                              <span className="truncate">{event.title}</span>
+                              <div className="flex items-center gap-1">
+                                {(event.platforms || []).slice(0, 2).map((platform, idx) => (
+                                  <div
+                                    key={`${event.id}-${platform}-mini-${idx}`}
+                                    className="w-4 h-4 rounded-full bg-gray-900/50 flex items-center justify-center"
+                                  >
+                                    {getPlatformIcon(platform, 'w-3 h-3')}
+                                  </div>
+                                ))}
+                              </div>
+                              <span className="truncate flex-1">{event.title}</span>
                             </div>
                           ))}
                           {dayEvents.length > 2 && (
@@ -650,19 +759,23 @@ const Calendar = () => {
                   <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
                     <SelectValue placeholder="Plataforma" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur">
                     <SelectItem value="all">Todas las plataformas</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="twitter">Twitter</SelectItem>
-                    <SelectItem value="facebook">Facebook</SelectItem>
+                    {platformKeys.map((platform) => (
+                      <SelectItem key={platform} value={platform}>
+                        <div className="flex items-center gap-2">
+                          {getPlatformIcon(platform, 'w-3 h-3')}
+                          {platformConfig[platform]?.label || platform}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
                     <SelectValue placeholder="Estado" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur">
                     <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="draft">Borradores</SelectItem>
                     <SelectItem value="scheduled">Programados</SelectItem>
@@ -708,11 +821,27 @@ const Calendar = () => {
                           className="p-3 rounded-lg glass-effect border border-purple-500/10 group hover:border-purple-500/30 transition-all"
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-2 flex-1 min-w-0">
-                              {getPlatformIcon(event.platform)}
-                              <span className="text-sm font-medium text-white truncate">
-                                {event.title}
-                              </span>
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="flex -space-x-1">
+                                {(event.platforms || []).slice(0, 3).map((platform, idx) => (
+                                  <div
+                                    key={`${event.id}-${platform}-${idx}`}
+                                    className="w-6 h-6 rounded-full border border-gray-900 flex items-center justify-center bg-gray-800/80"
+                                  >
+                                    {getPlatformIcon(platform, 'w-3 h-3')}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-sm font-medium text-white truncate block">
+                                  {event.title}
+                                </span>
+                                {event.campaign && (
+                                  <span className="text-xs text-gray-400 truncate block">
+                                    {event.campaign}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-1">
                               <span className={`text-xs px-2 py-1 rounded ${
@@ -725,37 +854,63 @@ const Calendar = () => {
                             </div>
                           </div>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center text-xs text-gray-400">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {event.time}
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <span className="flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {event.time}
+                              </span>
+                              {event.optimalTime && (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300">
+                                  Peak: {event.optimalTime}
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openEditModal(event)}
-                                className="h-6 w-6 p-0 hover:bg-purple-500/20"
-                              >
-                                <Edit2 className="w-3 h-3 text-purple-400" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDuplicateEvent(event)}
-                                className="h-6 w-6 p-0 hover:bg-blue-500/20"
-                              >
-                                <Copy className="w-3 h-3 text-blue-400" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteEvent(event.id)}
-                                className="h-6 w-6 p-0 hover:bg-red-500/20"
-                              >
-                                <Trash2 className="w-3 h-3 text-red-400" />
-                              </Button>
+                            <div className="flex items-center gap-2">
+                              {event.aiScore && (
+                                <span className="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-300">
+                                  IQ {event.aiScore}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditModal(event)}
+                                  className="h-6 w-6 p-0 hover:bg-purple-500/20"
+                                >
+                                  <Edit2 className="w-3 h-3 text-purple-400" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDuplicateEvent(event)}
+                                  className="h-6 w-6 p-0 hover:bg-blue-500/20"
+                                >
+                                  <Copy className="w-3 h-3 text-blue-400" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  className="h-6 w-6 p-0 hover:bg-red-500/20"
+                                >
+                                  <Trash2 className="w-3 h-3 text-red-400" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
+                          {event.hashtags?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {event.hashtags.slice(0, 4).map((tag) => (
+                                <span
+                                  key={`${event.id}-${tag}`}
+                                  className="text-[10px] px-2 py-0.5 rounded-full bg-gray-800/60 text-purple-200 border border-purple-500/20"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -795,14 +950,30 @@ const Calendar = () => {
                           key={event.id}
                           className="flex items-center justify-between p-3 rounded-lg glass-effect border border-purple-500/10 group hover:border-purple-500/30 transition-all"
                         >
-                          <div className="flex items-center space-x-3 flex-1 min-w-0">
-                            {getPlatformIcon(event.platform)}
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex -space-x-1">
+                              {(event.platforms || []).slice(0, 3).map((platform, idx) => (
+                                <div
+                                  key={`${event.id}-${platform}-upcoming-${idx}`}
+                                  className="w-7 h-7 rounded-full border border-purple-500/30 flex items-center justify-center bg-gray-900/60"
+                                >
+                                  {getPlatformIcon(platform, 'w-3 h-3')}
+                                </div>
+                              ))}
+                            </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-white truncate">
                                 {event.title}
                               </p>
-                              <p className="text-xs text-gray-400">
-                                {event.date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} - {event.time}
+                              <p className="text-xs text-gray-400 flex items-center gap-2">
+                                <span>
+                                  {event.date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} · {event.time}
+                                </span>
+                                {event.aiScore && (
+                                  <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">
+                                    IQ {event.aiScore}
+                                  </span>
+                                )}
                               </p>
                             </div>
                           </div>
@@ -845,54 +1016,207 @@ const Calendar = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="w-4 h-4 text-purple-400" />
-                      <span className="text-sm text-gray-300">Total Eventos</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-purple-400" />
+                        <span className="text-sm text-gray-300">Total eventos</span>
+                      </div>
+                      <span className="text-xl font-bold text-white">{filteredEvents.length}</span>
                     </div>
-                    <span className="text-xl font-bold text-white">{filteredEvents.length}</span>
-                  </div>
 
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-gray-300">Programados</span>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-green-400" />
+                        <span className="text-sm text-gray-300">Programados</span>
+                      </div>
+                      <span className="text-xl font-bold text-green-400">
+                        {scheduledCount}
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-green-400">
-                      {filteredEvents.filter(e => e.status === 'scheduled').length}
-                    </span>
-                  </div>
 
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-yellow-400" />
-                      <span className="text-sm text-gray-300">Borradores</span>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-yellow-400" />
+                        <span className="text-sm text-gray-300">Borradores</span>
+                      </div>
+                      <span className="text-xl font-bold text-yellow-400">
+                        {draftCount}
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-yellow-400">
-                      {filteredEvents.filter(e => e.status === 'draft').length}
-                    </span>
+
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-blue-300" />
+                        <span className="text-sm text-gray-300">IQ promedio</span>
+                      </div>
+                      <span className="text-xl font-bold text-blue-300">{averageAiScore}</span>
+                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-purple-500/20">
-                    <p className="text-xs text-gray-400 mb-2">Plataformas más usadas:</p>
+                    <p className="text-xs text-gray-400 mb-2">Plataformas con mayor actividad:</p>
                     <div className="flex flex-wrap gap-2">
-                      {['youtube', 'instagram', 'twitter', 'facebook'].map(platform => {
-                        const count = filteredEvents.filter(e => e.platform === platform).length;
-                        if (count === 0) return null;
-                        return (
-                          <div key={platform} className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-800/50 border border-purple-500/10">
+                      {platformUsage.length > 0 ? (
+                        platformUsage.map(({ platform, label, count }) => (
+                          <div
+                            key={platform}
+                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-800/50 border border-purple-500/10"
+                          >
                             {getPlatformIcon(platform, 'w-3 h-3')}
-                            <span className="text-xs text-gray-300">{count}</span>
+                            <span className="text-xs text-gray-300">{label}</span>
+                            <span className="text-xs text-purple-300">({count})</span>
                           </div>
-                        );
-                      })}
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-500">Sin datos suficientes todavía.</span>
+                      )}
                     </div>
                   </div>
+
+                  {peakMoments.length > 0 && (
+                    <div className="pt-3 border-t border-purple-500/20">
+                      <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-emerald-300" />
+                        Próximos picos recomendados
+                      </p>
+                      <div className="space-y-2">
+                        {peakMoments.map((moment) => (
+                          <div
+                            key={moment.id}
+                            className="flex items-center justify-between p-2 rounded-lg bg-gray-800/40 border border-purple-500/10"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm text-white truncate">{moment.title}</p>
+                              <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <span>{moment.optimalTime}</span>
+                                <div className="flex -space-x-1">
+                                  {(moment.platforms || []).slice(0, 3).map((platform, idx) => (
+                                    <div
+                                      key={`${moment.id}-${platform}-peak-${idx}`}
+                                      className="w-5 h-5 rounded-full bg-gray-900/60 border border-purple-500/30 flex items-center justify-center"
+                                    >
+                                      {getPlatformIcon(platform, 'w-3 h-3')}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <Target className="w-4 h-4 text-purple-300" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+        >
+          <Card className="glass-effect border-purple-500/20 h-full">
+            <CardHeader>
+              <CardTitle className="text-white text-lg flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-purple-400" />
+                Playbooks omnicanal
+              </CardTitle>
+              <CardDescription>
+                Secuencias inspiradas en los flujos de Hootsuite con boost ContentLab.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {automationBlueprints.map((playbook, index) => (
+                  <div
+                    key={playbook.title}
+                    className="p-3 rounded-lg border border-purple-500/20 bg-gray-800/40"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-white">
+                        {index + 1}. {playbook.title}
+                      </h4>
+                      <span className="text-xs text-purple-300">{playbook.cadence}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">{playbook.description}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {playbook.platforms.map((platform) => (
+                        <span
+                          key={`${playbook.title}-${platform}`}
+                          className="text-xs px-2 py-1 rounded-full bg-gray-900/70 border border-purple-500/20 text-gray-200 flex items-center gap-1"
+                        >
+                          {getPlatformIcon(platform, 'w-3 h-3')}
+                          {platformConfig[platform]?.label || platform}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.35 }}
+        >
+          <Card className="glass-effect border-purple-500/20 h-full">
+            <CardHeader>
+              <CardTitle className="text-white text-lg flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-400" />
+                Radar IA (VidIQ++)
+              </CardTitle>
+              <CardDescription>
+                Pulso de keywords, ventanas y momentum listo para accionar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-xs text-gray-400 mb-2">Palabras clave dominantes</p>
+                <div className="flex flex-wrap gap-2">
+                  {topHashtags.length > 0 ? (
+                    topHashtags.map(([tag, count]) => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-200"
+                      >
+                        {tag} · {count}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-500">
+                      Aún no hay suficientes hashtags para analizar.
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-emerald-300">Mejor ventana actual</p>
+                  <p className="text-sm text-white font-semibold">
+                    {previewOptimalTime || 'Selecciona plataformas para una recomendación'}
+                  </p>
+                </div>
+                <Sparkles className="w-5 h-5 text-emerald-300" />
+              </div>
+              <div className="p-3 rounded-lg border border-blue-500/20 bg-blue-500/10">
+                <p className="text-xs text-gray-300 mb-1">Siguiente movimiento</p>
+                <p className="text-sm text-white">
+                  Duplica el contenido ganador en {platformUsage[0]?.label ?? 'la red principal'} con un recorte
+                  rápido y protege el IQ {averageAiScore} reutilizando los hashtags sugeridos.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Modal Crear/Editar Evento */}
@@ -956,38 +1280,34 @@ const Calendar = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="platform" className="text-white">Plataforma</Label>
-                <Select value={formData.platform} onValueChange={(value) => setFormData({ ...formData, platform: value })}>
-                  <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="youtube">
-                      <div className="flex items-center gap-2">
-                        <Youtube className="w-4 h-4 text-red-500" />
-                        YouTube
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="instagram">
-                      <div className="flex items-center gap-2">
-                        <Instagram className="w-4 h-4 text-pink-500" />
-                        Instagram
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="twitter">
-                      <div className="flex items-center gap-2">
-                        <Twitter className="w-4 h-4 text-blue-400" />
-                        Twitter
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="facebook">
-                      <div className="flex items-center gap-2">
-                        <Facebook className="w-4 h-4 text-blue-600" />
-                        Facebook
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-white">Plataformas objetivo</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {platformKeys.map((platform) => {
+                    const selected = formData.platforms.includes(platform);
+                    const config = platformConfig[platform];
+                    return (
+                      <Button
+                        key={platform}
+                        type="button"
+                        variant="outline"
+                        onClick={() => togglePlatformSelection(platform)}
+                        className={`justify-start gap-2 h-10 border transition ${
+                          selected
+                            ? 'bg-purple-500/20 border-purple-400/60 text-white'
+                            : 'bg-gray-800/50 border-purple-500/20 text-gray-200'
+                        }`}
+                      >
+                        {getPlatformIcon(platform, 'w-4 h-4')}
+                        <span className="text-sm">{config?.label || platform}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+                {previewOptimalTime && (
+                  <p className="text-xs text-emerald-300">
+                    Mejor horario recomendado: {previewOptimalTime}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -996,10 +1316,55 @@ const Calendar = () => {
                   <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur">
                     <SelectItem value="draft">Borrador</SelectItem>
                     <SelectItem value="scheduled">Programado</SelectItem>
                     <SelectItem value="published">Publicado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="campaign" className="text-white">Campaña / Sprint</Label>
+              <Input
+                id="campaign"
+                placeholder="Ej: Lanzamiento Elite Q1"
+                value={formData.campaign}
+                onChange={(e) => setFormData({ ...formData, campaign: e.target.value })}
+                className="bg-gray-800/50 border-purple-500/20 text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-white">Objetivo principal</Label>
+                <Select value={formData.primaryGoal} onValueChange={(value) => setFormData({ ...formData, primaryGoal: value })}>
+                  <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
+                    <SelectValue placeholder="Selecciona objetivo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur">
+                    {goalOptions.map((goal) => (
+                      <SelectItem key={goal.value} value={goal.value}>
+                        {goal.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-white">Tipo de contenido</Label>
+                <Select value={formData.contentType} onValueChange={(value) => setFormData({ ...formData, contentType: value })}>
+                  <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
+                    <SelectValue placeholder="Formato" />
+                  </SelectTrigger>
+                <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur">
+                  {contentTypeOptions.map((content) => (
+                    <SelectItem key={content.value} value={content.value}>
+                      {content.label}
+                    </SelectItem>
+                  ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1011,7 +1376,7 @@ const Calendar = () => {
                 <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur">
                   {Object.entries(categories).map(([key, category]) => (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
@@ -1023,6 +1388,45 @@ const Calendar = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 rounded-lg border border-purple-500/20 bg-purple-500/10">
+                <div className="flex items-center justify-between text-xs text-gray-300">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-green-300" />
+                    IQ estimado
+                  </span>
+                  <span className="text-[10px] text-gray-400">Motor estilo VidIQ</span>
+                </div>
+                <p className="text-2xl font-semibold text-white mt-1">
+                  {previewAiScore}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Ajusta título y descripción para potenciar este score.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-purple-500/20 bg-gray-800/50">
+                <p className="text-xs text-gray-300 flex items-center gap-1">
+                  <Share2 className="w-3 h-3 text-sky-300" />
+                  Hashtags sugeridos
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {previewHashtags.length > 0 ? (
+                    previewHashtags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-200"
+                      >
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-500">Añade más contexto para recomendaciones.</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
