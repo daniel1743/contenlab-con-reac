@@ -499,32 +499,50 @@ const LandingPage = ({ onSectionChange }) => {
 
       {/* Carrusel de videos explicativos */}
       <section className="py-24 px-4 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent opacity-[0.04] pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
           <motion.div
-            className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
+            className="text-center mb-12"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true, amount: 0.3 }}
           >
-            <div className="space-y-3 max-w-3xl">
-              <p className="text-sm uppercase tracking-[0.45em] text-purple-400/80 flex items-center gap-2 font-medium">
-                <PlayCircle className="w-4 h-4" />
+            <div className="space-y-4 max-w-4xl mx-auto">
+              <motion.p
+                className="text-sm uppercase tracking-[0.45em] text-purple-300/80 flex items-center gap-2 justify-center font-medium"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                viewport={{ once: true }}
+              >
+                <PlayCircle className="w-5 h-5 text-purple-200/90" />
                 Mira ContentLab en acción
-              </p>
-              <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-purple-100 to-purple-200 bg-clip-text text-transparent leading-tight">
+              </motion.p>
+              <motion.h2
+                className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#f79bff] via-[#c58cff] to-[#8cb0ff] bg-clip-text text-transparent leading-tight"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
                 Videos rápidos para entender el potencial de la plataforma
-              </h2>
-              <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+              </motion.h2>
+              <motion.p
+                className="text-slate-300/90 text-lg md:text-xl leading-relaxed mx-auto max-w-3xl"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                viewport={{ once: true }}
+              >
                 Explicaciones cortas, directas y profesionales grabadas por el equipo. Perfectas para compartir con clientes o con tu equipo interno antes de migrar tus procesos.
-              </p>
+              </motion.p>
             </div>
           </motion.div>
 
           <div className="relative overflow-hidden">
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#05030b] via-[#05030b]/70 to-transparent z-10" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#05030b] via-[#05030b]/70 to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#080c1d] via-[#080c1d]/80 to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#080c1d] via-[#080c1d]/80 to-transparent z-10" />
 
             <motion.div
               className="flex gap-6 lg:gap-8"
@@ -534,7 +552,7 @@ const LandingPage = ({ onSectionChange }) => {
               {explainerVideos.concat(explainerVideos).map((video, index) => (
                 <div
                   key={`${video.id}-${index}`}
-                  className="min-w-[280px] sm:min-w-[340px] lg:min-w-[410px] max-w-[410px] bg-gray-900/60 border border-purple-500/20 rounded-3xl overflow-hidden shadow-xl shadow-purple-500/10 backdrop-blur"
+                  className="min-w-[280px] sm:min-w-[340px] lg:min-w-[410px] max-w-[410px] bg-[#0b1124]/95 border border-white/10 rounded-3xl overflow-hidden shadow-[0_18px_45px_-25px] shadow-purple-500/40 backdrop-blur-xl"
                 >
                   <div className="relative aspect-video">
                     <iframe
@@ -545,23 +563,23 @@ const LandingPage = ({ onSectionChange }) => {
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                     />
-                    <div className="absolute inset-0 border border-white/10 rounded-3xl pointer-events-none" />
+                    <div className="absolute inset-0 border border-white/5 rounded-3xl pointer-events-none" />
                   </div>
                   <div className="p-5 space-y-3">
-                    <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-purple-200/70">
-                      <span className="flex items-center gap-2">
-                        <Clock3 className="w-3.5 h-3.5 text-purple-200/80" />
+                    <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-purple-200/80">
+                      <span className="flex items-center gap-2 text-purple-200/80">
+                        <Clock3 className="w-3.5 h-3.5" />
                         {video.duration}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-fuchsia-300/80" />
+                      <span className="flex items-center gap-1 text-pink-200/80">
+                        <Sparkles className="w-3.5 h-3.5" />
                         Tutorial premium
                       </span>
                     </div>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-white/95">
                       {video.title}
                     </h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <p className="text-sm text-slate-300 leading-relaxed">
                       {video.description}
                     </p>
                   </div>
