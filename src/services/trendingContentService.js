@@ -259,7 +259,8 @@ export const getYouTubeTrending = async (userId, query, maxResults = 10) => {
         viralPotential: calculateViralScore(item.snippet.title),
         statistics: videosStatisticsMap[item.id.videoId]?.statistics || null,
         contentDetails: videosStatisticsMap[item.id.videoId]?.contentDetails || null,
-        categoryId: videosStatisticsMap[item.id.videoId]?.snippet?.categoryId || null
+        categoryId: videosStatisticsMap[item.id.videoId]?.snippet?.categoryId || null,
+        liveBroadcastContent: videosStatisticsMap[item.id.videoId]?.snippet?.liveBroadcastContent || item.snippet.liveBroadcastContent || 'none'
       })),
       channels: Object.values(channelsMap),
       totalResults: data.pageInfo.totalResults,

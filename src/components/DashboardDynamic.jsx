@@ -128,6 +128,123 @@ const generateFallbackInsights = (topic) => [
   }
 ];
 
+function parseISODuration(duration) {
+  if (!duration) return null;
+  const pattern = /P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?/;
+  const matches = duration.match(pattern);
+  if (!matches) return null;
+  const days = Number(matches[1] || 0);
+  const hours = Number(matches[2] || 0);
+  const minutes = Number(matches[3] || 0);
+  const seconds = Number(matches[4] || 0);
+  return days * 86400 + hours * 3600 + minutes * 60 + seconds;
+}
+
+const compactFormatter = new Intl.NumberFormat('es', {
+  notation: 'compact',
+  maximumFractionDigits: 1
+});
+
+function formatCompactRange(value) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return 'N/D';
+  }
+  if (value < 1000) {
+    return `${Math.round(value)}+`;
+  }
+  return `${compactFormatter.format(value)}+`;
+}
+
+function formatRangeFromValues(values, { isPercentage = false } = {}) {
+  if (!Array.isArray(values)) return 'N/D';
+  const filtered = values.filter(value => Number.isFinite(value) && value > 0);
+  if (!filtered.length) return 'N/D';
+  const min = Math.min(...filtered);
+  const max = Math.max(...filtered);
+
+  const formatValue = (val) => {
+    if (isPercentage) {
+      return `${val.toFixed(1)}%`;
+    }
+    if (val < 1000) {
+      return `${Math.round(val)}`;
+    }
+    return compactFormatter.format(val);
+  };
+
+  if (Math.abs(max - min) < 1) {
+    return isPercentage ? `${min.toFixed(1)}%` : `${formatValue(min)}+`;
+  }
+
+  return `${formatValue(min)} - ${formatValue(max)}`;
+}
+
+function calculateTrendScore(videos, avgViews, avgEngagement, newsCount) {
+  if (!videos.length) return 55;
+
+  const now = Date.now();
+  const recencyScores = videos.map(video => {
+    const publishedAt = video.publishedAt || video.contentDetails?.publishedAt;
+    const published = publishedAt ? new Date(publishedAt).getTime() : NaN;
+    if (!Number.isFinite(published)) return 50;
+    const daysAgo = (now - published) / (1000 * 60 * 60 * 24);
+    return Math.max(10, 100 - Math.min(daysAgo, 30) * 3);
+  });
+
+  const recencyScore = recencyScores.reduce((acc, value) => acc + value, 0) / recencyScores.length;
+  const viewScore = avgViews ? Math.min(100, Math.log10(avgViews + 1) * 20) : 45;
+  const engagementScore = avgEngagement ? Math.min(100, avgEngagement * 4) : 40;
+  const newsBoost = Math.min(newsCount * 2, 10);
+
+  return Math.round(
+    Math.min(
+      100,
+      (recencyScore + viewScore + engagementScore) / 3 + newsBoost
+    )
+  );
+}
+
+function calculateWeeklyGrowth(videos) {
+  if (!videos.length) return 0;
+
+  const now = Date.now();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  let lastSeven = 0;
+  let previousSeven = 0;
+
+  videos.forEach(video => {
+    const publishedAt = video.publishedAt || video.contentDetails?.publishedAt;
+    const published = publishedAt ? new Date(publishedAt).getTime() : NaN;
+    if (!Number.isFinite(published)) return;
+
+    const views = Number(video.statistics?.viewCount || 0);
+    const delta = now - published;
+
+    if (delta <= weekMs) {
+      lastSeven += views;
+    } else if (delta <= weekMs * 2) {
+      previousSeven += views;
+    }
+  });
+
+  if (previousSeven > 0) {
+    return Number((((lastSeven - previousSeven) / previousSeven) * 100).toFixed(1));
+  }
+
+  if (lastSeven > 0) {
+    return 100;
+  }
+
+  return 0;
+}
+
+function formatSignedPercentage(value) {
+  if (!Number.isFinite(value)) return '0%';
+  const rounded = Number(value.toFixed(1));
+  const prefix = rounded > 0 ? '+' : '';
+  return `${prefix}${rounded}%`;
+}
+
 const DashboardDynamic = ({ onSectionChange }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -340,7 +457,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
   };
 
   const generateWeeklyData = (videos) => {
-    const labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const labels = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
     const accumulator = {
       0: { views: 0, engagement: 0 },
       1: { views: 0, engagement: 0 },
@@ -453,32 +570,48 @@ const DashboardDynamic = ({ onSectionChange }) => {
   };
 
   const generateMockMetrics = (topic) => {
+    const mockViews = [520000, 465000, 398000, 612000, 580000];
+    const mockEngagement = [12.1, 9.4, 8.8, 7.9, 9.2];
+
     return {
       topic,
-      creatorsInNiche: Math.floor(Math.random() * 500) + 200,
-      avgViewsPerVideo: Math.floor(Math.random() * 500000) + 100000,
-      avgEngagement: (Math.random() * 8 + 3).toFixed(1),
-      trendScore: Math.floor(Math.random() * 30) + 65,
-      weeklyGrowth: (Math.random() * 30 + 10).toFixed(1),
+      creatorsInNiche: 5,
+      creatorsRange: formatCompactRange(5),
+      avgViewsPerVideo: mockViews.reduce((acc, value) => acc + value, 0) / mockViews.length,
+      avgViewsRange: formatRangeFromValues(mockViews),
+      avgEngagement: mockEngagement.reduce((acc, value) => acc + value, 0) / mockEngagement.length,
+      avgEngagementRange: formatRangeFromValues(mockEngagement, { isPercentage: true }),
+      trendScore: 72,
+      weeklyGrowth: 18.4,
       topCreators: [
-        { name: 'Creador Alpha', followers: '850K', avgViews: '320K', engagement: '8.2%', platform: 'YouTube' },
-        { name: 'Beta Content', followers: '620K', avgViews: '180K', engagement: '7.1%', platform: 'TikTok' },
-        { name: 'Gamma Studios', followers: '490K', avgViews: '140K', engagement: '6.5%', platform: 'Instagram' },
-        { name: 'Delta Creator', followers: '380K', avgViews: '95K', engagement: '5.8%', platform: 'YouTube' },
-        { name: 'Epsilon Media', followers: '290K', avgViews: '72K', engagement: '5.2%', platform: 'TikTok' }
+        { id: 'alpha', name: 'Paulettee', followers: '811K+', avgViews: '520K - 580K', engagement: '11.8% - 12.4%', platform: 'YouTube', channelUrl: 'https://www.youtube.com/@paulettee' },
+        { id: 'beta', name: 'El Rincón De Giorgio', followers: '373K+', avgViews: '480K - 560K', engagement: '8.8% - 9.4%', platform: 'YouTube', channelUrl: 'https://www.youtube.com/@elrincondegiorgio' },
+        { id: 'gamma', name: 'TikTak Draw', followers: '131K+', avgViews: '320K - 390K', engagement: '8.1% - 8.8%', platform: 'YouTube', channelUrl: 'https://www.youtube.com/@TikTakDraw' },
+        { id: 'delta', name: 'EL ANTIPODCAST', followers: '411K+', avgViews: '470K - 520K', engagement: '7.8% - 8.6%', platform: 'YouTube', channelUrl: 'https://www.youtube.com/@ELANTIPODCAST' },
+        { id: 'epsilon', name: 'ZEPfilms', followers: '839K+', avgViews: '55K - 68K', engagement: '8.8% - 9.4%', platform: 'YouTube', channelUrl: 'https://www.youtube.com/@zepfilms' }
       ],
-      weeklyData: generateWeeklyData(),
-      platformDistribution: generatePlatformData(),
-      contentTypes: generateContentTypes(),
+      weeklyData: [
+        { day: 'Lun', views: 480000, engagement: 52000 },
+        { day: 'Mar', views: 520000, engagement: 57000 },
+        { day: 'Mie', views: 430000, engagement: 48000 },
+        { day: 'Jue', views: 610000, engagement: 63000 },
+        { day: 'Vie', views: 550000, engagement: 60000 },
+        { day: 'Sab', views: 690000, engagement: 72000 },
+        { day: 'Dom', views: 720000, engagement: 76000 }
+      ],
+      platformDistribution: [
+        { platform: 'YouTube Long-form', percentage: 62 },
+        { platform: 'YouTube Shorts', percentage: 28 },
+        { platform: 'YouTube Live', percentage: 10 }
+      ],
+      contentTypes: [
+        { type: 'Investigación', percentage: 35 },
+        { type: 'Storytelling', percentage: 30 },
+        { type: 'Entrevistas', percentage: 20 },
+        { type: 'Actualidad', percentage: 15 }
+      ],
       fetchedAt: new Date().toISOString()
     };
-  };
-
-  // Formatear números
-  const formatNumber = (num) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
   };
 
   // Datos para gráfico de línea (semanal)
@@ -510,18 +643,19 @@ const DashboardDynamic = ({ onSectionChange }) => {
       backgroundColor: [
         'rgba(239, 68, 68, 0.8)',
         'rgba(59, 130, 246, 0.8)',
-        'rgba(168, 85, 247, 0.8)',
         'rgba(34, 197, 94, 0.8)'
       ],
       borderColor: [
         'rgb(239, 68, 68)',
         'rgb(59, 130, 246)',
-        'rgb(168, 85, 247)',
         'rgb(34, 197, 94)'
       ],
       borderWidth: 2
     }]
   } : null;
+
+  const formattedWeeklyGrowth = nichemMetrics ? formatSignedPercentage(nichemMetrics.weeklyGrowth) : '+0%';
+  const weeklyGrowthPositive = (nichemMetrics?.weeklyGrowth ?? 0) >= 0;
 
   return (
     <div className="space-y-6">
@@ -599,34 +733,34 @@ const DashboardDynamic = ({ onSectionChange }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 icon={Users}
-                title="Creadores en el Nicho"
-                value={nichemMetrics.creatorsInNiche}
-                change={`+${Math.floor(Math.random() * 20 + 5)}%`}
-                trend="up"
+                title="Creadores analizados"
+                value={nichemMetrics.creatorsRange}
+                change="Datos directos de YouTube"
+                trend="neutral"
                 color="from-purple-500/20 to-pink-500/20"
               />
               <StatCard
                 icon={Eye}
-                title="Vistas Promedio/Video"
-                value={formatNumber(nichemMetrics.avgViewsPerVideo)}
-                change={`+${Math.floor(Math.random() * 15 + 8)}%`}
-                trend="up"
+                title="Rango de vistas por video"
+                value={nichemMetrics.avgViewsRange}
+                change="Últimos lanzamientos en el nicho"
+                trend={nichemMetrics.weeklyGrowth >= 0 ? 'up' : 'down'}
                 color="from-blue-500/20 to-cyan-500/20"
               />
               <StatCard
                 icon={Heart}
-                title="Engagement Promedio"
-                value={`${nichemMetrics.avgEngagement}%`}
-                change={`+${(Math.random() * 2).toFixed(1)}%`}
-                trend="up"
+                title="Engagement estimado"
+                value={nichemMetrics.avgEngagementRange}
+                change="Baseline basado en likes + comentarios"
+                trend="neutral"
                 color="from-pink-500/20 to-red-500/20"
               />
               <StatCard
                 icon={TrendingUp}
-                title="Tendencia del Tema"
+                title="Momentum del tema"
                 value={`${nichemMetrics.trendScore}/100`}
-                change={nichemMetrics.trendScore > 75 ? 'Muy Alto' : nichemMetrics.trendScore > 50 ? 'Alto' : 'Medio'}
-                trend={nichemMetrics.trendScore > 70 ? 'up' : 'neutral'}
+                change={nichemMetrics.trendScore >= 75 ? 'Momentum alto' : nichemMetrics.trendScore >= 55 ? 'Crecimiento saludable' : 'Oportunidad emergente'}
+                trend={nichemMetrics.trendScore >= 75 ? 'up' : nichemMetrics.trendScore < 50 ? 'down' : 'neutral'}
                 color="from-green-500/20 to-emerald-500/20"
               />
             </div>
@@ -693,36 +827,53 @@ const DashboardDynamic = ({ onSectionChange }) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {nichemMetrics.topCreators.map((creator, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                          {idx + 1}
+                  {nichemMetrics.topCreators.length > 0 ? (
+                    nichemMetrics.topCreators.map((creator, idx) => (
+                      <div
+                        key={creator.id || idx}
+                        className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                            {idx + 1}
+                          </div>
+                          <div>
+                            {creator.channelUrl ? (
+                              <a
+                                href={creator.channelUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-white hover:text-purple-300 transition-colors"
+                              >
+                                {creator.name}
+                              </a>
+                            ) : (
+                              <p className="font-semibold text-white">{creator.name}</p>
+                            )}
+                            <p className="text-xs text-gray-400">{creator.platform}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-white">{creator.name}</p>
-                          <p className="text-xs text-gray-400">{creator.platform}</p>
+                        <div className="flex gap-6 text-sm">
+                          <div className="text-center">
+                            <p className="text-gray-400 text-xs">Seguidores</p>
+                            <p className="text-white font-semibold">{creator.followers}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-gray-400 text-xs">Vistas Prom</p>
+                            <p className="text-white font-semibold">{creator.avgViews}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-gray-400 text-xs">Engagement</p>
+                            <p className="text-green-400 font-semibold">{creator.engagement}</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex gap-6 text-sm">
-                        <div className="text-center">
-                          <p className="text-gray-400 text-xs">Seguidores</p>
-                          <p className="text-white font-semibold">{creator.followers}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-400 text-xs">Vistas Prom</p>
-                          <p className="text-white font-semibold">{creator.avgViews}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-400 text-xs">Engagement</p>
-                          <p className="text-green-400 font-semibold">{creator.engagement}</p>
-                        </div>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-400 py-6 text-center">
+                      No encontramos creadores activos para este término en este momento. Intenta afinar el nicho o actualiza más tarde.
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -806,14 +957,20 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-400">Crecimiento de Audiencia (Semanal)</p>
-                    <p className="text-4xl font-bold text-gradient mt-2">+{nichemMetrics.weeklyGrowth}%</p>
-                    <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                      <ArrowUp className="w-3 h-3" />
-                      Interés por el tema en alza
+                    <p className={`text-4xl font-bold mt-2 ${weeklyGrowthPositive ? 'text-gradient' : 'text-red-300'}`}>
+                      {formattedWeeklyGrowth}
+                    </p>
+                    <p className={`text-xs mt-1 flex items-center gap-1 ${weeklyGrowthPositive ? 'text-green-400' : 'text-red-400'}`}>
+                      {weeklyGrowthPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                      {weeklyGrowthPositive ? 'Interés por el tema en alza' : 'Interés en descenso (ajusta tus contenidos)'}
                     </p>
                   </div>
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                    <TrendingUp className="w-10 h-10 text-green-400" />
+                    {weeklyGrowthPositive ? (
+                      <TrendingUp className="w-10 h-10 text-green-400" />
+                    ) : (
+                      <TrendingDown className="w-10 h-10 text-red-400" />
+                    )}
                   </div>
                 </div>
               </CardContent>

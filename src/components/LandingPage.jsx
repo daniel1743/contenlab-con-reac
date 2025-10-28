@@ -34,7 +34,9 @@ import {
   Send,
   Download,
   Bell,
-  Search
+  Search,
+  PlayCircle,
+  Clock3
 } from 'lucide-react';
 
 
@@ -238,6 +240,30 @@ const LandingPage = ({ onSectionChange }) => {
     //   accent: 'violet',
     //   section: 'chat'
     // }
+  ];
+
+  const explainerVideos = [
+    {
+      id: 'video-tour',
+      title: 'Tour completo de ContentLab',
+      description: 'Recorre el dashboard inteligente, el calendario IA y el flujo de publicación omnicanal.',
+      duration: '02:45',
+      embedUrl: 'https://www.youtube.com/embed/8pOHS7Xk4SI'
+    },
+    {
+      id: 'video-calendar',
+      title: 'Planificación multiformato en minutos',
+      description: 'Aprende a coordinar campañas para YouTube, Shorts y Reels con un solo tablero.',
+      duration: '03:10',
+      embedUrl: 'https://www.youtube.com/embed/c-9qU79tGQg'
+    },
+    {
+      id: 'video-ai',
+      title: 'Superpoderes IA para tu equipo',
+      description: 'Genera guiones, hashtags y tarjetas estratégicas apoyadas por Gemini en un clic.',
+      duration: '02:28',
+      embedUrl: 'https://www.youtube.com/embed/D9ioyEvdggk'
+    }
   ];
 
 
@@ -468,6 +494,81 @@ const LandingPage = ({ onSectionChange }) => {
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* Carrusel de videos explicativos */}
+      <section className="py-24 px-4 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative">
+          <motion.div
+            className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true, amount: 0.3 }}
+          >
+            <div className="space-y-3 max-w-3xl">
+              <p className="text-sm uppercase tracking-[0.45em] text-purple-400/80 flex items-center gap-2 font-medium">
+                <PlayCircle className="w-4 h-4" />
+                Mira ContentLab en acción
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-purple-100 to-purple-200 bg-clip-text text-transparent leading-tight">
+                Videos rápidos para entender el potencial de la plataforma
+              </h2>
+              <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+                Explicaciones cortas, directas y profesionales grabadas por el equipo. Perfectas para compartir con clientes o con tu equipo interno antes de migrar tus procesos.
+              </p>
+            </div>
+          </motion.div>
+
+          <div className="relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#05030b] via-[#05030b]/70 to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#05030b] via-[#05030b]/70 to-transparent z-10" />
+
+            <motion.div
+              className="flex gap-6 lg:gap-8"
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
+            >
+              {explainerVideos.concat(explainerVideos).map((video, index) => (
+                <div
+                  key={`${video.id}-${index}`}
+                  className="min-w-[280px] sm:min-w-[340px] lg:min-w-[410px] max-w-[410px] bg-gray-900/60 border border-purple-500/20 rounded-3xl overflow-hidden shadow-xl shadow-purple-500/10 backdrop-blur"
+                >
+                  <div className="relative aspect-video">
+                    <iframe
+                      src={`${video.embedUrl}?rel=0&controls=1&modestbranding=1`}
+                      title={video.title}
+                      className="w-full h-full"
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                    <div className="absolute inset-0 border border-white/10 rounded-3xl pointer-events-none" />
+                  </div>
+                  <div className="p-5 space-y-3">
+                    <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-purple-200/70">
+                      <span className="flex items-center gap-2">
+                        <Clock3 className="w-3.5 h-3.5 text-purple-200/80" />
+                        {video.duration}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-fuchsia-300/80" />
+                        Tutorial premium
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white">
+                      {video.title}
+                    </h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      {video.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </section>
 

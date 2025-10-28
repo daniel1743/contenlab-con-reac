@@ -90,9 +90,9 @@ const Calendar = () => {
       icon: Instagram,
       accent: 'text-pink-500',
       chip: 'bg-pink-500/10 border-pink-500/30 text-pink-200',
-      peakTimes: ['Mi�rcoles 13:00', 'Domingo 19:00'],
+      peakTimes: ['Miércoles 13:00', 'Domingo 19:00'],
       contentPlays: ['Reels educativos', 'Carruseles narrativa'],
-      boost: 'Activa historias teaser autom�ticas antes y despu�s del post principal.'
+      boost: 'Activa historias teaser automáticas antes y después del post principal.'
     },
     twitter: {
       id: 'twitter',
@@ -110,9 +110,9 @@ const Calendar = () => {
       icon: Facebook,
       accent: 'text-blue-600',
       chip: 'bg-blue-600/10 border-blue-600/30 text-blue-100',
-      peakTimes: ['Mi�rcoles 18:00', 'S�bado 11:00'],
+      peakTimes: ['Miércoles 18:00', 'Sábado 11:00'],
       contentPlays: ['Lives cortos', 'Publicaciones de comunidad'],
-      boost: 'Segmenta audiencias lookalike y duplica autom�ticamente en grupos clave.'
+      boost: 'Segmenta audiencias lookalike y duplica automáticamente en grupos clave.'
     },
     linkedin: {
       id: 'linkedin',
@@ -121,7 +121,7 @@ const Calendar = () => {
       accent: 'text-sky-500',
       chip: 'bg-sky-500/10 border-sky-500/30 text-sky-200',
       peakTimes: ['Martes 08:30', 'Jueves 09:00'],
-      contentPlays: ['Art�culos largos', 'Posts de liderazgo'],
+      contentPlays: ['Artículos largos', 'Posts de liderazgo'],
       boost: 'Convierte el video en documento carrusel + lead form para captar contactos.'
     },
     tiktok: {
@@ -130,9 +130,9 @@ const Calendar = () => {
       icon: Music2,
       accent: 'text-emerald-400',
       chip: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200',
-      peakTimes: ['Jueves 19:00', 'S�bado 21:00'],
+      peakTimes: ['Jueves 19:00', 'Sábado 21:00'],
       contentPlays: ['Trends con hook', 'Clips ultra cortos'],
-      boost: 'Automatiza republicaci�n vertical y añade CTA interactivo en los primeros 3 segundos.'
+      boost: 'Automatiza republicación vertical y añade CTA interactivo en los primeros 3 segundos.'
     }
   };
 
