@@ -200,3 +200,291 @@ export const getWeeklyTrends = async (topic) => {
     };
   }
 };
+
+/**
+ * 🆕 Obtiene información de un canal por ID o username
+ * @param {string} channelIdentifier - ID del canal (@username o channel ID)
+ * @returns {Promise<Object>} - Datos del canal
+ */
+export const getChannelInfo = async (channelIdentifier) => {
+  if (!YOUTUBE_API_KEY) {
+    throw new Error('YouTube API key not configured');
+  }
+
+  try {
+    let url;
+
+    // Determinar si es un @username o un channel ID
+    if (channelIdentifier.startsWith('@')) {
+      // Buscar por username (handle)
+      const username = channelIdentifier.substring(1);
+      url = `${YOUTUBE_BASE_URL}/channels?part=snippet,statistics,contentDetails&forHandle=${username}&key=${YOUTUBE_API_KEY}`;
+    } else {
+      // Buscar por channel ID
+      url = `${YOUTUBE_BASE_URL}/channels?part=snippet,statistics,contentDetails&id=${channelIdentifier}&key=${YOUTUBE_API_KEY}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) {
+      throw new Error('Canal no encontrado');
+    }
+
+    const channel = data.items[0];
+
+    return {
+      channelId: channel.id,
+      title: channel.snippet.title,
+      description: channel.snippet.description,
+      customUrl: channel.snippet.customUrl,
+      thumbnail: channel.snippet.thumbnails.medium.url,
+      subscriberCount: parseInt(channel.statistics.subscriberCount || 0),
+      videoCount: parseInt(channel.statistics.videoCount || 0),
+      viewCount: parseInt(channel.statistics.viewCount || 0),
+      publishedAt: channel.snippet.publishedAt,
+      country: channel.snippet.country || 'N/A'
+    };
+
+  } catch (error) {
+    console.error('Error fetching channel info:', error);
+    throw error;
+  }
+};
+
+/**
+ * 🆕 Obtiene los videos más recientes de un canal
+ * @param {string} channelId - ID del canal
+ * @param {number} maxResults - Número máximo de resultados
+ * @returns {Promise<Array>} - Lista de videos recientes
+ */
+export const getChannelRecentVideos = async (channelId, maxResults = 10) => {
+  if (!YOUTUBE_API_KEY) {
+    throw new Error('YouTube API key not configured');
+  }
+
+  try {
+    // Obtener el uploads playlist ID del canal
+    const channelUrl = `${YOUTUBE_BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`;
+    const channelResponse = await fetch(channelUrl);
+
+    if (!channelResponse.ok) {
+      throw new Error(`YouTube API error: ${channelResponse.status}`);
+    }
+
+    const channelData = await channelResponse.json();
+
+    if (!channelData.items || channelData.items.length === 0) {
+      return [];
+    }
+
+    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
+
+    // Obtener videos de la playlist de uploads
+    const playlistUrl = `${YOUTUBE_BASE_URL}/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`;
+    const playlistResponse = await fetch(playlistUrl);
+
+    if (!playlistResponse.ok) {
+      throw new Error(`YouTube API error: ${playlistResponse.status}`);
+    }
+
+    const playlistData = await playlistResponse.json();
+
+    if (!playlistData.items) {
+      return [];
+    }
+
+    // Obtener IDs de videos para conseguir estadísticas
+    const videoIds = playlistData.items.map(item => item.snippet.resourceId.videoId);
+    const statsData = await getVideoStatistics(videoIds);
+
+    // Combinar datos
+    return playlistData.items.map((item, index) => {
+      const stats = statsData.items[index]?.statistics || {};
+
+      return {
+        videoId: item.snippet.resourceId.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        thumbnail: item.snippet.thumbnails.medium.url,
+        publishedAt: item.snippet.publishedAt,
+        viewCount: parseInt(stats.viewCount || 0),
+        likeCount: parseInt(stats.likeCount || 0),
+        commentCount: parseInt(stats.commentCount || 0)
+      };
+    });
+
+  } catch (error) {
+    console.error('Error fetching channel videos:', error);
+    throw error;
+  }
+};
+
+/**
+ * 🆕 Analiza la performance promedio del canal
+ * @param {string} channelId - ID del canal
+ * @returns {Promise<Object>} - Métricas de performance
+ */
+export const analyzeChannelPerformance = async (channelId) => {
+  try {
+    const videos = await getChannelRecentVideos(channelId, 20);
+
+    if (videos.length === 0) {
+      return {
+        avgViews: 0,
+        avgLikes: 0,
+        avgComments: 0,
+        engagementRate: 0,
+        bestPerformingVideo: null,
+        isSimulated: true
+      };
+    }
+
+    // Calcular promedios
+    const totalViews = videos.reduce((sum, v) => sum + v.viewCount, 0);
+    const totalLikes = videos.reduce((sum, v) => sum + v.likeCount, 0);
+    const totalComments = videos.reduce((sum, v) => sum + v.commentCount, 0);
+
+    const avgViews = Math.floor(totalViews / videos.length);
+    const avgLikes = Math.floor(totalLikes / videos.length);
+    const avgComments = Math.floor(totalComments / videos.length);
+
+    // Calcular engagement rate (likes + comments) / views
+    const engagementRate = avgViews > 0
+      ? ((avgLikes + avgComments) / avgViews * 100).toFixed(2)
+      : 0;
+
+    // Encontrar el video con mejor performance
+    const bestVideo = videos.reduce((best, current) => {
+      const currentScore = current.viewCount + (current.likeCount * 10) + (current.commentCount * 5);
+      const bestScore = best.viewCount + (best.likeCount * 10) + (best.commentCount * 5);
+      return currentScore > bestScore ? current : best;
+    }, videos[0]);
+
+    return {
+      avgViews,
+      avgLikes,
+      avgComments,
+      engagementRate: parseFloat(engagementRate),
+      bestPerformingVideo: {
+        title: bestVideo.title,
+        views: bestVideo.viewCount,
+        likes: bestVideo.likeCount,
+        videoId: bestVideo.videoId
+      },
+      totalVideosAnalyzed: videos.length,
+      isSimulated: false
+    };
+
+  } catch (error) {
+    console.error('Error analyzing channel performance:', error);
+    return {
+      avgViews: 0,
+      avgLikes: 0,
+      avgComments: 0,
+      engagementRate: 0,
+      bestPerformingVideo: null,
+      isSimulated: true
+    };
+  }
+};
+
+/**
+ * 🆕 Obtiene trending videos por categoría
+ * @param {string} categoryId - ID de categoría de YouTube (Gaming=20, Education=27, etc.)
+ * @param {string} regionCode - Código de región (US, MX, AR, ES, etc.)
+ * @param {number} maxResults - Número máximo de resultados
+ * @returns {Promise<Array>} - Videos trending en la categoría
+ */
+export const getTrendingByCategory = async (categoryId = '0', regionCode = 'US', maxResults = 10) => {
+  if (!YOUTUBE_API_KEY) {
+    throw new Error('YouTube API key not configured');
+  }
+
+  try {
+    const url = `${YOUTUBE_BASE_URL}/videos?part=snippet,statistics&chart=mostPopular&regionCode=${regionCode}&videoCategoryId=${categoryId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) {
+      return [];
+    }
+
+    return data.items.map(video => ({
+      videoId: video.id,
+      title: video.snippet.title,
+      channelTitle: video.snippet.channelTitle,
+      description: video.snippet.description,
+      thumbnail: video.snippet.thumbnails.medium.url,
+      publishedAt: video.snippet.publishedAt,
+      viewCount: parseInt(video.statistics.viewCount || 0),
+      likeCount: parseInt(video.statistics.likeCount || 0),
+      commentCount: parseInt(video.statistics.commentCount || 0),
+      tags: video.snippet.tags || []
+    }));
+
+  } catch (error) {
+    console.error('Error fetching trending videos:', error);
+    throw error;
+  }
+};
+
+/**
+ * 🆕 Obtiene palabras clave populares basadas en un tema
+ * @param {string} topic - Tema base
+ * @param {number} maxResults - Número de sugerencias
+ * @returns {Promise<Array>} - Keywords populares con métricas
+ */
+export const getPopularKeywords = async (topic, maxResults = 10) => {
+  try {
+    // Buscar videos relacionados
+    const searchResults = await searchYouTubeVideos(topic, 50);
+
+    if (!searchResults.items || searchResults.items.length === 0) {
+      return [];
+    }
+
+    // Extraer títulos
+    const titles = searchResults.items.map(item => item.snippet.title);
+
+    // Extraer palabras clave más comunes
+    const wordFrequency = {};
+    const stopWords = ['el', 'la', 'de', 'en', 'y', 'a', 'que', 'es', 'por', 'para', 'con', 'no', 'una', 'su', 'al', 'lo', 'como', 'más', 'o', 'pero', 'sus', 'le', 'ya', 'ha', 'the', 'of', 'and', 'to', 'in', 'a', 'is', 'for', 'on', 'with', 'as', 'how', 'this', 'that'];
+
+    titles.forEach(title => {
+      const words = title.toLowerCase()
+        .replace(/[^\wáéíóúñü\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 3 && !stopWords.includes(word));
+
+      words.forEach(word => {
+        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+      });
+    });
+
+    // Ordenar por frecuencia
+    const sortedKeywords = Object.entries(wordFrequency)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, maxResults)
+      .map(([keyword, count]) => ({
+        keyword,
+        frequency: count,
+        trend: count > 5 ? 'high' : count > 2 ? 'medium' : 'low'
+      }));
+
+    return sortedKeywords;
+
+  } catch (error) {
+    console.error('Error getting popular keywords:', error);
+    return [];
+  }
+};

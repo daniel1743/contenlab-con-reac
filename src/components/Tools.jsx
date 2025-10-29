@@ -117,9 +117,37 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
   // 🆕 ESTADOS PARA PERSONALIDAD DEL CREADOR
   const [showPersonalityModal, setShowPersonalityModal] = useState(false);
   const [creatorPersonality, setCreatorPersonality] = useState(() => {
-    // Cargar desde localStorage si existe
+    // Prioridad 1: Cargar perfil completo del onboarding
+    const fullProfile = localStorage.getItem('creatorProfile');
+    if (fullProfile) {
+      try {
+        const profile = JSON.parse(fullProfile);
+        return {
+          role: profile.role || '',
+          style: profile.toneStyle || profile.style || '',
+          audience: profile.targetAudience || profile.audience || '',
+          goals: profile.primaryGoal || profile.goals || '',
+          // Campos adicionales del onboarding completo
+          name: profile.name || '',
+          channelName: profile.channelName || '',
+          uniqueSlogan: profile.uniqueSlogan || '',
+          narrativeStructure: profile.narrativeStructure || '',
+          audienceInterests: profile.audienceInterests || '',
+          contentFrequency: profile.contentFrequency || ''
+        };
+      } catch (error) {
+        console.error('Error parsing creatorProfile:', error);
+      }
+    }
+
+    // Prioridad 2: Cargar perfil simple (legacy)
     const saved = localStorage.getItem('creatorPersonality');
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      return JSON.parse(saved);
+    }
+
+    // Default vacío
+    return {
       role: '',
       style: '',
       audience: '',
@@ -739,14 +767,33 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     setShowPersonalityModal(false);
   }, [creatorPersonality, toast]);
 
+  // 🔒 Estado para verificar si la personalidad está completa
+  const [showLockedModal, setShowLockedModal] = useState(false);
+  const isPersonalityComplete = creatorPersonality.role && creatorPersonality.style && creatorPersonality.audience && creatorPersonality.goals;
+
+  // 🔒 Función para manejar click en herramientas bloqueadas
+  const handleLockedToolClick = useCallback(() => {
+    setShowLockedModal(true);
+  }, []);
+
   const tools = [
+    {
+      id: 'personality-setup',
+      title: 'Define tu Personalidad',
+      description: 'Configura tu rol, estilo, audiencia y objetivos para contenido personalizado',
+      icon: User,
+      color: 'from-blue-500 to-cyan-500',
+      action: () => setShowPersonalityModal(true),
+      requiresPersonality: false
+    },
     {
       id: 'ai-content',
       title: 'Generador de Contenido IA',
       description: 'Crea contenido viral optimizado para cada plataforma',
       icon: Sparkles,
       color: 'from-purple-500 to-pink-500',
-      action: () => {}
+      action: () => {},
+      requiresPersonality: true
     },
     // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado, reemplazar con Canva SDK
     // {
@@ -758,20 +805,13 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     //   action: () => onSectionChange && onSectionChange('thumbnail-editor')
     // },
     {
-      id: 'personality-setup',
-      title: 'Define tu Personalidad',
-      description: 'Configura tu rol, estilo, audiencia y objetivos para contenido personalizado',
-      icon: User,
-      color: 'from-blue-500 to-cyan-500',
-      action: () => setShowPersonalityModal(true)
-    },
-    {
       id: 'hashtag-generator',
       title: 'Generador de Hashtags',
       description: 'Encuentra hashtags trending para maximizar alcance',
       icon: Hash,
       color: 'from-green-500 to-blue-500',
-      action: () => setShowHashtagModal(true)
+      action: () => setShowHashtagModal(true),
+      requiresPersonality: true
     },
     {
       id: 'trend-analyzer',
@@ -779,7 +819,8 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       description: 'Descubre qué contenido está funcionando en tu nicho',
       icon: TrendingUp,
       color: 'from-orange-500 to-red-500',
-      action: () => setShowTrendModal(true)
+      action: () => setShowTrendModal(true),
+      requiresPersonality: true
     },
   ];
   
@@ -870,11 +911,15 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {tools.map((tool) => {
           const Icon = tool.icon;
+          const isLocked = tool.requiresPersonality && !isPersonalityComplete;
+
           return (
-            <div key={tool.id}>
-              <Card 
-                className="glass-effect border-purple-500/20 hover:shadow-glow transition-all duration-300 cursor-pointer h-full"
-                onClick={tool.action}
+            <div key={tool.id} className="relative">
+              <Card
+                className={`glass-effect border-purple-500/20 hover:shadow-glow transition-all duration-300 cursor-pointer h-full ${
+                  isLocked ? 'opacity-40 blur-[2px] pointer-events-none' : ''
+                }`}
+                onClick={isLocked ? undefined : tool.action}
               >
                 <CardHeader className="text-center">
                   <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4`}>
@@ -884,6 +929,19 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                   <CardDescription className="text-gray-400">{tool.description}</CardDescription>
                 </CardHeader>
               </Card>
+
+              {/* Overlay de bloqueo */}
+              {isLocked && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
+                  onClick={handleLockedToolClick}
+                >
+                  <div className="bg-gradient-to-br from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-2xl p-4 shadow-2xl border border-white/20 transform hover:scale-105 transition-transform">
+                    <Lock className="w-8 h-8 text-white mx-auto mb-2" />
+                    <p className="text-white text-sm font-semibold">Bloqueado</p>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -2020,6 +2078,63 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 🔒 MODAL DE HERRAMIENTA BLOQUEADA */}
+      {showLockedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <Card className="glass-effect border-purple-500/30 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-300">
+            <CardHeader className="text-center pb-4">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/50 animate-pulse">
+                <Lock className="w-10 h-10 text-white" />
+              </div>
+              <CardTitle className="text-white text-2xl mb-2">
+                Herramienta Bloqueada
+              </CardTitle>
+              <CardDescription className="text-gray-300 text-base leading-relaxed">
+                Para acceder a esta herramienta, primero debes completar tu perfil de creador en{' '}
+                <span className="text-blue-400 font-semibold">"Define tu Personalidad"</span>
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-4 pt-2">
+              <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold text-sm mb-1">¿Por qué necesito definir mi personalidad?</h4>
+                    <p className="text-gray-400 text-xs leading-relaxed">
+                      Al conocer tu estilo, audiencia y objetivos, nuestras herramientas de IA generarán contenido 100% personalizado y más efectivo para tu marca.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    setShowLockedModal(false);
+                    setShowPersonalityModal(true);
+                  }}
+                  className="w-full gradient-primary hover:opacity-90 text-base py-6 shadow-lg shadow-purple-500/30"
+                >
+                  <User className="w-5 h-5 mr-2" />
+                  Definir mi Personalidad
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLockedModal(false)}
+                  className="w-full border-purple-500/30 hover:bg-purple-500/10 text-gray-300"
+                >
+                  Entendido, lo haré después
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 

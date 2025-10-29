@@ -24,12 +24,31 @@ import Badges from '@/components/Badges';
 import History from '@/components/History';
 import Profile from '@/components/Profile';
 import Notifications from '@/components/Notifications';
+import Onboarding from '@/components/Onboarding';
 
 function App() {
   const { session, loading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const isAuthenticated = !!session;
+
+  // 🆕 Verificar si el usuario ya completó el onboarding
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      const creatorProfile = localStorage.getItem('creatorProfile');
+      const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+
+      // Si no tiene perfil y no ha completado onboarding, mostrarlo
+      if (!creatorProfile && !hasCompletedOnboarding) {
+        // Esperar 1 segundo después de autenticarse para mostrar onboarding
+        const timer = setTimeout(() => {
+          setShowOnboarding(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isAuthenticated, loading]);
   
   // El estado inicial de la sección activa siempre será 'landing'.
   const [activeSection, setActiveSection] = useState('landing');
@@ -182,6 +201,23 @@ function App() {
             setShowAuthModal(true);
           }}
         />
+
+        {/* 🚀 ONBOARDING PROFESIONAL - 3 FASES */}
+        {showOnboarding && (
+          <Onboarding
+            onComplete={(profile) => {
+              console.log('✅ Perfil de creador guardado:', profile);
+              localStorage.setItem('onboardingCompleted', 'true');
+              setShowOnboarding(false);
+              // Redirigir a Tools para comenzar a usar el generador
+              setActiveSection('tools');
+            }}
+            onSkip={() => {
+              localStorage.setItem('onboardingCompleted', 'true');
+              setShowOnboarding(false);
+            }}
+          />
+        )}
 
         {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
       </div>

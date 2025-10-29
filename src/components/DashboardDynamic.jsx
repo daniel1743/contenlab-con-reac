@@ -46,6 +46,22 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { getAllTrending } from '@/services/trendingContentService';
 import { generateExpertAdvisoryInsights } from '@/services/geminiService';
+import {
+  searchYouTubeVideos,
+  getWeeklyTrends,
+  getEngagementData,
+  getPopularKeywords
+} from '@/services/youtubeService';
+import {
+  analyzeSocialSentiment,
+  getTrendingHashtags,
+  calculateViralScore
+} from '@/services/twitterApiService';
+import {
+  getTrendingNews,
+  getEmergingTopics,
+  getTopicMomentum
+} from '@/services/newsApiService';
 
 ChartJS.register(
   CategoryScale,
@@ -257,6 +273,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [expertInsights, setExpertInsights] = useState([]);
   const [isInsightsLoading, setIsInsightsLoading] = useState(false);
 
+  // 🆕 NUEVOS ESTADOS PARA APIs REALES
+  const [youtubeData, setYoutubeData] = useState(null);
+  const [twitterData, setTwitterData] = useState(null);
+  const [newsData, setNewsData] = useState(null);
+  const [emergingTopics, setEmergingTopics] = useState([]);
+
   const fetchExpertInsights = useCallback(
     async (topic, metricsContext = {}) => {
       setIsInsightsLoading(true);
@@ -313,12 +335,34 @@ const DashboardDynamic = ({ onSectionChange }) => {
     setExpertInsights([]);
 
     try {
-      // Obtener datos de múltiples fuentes
-      const trendingData = await getAllTrending(
-        user.id,
-        searchTopic,
-        ['news', 'youtube']
-      );
+      // 🚀 LLAMADAS EN PARALELO A TODAS LAS APIs
+      const [
+        trendingData,
+        youtubeWeekly,
+        youtubeEngagement,
+        youtubeKeywords,
+        twitterSentiment,
+        twitterHashtags,
+        twitterViral,
+        newsTrending,
+        newsMomentum,
+        newsEmerging
+      ] = await Promise.all([
+        // API existente
+        getAllTrending(user.id, searchTopic, ['news', 'youtube']),
+        // 🎥 YouTube APIs (3 gráficos)
+        getWeeklyTrends(searchTopic),
+        getEngagementData(searchTopic),
+        getPopularKeywords(searchTopic, 10),
+        // 🐦 Twitter APIs (datos de conversación social)
+        analyzeSocialSentiment(searchTopic),
+        getTrendingHashtags(searchTopic),
+        calculateViralScore(searchTopic),
+        // 📰 News APIs (temas emergentes y momentum)
+        getTrendingNews(searchTopic, 'es', 10),
+        getTopicMomentum(searchTopic, 7),
+        getEmergingTopics('technology', 'us')
+      ]);
 
       if (!trendingData.success) {
         throw new Error('Error obteniendo datos del tema');
@@ -326,14 +370,42 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
       setTopicData(trendingData.data);
 
+      // 🆕 Guardar datos de las nuevas APIs
+      setYoutubeData({
+        weeklyTrends: youtubeWeekly,
+        engagement: youtubeEngagement,
+        keywords: youtubeKeywords
+      });
+
+      setTwitterData({
+        sentiment: twitterSentiment,
+        hashtags: twitterHashtags,
+        viralScore: twitterViral
+      });
+
+      setNewsData({
+        trending: newsTrending,
+        momentum: newsMomentum
+      });
+
+      setEmergingTopics(newsEmerging);
+
       // Analizar y calcular métricas del nicho
       const metrics = analyzeNicheMetrics(trendingData.data, searchTopic);
       setNichemMetrics(metrics);
-      await fetchExpertInsights(searchTopic, metrics);
+
+      // 🆕 Enriquecer insights con datos de todas las APIs
+      await fetchExpertInsights(searchTopic, {
+        ...metrics,
+        youtubeEngagement: youtubeEngagement,
+        twitterSentiment: twitterSentiment,
+        newsMomentum: newsMomentum,
+        viralScore: twitterViral?.viralScore || 0
+      });
 
       toast({
-        title: '✅ Tema analizado',
-        description: `Mostrando datos de "${searchTopic}"`,
+        title: '✅ Tema analizado con 3 APIs reales',
+        description: `Datos de YouTube, Twitter y News API para "${searchTopic}"`,
       });
 
     } catch (error) {

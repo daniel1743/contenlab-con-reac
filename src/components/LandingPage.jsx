@@ -46,28 +46,70 @@ const LandingPage = ({ onSectionChange }) => {
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
   // Hook para contador animado
-  function AnimatedCounter({ value, suffix = '' }) {
+  function AnimatedCounter({ value, suffix }) {
     const ref = useRef(null);
     const motionValue = useMotionValue(0);
-    const springValue = useSpring(motionValue, { duration: 3000 });
+    const springValue = useSpring(motionValue, { damping: 16, stiffness: 120 });
     const isInView = useInView(ref, { once: true, margin: "-100px" });
 
-    useEffect(() => {
-      if (isInView) {
-        const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
-        animate(motionValue, numericValue, { duration: 2 });
+    const rawValue = typeof value === 'number' ? value.toString() : value;
+    const numericMatch = typeof rawValue === 'string' ? rawValue.match(/\d+(\.\d+)?/) : null;
+    const shouldAnimate = typeof value === 'number' || (!!numericMatch && !(typeof rawValue === 'string' && rawValue.includes('/')));
+
+    const derivedSuffix = (() => {
+      if (suffix !== undefined) {
+        return suffix;
       }
-    }, [isInView, value, motionValue]);
+      if (typeof rawValue === 'string' && numericMatch) {
+        const startIndex = (numericMatch.index ?? 0) + numericMatch[0].length;
+        return rawValue.slice(startIndex);
+      }
+      return '';
+    })();
+
+    const decimalPlaces = (() => {
+      if (typeof value === 'number') {
+        const decimalPart = value.toString().split('.')[1];
+        return decimalPart ? decimalPart.length : 0;
+      }
+      if (numericMatch && numericMatch[0].includes('.')) {
+        return numericMatch[0].split('.')[1].length;
+      }
+      return 0;
+    })();
 
     useEffect(() => {
-      springValue.on("change", (latest) => {
-        if (ref.current) {
-          ref.current.textContent = latest.toFixed(0) + suffix;
-        }
-      });
-    }, [springValue, suffix]);
+      if (!isInView || !shouldAnimate) {
+        return;
+      }
+      const targetValue = typeof value === 'number'
+        ? value
+        : numericMatch
+          ? parseFloat(numericMatch[0])
+          : 0;
+      const controls = animate(motionValue, targetValue, { duration: 2, ease: "easeOut" });
+      return () => controls.stop();
+    }, [isInView, shouldAnimate, numericMatch, value, motionValue]);
 
-    return <span ref={ref}>{value}</span>;
+    useEffect(() => {
+      if (!shouldAnimate) {
+        return;
+      }
+      const unsubscribe = springValue.on("change", (latest) => {
+        if (!ref.current) {
+          return;
+        }
+        const formatted = decimalPlaces > 0 ? latest.toFixed(decimalPlaces) : Math.round(latest).toString();
+        ref.current.textContent = `${formatted}${derivedSuffix}`;
+      });
+      return () => unsubscribe();
+    }, [springValue, decimalPlaces, derivedSuffix, shouldAnimate]);
+
+    if (!shouldAnimate) {
+      return <span>{value}</span>;
+    }
+
+    return <span ref={ref}>{rawValue}</span>;
   }
 
   // Componente Typed Text
@@ -204,7 +246,7 @@ const LandingPage = ({ onSectionChange }) => {
       description: 'Gestiona mensajes, comentarios y DMs de todas tus redes sociales desde un solo lugar',
       color: 'from-blue-600 to-cyan-600',
       accent: 'blue',
-      section: 'inbox'
+      comingSoon: true
     },
     {
       icon: Calendar,
@@ -263,6 +305,13 @@ const LandingPage = ({ onSectionChange }) => {
       description: 'Genera guiones, hashtags y tarjetas estratégicas apoyadas por Gemini en un clic.',
       duration: '02:28',
       embedUrl: 'https://www.youtube.com/embed/D9ioyEvdggk'
+    },
+    {
+      id: 'video-publicidad-emotiva',
+      title: 'Publicidad Emotiva generada con IA',
+      description: 'Explora cómo conectamos con audiencias sensibles utilizando storytelling audiovisual asistido por IA.',
+      duration: '01:12',
+      videoUrl: '/Publicidad_Emotiva_con_IA.mp4'
     }
   ];
 
@@ -326,6 +375,14 @@ const LandingPage = ({ onSectionChange }) => {
   // Función para navegación usando el sistema de secciones existente
   const handleFreeTrial = () => {
     onSectionChange('tools'); // Cambia a la sección tools usando el callback del App.jsx
+  };
+
+  const handleDemoScroll = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const section = document.getElementById('demo-videos');
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
 
@@ -455,7 +512,7 @@ const LandingPage = ({ onSectionChange }) => {
               </RippleButton>
 
               <RippleButton
-                onClick={() => {}}
+                onClick={handleDemoScroll}
                 className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/20 transition-all duration-300"
               >
                 <Eye className="w-5 h-5 inline mr-2" />
@@ -498,7 +555,7 @@ const LandingPage = ({ onSectionChange }) => {
       </section>
 
       {/* Carrusel de videos explicativos */}
-      <section className="py-24 px-4 relative">
+      <section id="demo-videos" className="py-24 px-4 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent opacity-[0.04] pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
           <motion.div
@@ -555,14 +612,25 @@ const LandingPage = ({ onSectionChange }) => {
                   className="min-w-[280px] sm:min-w-[340px] lg:min-w-[410px] max-w-[410px] bg-[#0b1124]/95 border border-white/10 rounded-3xl overflow-hidden shadow-[0_18px_45px_-25px] shadow-purple-500/40 backdrop-blur-xl"
                 >
                   <div className="relative aspect-video">
-                    <iframe
-                      src={`${video.embedUrl}?rel=0&controls=1&modestbranding=1`}
-                      title={video.title}
-                      className="w-full h-full"
-                      loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
+                    {video.videoUrl ? (
+                      <video
+                        src={video.videoUrl}
+                        className="w-full h-full object-cover"
+                        controls
+                        preload="metadata"
+                        playsInline
+                        aria-label={video.title}
+                      />
+                    ) : (
+                      <iframe
+                        src={`${video.embedUrl}?rel=0&controls=1&modestbranding=1`}
+                        title={video.title}
+                        className="w-full h-full"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    )}
                     <div className="absolute inset-0 border border-white/5 rounded-3xl pointer-events-none" />
                   </div>
                   <div className="p-5 space-y-3">
@@ -666,6 +734,7 @@ const LandingPage = ({ onSectionChange }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {modules.map((module, index) => {
               const Icon = module.icon;
+              const isComingSoon = module.comingSoon;
               return (
                 <motion.div
                   key={module.name}
@@ -673,13 +742,26 @@ const LandingPage = ({ onSectionChange }) => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  onHoverStart={() => setHoveredCard(index)}
+                  onHoverStart={() => {
+                    if (!isComingSoon) {
+                      setHoveredCard(index);
+                    }
+                  }}
                   onHoverEnd={() => setHoveredCard(null)}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => onSectionChange(module.section)}
-                  className="group cursor-pointer"
+                  whileHover={isComingSoon ? undefined : { scale: 1.02 }}
+                  onClick={() => {
+                    if (!isComingSoon && module.section) {
+                      onSectionChange(module.section);
+                    }
+                  }}
+                  className={`group ${isComingSoon ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
                 >
                   <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-violet-500/30 transition-all duration-500">
+                    {isComingSoon && (
+                      <span className="absolute top-4 left-4 text-xs font-semibold px-3 py-1 rounded-full bg-white/10 text-gray-100 tracking-wide z-20">
+                        Proximamente
+                      </span>
+                    )}
                     <motion.div
                       className={`absolute inset-0 bg-gradient-to-br ${module.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
                     />
@@ -740,10 +822,12 @@ const LandingPage = ({ onSectionChange }) => {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
-              onClick={() => onSectionChange('inbox')}
-              className="group cursor-pointer"
+              className="group cursor-not-allowed opacity-80"
             >
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-blue-500/30 transition-all duration-300">
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden transition-all duration-300">
+                <span className="absolute top-4 right-4 text-[10px] font-semibold px-3 py-1 rounded-full bg-blue-500/20 text-blue-100 tracking-widest uppercase">
+                  Proximamente
+                </span>
                 <div className="flex items-start gap-4 mb-6">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                     <Inbox className="w-8 h-8 text-white" />
@@ -753,13 +837,12 @@ const LandingPage = ({ onSectionChange }) => {
                     <p className="text-sm text-blue-300">Ahorra 5+ horas semanales</p>
                   </div>
                 </div>
-
                 <ul className="space-y-3 mb-6">
                   {[
-                    { icon: MessageSquare, text: 'Mensajes de todas las plataformas' },
-                    { icon: Bell, text: 'Notificaciones en tiempo real' },
-                    { icon: Send, text: 'Respuestas rápidas con IA' },
-                    { icon: Eye, text: 'Filtros inteligentes' }
+                    { icon: MessageSquare, text: "Mensajes de todas las plataformas" },
+                    { icon: Bell, text: "Notificaciones en tiempo real" },
+                    { icon: Send, text: "Respuestas rapidas con IA" },
+                    { icon: Eye, text: "Filtros inteligentes" }
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-gray-300">
                       <item.icon className="w-4 h-4 text-blue-400" />
@@ -767,14 +850,12 @@ const LandingPage = ({ onSectionChange }) => {
                     </li>
                   ))}
                 </ul>
-
-                <div className="flex items-center gap-2 text-blue-400 group-hover:gap-3 transition-all">
-                  <span className="text-sm font-medium">Explorar Inbox</span>
-                  <span>→</span>
+                <div className="flex items-center gap-2 text-blue-200 uppercase tracking-widest">
+                  <span className="text-sm font-medium">Disponible pronto</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </div>
               </Card>
             </motion.div>
-
             {/* Content Library Feature */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -814,7 +895,7 @@ const LandingPage = ({ onSectionChange }) => {
 
                 <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-3 transition-all">
                   <span className="text-sm font-medium">Explorar Biblioteca</span>
-                  <span>→</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </div>
               </Card>
             </motion.div>
@@ -858,7 +939,7 @@ const LandingPage = ({ onSectionChange }) => {
 
                 <div className="flex items-center gap-2 text-purple-400 group-hover:gap-3 transition-all">
                   <span className="text-sm font-medium">Explorar Configuración</span>
-                  <span>→</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </div>
               </Card>
             </motion.div>
@@ -1003,14 +1084,14 @@ const LandingPage = ({ onSectionChange }) => {
                   animate={{ x: [0, 5, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  →
+                  &rarr;
                 </motion.div>
               </span>
             </motion.button>
             
             <p className="text-sm text-gray-400">
               <Shield className="w-4 h-4 inline mr-2" />
-              Sin tarjeta de crédito • Acceso inmediato • Soporte 24/7
+              Sin tarjeta de credito | Acceso inmediato | Soporte 24/7
             </p>
           </motion.div>
         </div>
