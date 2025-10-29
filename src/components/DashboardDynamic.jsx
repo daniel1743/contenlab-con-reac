@@ -28,7 +28,13 @@ import {
   MapIcon,
   AcademicCapIcon,
   ShieldCheckIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  ArrowDownTrayIcon,
+  BookmarkIcon,
+  XMarkIcon,
+  NewspaperIcon,
+  LinkIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 
 // Íconos solid para énfasis
@@ -65,11 +71,8 @@ import {
   getTrendingHashtags,
   calculateViralScore
 } from '@/services/twitterApiService';
-import {
-  getTrendingNews,
-  getEmergingTopics,
-  getTopicMomentum
-} from '@/services/newsApiService';
+import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiService';
+import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
 
 ChartJS.register(
   CategoryScale,
@@ -292,6 +295,18 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [creatorAnalysis, setCreatorAnalysis] = useState({});
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
+  // 🆕 ESTADOS PARA MODAL CLICABLE DE ANÁLISIS
+  const [selectedCreator, setSelectedCreator] = useState(null);
+  const [showCreatorModal, setShowCreatorModal] = useState(false);
+
+  // 🆕 ESTADOS PARA NEWSAPI Y ANÁLISIS SEO DE GEMINI
+  const [newsArticles, setNewsArticles] = useState([]);
+  const [seoAnalysis, setSeoAnalysis] = useState({});
+  const [hoveredArticle, setHoveredArticle] = useState(null);
+  const [loadingSEOAnalysis, setLoadingSEOAnalysis] = useState(false);
+  const [showSEOModal, setShowSEOModal] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
   // 🆕 FUNCIÓN PARA ANALIZAR CREADOR AL HACER HOVER
   const handleCreatorHover = useCallback(async (creator, topic) => {
     const creatorKey = `${creator.name}-${topic}`;
@@ -323,6 +338,247 @@ const DashboardDynamic = ({ onSectionChange }) => {
       setLoadingAnalysis(false);
     }
   }, [creatorAnalysis]);
+
+  // 🆕 FUNCIÓN PARA GUARDAR CONSEJO EN LOCALSTORAGE
+  const saveAdviceToVault = useCallback((advice) => {
+    try {
+      const vaultKey = 'viralcraft_saved_advice';
+      const existingVault = JSON.parse(localStorage.getItem(vaultKey) || '[]');
+
+      // Agregar timestamp y topic
+      const savedAdvice = {
+        id: Date.now(),
+        topic: nichemMetrics.topic,
+        advice: advice,
+        savedAt: new Date().toISOString()
+      };
+
+      existingVault.unshift(savedAdvice); // Agregar al inicio
+
+      // Limitar a 50 consejos para no llenar localStorage
+      if (existingVault.length > 50) {
+        existingVault.pop();
+      }
+
+      localStorage.setItem(vaultKey, JSON.stringify(existingVault));
+
+      toast({
+        title: '✅ Consejo guardado en tu bóveda',
+        description: 'Puedes acceder a tus consejos guardados desde el historial'
+      });
+    } catch (error) {
+      console.error('Error guardando consejo:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No pudimos guardar el consejo. Tu navegador puede estar sin espacio.',
+        variant: 'destructive'
+      });
+    }
+  }, [nichemMetrics, toast]);
+
+  // 🆕 FUNCIÓN PARA DESCARGAR CONSEJO
+  const downloadAdvice = useCallback((advice, creatorName) => {
+    try {
+      const content = `═══════════════════════════════════════
+🎯 ANÁLISIS CONTENTLAB AI - CREADOR TOP
+═══════════════════════════════════════
+
+📊 Creador: ${creatorName}
+🔍 Tema: ${nichemMetrics.topic}
+📅 Fecha: ${new Date().toLocaleDateString('es-ES')}
+
+───────────────────────────────────────
+📝 ANÁLISIS Y RECOMENDACIONES:
+───────────────────────────────────────
+
+${advice}
+
+───────────────────────────────────────
+Generado por ViralCraft ContentLab AI
+https://viralcraft.app
+═══════════════════════════════════════`;
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contentlab-${creatorName.replace(/\s+/g, '-')}-${Date.now()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: '✅ Consejo descargado',
+        description: 'El análisis se guardó en tu carpeta de descargas'
+      });
+    } catch (error) {
+      console.error('Error descargando consejo:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No pudimos descargar el archivo',
+        variant: 'destructive'
+      });
+    }
+  }, [nichemMetrics, toast]);
+
+  // 🆕 FUNCIÓN PARA ANALIZAR ARTÍCULO DE NEWS CON SEO AL HACER HOVER
+  const handleArticleHover = useCallback(async (article) => {
+    const articleKey = article.id;
+
+    // Si ya tenemos el análisis cacheado, no volver a pedir
+    if (seoAnalysis[articleKey]) {
+      setHoveredArticle(article);
+      return;
+    }
+
+    setHoveredArticle(article);
+    setLoadingSEOAnalysis(true);
+
+    try {
+      console.log('🤖 Analizando artículo con Gemini SEO:', article.title);
+      const { analyzeTrendingSEO } = await import('@/services/geminiSEOAnalysisService');
+      const analysis = await analyzeTrendingSEO(article, nichemMetrics.topic);
+
+      setSeoAnalysis(prev => ({
+        ...prev,
+        [articleKey]: analysis
+      }));
+    } catch (error) {
+      console.error('Error analizando artículo con SEO:', error);
+      setSeoAnalysis(prev => ({
+        ...prev,
+        [articleKey]: {
+          error: true,
+          message: '❌ No pudimos analizar este artículo en este momento. Intenta de nuevo.'
+        }
+      }));
+    } finally {
+      setLoadingSEOAnalysis(false);
+    }
+  }, [seoAnalysis, nichemMetrics]);
+
+  // 🆕 FUNCIÓN PARA GUARDAR ANÁLISIS SEO EN LOCALSTORAGE
+  const saveSEOAdviceToVault = useCallback((seoData, articleTitle) => {
+    try {
+      const vaultKey = 'viralcraft_saved_seo_advice';
+      const existingVault = JSON.parse(localStorage.getItem(vaultKey) || '[]');
+
+      const savedAdvice = {
+        id: Date.now(),
+        topic: nichemMetrics.topic,
+        articleTitle: articleTitle,
+        seoAnalysis: seoData,
+        savedAt: new Date().toISOString()
+      };
+
+      existingVault.unshift(savedAdvice);
+
+      if (existingVault.length > 50) {
+        existingVault.pop();
+      }
+
+      localStorage.setItem(vaultKey, JSON.stringify(existingVault));
+
+      toast({
+        title: '✅ Análisis SEO guardado',
+        description: 'Guardado en tu bóveda de consejos'
+      });
+    } catch (error) {
+      console.error('Error guardando análisis SEO:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No pudimos guardar el análisis',
+        variant: 'destructive'
+      });
+    }
+  }, [nichemMetrics, toast]);
+
+  // 🆕 FUNCIÓN PARA DESCARGAR ANÁLISIS SEO
+  const downloadSEOAdvice = useCallback((seoData, articleTitle) => {
+    try {
+      const analysis = seoData.analysis;
+
+      const content = `═══════════════════════════════════════
+🚀 ANÁLISIS SEO - VIRALCRAFT CONTENTLAB
+═══════════════════════════════════════
+
+TEMA: ${nichemMetrics.topic}
+ARTÍCULO: ${articleTitle}
+FECHA: ${new Date().toLocaleDateString('es')}
+
+───────────────────────────────────────
+📊 OPORTUNIDAD SEO:
+───────────────────────────────────────
+
+${analysis.oportunidadSEO}
+
+───────────────────────────────────────
+🔑 PALABRAS CLAVE ESTRATÉGICAS:
+───────────────────────────────────────
+
+${analysis.palabrasClave.map((kw, i) => `${i + 1}. ${kw}`).join('\n')}
+
+───────────────────────────────────────
+📝 TÍTULO OPTIMIZADO:
+───────────────────────────────────────
+
+${analysis.tituloOptimizado}
+
+───────────────────────────────────────
+💡 ESTRATEGIAS DE CONTENIDO:
+───────────────────────────────────────
+
+${analysis.estrategiasContenido.map((est, i) => `${i + 1}. ${est}`).join('\n\n')}
+
+───────────────────────────────────────
+🎯 FORMATOS RECOMENDADOS:
+───────────────────────────────────────
+
+${analysis.formatosRecomendados.map((fmt, i) => `${i + 1}. ${fmt}`).join('\n')}
+
+───────────────────────────────────────
+📈 MÉTRICAS OBJETIVO:
+───────────────────────────────────────
+
+• Alcance Estimado: ${analysis.metricasObjetivo.alcanceEstimado}
+• Dificultad SEO: ${analysis.metricasObjetivo.dificultadSEO}
+• Potencial Viral: ${analysis.metricasObjetivo.potencialViral}
+
+───────────────────────────────────────
+⚡ CONSEJO RÁPIDO:
+───────────────────────────────────────
+
+${analysis.consejoRapido}
+
+───────────────────────────────────────
+Generado por ViralCraft ContentLab AI
+https://viralcraft.app
+═══════════════════════════════════════`;
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contentlab-seo-${articleTitle.substring(0, 30).replace(/\s+/g, '-')}-${Date.now()}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: '✅ Análisis SEO descargado',
+        description: 'El análisis se guardó en tu carpeta de descargas'
+      });
+    } catch (error) {
+      console.error('Error descargando análisis SEO:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No pudimos descargar el archivo',
+        variant: 'destructive'
+      });
+    }
+  }, [nichemMetrics, toast]);
 
   const fetchExpertInsights = useCallback(
     async (topic, metricsContext = {}) => {
@@ -389,9 +645,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
         twitterSentiment,
         twitterHashtags,
         twitterViral,
-        newsTrending,
-        newsMomentum,
-        newsEmerging
+        newsArticles
       ] = await Promise.all([
         // API existente
         getAllTrending(user.id, searchTopic, ['news', 'youtube']),
@@ -403,10 +657,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
         analyzeSocialSentiment(searchTopic),
         getTrendingHashtags(searchTopic),
         calculateViralScore(searchTopic),
-        // 📰 News APIs (temas emergentes y momentum)
-        getTrendingNews(searchTopic, 'es', 10),
-        getTopicMomentum(searchTopic, 7),
-        getEmergingTopics('technology', 'us')
+        // 📰 NewsAPI - Artículos trending sobre el tema
+        getTrendingTopicsByKeyword(searchTopic)
       ]);
 
       if (!trendingData.success) {
@@ -428,12 +680,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
         viralScore: twitterViral
       });
 
-      setNewsData({
-        trending: newsTrending,
-        momentum: newsMomentum
-      });
-
-      setEmergingTopics(newsEmerging);
+      // 📰 Guardar artículos de NewsAPI
+      setNewsArticles(newsArticles || []);
 
       // Analizar y calcular métricas del nicho
       const metrics = analyzeNicheMetrics(trendingData.data, searchTopic);
@@ -444,13 +692,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
         ...metrics,
         youtubeEngagement: youtubeEngagement,
         twitterSentiment: twitterSentiment,
-        newsMomentum: newsMomentum,
         viralScore: twitterViral?.viralScore || 0
       });
 
       toast({
-        title: '✅ Tema analizado con 3 APIs reales',
-        description: `Datos de YouTube, Twitter y News API para "${searchTopic}"`,
+        title: '✅ Tema analizado con APIs reales',
+        description: `${newsArticles.length} tendencias de NewsAPI + YouTube + Twitter para "${searchTopic}"`,
       });
 
     } catch (error) {
@@ -898,6 +1145,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 <CardContent>
                   {weeklyChartData && <Line data={weeklyChartData} options={{
                     responsive: true,
+                    maintainAspectRatio: true,
+                    animation: false,
                     plugins: {
                       legend: { labels: { color: '#fff' } }
                     },
@@ -923,6 +1172,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 <CardContent>
                   {platformChartData && <Doughnut data={platformChartData} options={{
                     responsive: true,
+                    maintainAspectRatio: true,
+                    animation: false,
                     plugins: {
                       legend: { labels: { color: '#fff' } }
                     }
@@ -949,7 +1200,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
                       <div
                         key={creator.id || idx}
                         className="relative flex items-center justify-between p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer group"
-                        onMouseEnter={() => handleCreatorHover(creator, nichemMetrics.topic)}
+                        onClick={() => {
+                          setSelectedCreator(creator);
+                          setShowCreatorModal(true);
+                          handleCreatorHover(creator, nichemMetrics.topic);
+                        }}
+                        onMouseEnter={() => setHoveredCreator(creator)}
                         onMouseLeave={() => setHoveredCreator(null)}
                       >
                         <div className="flex items-center gap-3 flex-1">
@@ -987,50 +1243,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
                           </div>
                         </div>
 
-                        {/* 🆕 TOOLTIP GLAMUROSO CON ANÁLISIS DE CONTENTLAB */}
+                        {/* 🆕 INDICADOR HOVER - Click para ver análisis */}
                         {hoveredCreator?.name === creator.name && (
-                          <div className="absolute left-0 right-0 top-full mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="relative">
-                              {/* Flecha decorativa */}
-                              <div className="absolute -top-2 left-8 w-4 h-4 bg-gradient-to-br from-purple-600 to-blue-600 rotate-45 border-l border-t border-purple-400/30"></div>
-
-                              {/* Contenedor principal del tooltip */}
-                              <div className="relative bg-gradient-to-br from-purple-900/95 via-blue-900/95 to-purple-900/95 backdrop-blur-xl rounded-xl border border-purple-400/30 shadow-2xl shadow-purple-500/20 p-4">
-                                {/* Header con badge */}
-                                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-purple-400/20">
-                                  <SparklesSolidIcon className="w-4 h-4 text-yellow-400 animate-pulse" />
-                                  <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200 uppercase tracking-wide">
-                                    Análisis ContentLab
-                                  </span>
-                                  <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/30">
-                                    Más info de {creator.name}
-                                  </span>
-                                </div>
-
-                                {/* Contenido del análisis */}
-                                {loadingAnalysis ? (
-                                  <div className="flex items-center gap-3 py-4">
-                                    <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                                    <span className="text-sm text-gray-300">ContentLab está analizando...</span>
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">
-                                    {creatorAnalysis[`${creator.name}-${nichemMetrics.topic}`] || 'Cargando análisis...'}
-                                  </div>
-                                )}
-
-                                {/* Footer glamuroso */}
-                                <div className="mt-3 pt-2 border-t border-purple-400/10 flex items-center justify-between">
-                                  <span className="text-[10px] text-gray-400 italic">
-                                    Powered by ContentLab AI Coach
-                                  </span>
-                                  <div className="flex gap-1">
-                                    {[...Array(3)].map((_, i) => (
-                                      <div key={i} className="w-1 h-1 rounded-full bg-purple-400/40"></div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
+                          <div className="absolute -bottom-2 right-2 z-10">
+                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-600/90 backdrop-blur-sm rounded-full text-xs text-white shadow-lg">
+                              <SparklesSolidIcon className="w-3 h-3 animate-pulse" />
+                              <span className="hidden sm:inline">Click para análisis</span>
                             </div>
                           </div>
                         )}
@@ -1072,7 +1290,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {expertInsights.map((insight) => {
                       const InsightIcon =
-                        insightIconMap[insight.icon] || Sparkles;
+                        insightIconMap[insight.icon] || SparklesSolidIcon;
                       return (
                         <div
                           key={insight.id}
@@ -1100,7 +1318,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                                 key={`${insight.id}-bullet-${idx}`}
                                 className="flex items-start gap-2 text-sm text-gray-200"
                               >
-                                <ShieldCheck className="mt-0.5 w-3.5 h-3.5 text-purple-300" />
+                                <ShieldCheckIcon className="mt-0.5 w-3.5 h-3.5 text-purple-300 stroke-[2]" />
                                 <span>{bullet}</span>
                               </li>
                             ))}
@@ -1143,6 +1361,155 @@ const DashboardDynamic = ({ onSectionChange }) => {
               </CardContent>
             </Card>
 
+            {/* 📰 TENDENCIAS EMERGENTES DE NEWSAPI + ANÁLISIS SEO DE GEMINI */}
+            {newsArticles.length > 0 && (
+              <div className="col-span-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <NewspaperIcon className="w-6 h-6 text-cyan-400 stroke-[2]" />
+                  <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-blue-200">
+                    Tendencias Emergentes
+                  </h3>
+                  <span className="text-xs text-gray-400 bg-cyan-500/10 px-2 py-1 rounded-full">
+                    {newsArticles.length} artículos
+                  </span>
+                </div>
+
+                {/* Grid de 4 tarjetas de noticias */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {newsArticles.map((article, index) => (
+                    <motion.div
+                      key={article.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative group"
+                      onMouseEnter={() => handleArticleHover(article)}
+                      onMouseLeave={() => setHoveredArticle(null)}
+                      onClick={() => {
+                        setSelectedArticle(article);
+                        setShowSEOModal(true);
+                        handleArticleHover(article); // Asegurar que el análisis esté cargado
+                      }}
+                    >
+                      <Card className="glass-effect border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 hover:border-cyan-400/40 transition-all duration-300 cursor-pointer h-full overflow-hidden">
+                        {/* Imagen del artículo */}
+                        {article.imageUrl && (
+                          <div className="relative h-32 overflow-hidden">
+                            <img
+                              src={article.imageUrl}
+                              alt={article.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/400x200?text=News';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
+
+                            {/* Badge de fuente */}
+                            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
+                              <p className="text-[10px] text-cyan-300 font-medium">{article.source}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <CardContent className="p-4 space-y-3">
+                          {/* Título */}
+                          <h4 className="text-sm font-semibold text-white line-clamp-2 group-hover:text-cyan-300 transition-colors">
+                            {article.title}
+                          </h4>
+
+                          {/* Descripción */}
+                          <p className="text-xs text-gray-400 line-clamp-3">
+                            {article.description}
+                          </p>
+
+                          {/* Footer con fecha y link */}
+                          <div className="flex items-center justify-between pt-2 border-t border-cyan-500/10">
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(article.publishedAt).toLocaleDateString('es', {
+                                day: 'numeric',
+                                month: 'short'
+                              })}
+                            </span>
+                            {!article.isFallback && (
+                              <a
+                                href={article.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group/link"
+                              >
+                                Leer más
+                                <LinkIcon className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Indicador de hover para análisis SEO */}
+                          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="bg-yellow-500/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1">
+                              <SparklesSolidIcon className="w-3 h-3 text-yellow-900" />
+                              <span className="text-[9px] font-semibold text-yellow-900">
+                                Click para análisis SEO
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Tooltip de hover con análisis SEO de Gemini */}
+                      {hoveredArticle?.id === article.id && seoAnalysis[article.id] && !seoAnalysis[article.id].error && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="absolute z-50 top-full mt-2 left-0 right-0 bg-gradient-to-br from-purple-900/98 via-blue-900/98 to-purple-900/98 backdrop-blur-xl rounded-xl shadow-2xl shadow-purple-500/30 border border-purple-400/30 p-4 max-w-sm pointer-events-none"
+                        >
+                          <div className="flex items-start gap-2 mb-2">
+                            <SparklesSolidIcon className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="text-[10px] font-semibold text-cyan-300 mb-1">ANÁLISIS SEO GEMINI AI</p>
+                              <p className="text-[9px] text-gray-300 leading-relaxed line-clamp-3">
+                                {seoAnalysis[article.id].analysis.consejoRapido}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Keywords preview */}
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {seoAnalysis[article.id].analysis.palabrasClave.slice(0, 3).map((kw, i) => (
+                              <span key={i} className="text-[8px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-full">
+                                {kw}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="text-[8px] text-gray-400 flex items-center gap-1">
+                            <InformationCircleIcon className="w-3 h-3" />
+                            Haz click en la tarjeta para ver análisis completo
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Loading indicator para análisis */}
+                      {hoveredArticle?.id === article.id && loadingSEOAnalysis && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-purple-900/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-xl pointer-events-none"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ArrowPathIcon className="w-4 h-4 text-cyan-400 animate-spin" />
+                            <span className="text-[10px] text-white">Analizando con Gemini...</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Timestamp */}
             <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
               <CalendarIcon className="w-3 h-3 stroke-[2.5]" />
@@ -1180,6 +1547,318 @@ const DashboardDynamic = ({ onSectionChange }) => {
           </CardContent>
         </Card>
       )}
+
+      {/* 🆕 MODAL RESPONSIVE PARA ANÁLISIS DE CREADOR - Movido al componente padre */}
+      <AnimatePresence>
+        {showCreatorModal && selectedCreator && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowCreatorModal(false)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full sm:max-w-2xl sm:max-h-[80vh] bg-gradient-to-br from-purple-900/98 via-blue-900/98 to-purple-900/98 backdrop-blur-xl sm:rounded-2xl shadow-2xl shadow-purple-500/30 border-t sm:border border-purple-400/30 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[80vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-purple-400/20 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <SparklesSolidIcon className="w-6 h-6 text-yellow-400 animate-pulse" />
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200">
+                      Análisis ContentLab AI
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {selectedCreator.name} • {selectedCreator.platform}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCreatorModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-400 hover:text-white stroke-[2]" />
+                </button>
+              </div>
+
+              {/* Contenido - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                {/* Stats del creador */}
+                <div className="grid grid-cols-3 gap-3 p-4 bg-black/30 rounded-lg">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">Seguidores</p>
+                    <p className="text-sm font-bold text-white mt-1">{selectedCreator.followers}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">Vistas Prom</p>
+                    <p className="text-sm font-bold text-white mt-1">{selectedCreator.avgViews}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400">Engagement</p>
+                    <p className="text-sm font-bold text-green-400 mt-1">{selectedCreator.engagement}</p>
+                  </div>
+                </div>
+
+                {/* Análisis */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 rounded-lg border border-purple-400/20">
+                    <InformationCircleIcon className="w-5 h-5 text-purple-300" />
+                    <span className="text-sm font-semibold text-purple-200">
+                      Consejos Estratégicos
+                    </span>
+                  </div>
+
+                  {loadingAnalysis ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-4">
+                      <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-sm text-gray-300">ContentLab está analizando este creador...</p>
+                    </div>
+                  ) : (
+                    <div className="text-sm sm:text-base text-gray-100 leading-relaxed whitespace-pre-wrap bg-black/20 rounded-lg p-4">
+                      {creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`] || 'Cargando análisis...'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer con acciones */}
+              <div className="flex-shrink-0 p-4 sm:p-6 border-t border-purple-400/20 bg-black/30">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => {
+                      const analysis = creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`];
+                      if (analysis) {
+                        saveAdviceToVault(analysis);
+                      }
+                    }}
+                    disabled={loadingAnalysis}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <BookmarkIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                    Guardar en Bóveda
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const analysis = creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`];
+                      if (analysis) {
+                        downloadAdvice(analysis, selectedCreator.name);
+                      }
+                    }}
+                    disabled={loadingAnalysis}
+                    variant="outline"
+                    className="flex-1 border-purple-500/30 hover:bg-purple-500/10"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                    Descargar
+                  </Button>
+                </div>
+                <p className="text-xs text-center text-gray-400 mt-3 italic">
+                  Powered by ContentLab AI Coach
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 🆕 MODAL PARA ANÁLISIS SEO COMPLETO DE NEWSAPI */}
+      <AnimatePresence>
+        {showSEOModal && selectedArticle && seoAnalysis[selectedArticle.id] && !seoAnalysis[selectedArticle.id].error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowSEOModal(false)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full sm:max-w-3xl sm:max-h-[85vh] bg-gradient-to-br from-cyan-900/98 via-blue-900/98 to-purple-900/98 backdrop-blur-xl sm:rounded-2xl shadow-2xl shadow-cyan-500/30 border-t sm:border border-cyan-400/30 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-cyan-400/20 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <SparklesSolidIcon className="w-6 h-6 text-yellow-400 animate-pulse" />
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-blue-200">
+                      Análisis SEO con Gemini AI
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
+                      {selectedArticle.title}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSEOModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-400 hover:text-white stroke-[2]" />
+                </button>
+              </div>
+
+              {/* Contenido - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                {/* Imagen y fuente */}
+                <div className="flex gap-4 items-start">
+                  {selectedArticle.imageUrl && (
+                    <img
+                      src={selectedArticle.imageUrl}
+                      alt={selectedArticle.title}
+                      className="w-24 h-24 rounded-lg object-cover"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/96?text=News';
+                      }}
+                    />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <NewspaperIcon className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs text-cyan-300">{selectedArticle.source}</span>
+                    </div>
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                      {selectedArticle.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Oportunidad SEO */}
+                <div className="bg-black/30 rounded-lg p-4 border border-cyan-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ChartBarIcon className="w-5 h-5 text-cyan-400" />
+                    <h4 className="text-sm font-bold text-cyan-200">Oportunidad SEO</h4>
+                  </div>
+                  <p className="text-sm text-gray-300 leading-relaxed">
+                    {seoAnalysis[selectedArticle.id].analysis.oportunidadSEO}
+                  </p>
+                </div>
+
+                {/* Palabras Clave */}
+                <div className="bg-black/30 rounded-lg p-4 border border-cyan-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TagIcon className="w-5 h-5 text-yellow-400" />
+                    <h4 className="text-sm font-bold text-yellow-200">Palabras Clave Estratégicas</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {seoAnalysis[selectedArticle.id].analysis.palabrasClave.map((kw, i) => (
+                      <span key={i} className="text-xs bg-cyan-500/20 text-cyan-200 px-3 py-1.5 rounded-full border border-cyan-400/30">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Título Optimizado */}
+                <div className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 rounded-lg p-4 border border-purple-400/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <SparklesSolidIcon className="w-4 h-4 text-purple-300" />
+                    <h4 className="text-xs font-bold text-purple-200 uppercase tracking-wide">Título Optimizado</h4>
+                  </div>
+                  <p className="text-base font-semibold text-white">
+                    {seoAnalysis[selectedArticle.id].analysis.tituloOptimizado}
+                  </p>
+                </div>
+
+                {/* Estrategias de Contenido */}
+                <div className="bg-black/30 rounded-lg p-4 border border-green-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <LightBulbIcon className="w-5 h-5 text-green-400" />
+                    <h4 className="text-sm font-bold text-green-200">Estrategias de Contenido</h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {seoAnalysis[selectedArticle.id].analysis.estrategiasContenido.map((est, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-gray-300">
+                        <span className="text-green-400 font-bold">{i + 1}.</span>
+                        <span>{est}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Formatos Recomendados */}
+                <div className="bg-black/30 rounded-lg p-4 border border-blue-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <RocketLaunchIcon className="w-5 h-5 text-blue-400" />
+                    <h4 className="text-sm font-bold text-blue-200">Formatos Recomendados</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {seoAnalysis[selectedArticle.id].analysis.formatosRecomendados.map((fmt, i) => (
+                      <div key={i} className="bg-blue-500/10 rounded-lg p-3 text-center border border-blue-400/20">
+                        <p className="text-xs text-blue-200">{fmt}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Métricas Objetivo */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-black/30 rounded-lg p-3 text-center border border-cyan-500/20">
+                    <p className="text-xs text-gray-400 mb-1">Alcance Estimado</p>
+                    <p className="text-sm font-bold text-cyan-300">{seoAnalysis[selectedArticle.id].analysis.metricasObjetivo.alcanceEstimado}</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3 text-center border border-yellow-500/20">
+                    <p className="text-xs text-gray-400 mb-1">Dificultad SEO</p>
+                    <p className="text-sm font-bold text-yellow-300">{seoAnalysis[selectedArticle.id].analysis.metricasObjetivo.dificultadSEO}</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3 text-center border border-purple-500/20">
+                    <p className="text-xs text-gray-400 mb-1">Potencial Viral</p>
+                    <p className="text-sm font-bold text-purple-300">{seoAnalysis[selectedArticle.id].analysis.metricasObjetivo.potencialViral}</p>
+                  </div>
+                </div>
+
+                {/* Consejo Rápido */}
+                <div className="bg-gradient-to-r from-yellow-900/40 to-orange-900/40 rounded-lg p-4 border border-yellow-400/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FireSolidIcon className="w-5 h-5 text-yellow-400 animate-pulse" />
+                    <h4 className="text-sm font-bold text-yellow-200">Consejo Rápido</h4>
+                  </div>
+                  <p className="text-sm text-gray-200 leading-relaxed">
+                    {seoAnalysis[selectedArticle.id].analysis.consejoRapido}
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer - Botones */}
+              <div className="border-t border-cyan-400/20 p-4 flex-shrink-0 bg-black/20">
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      saveSEOAdviceToVault(seoAnalysis[selectedArticle.id], selectedArticle.title);
+                    }}
+                    variant="default"
+                    className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+                  >
+                    <BookmarkIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                    Guardar en Vault
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      downloadSEOAdvice(seoAnalysis[selectedArticle.id], selectedArticle.title);
+                    }}
+                    variant="outline"
+                    className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                    Descargar
+                  </Button>
+                </div>
+                <p className="text-xs text-center text-gray-400 mt-3 italic">
+                  Powered by Gemini AI + ContentLab
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

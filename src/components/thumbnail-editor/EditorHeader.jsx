@@ -1,7 +1,14 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Download, Undo, Redo, Save, History } from 'lucide-react';
+import {
+  ArrowLeftIcon,
+  ArrowDownTrayIcon,
+  ArrowUturnLeftIcon,
+  ArrowUturnRightIcon,
+  BookmarkIcon,
+  ClockIcon
+} from '@heroicons/react/24/outline';
 
 const EditorHeader = ({ onBack, onExport, canUndo, canRedo, onUndo, onRedo }) => {
   const { toast } = useToast();
@@ -18,7 +25,7 @@ const EditorHeader = ({ onBack, onExport, canUndo, canRedo, onUndo, onRedo }) =>
       <div className="flex items-center justify-between w-full px-4">
         <div className="flex items-center space-x-2">
           <Button variant="ghost" onClick={onBack} className="text-white hover:bg-white/10">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2 stroke-[2]" />
             Volver
           </Button>
           <div>
@@ -28,22 +35,22 @@ const EditorHeader = ({ onBack, onExport, canUndo, canRedo, onUndo, onRedo }) =>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo} className="disabled:opacity-50 hover:bg-purple-500/20">
-            <Undo className="w-5 h-5" />
+            <ArrowUturnLeftIcon className="w-5 h-5 stroke-[2]" />
           </Button>
           <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo} className="disabled:opacity-50 hover:bg-purple-500/20">
-            <Redo className="w-5 h-5" />
+            <ArrowUturnRightIcon className="w-5 h-5 stroke-[2]" />
           </Button>
           <Button variant="ghost" size="icon" onClick={handleNotImplemented} className="hover:bg-purple-500/20">
-            <History className="w-5 h-5" />
+            <ClockIcon className="w-5 h-5 stroke-[2]" />
           </Button>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" onClick={handleNotImplemented} className="border-purple-500/20">
-            <Save className="w-4 h-4 mr-2" />
+            <BookmarkIcon className="w-4 h-4 mr-2 stroke-[2]" />
             Guardar
           </Button>
           <Button onClick={onExport} className="gradient-primary hover:opacity-90">
-            <Download className="w-4 h-4 mr-2" />
+            <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
             Exportar
           </Button>
         </div>

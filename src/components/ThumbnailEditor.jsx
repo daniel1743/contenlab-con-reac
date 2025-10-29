@@ -1,228 +1,559 @@
-import React, { useState } from 'react';
-import { motion, useTransform, useScroll } from 'framer-motion'; // ✅ useScroll reemplaza useViewportScroll
-import { Card } from '@/components/ui/card';
-import PricingSection from '@/components/PricingSection';
-import TestimonialsCarousel from '@/components/TestimonialsCarousel';
-import BrandsCarousel from '@/components/BrandsCarousel';
+// ThumbnailEditor.tsx
+import React, { useEffect, useRef, useState } from 'react';
+import { fabric } from 'fabric';
 
-// Importar iconos animados modernos
-import { 
-  Sparkles, 
-  TrendingUp, 
-  Zap, 
-  Target, 
-  Users, 
-  BarChart3, 
-  Lightbulb, 
-  Activity, 
-  Briefcase,
-  Brain,
-  Compass,
-  Flame,
-  Heart,
-  Palette,
-  Shield,
-  Wand2,
-  Eye,
-  Megaphone
-} from 'lucide-react';
+const ThumbnailEditor = () => {
+  // ========== ESTADO Y REFERENCIAS ==========
+  
+  // Referencia al canvas DOM
+  const canvasRef = useRef(null);
+  
+  // Referencia a la instancia de Fabric.js Canvas
+  const fabricCanvasRef = useRef(null);
+  
+  // Estados para el historial de deshacer/rehacer
+  const [history, setHistory] = useState([]);
+  const [historyStep, setHistoryStep] = useState(-1);
+  const isRedoing = useRef(false);
+  
+  // Estado para mostrar propiedades del objeto seleccionado
+  const [selectedObjectType, setSelectedObjectType] = useState('');
 
-const LandingPage = ({ onSectionChange }) => {
-  const [hoveredCard, setHoveredCard] = useState(null);
-  const { scrollYProgress } = useScroll(); // ✅ reemplazo de useViewportScroll
-  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
-
-  // Iconos animados para módulos únicos
-  const AnimatedIcon = ({ Icon, delay = 0, color = "text-white" }) => (
-    <motion.div
-      initial={{ scale: 0, rotate: -180 }}
-      animate={{ scale: 1, rotate: 0 }}
-      transition={{ 
-        duration: 0.6, 
-        delay,
-        type: "spring",
-        stiffness: 100 
-      }}
-      whileHover={{ 
-        scale: 1.1, 
-        rotate: 360,
-        transition: { duration: 0.3 }
-      }}
-      className={`${color}`}
-    >
-      <Icon className="w-8 h-8" />
-    </motion.div>
-  );
-
-  // Módulos únicos con nombres profesionales
-  const modules = [
-    { 
-      icon: Eye, 
-      name: 'TrendScope', 
-      description: 'Análisis de tendencias con IA para detectar contenido viral antes que tu competencia',
-      color: 'from-violet-600 to-purple-600',
-      accent: 'violet'
-    },
-    { 
-      icon: Compass, 
-      name: 'EthniMap', 
-      description: 'Sectorización inteligente para identificar y conquistar nichos éticos inexplorados',
-      color: 'from-emerald-600 to-teal-600',
-      accent: 'emerald'
-    },
-    { 
-      icon: Flame, 
-      name: 'PulseRank', 
-      description: 'Optimización SEO emocional que viraliza sin perder profundidad ni autenticidad',
-      color: 'from-orange-600 to-red-600',
-      accent: 'orange'
-    },
-    { 
-      icon: Heart, 
-      name: 'StoryForge', 
-      description: 'Narrativa emocional que transforma datos en historias que conectan y conmueven',
-      color: 'from-pink-600 to-rose-600',
-      accent: 'pink'
-    },
-    { 
-      icon: Palette, 
-      name: 'VisualCraft', 
-      description: 'Editor de miniaturas con IA que crea diseños irresistibles en segundos',
-      color: 'from-blue-600 to-cyan-600',
-      accent: 'blue'
-    },
-    { 
-      icon: Brain, 
-      name: 'InsightHub', 
-      description: 'Dashboard inteligente que convierte métricas complejas en decisiones claras',
-      color: 'from-indigo-600 to-purple-600',
-      accent: 'indigo'
+  // ========== INICIALIZACIÓN DEL CANVAS ==========
+  
+  useEffect(() => {
+    // Inicializar el canvas de Fabric.js con dimensiones de miniatura de YouTube
+    if (canvasRef.current && !fabricCanvasRef.current) {
+      const canvas = new fabric.Canvas(canvasRef.current, {
+        width: 1280,
+        height: 720,
+        backgroundColor: '#ffffff',
+      });
+      
+      fabricCanvasRef.current = canvas;
+      
+      // Guardar estado inicial
+      saveState();
+      
+      // Event listeners para actualizar el historial cuando se modifiquen objetos
+      canvas.on('object:added', handleCanvasChange);
+      canvas.on('object:modified', handleCanvasChange);
+      canvas.on('object:removed', handleCanvasChange);
+      
+      // Event listener para mostrar propiedades del objeto seleccionado
+      canvas.on('selection:created', handleSelection);
+      canvas.on('selection:updated', handleSelection);
+      canvas.on('selection:cleared', () => setSelectedObjectType(''));
     }
-  ];
+    
+    // Cleanup al desmontar
+    return () => {
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+        fabricCanvasRef.current = null;
+      }
+    };
+  }, []);
 
-  // Estadísticas con contexto emocional y sus iconos
-  const emotionalStats = [
-    { 
-      value: '15K+', 
-      label: 'Creadores Activos',
-      context: 'Desde educadores hasta activistas visuales, todos encuentran aquí su espacio para crecer',
-      Icon: Users,
-      color: 'text-violet-300'
-    },
-    { 
-      value: '700%', 
-      label: 'Más Engagement',
-      context: 'Cuando el contenido conecta con valores auténticos, el crecimiento es inevitable',
-      Icon: TrendingUp,
-      color: 'text-pink-400'
-    },
-    { 
-      value: '24/7', 
-      label: 'IA Creativa',
-      context: 'Tu aliado digital que nunca duerme, siempre inspirando nuevas ideas',
-      Icon: Zap,
-      color: 'text-yellow-400'
-    },
-    { 
-      value: '99.9%', 
-      label: 'Uptime',
-      context: 'Porque tu creatividad no puede esperar, nosotros siempre estamos aquí',
-      Icon: Shield,
-      color: 'text-cyan-400'
-    }
-  ];
+  // ========== MANEJO DE EVENTOS DE TECLADO ==========
+  
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      // Ctrl+Z - Deshacer
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+      
+      // Ctrl+Y - Rehacer
+      if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+      
+      // Delete - Eliminar objeto seleccionado
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const activeObject = canvas.getActiveObject();
+        if (activeObject && !(activeObject instanceof fabric.IText && activeObject.isEditing)) {
+          e.preventDefault();
+          canvas.remove(activeObject);
+          canvas.renderAll();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [historyStep, history]);
 
-  // Tipos de creadores específicos
-  const creatorTypes = [
-    {
-      icon: Megaphone,
-      title: 'Narradores Visuales',
-      description: 'Buscan impacto emocional auténtico',
-      features: ['Storytelling visual', 'Engagement emocional', 'Branding narrativo']
-    },
-    {
-      icon: Lightbulb,
-      title: 'Educadores Digitales',
-      description: 'Quieren viralizar conocimiento ético',
-      features: ['Contenido educativo', 'Viralización responsable', 'Comunidades de aprendizaje']
-    },
-    {
-      icon: BarChart3,
-      title: 'Analistas Creativos',
-      description: 'Necesitan entender tendencias profundamente',
-      features: ['Análisis de datos', 'Insights predictivos', 'Estrategias basadas en evidencia']
-    }
-  ];
-
-  // Función para navegación usando el sistema de secciones existente
-  const handleFreeTrial = () => {
-    onSectionChange('tools'); // Cambia a la sección tools usando el callback del App.jsx
+  // ========== FUNCIONES DE HISTORIAL (DESHACER/REHACER) ==========
+  
+  // Guardar el estado actual del canvas en el historial
+  const saveState = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || isRedoing.current) return;
+    
+    const json = JSON.stringify(canvas.toJSON());
+    
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyStep + 1);
+      newHistory.push(json);
+      return newHistory;
+    });
+    
+    setHistoryStep(prev => prev + 1);
+  };
+  
+  // Manejar cambios en el canvas (para guardar estado)
+  const handleCanvasChange = () => {
+    // Usar un timeout para evitar múltiples guardados en una sola operación
+    setTimeout(() => {
+      if (!isRedoing.current) {
+        saveState();
+      }
+    }, 100);
+  };
+  
+  // Deshacer: volver al estado anterior
+  const undo = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || historyStep <= 0) return;
+    
+    isRedoing.current = true;
+    const previousStep = historyStep - 1;
+    
+    canvas.loadFromJSON(history[previousStep], () => {
+      canvas.renderAll();
+      setHistoryStep(previousStep);
+      isRedoing.current = false;
+    });
+  };
+  
+  // Rehacer: avanzar al siguiente estado
+  const redo = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || historyStep >= history.length - 1) return;
+    
+    isRedoing.current = true;
+    const nextStep = historyStep + 1;
+    
+    canvas.loadFromJSON(history[nextStep], () => {
+      canvas.renderAll();
+      setHistoryStep(nextStep);
+      isRedoing.current = false;
+    });
   };
 
+  // ========== MANEJO DE SELECCIÓN DE OBJETOS ==========
+  
+  const handleSelection = (e) => {
+    const activeObject = e.selected?.[0];
+    if (activeObject) {
+      setSelectedObjectType(activeObject.type || 'unknown');
+    }
+  };
+
+  // ========== FUNCIONES DE LA BARRA DE HERRAMIENTAS ==========
+  
+  // Añadir texto editable al canvas
+  const addText = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const text = new fabric.IText('Texto de ejemplo', {
+      left: 100,
+      top: 100,
+      fontSize: 40,
+      fill: '#000000',
+      fontFamily: 'Arial',
+    });
+    
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+  };
+  
+  // Añadir rectángulo al canvas
+  const addRectangle = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const rect = new fabric.Rect({
+      left: 150,
+      top: 150,
+      width: 200,
+      height: 150,
+      fill: '#3498db',
+      stroke: '#2980b9',
+      strokeWidth: 2,
+    });
+    
+    canvas.add(rect);
+    canvas.setActiveObject(rect);
+    canvas.renderAll();
+  };
+  
+  // Manejar la subida de imagen
+  const handleImageUpload = (e) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      const imgUrl = event.target?.result;
+      
+      fabric.Image.fromURL(imgUrl, (img) => {
+        // Escalar la imagen si es muy grande
+        const maxWidth = 600;
+        const maxHeight = 600;
+        
+        if (img.width && img.width > maxWidth) {
+          img.scaleToWidth(maxWidth);
+        }
+        if (img.height && img.height > maxHeight) {
+          img.scaleToHeight(maxHeight);
+        }
+        
+        img.set({
+          left: 100,
+          top: 100,
+        });
+        
+        canvas.add(img);
+        canvas.setActiveObject(img);
+        canvas.renderAll();
+      });
+    };
+    
+    reader.readAsDataURL(file);
+    
+    // Resetear el input para permitir subir la misma imagen de nuevo
+    e.target.value = '';
+  };
+  
+  // Exportar el canvas como imagen PNG
+  const exportCanvas = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Deseleccionar todos los objetos antes de exportar
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    
+    // Convertir el canvas a data URL
+    const dataURL = canvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 1,
+    });
+    
+    // Crear un enlace de descarga
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = 'thumbnail.png';
+    link.click();
+  };
+
+  // ========== FUNCIONES DE FILTROS (con ImageJS) ==========
+  
+  // Nota: Para usar image-js, necesitarías importarlo: import { Image } from 'image-js'
+  // Aquí está la estructura básica para aplicar filtros
+  
+  const applyBrightness = async () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const activeObject = canvas.getActiveObject();
+    
+    // Verificar que el objeto seleccionado sea una imagen
+    if (!activeObject || activeObject.type !== 'image') {
+      alert('Por favor, selecciona una imagen para aplicar el filtro');
+      return;
+    }
+    
+    const fabricImage = activeObject;
+    const imgElement = fabricImage.getElement();
+    
+    // OPCIÓN 1: Usar filtros nativos de Fabric.js
+    fabricImage.filters = fabricImage.filters || [];
+    fabricImage.filters.push(new fabric.Image.filters.Brightness({
+      brightness: 0.1 // Aumentar brillo en 0.1 (rango: -1 a 1)
+    }));
+    fabricImage.applyFilters();
+    canvas.renderAll();
+    
+    /* OPCIÓN 2: Usar image-js (requiere instalación: npm install image-js)
+    try {
+      // Convertir la imagen a formato image-js
+      const response = await fetch(imgElement.src);
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Cargar con image-js
+      const image = await Image.load(uint8Array);
+      
+      // Aplicar filtro de brillo (ejemplo: multiplicar valores RGB)
+      const brightened = image.multiply(1.1); // Incrementar 10%
+      
+      // Convertir de vuelta a data URL
+      const dataUrl = brightened.toDataURL();
+      
+      // Actualizar la imagen en el canvas
+      fabric.Image.fromURL(dataUrl, (newImg) => {
+        newImg.set({
+          left: fabricImage.left,
+          top: fabricImage.top,
+          scaleX: fabricImage.scaleX,
+          scaleY: fabricImage.scaleY,
+          angle: fabricImage.angle,
+        });
+        
+        canvas.remove(fabricImage);
+        canvas.add(newImg);
+        canvas.setActiveObject(newImg);
+        canvas.renderAll();
+      });
+    } catch (error) {
+      console.error('Error aplicando filtro:', error);
+    }
+    */
+  };
+  
+  const applyContrast = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const activeObject = canvas.getActiveObject();
+    
+    if (!activeObject || activeObject.type !== 'image') {
+      alert('Por favor, selecciona una imagen para aplicar el filtro');
+      return;
+    }
+    
+    const fabricImage = activeObject;
+
+    // Usar filtros nativos de Fabric.js
+    fabricImage.filters = fabricImage.filters || [];
+    fabricImage.filters.push(new fabric.Image.filters.Contrast({
+      contrast: 0.1 // Aumentar contraste
+    }));
+    fabricImage.applyFilters();
+    canvas.renderAll();
+  };
+  
+  const applySaturation = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const activeObject = canvas.getActiveObject();
+    
+    if (!activeObject || activeObject.type !== 'image') {
+      alert('Por favor, selecciona una imagen para aplicar el filtro');
+      return;
+    }
+    
+    const fabricImage = activeObject;
+
+    // Usar filtros nativos de Fabric.js
+    fabricImage.filters = fabricImage.filters || [];
+    fabricImage.filters.push(new fabric.Image.filters.Saturation({
+      saturation: 0.2 // Aumentar saturación
+    }));
+    fabricImage.applyFilters();
+    canvas.renderAll();
+  };
+
+  // ========== RENDERIZADO DEL COMPONENTE ==========
+  
   return (
-    <div className="min-h-screen bg-gray-900 relative overflow-hidden pt-[72px]">
-
-      {/* ... todas tus secciones, sin tocar ... */}
-
-      {/* Botones corregidos */}
-      <motion.button 
-        type="button" // ✅ evita reload
-        onClick={handleFreeTrial}
-        className="group relative px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-semibold text-lg overflow-hidden"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"
-          initial={{ x: '-100%' }}
-          whileHover={{ x: '0%' }}
-          transition={{ duration: 0.3 }}
-        />
-        <span className="relative z-10 flex items-center gap-2">
-          <Wand2 className="w-5 h-5" />
-          Probar Gratis
-        </span>
-      </motion.button>
-
-      <motion.button 
-        type="button" // ✅ evita reload
-        className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/20 transition-all duration-300"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <span className="flex items-center gap-2">
-          <Eye className="w-5 h-5" />
-          Ver Demo
-        </span>
-      </motion.button>
-
-      {/* CTA Final */}
-      <motion.button 
-        type="button" // ✅ evita reload
-        onClick={handleFreeTrial}
-        className="group relative px-12 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-bold text-xl overflow-hidden"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600"
-          initial={{ x: '-100%' }}
-          whileHover={{ x: '0%' }}
-          transition={{ duration: 0.3 }}
-        />
-        <span className="relative z-10 flex items-center gap-3">
-          <Wand2 className="w-6 h-6" />
-          Comenzar a crear ahora
-          <motion.div
-            animate={{ x: [0, 5, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            →
-          </motion.div>
-        </span>
-      </motion.button>
+    <div style={styles.container}>
+      <h2 style={styles.title}>Editor de Miniaturas</h2>
+      
+      {/* BARRA DE HERRAMIENTAS */}
+      <div style={styles.toolbar}>
+        <button onClick={addText} style={styles.button}>
+          ➕ Añadir Texto
+        </button>
+        
+        <button onClick={addRectangle} style={styles.button}>
+          ⬜ Añadir Rectángulo
+        </button>
+        
+        <label htmlFor="imageUpload" style={styles.button}>
+          🖼️ Subir Imagen
+          <input
+            id="imageUpload"
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={styles.fileInput}
+          />
+        </label>
+        
+        <div style={styles.separator} />
+        
+        <button onClick={applyBrightness} style={styles.button}>
+          ☀️ Brillo+
+        </button>
+        
+        <button onClick={applyContrast} style={styles.button}>
+          🔆 Contraste+
+        </button>
+        
+        <button onClick={applySaturation} style={styles.button}>
+          🎨 Saturación+
+        </button>
+        
+        <div style={styles.separator} />
+        
+        <button 
+          onClick={undo} 
+          disabled={historyStep <= 0}
+          style={{
+            ...styles.button,
+            opacity: historyStep <= 0 ? 0.5 : 1,
+          }}
+        >
+          ↶ Deshacer (Ctrl+Z)
+        </button>
+        
+        <button 
+          onClick={redo} 
+          disabled={historyStep >= history.length - 1}
+          style={{
+            ...styles.button,
+            opacity: historyStep >= history.length - 1 ? 0.5 : 1,
+          }}
+        >
+          ↷ Rehacer (Ctrl+Y)
+        </button>
+        
+        <div style={styles.separator} />
+        
+        <button onClick={exportCanvas} style={styles.exportButton}>
+          💾 Exportar PNG
+        </button>
+      </div>
+      
+      {/* PANEL DE PROPIEDADES */}
+      {selectedObjectType && (
+        <div style={styles.propertiesPanel}>
+          <strong>Objeto seleccionado:</strong> {selectedObjectType}
+          <br />
+          <small>Presiona "Delete" para eliminar</small>
+        </div>
+      )}
+      
+      {/* CANVAS */}
+      <div style={styles.canvasContainer}>
+        <canvas ref={canvasRef} />
+      </div>
+      
+      {/* INSTRUCCIONES */}
+      <div style={styles.instructions}>
+        <h3>Instrucciones:</h3>
+        <ul>
+          <li>Haz clic en los objetos para seleccionarlos, moverlos, rotarlos o redimensionarlos</li>
+          <li>Haz doble clic en el texto para editarlo</li>
+          <li>Usa <kbd>Delete</kbd> o <kbd>Backspace</kbd> para eliminar objetos seleccionados</li>
+          <li>Usa <kbd>Ctrl+Z</kbd> para deshacer y <kbd>Ctrl+Y</kbd> para rehacer</li>
+          <li>Los filtros solo funcionan en imágenes seleccionadas</li>
+        </ul>
+      </div>
     </div>
   );
 };
 
-export default LandingPage;
+// ========== ESTILOS ==========
+
+const styles = {
+  container: {
+    fontFamily: 'Arial, sans-serif',
+    maxWidth: '1300px',
+    margin: '0 auto',
+    padding: '20px',
+  },
+  title: {
+    textAlign: 'center',
+    color: '#2c3e50',
+    marginBottom: '20px',
+  },
+  toolbar: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px',
+    padding: '15px',
+    backgroundColor: '#ecf0f1',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    alignItems: 'center',
+  },
+  button: {
+    padding: '10px 15px',
+    backgroundColor: '#3498db',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    transition: 'background-color 0.3s',
+    position: 'relative',
+  },
+  exportButton: {
+    padding: '10px 20px',
+    backgroundColor: '#27ae60',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    transition: 'background-color 0.3s',
+  },
+  fileInput: {
+    display: 'none',
+  },
+  separator: {
+    width: '1px',
+    height: '30px',
+    backgroundColor: '#bdc3c7',
+    margin: '0 5px',
+  },
+  propertiesPanel: {
+    padding: '15px',
+    backgroundColor: '#fff3cd',
+    border: '1px solid #ffc107',
+    borderRadius: '5px',
+    marginBottom: '20px',
+    fontSize: '14px',
+  },
+  canvasContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '20px',
+    border: '2px solid #34495e',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+  },
+  instructions: {
+    backgroundColor: '#f8f9fa',
+    padding: '20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+  },
+};
+
+export default ThumbnailEditor;
