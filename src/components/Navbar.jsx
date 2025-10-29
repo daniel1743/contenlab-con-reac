@@ -3,7 +3,34 @@ import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sparkles, BarChart3, Wrench, Calendar, Settings, User, LogOut, Menu, X, MessageSquare, Home, Crown, Inbox, FolderOpen, Coins, Award, History, UserCog, Bell, DoorOpen, Zap } from 'lucide-react';
+// Heroicons imports for professional iconography
+import {
+  SparklesIcon,
+  ChartBarIcon,
+  WrenchScrewdriverIcon,
+  CalendarIcon,
+  Cog6ToothIcon,
+  UserIcon,
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon,
+  ChatBubbleLeftRightIcon,
+  HomeIcon,
+  InboxIcon,
+  FolderOpenIcon,
+  BanknotesIcon,
+  TrophyIcon,
+  ClockIcon,
+  UserCircleIcon,
+  BellIcon,
+  ArrowRightStartOnRectangleIcon,
+  BoltIcon
+} from '@heroicons/react/24/outline';
+
+import {
+  SparklesIcon as SparklesSolidIcon,
+  CurrencyDollarIcon
+} from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -40,15 +67,15 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
 
   // Navegación actualizada con nuevas secciones
   const navigationItems = [
-    { id: 'landing', label: 'Inicio', icon: Home },
-    { id: 'dashboard', label: 'Mi Craft Viral', icon: BarChart3, authRequired: true },
-    { id: 'tools', label: 'Centro Creativo', icon: Wrench },
+    { id: 'landing', label: 'Inicio', icon: HomeIcon },
+    { id: 'dashboard', label: 'Mi Craft Viral', icon: ChartBarIcon, authRequired: true },
+    { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon },
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
-    // { id: 'inbox', label: 'Mensajes', icon: Inbox, authRequired: true },
-    { id: 'calendar', label: 'Calendario', icon: Calendar, authRequired: true },
-    { id: 'library', label: 'Biblioteca', icon: FolderOpen, authRequired: true },
+    // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
+    { id: 'calendar', label: 'Calendario', icon: CalendarIcon, authRequired: true },
+    { id: 'library', label: 'Biblioteca', icon: FolderOpenIcon, authRequired: true },
     // COMENTADO TEMPORALMENTE - Chat sin backend funcional
-    // { id: 'chat', label: 'Chat IA', icon: MessageSquare, authRequired: true },
+    // { id: 'chat', label: 'Chat IA', icon: ChatBubbleLeftRightIcon, authRequired: true },
   ];
 
   // Lógica de navegación modificada
@@ -102,7 +129,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             onClick={() => onSectionChange('landing')}
             whileHover={{ scale: 1.05 }}
           >
-            <img src="/ico-viral.svg" alt="ViralCraft" className="w-8 h-8" />
+            <img src="/mascota.png" alt="ViralCraft" className="w-10 h-10 rounded-full object-cover" />
             <div className="relative">
               <span className="text-xl font-bold text-gradient">ViralCraft</span>
               <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
@@ -162,7 +189,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
-                          <Zap className="mr-2 h-4 w-4 text-yellow-400" />
+                          <BoltIcon className="mr-2 h-4 w-4 text-yellow-400 stroke-[2]" />
                           <span className="text-xs font-semibold">Plan/Poderes</span>
                         </div>
                         <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${
@@ -179,7 +206,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
-                          <Coins className="mr-2 h-4 w-4 text-green-400" />
+                          <BanknotesIcon className="mr-2 h-4 w-4 text-green-400 stroke-[2]" />
                           <span className="text-xs font-semibold">Créditos</span>
                         </div>
                         <span className="text-xs font-bold text-green-400">
@@ -199,9 +226,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                         }}
                         className="cursor-pointer bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 border border-yellow-500/30"
                       >
-                        <Crown className="mr-2 h-4 w-4 text-yellow-400" />
+                        <TrophyIcon className="mr-2 h-4 w-4 text-yellow-400 stroke-[2]" />
                         <span className="text-xs font-bold text-yellow-400">Actualizar Plan</span>
-                        <Sparkles className="ml-auto h-3 w-3 text-yellow-400 animate-pulse" />
+                        <SparklesSolidIcon className="ml-auto h-3 w-3 text-yellow-400 animate-pulse" />
                       </DropdownMenuItem>
                     )}
 
@@ -209,7 +236,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
 
                     {/* Insignias */}
                     <DropdownMenuItem onClick={() => onSectionChange('badges')} className="cursor-pointer">
-                      <Award className="mr-2 h-4 w-4 text-purple-400" />
+                      <TrophyIcon className="mr-2 h-4 w-4 text-purple-400 stroke-[2]" />
                       <span className="text-xs">Insignias</span>
                       <span className="ml-auto text-xs text-gray-400">{userBadges}/10</span>
                     </DropdownMenuItem>
@@ -218,19 +245,19 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
 
                     {/* Mis Forjados (Historial) */}
                     <DropdownMenuItem onClick={() => onSectionChange('history')} className="cursor-pointer">
-                      <History className="mr-2 h-4 w-4" />
+                      <ClockIcon className="mr-2 h-4 w-4 stroke-[2]" />
                       <span className="text-xs">Mis Forjados</span>
                     </DropdownMenuItem>
 
                     {/* Cambiar Identidad (Perfil) */}
                     <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer">
-                      <UserCog className="mr-2 h-4 w-4" />
+                      <UserCircleIcon className="mr-2 h-4 w-4 stroke-[2]" />
                       <span className="text-xs">Cambiar Identidad</span>
                     </DropdownMenuItem>
 
                     {/* Notificaciones */}
                     <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="cursor-pointer">
-                      <Bell className="mr-2 h-4 w-4" />
+                      <BellIcon className="mr-2 h-4 w-4 stroke-[2]" />
                       <span className="text-xs">Notificaciones</span>
                     </DropdownMenuItem>
 
@@ -238,7 +265,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
 
                     {/* Cerrar Portal (Cerrar Sesión) */}
                     <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400 cursor-pointer">
-                      <DoorOpen className="mr-2 h-4 w-4" />
+                      <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4 stroke-[2]" />
                       <span className="text-xs font-semibold">Cerrar Portal</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -266,7 +293,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
               className="md:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMobileMenuOpen ? <XMarkIcon className="h-5 w-5 stroke-[2]" /> : <Bars3Icon className="h-5 w-5 stroke-[2]" />}
             </Button>
           </div>
         </div>

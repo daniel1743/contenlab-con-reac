@@ -3,32 +3,40 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+// 🎨 Heroicons - Íconos profesionales con estilo moderno
 import {
-  TrendingUp,
-  Users,
-  Eye,
-  Heart,
-  Target,
-  Search,
-  Loader2,
-  TrendingDown,
-  Sparkles,
-  BarChart3,
-  Activity,
-  Globe,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  Lightbulb,
-  LineChart,
-  Diamond,
-  Rocket,
-  Compass,
-  GraduationCap,
-  ShieldCheck,
-  DollarSign
-} from 'lucide-react';
+  ArrowTrendingUpIcon,
+  UsersIcon,
+  EyeIcon,
+  HeartIcon,
+  ViewfinderCircleIcon,
+  MagnifyingGlassIcon,
+  ArrowPathIcon,
+  ArrowTrendingDownIcon,
+  SparklesIcon,
+  ChartBarIcon,
+  SignalIcon,
+  GlobeAltIcon,
+  CalendarIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  MinusIcon,
+  LightBulbIcon,
+  ChartPieIcon,
+  FireIcon,
+  RocketLaunchIcon,
+  MapIcon,
+  AcademicCapIcon,
+  ShieldCheckIcon,
+  BanknotesIcon
+} from '@heroicons/react/24/outline';
+
+// Íconos solid para énfasis
+import {
+  SparklesIcon as SparklesSolidIcon,
+  FireIcon as FireSolidIcon,
+  InformationCircleIcon
+} from '@heroicons/react/24/solid';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -45,7 +53,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { getAllTrending } from '@/services/trendingContentService';
-import { generateExpertAdvisoryInsights } from '@/services/geminiService';
+import { generateExpertAdvisoryInsights, analyzeTopCreator } from '@/services/geminiService';
 import {
   searchYouTubeVideos,
   getWeeklyTrends,
@@ -76,17 +84,17 @@ ChartJS.register(
 );
 
 const insightIconMap = {
-  Lightbulb,
-  LineChart,
-  Diamond,
-  Rocket,
-  Compass,
-  GraduationCap,
-  ShieldCheck,
-  DollarSign,
-  Sparkles,
-  BarChart3,
-  Target
+  Lightbulb: LightBulbIcon,
+  LineChart: ChartPieIcon,
+  Diamond: FireSolidIcon,
+  Rocket: RocketLaunchIcon,
+  Compass: MapIcon,
+  GraduationCap: AcademicCapIcon,
+  ShieldCheck: ShieldCheckIcon,
+  DollarSign: BanknotesIcon,
+  Sparkles: SparklesSolidIcon,
+  BarChart3: ChartBarIcon,
+  Target: ViewfinderCircleIcon
 };
 
 const generateFallbackInsights = (topic) => [
@@ -278,6 +286,43 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [twitterData, setTwitterData] = useState(null);
   const [newsData, setNewsData] = useState(null);
   const [emergingTopics, setEmergingTopics] = useState([]);
+
+  // 🆕 ESTADOS PARA TOOLTIP DE CREADOR
+  const [hoveredCreator, setHoveredCreator] = useState(null);
+  const [creatorAnalysis, setCreatorAnalysis] = useState({});
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+
+  // 🆕 FUNCIÓN PARA ANALIZAR CREADOR AL HACER HOVER
+  const handleCreatorHover = useCallback(async (creator, topic) => {
+    const creatorKey = `${creator.name}-${topic}`;
+
+    // Si ya tenemos el análisis cacheado, no volver a pedir
+    if (creatorAnalysis[creatorKey]) {
+      setHoveredCreator(creator);
+      return;
+    }
+
+    setHoveredCreator(creator);
+    setLoadingAnalysis(true);
+
+    try {
+      console.log('🎯 Analizando creador con ContentLab AI:', creator.name);
+      const analysis = await analyzeTopCreator(creator, topic);
+
+      setCreatorAnalysis(prev => ({
+        ...prev,
+        [creatorKey]: analysis
+      }));
+    } catch (error) {
+      console.error('Error analizando creador:', error);
+      setCreatorAnalysis(prev => ({
+        ...prev,
+        [creatorKey]: '❌ No pudimos analizar este creador en este momento. Intenta de nuevo.'
+      }));
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  }, [creatorAnalysis]);
 
   const fetchExpertInsights = useCallback(
     async (topic, metricsContext = {}) => {
@@ -740,7 +785,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-4xl font-bold text-gradient flex items-center gap-3">
-              <BarChart3 className="w-10 h-10" />
+              <ChartBarIcon className="w-10 h-10 stroke-[1.5]" />
               Mi Craft Viral
             </h1>
             <p className="text-lg text-gray-400 mt-2">
@@ -756,7 +801,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
           <CardContent className="p-4">
             <div className="flex gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 stroke-[2]" />
                 <Input
                   placeholder="Busca un tema o nicho (ej: cocina saludable, gaming, finanzas)..."
                   value={searchTopic}
@@ -772,12 +817,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <ArrowPathIcon className="w-5 h-5 mr-2 animate-spin stroke-[2]" />
                     Analizando...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5 mr-2" />
+                    <SparklesSolidIcon className="w-5 h-5 mr-2 text-yellow-400" />
                     Analizar Tema
                   </>
                 )}
@@ -804,7 +849,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
-                icon={Users}
+                icon={UsersIcon}
                 title="Creadores analizados"
                 value={nichemMetrics.creatorsRange}
                 change="Datos directos de YouTube"
@@ -812,7 +857,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 color="from-purple-500/20 to-pink-500/20"
               />
               <StatCard
-                icon={Eye}
+                icon={EyeIcon}
                 title="Rango de vistas por video"
                 value={nichemMetrics.avgViewsRange}
                 change="Últimos lanzamientos en el nicho"
@@ -820,7 +865,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 color="from-blue-500/20 to-cyan-500/20"
               />
               <StatCard
-                icon={Heart}
+                icon={HeartIcon}
                 title="Engagement estimado"
                 value={nichemMetrics.avgEngagementRange}
                 change="Baseline basado en likes + comentarios"
@@ -828,7 +873,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 color="from-pink-500/20 to-red-500/20"
               />
               <StatCard
-                icon={TrendingUp}
+                icon={ArrowTrendingUpIcon}
                 title="Momentum del tema"
                 value={`${nichemMetrics.trendScore}/100`}
                 change={nichemMetrics.trendScore >= 75 ? 'Momentum alto' : nichemMetrics.trendScore >= 55 ? 'Crecimiento saludable' : 'Oportunidad emergente'}
@@ -843,7 +888,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
               <Card className="lg:col-span-2 glass-effect border-purple-500/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-purple-400" />
+                    <SignalIcon className="w-5 h-5 text-purple-400 stroke-[2]" />
                     Rendimiento Semanal del Tema
                   </CardTitle>
                   <CardDescription>
@@ -868,7 +913,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
               <Card className="glass-effect border-purple-500/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-blue-400" />
+                    <GlobeAltIcon className="w-5 h-5 text-blue-400 stroke-[2]" />
                     Distribución por Plataforma
                   </CardTitle>
                   <CardDescription>
@@ -890,7 +935,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
             <Card className="glass-effect border-purple-500/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-yellow-400" />
+                  <ViewfinderCircleIcon className="w-5 h-5 text-yellow-400 stroke-[2]" />
                   Top Creadores en "{nichemMetrics.topic}"
                 </CardTitle>
                 <CardDescription>
@@ -903,7 +948,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     nichemMetrics.topCreators.map((creator, idx) => (
                       <div
                         key={creator.id || idx}
-                        className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors"
+                        className="relative flex items-center justify-between p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer group"
+                        onMouseEnter={() => handleCreatorHover(creator, nichemMetrics.topic)}
+                        onMouseLeave={() => setHoveredCreator(null)}
                       >
                         <div className="flex items-center gap-3 flex-1">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
@@ -939,6 +986,54 @@ const DashboardDynamic = ({ onSectionChange }) => {
                             <p className="text-green-400 font-semibold">{creator.engagement}</p>
                           </div>
                         </div>
+
+                        {/* 🆕 TOOLTIP GLAMUROSO CON ANÁLISIS DE CONTENTLAB */}
+                        {hoveredCreator?.name === creator.name && (
+                          <div className="absolute left-0 right-0 top-full mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="relative">
+                              {/* Flecha decorativa */}
+                              <div className="absolute -top-2 left-8 w-4 h-4 bg-gradient-to-br from-purple-600 to-blue-600 rotate-45 border-l border-t border-purple-400/30"></div>
+
+                              {/* Contenedor principal del tooltip */}
+                              <div className="relative bg-gradient-to-br from-purple-900/95 via-blue-900/95 to-purple-900/95 backdrop-blur-xl rounded-xl border border-purple-400/30 shadow-2xl shadow-purple-500/20 p-4">
+                                {/* Header con badge */}
+                                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-purple-400/20">
+                                  <SparklesSolidIcon className="w-4 h-4 text-yellow-400 animate-pulse" />
+                                  <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200 uppercase tracking-wide">
+                                    Análisis ContentLab
+                                  </span>
+                                  <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/30">
+                                    Más info de {creator.name}
+                                  </span>
+                                </div>
+
+                                {/* Contenido del análisis */}
+                                {loadingAnalysis ? (
+                                  <div className="flex items-center gap-3 py-4">
+                                    <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-sm text-gray-300">ContentLab está analizando...</span>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">
+                                    {creatorAnalysis[`${creator.name}-${nichemMetrics.topic}`] || 'Cargando análisis...'}
+                                  </div>
+                                )}
+
+                                {/* Footer glamuroso */}
+                                <div className="mt-3 pt-2 border-t border-purple-400/10 flex items-center justify-between">
+                                  <span className="text-[10px] text-gray-400 italic">
+                                    Powered by ContentLab AI Coach
+                                  </span>
+                                  <div className="flex gap-1">
+                                    {[...Array(3)].map((_, i) => (
+                                      <div key={i} className="w-1 h-1 rounded-full bg-purple-400/40"></div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -954,11 +1049,11 @@ const DashboardDynamic = ({ onSectionChange }) => {
             <Card className="glass-effect border-purple-500/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-300" />
+                  <SparklesSolidIcon className="w-5 h-5 text-purple-300" />
                   Playbooks expertos para "{nichemMetrics.topic}"
                 </CardTitle>
                 <CardDescription>
-                  Recomendaciones generadas por nuestro estratega IA (Gemini) para accionar de inmediato
+                  Recomendaciones generadas por nuestro estratega ContentLab AI para accionar de inmediato
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1033,15 +1128,15 @@ const DashboardDynamic = ({ onSectionChange }) => {
                       {formattedWeeklyGrowth}
                     </p>
                     <p className={`text-xs mt-1 flex items-center gap-1 ${weeklyGrowthPositive ? 'text-green-400' : 'text-red-400'}`}>
-                      {weeklyGrowthPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                      {weeklyGrowthPositive ? <ArrowUpIcon className="w-3 h-3 stroke-[2.5]" /> : <ArrowDownIcon className="w-3 h-3 stroke-[2.5]" />}
                       {weeklyGrowthPositive ? 'Interés por el tema en alza' : 'Interés en descenso (ajusta tus contenidos)'}
                     </p>
                   </div>
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
                     {weeklyGrowthPositive ? (
-                      <TrendingUp className="w-10 h-10 text-green-400" />
+                      <ArrowTrendingUpIcon className="w-10 h-10 text-green-400 stroke-[1.5]" />
                     ) : (
-                      <TrendingDown className="w-10 h-10 text-red-400" />
+                      <ArrowTrendingDownIcon className="w-10 h-10 text-red-400 stroke-[1.5]" />
                     )}
                   </div>
                 </div>
@@ -1050,7 +1145,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
             {/* Timestamp */}
             <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-              <Calendar className="w-3 h-3" />
+              <CalendarIcon className="w-3 h-3 stroke-[2.5]" />
               <span>Datos actualizados: {new Date(nichemMetrics.fetchedAt).toLocaleString('es')}</span>
             </div>
           </motion.div>
@@ -1061,7 +1156,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
       {!nichemMetrics && !isLoading && (
         <Card className="glass-effect border-purple-500/20 min-h-[400px] flex items-center justify-center">
           <CardContent className="text-center space-y-4">
-            <Sparkles className="w-20 h-20 mx-auto text-purple-400 opacity-30" />
+            <SparklesSolidIcon className="w-20 h-20 mx-auto text-purple-400 opacity-30" />
             <h3 className="text-2xl font-semibold text-white">Descubre Tendencias en Tiempo Real</h3>
             <p className="text-gray-400 max-w-md mx-auto">
               Busca cualquier tema o nicho y obtén un análisis completo de cómo está funcionando
@@ -1089,29 +1184,105 @@ const DashboardDynamic = ({ onSectionChange }) => {
   );
 };
 
-// Componente de tarjeta de estadística
+// Diccionario de explicaciones ContentLab AI para cada métrica
+const METRIC_EXPLANATIONS = {
+  "Creadores analizados": {
+    title: "¿Qué significa 'Creadores analizados'?",
+    explanation: "📊 Este número representa cuántos creadores de contenido están activos en este nicho según los datos de YouTube. Un rango alto (100+) indica saturación - será más difícil destacar. Un rango bajo (<30) puede significar una oportunidad emergente o un nicho demasiado específico.",
+    advice: "💡 Consejo ContentLab: Si ves 100+ creadores, no te desanimes. Busca un sub-nicho más específico donde puedas diferenciarte. Por ejemplo, en vez de 'cocina', prueba 'cocina keto para principiantes'."
+  },
+  "Rango de vistas por video": {
+    title: "¿Cómo interpretar el rango de vistas?",
+    explanation: "👁️ Este rango muestra las visualizaciones promedio que están obteniendo los videos en este tema. Si ves '5K-50K', significa que los videos típicos obtienen entre 5,000 y 50,000 vistas. Un rango amplio indica alta variabilidad - algunos videos explotan mientras otros no.",
+    advice: "💡 Consejo ContentLab: Si el rango es bajo (menos de 10K), el tema puede estar poco demandado O puedes ser pionero. Si es alto (100K+), hay audiencia masiva pero también más competencia. Tu calidad debe ser impecable."
+  },
+  "Engagement estimado": {
+    title: "¿Qué es el engagement y por qué importa?",
+    explanation: "❤️ El engagement mide cuánto interactúa la audiencia (likes, comentarios, compartidos). Un buen engagement (>5%) indica que el tema REALMENTE conecta con las personas, no solo que lo miran. Esto es oro para el algoritmo de YouTube.",
+    advice: "💡 Consejo ContentLab: Engagement alto = audiencia apasionada. Estos nichos son mejores para monetización porque la comunidad es leal. Si ves engagement bajo (<2%), el tema puede ser aburrido o estar saturado de contenido genérico."
+  },
+  "Momentum del tema": {
+    title: "¿Qué significa el 'Momentum'?",
+    explanation: "🚀 El Momentum (0-100) mide si un tema está creciendo, estable o muriendo. 75+ es explosivo (sube ahora al tren), 50-75 es saludable (crecimiento sostenido), 25-50 es estable, <25 está decayendo. ContentLab calcula esto analizando vistas, engagement y frecuencia de publicación.",
+    advice: "💡 Consejo ContentLab: Momentum alto NO siempre es mejor. Si está en 90+, llegas tarde - ya es mainstream. Busca temas en 50-70: tienen tracción pero aún hay espacio para crecer con ellos."
+  }
+};
+
+// Componente de tarjeta de estadística con tooltip explicativo
 const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
-  const TrendIcon = trend === 'up' ? ArrowUp : trend === 'down' ? ArrowDown : Minus;
+  const [showTooltip, setShowTooltip] = React.useState(false);
+  const TrendIcon = trend === 'up' ? ArrowUpIcon : trend === 'down' ? ArrowDownIcon : MinusIcon;
   const trendColor = trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-yellow-400';
+  const explanation = METRIC_EXPLANATIONS[title];
 
   return (
-    <Card className={`glass-effect border-purple-500/20 bg-gradient-to-br ${color}`}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-gray-400 mb-2">{title}</p>
-            <p className="text-3xl font-bold text-white mb-1">{value}</p>
-            <div className={`flex items-center gap-1 text-sm ${trendColor}`}>
-              <TrendIcon className="w-4 h-4" />
-              <span>{change}</span>
+    <div className="relative">
+      <Card className={`glass-effect border-purple-500/20 bg-gradient-to-br ${color} cursor-pointer transition-all duration-300 hover:scale-105`}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}>
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-sm text-gray-400">{title}</p>
+                <div className="group relative">
+                  <InformationCircleIcon className="w-4 h-4 text-purple-400 animate-pulse" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-white mb-1">{value}</p>
+              <div className={`flex items-center gap-1 text-sm ${trendColor}`}>
+                <TrendIcon className="w-4 h-4" />
+                <span>{change}</span>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg bg-white/5">
+              <Icon className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="p-3 rounded-lg bg-white/5">
-            <Icon className="w-6 h-6 text-white" />
+        </CardContent>
+      </Card>
+
+      {/* 🆕 TOOLTIP EXPLICATIVO CONTENTLAB AI */}
+      {showTooltip && explanation && (
+        <div className="absolute left-0 right-0 top-full mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="relative">
+            {/* Flecha decorativa */}
+            <div className="absolute -top-2 left-8 w-4 h-4 bg-gradient-to-br from-purple-600 to-blue-600 rotate-45 border-l border-t border-purple-400/30"></div>
+
+            {/* Contenedor del tooltip */}
+            <div className="relative bg-gradient-to-br from-purple-900/98 via-blue-900/98 to-purple-900/98 backdrop-blur-xl rounded-xl border border-purple-400/40 shadow-2xl shadow-purple-500/30 p-4 max-w-md">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-purple-400/20">
+                <SparklesSolidIcon className="w-4 h-4 text-yellow-400" />
+                <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200 uppercase tracking-wide">
+                  {explanation.title}
+                </span>
+              </div>
+
+              {/* Explicación */}
+              <div className="space-y-3 text-sm text-gray-100 leading-relaxed">
+                <p>{explanation.explanation}</p>
+                <div className="pt-2 border-t border-purple-400/10">
+                  <p className="text-yellow-300/90 font-medium">{explanation.advice}</p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-3 pt-2 border-t border-purple-400/10 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 italic">
+                  Powered by ContentLab AI Coach
+                </span>
+                <div className="flex gap-1">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="w-1 h-1 rounded-full bg-purple-400/40"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 

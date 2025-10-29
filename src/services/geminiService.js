@@ -691,3 +691,57 @@ FORMATO: Responde en markdown estructurado y profesional, NO en JSON simple.
 
   return await generateContent(prompt);
 };
+
+/**
+ * 🆕 ANÁLISIS DE CREADOR TOP - Coach/Asesor SEO Profesional
+ * Analiza los datos de un creador y da feedback realista como coach
+ * @param {Object} creatorData - Datos del creador (followers, avgViews, engagement, etc.)
+ * @param {string} topic - Tema/nicho analizado
+ * @returns {Promise<string>} - Análisis profesional y motivador
+ */
+export const analyzeTopCreator = async (creatorData, topic) => {
+  const prompt = `
+🎯 ROL: Eres un COACH DE CONTENIDO y ASESOR SEO PROFESIONAL con 10+ años de experiencia.
+Tu estilo: Franco, realista, motivador pero honesto. Das opciones estratégicas concretas.
+
+📊 CREADOR ANALIZADO:
+- Nombre: ${creatorData.name}
+- Plataforma: ${creatorData.platform}
+- Seguidores: ${creatorData.followers}
+- Vistas Promedio: ${creatorData.avgViews}
+- Engagement: ${creatorData.engagement}
+- Nicho: "${topic}"
+
+🎯 TU MISIÓN:
+Analiza OBJETIVAMENTE este creador y proporciona:
+
+1. **Diagnóstico Realista** (2-3 líneas)
+   - ¿Qué está haciendo bien? (basado en engagement/vistas)
+   - ¿Hay saturación en este nicho? ¿Está trillado?
+   - ¿Sus métricas son realistas para alguien que empieza?
+
+2. **Advertencia SEO** (1-2 líneas)
+   - Si el tema está saturado: "⚠️ CUIDADO: Este nicho está MUY competido..."
+   - Si hay oportunidad: "✅ OPORTUNIDAD: Hay espacio para crecer si..."
+
+3. **Estrategia de Diferenciación** (2-3 puntos concretos)
+   - NO copies el estilo de ${creatorData.name}
+   - Encuentra ÁNGULOS ÚNICOS para el mismo tema "${topic}"
+   - Ejemplos: cambiar formato, target diferente, enfoque innovador
+
+4. **Acción Inmediata** (1 frase)
+   - Qué hacer HOY para diferenciarte
+
+⚡ REGLAS CRÍTICAS:
+- Menos es más: Máximo 120 palabras TOTAL
+- Sé FRANCO: Si está trillado, dilo
+- Da OPCIONES REALES, no "trabaja duro" genérico
+- Usa emojis estratégicamente (máximo 4)
+- NO hagas listas largas
+- Motivar SIN mentir sobre la dificultad
+
+FORMATO: Texto directo en párrafos cortos, NO markdown complejo.
+`;
+
+  return await generateContent(prompt);
+};

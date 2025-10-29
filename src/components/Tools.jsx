@@ -6,33 +6,40 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
+// Heroicons imports for professional iconography
 import {
-  Sparkles,
-  Image,
-  Hash,
-  Wand2,
-  TrendingUp,
-  Zap,
-  Clipboard,
-  Trash2,
-  Copy,
-  BarChart2,
-  Youtube,
-  Facebook,
-  Instagram as InstagramIcon,
-  RotateCw,
-  Download,
-  User,
-  X,
-  ArrowUp,
-  Minus,
-  ChevronRight,
-  AlertCircle,
-  Lock,
-  Crown,
-  Star,
-  CheckCircle2
-} from 'lucide-react';
+  SparklesIcon,
+  PhotoIcon,
+  HashtagIcon,
+  BoltIcon,
+  ArrowTrendingUpIcon,
+  ClipboardDocumentIcon,
+  TrashIcon,
+  DocumentDuplicateIcon,
+  ChartBarIcon,
+  ArrowPathIcon,
+  ArrowDownTrayIcon,
+  UserIcon,
+  XMarkIcon,
+  ArrowUpIcon,
+  MinusIcon,
+  ChevronRightIcon,
+  ExclamationCircleIcon,
+  LockClosedIcon,
+  TrophyIcon,
+  StarIcon,
+  CheckCircleIcon,
+  Cog6ToothIcon,
+  InformationCircleIcon,
+  ChevronDownIcon,
+  VideoCameraIcon,
+  PlayCircleIcon
+} from '@heroicons/react/24/outline';
+
+import {
+  SparklesIcon as SparklesSolidIcon,
+  BoltIcon as BoltSolidIcon
+} from '@heroicons/react/24/solid';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Bar, Doughnut } from 'react-chartjs-2';
@@ -103,6 +110,37 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
   const [contentLimpio, setContentLimpio] = useState('');
   const [contentSugerencias, setContentSugerencias] = useState('');
   const [activeTab, setActiveTab] = useState('limpio');
+
+  // 🆕 PERSONALIZACIÓN AVANZADA - Estados
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [advancedSettings, setAdvancedSettings] = useState(() => {
+    // Smart defaults desde creatorProfile
+    const profile = localStorage.getItem('creatorProfile');
+    if (profile) {
+      const data = JSON.parse(profile);
+      return {
+        emotionalObjective: data.primaryGoal === 'Educar' ? 'Confianza' :
+                           data.primaryGoal === 'Inspirar' ? 'Inspiración' :
+                           data.primaryGoal === 'Entretener' ? 'Humor' : '',
+        depthLevel: data.contentFrequency === 'Diario' ? 'Superficial (Viral)' : 'Profundo',
+        audienceType: data.targetAudience || '',
+        narrativeStyle: data.narrativeStructure || data.toneStyle || '',
+        brandValues: data.uniqueSlogan || '',
+        usageContext: 'Redes sociales'
+      };
+    }
+    return {
+      emotionalObjective: '',
+      depthLevel: '',
+      audienceType: '',
+      narrativeStyle: '',
+      brandValues: '',
+      usageContext: ''
+    };
+  });
+  const [isUsingProfile, setIsUsingProfile] = useState(() => {
+    return !!localStorage.getItem('creatorProfile');
+  });
 
   // 🆕 NUEVOS ESTADOS PARA DATOS REALES DE GEMINI
   const [realTitles, setRealTitles] = useState([]);
@@ -514,12 +552,24 @@ const handleCopy = useCallback(() => {
       console.log('🤖 Llamando a Gemini API para script principal...');
       console.log('🎭 Personalidad del creador:', creatorPersonality.role ? 'Configurada' : 'No configurada');
 
+      // 🆕 Construir perfil enriquecido con settings avanzados
+      const enrichedProfile = creatorPersonality.role ? {
+        ...creatorPersonality,
+        // Smart defaults aplicados automáticamente
+        emotionalObjective: advancedSettings.emotionalObjective,
+        depthLevel: advancedSettings.depthLevel,
+        specificAudience: advancedSettings.audienceType || creatorPersonality.audience,
+        narrativePreference: advancedSettings.narrativeStyle || creatorPersonality.style,
+        coreValues: advancedSettings.brandValues,
+        contentContext: advancedSettings.usageContext
+      } : null;
+
       const generatedScript = await generateViralScript(
         selectedTheme,
         selectedStyle,
         selectedDuration,
         contentTopic,
-        creatorPersonality.role ? creatorPersonality : null
+        enrichedProfile
       );
 
       console.log('✅ Script generado:', generatedScript);
@@ -615,7 +665,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       setIsGenerating(false);
       console.log('🏁 Generación de contenido finalizada');
     }
-  }, [contentTopic, selectedTheme, selectedStyle, selectedDuration, creatorPersonality, toast, user]);
+  }, [contentTopic, selectedTheme, selectedStyle, selectedDuration, creatorPersonality, advancedSettings, toast, user]);
 
   // Reproducir (libre para todos)
   const handleReplayScript = useCallback(() => {
@@ -1037,6 +1087,175 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             />
           </div>
 
+          {/* 🆕 BADGE: PERFIL ACTIVO O BOTÓN DE PERSONALIZACIÓN */}
+          {isUsingProfile ? (
+            <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-300">
+                  Usando tu perfil de creador
+                </span>
+                <span className="text-xs text-gray-400">
+                  (Estilo, audiencia y valores aplicados automáticamente)
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+              >
+                <Cog6ToothIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                {showAdvancedSettings ? 'Ocultar' : 'Personalizar'}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+              >
+                <Cog6ToothIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                {showAdvancedSettings ? 'Ocultar Ajustes Avanzados' : '⚙️ Personalización Avanzada (Opcional)'}
+              </Button>
+            </div>
+          )}
+
+          {/* 🆕 PANEL COLAPSABLE: PERSONALIZACIÓN AVANZADA */}
+          {showAdvancedSettings && (
+            <div className="space-y-4 p-4 bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <SparklesSolidIcon className="w-5 h-5 text-purple-400" />
+                  Personalización Avanzada
+                </h3>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">
+                Ajusta estos parámetros para afinar el contenido. Los valores están pre-llenados desde tu perfil.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Objetivo Emocional */}
+                <div className="space-y-2">
+                  <Label htmlFor="emotional-objective" className="text-sm text-gray-300">
+                    💡 Objetivo Emocional
+                  </Label>
+                  <select
+                    id="emotional-objective"
+                    value={advancedSettings.emotionalObjective}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, emotionalObjective: e.target.value})}
+                    className="w-full p-2.5 bg-gray-800/50 border border-purple-500/20 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="Empatía">Empatía (Conectar emocionalmente)</option>
+                    <option value="Inspiración">Inspiración (Motivar a la acción)</option>
+                    <option value="Urgencia">Urgencia (FOMO, actuar ahora)</option>
+                    <option value="Confianza">Confianza (Autoridad y credibilidad)</option>
+                    <option value="Humor">Humor (Entretenimiento ligero)</option>
+                    <option value="Curiosidad">Curiosidad (Intriga y misterio)</option>
+                  </select>
+                </div>
+
+                {/* 2. Nivel de Profundidad */}
+                <div className="space-y-2">
+                  <Label htmlFor="depth-level" className="text-sm text-gray-300">
+                    📊 Nivel de Profundidad
+                  </Label>
+                  <select
+                    id="depth-level"
+                    value={advancedSettings.depthLevel}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, depthLevel: e.target.value})}
+                    className="w-full p-2.5 bg-gray-800/50 border border-purple-500/20 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="Superficial (Viral)">Superficial (Rápido, viral, TikTok)</option>
+                    <option value="Moderado">Moderado (Equilibrado, Instagram/YouTube)</option>
+                    <option value="Profundo">Profundo (Reflexivo, largo formato)</option>
+                    <option value="Experto">Experto (Técnico, nicho específico)</option>
+                  </select>
+                </div>
+
+                {/* 3. Tipo de Audiencia */}
+                <div className="space-y-2">
+                  <Label htmlFor="audience-type" className="text-sm text-gray-300">
+                    👥 Tipo de Audiencia
+                  </Label>
+                  <Input
+                    id="audience-type"
+                    placeholder="Ej: Profesionales 25-35, Madres emprendedoras..."
+                    value={advancedSettings.audienceType}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, audienceType: e.target.value})}
+                    className="bg-gray-800/50 border-purple-500/20 text-sm"
+                  />
+                </div>
+
+                {/* 4. Estilo Narrativo */}
+                <div className="space-y-2">
+                  <Label htmlFor="narrative-style" className="text-sm text-gray-300">
+                    📖 Estilo Narrativo
+                  </Label>
+                  <select
+                    id="narrative-style"
+                    value={advancedSettings.narrativeStyle}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, narrativeStyle: e.target.value})}
+                    className="w-full p-2.5 bg-gray-800/50 border border-purple-500/20 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="Directo">Directo (Al grano, sin rodeos)</option>
+                    <option value="Storytelling">Storytelling (Narrativa envolvente)</option>
+                    <option value="Conversacional">Conversacional (Como hablar con amigo)</option>
+                    <option value="Educativo">Educativo (Paso a paso, didáctico)</option>
+                    <option value="Poético">Poético (Metáforas, lenguaje elevado)</option>
+                  </select>
+                </div>
+
+                {/* 5. Valores de Marca */}
+                <div className="space-y-2">
+                  <Label htmlFor="brand-values" className="text-sm text-gray-300">
+                    ⭐ Valores / Mensaje Central
+                  </Label>
+                  <Input
+                    id="brand-values"
+                    placeholder="Ej: Autenticidad, disciplina, libertad..."
+                    value={advancedSettings.brandValues}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, brandValues: e.target.value})}
+                    className="bg-gray-800/50 border-purple-500/20 text-sm"
+                  />
+                </div>
+
+                {/* 6. Contexto de Uso */}
+                <div className="space-y-2">
+                  <Label htmlFor="usage-context" className="text-sm text-gray-300">
+                    📱 Contexto de Uso
+                  </Label>
+                  <select
+                    id="usage-context"
+                    value={advancedSettings.usageContext}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, usageContext: e.target.value})}
+                    className="w-full p-2.5 bg-gray-800/50 border border-purple-500/20 rounded-lg text-white text-sm focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="Redes sociales">Redes sociales (Viral, corto)</option>
+                    <option value="Blog/Artículo">Blog/Artículo (Largo formato, SEO)</option>
+                    <option value="Email marketing">Email marketing (Persuasivo, CTA)</option>
+                    <option value="Presentación">Presentación (Formal, estructurado)</option>
+                    <option value="Podcast/Video">Podcast/Video (Conversacional, natural)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 text-xs text-gray-400">
+                <InformationCircleIcon className="w-4 h-4 stroke-[2]" />
+                <span>
+                  Estos ajustes se combinan con tu perfil de creador para generar contenido ultra-personalizado
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Botones de acción */}
           <div className="flex gap-3">
             {/* ✅ GENERADOR: Libre para todos */}
@@ -1046,9 +1265,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               className="flex-1 gradient-primary hover:opacity-90 transition-opacity flex items-center justify-center"
             >
               {isGenerating ? (
-                <Wand2 className="w-4 h-4 mr-2 animate-spin" />
+                <SparklesSolidIcon className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <Zap className="w-4 h-4 mr-2" />
+                <BoltSolidIcon className="w-4 h-4 mr-2" />
               )}
               <span>
                 {isGenerating ? 'ViralCraft está creando tu guión...' : 'Generar Contenido Viral'}
@@ -1065,7 +1284,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               className="border-purple-500/20 hover:bg-purple-500/10 px-4"
               title="Reproducir guión sin regenerar"
             >
-              <RotateCw className="w-4 h-4 mr-2" />
+              <ArrowPathIcon className="w-4 h-4 mr-2 stroke-[2]" />
               Reproducir
             </Button>
           </div>
@@ -1099,7 +1318,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                             size="sm"
                             className="border-green-500/20 hover:bg-green-500/10"
                           >
-                            <Clipboard className="w-4 h-4 mr-2" />
+                            <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
                             Copiar
                           </Button>
                           <Button
@@ -1117,7 +1336,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                             size="sm"
                             className="border-green-500/20 hover:bg-green-500/10"
                           >
-                            <Download className="w-4 h-4 mr-2" />
+                            <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
                             Descargar
                           </Button>
                         </div>
@@ -1141,7 +1360,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                           size="lg"
                         >
                           Continuar a Sugerencias Prácticas
-                          <ChevronRight className="w-5 h-5 ml-2" />
+                          <ChevronRightIcon className="w-5 h-5 ml-2 stroke-[2]" />
                         </Button>
                       </div>
                     </CardContent>
@@ -1165,7 +1384,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                           size="sm"
                           className="border-blue-500/20 hover:bg-blue-500/10"
                         >
-                          <Clipboard className="w-4 h-4 mr-2" />
+                          <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
                           Copiar
                         </Button>
                       </div>
@@ -1188,7 +1407,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                           size="lg"
                         >
                           Ver Análisis Estratégico Completo
-                          <ChevronRight className="w-5 h-5 ml-2" />
+                          <ChevronRightIcon className="w-5 h-5 ml-2 stroke-[2]" />
                         </Button>
                       </div>
                     </CardContent>
@@ -1212,7 +1431,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                           size="sm"
                           className="border-purple-500/20 hover:bg-purple-500/10"
                         >
-                          <Clipboard className="w-4 h-4 mr-2" />
+                          <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
                           Copiar
                         </Button>
                       </div>
@@ -1243,7 +1462,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           <Card className="glass-effect border-purple-500/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <BarChart2 className="w-5 h-5 mr-2 text-blue-400"/>
+                <ChartBarIcon className="w-5 h-5 mr-2 text-blue-400 stroke-[2]"/>
                 📈 Tendencias del Tema (ViralCraft IA)
               </CardTitle>
             </CardHeader>
@@ -1262,7 +1481,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           <Card className="glass-effect border-pink-500/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-pink-400"/>
+                <ArrowTrendingUpIcon className="w-5 h-5 mr-2 text-pink-400 stroke-[2]"/>
                 📊 Análisis de Engagement: {contentTopic || 'Tu Tema'}
               </CardTitle>
               <CardDescription className="text-gray-400">
@@ -1320,7 +1539,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                   />
                 ) : (
                   <div className="text-center text-gray-400">
-                    <Youtube className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <PlayCircleIcon className="w-16 h-16 mx-auto mb-4 opacity-50 stroke-[1.5]" />
                     <p className="text-sm">Analizando engagement de YouTube...</p>
                     <p className="text-xs mt-2">Datos simulados basados en tendencias del tema</p>
                   </div>
@@ -1355,9 +1574,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             className="gradient-primary hover:opacity-90 text-lg px-8 py-6"
             size="lg"
           >
-            <Zap className="w-5 h-5 mr-2" />
+            <BoltSolidIcon className="w-5 h-5 mr-2" />
             Continuar a tu Craft Viral
-            <ChevronRight className="w-5 h-5 ml-2" />
+            <ChevronRightIcon className="w-5 h-5 ml-2 stroke-[2]" />
           </Button>
         </div>
       )}
@@ -1370,7 +1589,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
+                    <UserIcon className="w-6 h-6 text-white stroke-[2]" />
                   </div>
                   <div>
                     <CardTitle className="text-white text-2xl">Define tu Personalidad</CardTitle>
