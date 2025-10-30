@@ -63,10 +63,10 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 lg:col-span-1">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 flex items-center justify-center text-3xl">
+                🐵
               </div>
-              <span className="text-xl font-bold text-gradient">CreoVision Premium</span>
+              <span className="text-xl font-bold text-gradient">CreoVision</span>
             </div>
             <p className="text-gray-400 text-sm">
               Transformando la creación de contenido con el poder de la IA.
@@ -94,7 +94,7 @@ const Footer = () => {
 
         <div className="mt-12 border-t border-purple-500/20 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} CreoVision Premium. Todos los derechos reservados.
+            © {new Date().getFullYear()} CreoVision. Todos los derechos reservados.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
             {socialLinks.map((social, index) => {

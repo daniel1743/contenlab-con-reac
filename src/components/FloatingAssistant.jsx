@@ -272,11 +272,11 @@ const FloatingAssistant = ({ userContext }) => {
         </motion.button>
       </motion.div>
 
-      {/* Ventana de chat - Diseño Premium */}
+      {/* Ventana de chat - Diseño OPACO y Claro */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-24 right-6 w-[420px] h-[650px] bg-gradient-to-br from-slate-900 via-purple-950/40 to-slate-900 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-purple-500/40 border border-purple-400/30 flex flex-col overflow-hidden z-50"
+            className="fixed bottom-24 right-6 w-[420px] h-[650px] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -335,8 +335,8 @@ const FloatingAssistant = ({ userContext }) => {
               </button>
             </div>
 
-            {/* Mensajes con diseño premium */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-slate-900/50 to-slate-900/80">
+            {/* Mensajes con fondo SÓLIDO */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-900">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center px-6">
                   <motion.div
@@ -364,8 +364,8 @@ const FloatingAssistant = ({ userContext }) => {
                   <div
                     className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-lg ${
                       message.role === 'user'
-                        ? 'bg-gradient-to-br from-purple-600 via-purple-500 to-pink-600 text-white shadow-purple-500/30'
-                        : 'bg-gradient-to-br from-slate-800/90 to-slate-800/70 text-gray-100 border border-purple-400/20 shadow-purple-500/10'
+                        ? 'bg-purple-600 text-white shadow-purple-500/30'
+                        : 'bg-gray-800 text-white border-2 border-purple-500/30'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
@@ -389,7 +389,7 @@ const FloatingAssistant = ({ userContext }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <div className="bg-gradient-to-br from-slate-800/90 to-slate-800/70 rounded-2xl px-6 py-4 border border-purple-400/20 shadow-lg shadow-purple-500/10">
+                  <div className="bg-gray-800 rounded-2xl px-6 py-4 border-2 border-purple-500/30">
                     <div className="flex items-center gap-3">
                       <div className="flex gap-1.5">
                         <motion.div
@@ -426,31 +426,63 @@ const FloatingAssistant = ({ userContext }) => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Sugerencias rápidas premium */}
-            {suggestions.length > 0 && messages.length <= 1 && (
-              <div className="px-5 pb-4 bg-gradient-to-b from-transparent to-slate-900/50">
+            {/* Botones de respuesta rápida - CONVERSACIONALES */}
+            {!isLoading && messages.length > 0 && (
+              <div className="px-5 pb-3 bg-gray-900 border-t-2 border-purple-500/30 pt-3">
                 <div className="flex items-center gap-2 mb-3">
-                  <LightBulbIcon className="w-4 h-4 text-yellow-400 drop-shadow-lg" />
-                  <span className="text-xs font-medium text-gray-300">Sugerencias para ti</span>
+                  <span className="text-xs font-semibold text-purple-400">Respuestas rápidas:</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.slice(0, 3).map((suggestion, idx) => (
-                    <motion.button
-                      key={idx}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className="text-xs bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-200 px-4 py-2 rounded-full border border-purple-400/30 transition-all duration-200 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 hover:scale-105 active:scale-95"
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {suggestion.text}
-                    </motion.button>
-                  ))}
+                <div className="grid grid-cols-2 gap-2">
+                  <motion.button
+                    onClick={() => {
+                      setInputValue("Sí, quiero ver ejemplos");
+                      setTimeout(() => handleSendMessage(new Event('submit')), 100);
+                    }}
+                    className="text-sm bg-purple-600 hover:bg-purple-500 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:scale-105 active:scale-95"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    ✨ Ver ejemplos
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      setInputValue("Guíame paso a paso");
+                      setTimeout(() => handleSendMessage(new Event('submit')), 100);
+                    }}
+                    className="text-sm bg-pink-600 hover:bg-pink-500 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:scale-105 active:scale-95"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    🎯 Guíame
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      setInputValue("Quiero probar ahora");
+                      setTimeout(() => handleSendMessage(new Event('submit')), 100);
+                    }}
+                    className="text-sm bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:scale-105 active:scale-95"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    🚀 Probar ahora
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      setInputValue("¿Qué puedes hacer?");
+                      setTimeout(() => handleSendMessage(new Event('submit')), 100);
+                    }}
+                    className="text-sm bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:scale-105 active:scale-95"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    💡 ¿Qué haces?
+                  </motion.button>
                 </div>
               </div>
             )}
 
-            {/* Input de mensaje premium */}
-            <form onSubmit={handleSendMessage} className="p-5 bg-gradient-to-t from-slate-900 to-slate-900/80 border-t border-purple-400/20">
+            {/* Input de mensaje OPACO */}
+            <form onSubmit={handleSendMessage} className="p-5 bg-gray-900 border-t-2 border-purple-500/30">
               <div className="flex items-end gap-3">
                 <div className="flex-1 relative">
                   <input
@@ -459,7 +491,7 @@ const FloatingAssistant = ({ userContext }) => {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Escribe tu pregunta aquí..."
-                    className="w-full bg-gradient-to-br from-slate-800/90 to-slate-800/70 text-white placeholder-gray-500 px-5 py-3.5 rounded-2xl border border-purple-400/30 focus:outline-none focus:border-purple-400/60 focus:shadow-lg focus:shadow-purple-500/20 transition-all duration-200"
+                    className="w-full bg-gray-800 text-white placeholder-gray-400 px-5 py-3.5 rounded-2xl border-2 border-purple-500/30 focus:outline-none focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/30 transition-all duration-200"
                     disabled={isLoading}
                   />
                   {/* Indicador de escritura */}

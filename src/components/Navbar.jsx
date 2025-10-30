@@ -34,7 +34,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount, onSubscriptionClick }) => {
+const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount, onSubscriptionClick, hasDemoAccess }) => {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
@@ -69,7 +69,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: HomeIcon },
     { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
-    { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon },
+    { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
     // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
     { id: 'calendar', label: 'Calendario', icon: CalendarIcon, authRequired: true },
@@ -81,7 +81,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   // Lógica de navegación modificada
   const handleNavClick = (item) => {
     setIsMobileMenuOpen(false);
-    if (item.authRequired && !isAuthenticated) {
+    const requiresAuth = item.authRequired && !isAuthenticated && !(item.id === 'tools' && hasDemoAccess);
+    if (requiresAuth) {
       toast({
         title: "Acceso restringido",
         description: "Debes iniciar sesión para acceder a esta función.",

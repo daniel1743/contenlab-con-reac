@@ -211,13 +211,39 @@ export default defineConfig({
 		},
 	},
 	build: {
+		target: 'es2015',
+		minify: 'terser',
+		terserOptions: {
+			compress: {
+				drop_console: true,
+				drop_debugger: true
+			}
+		},
+		cssCodeSplit: true,
+		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
 			external: [
 				'@babel/parser',
 				'@babel/traverse',
 				'@babel/generator',
 				'@babel/types'
-			]
-		}
+			],
+			output: {
+				manualChunks: {
+					'react-vendor': ['react', 'react-dom'],
+					'animation': ['framer-motion'],
+					'ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+					'charts': ['recharts', 'chart.js', 'react-chartjs-2'],
+					'editor': ['fabric', 'konva', 'react-konva'],
+					'ai': ['@google/generative-ai'],
+					'supabase': ['@supabase/supabase-js']
+				}
+			}
+		},
+		sourcemap: false
+	},
+	optimizeDeps: {
+		include: ['react', 'react-dom', 'framer-motion'],
+		exclude: ['@xenova/transformers']
 	}
 });

@@ -96,3 +96,4 @@ dist-ssr
 # 4. Agregar .env a .gitignore (ya está arriba)
 # 5. git push
 nul
+.vercel

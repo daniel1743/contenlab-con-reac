@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import PricingSection from '@/components/PricingSection';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import BrandsCarousel from '@/components/BrandsCarousel';
+import GuidedDemoModal from '@/components/GuidedDemoModal';
 
 
 // Importar iconos animados modernos
@@ -41,10 +42,11 @@ import {
 } from 'lucide-react';
 
 
-const LandingPage = ({ onSectionChange }) => {
+const LandingPage = ({ onSectionChange, onStartDemo }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [isVideoCarouselHovered, setIsVideoCarouselHovered] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [showDemoModal, setShowDemoModal] = useState(false);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
@@ -422,15 +424,16 @@ const LandingPage = ({ onSectionChange }) => {
 
   // Función para navegación usando el sistema de secciones existente
   const handleFreeTrial = () => {
-    onSectionChange('tools'); // Cambia a la sección tools usando el callback del App.jsx
+    setShowDemoModal(true);
   };
 
-  const handleDemoScroll = () => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const section = document.getElementById('demo-videos');
-    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleCloseDemo = () => {
+    setShowDemoModal(false);
+  };
+
+  const handleCompleteDemo = () => {
+    setShowDemoModal(false);
+    onStartDemo?.();
   };
 
 
@@ -557,14 +560,6 @@ const LandingPage = ({ onSectionChange }) => {
               >
                 <Wand2 className="w-5 h-5 inline mr-2" />
                 Probar Gratis
-              </RippleButton>
-
-              <RippleButton
-                onClick={handleDemoScroll}
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/20 transition-all duration-300"
-              >
-                <Eye className="w-5 h-5 inline mr-2" />
-                Ver Demo
               </RippleButton>
             </motion.div>
           </motion.div>
@@ -1215,9 +1210,14 @@ const LandingPage = ({ onSectionChange }) => {
                 </p>
               </div>
             </motion.div>
-          </motion.div>
+      </motion.div>
         )}
       </AnimatePresence>
+      <GuidedDemoModal
+        open={showDemoModal}
+        onClose={handleCloseDemo}
+        onComplete={handleCompleteDemo}
+      />
     </div>
   );
 };

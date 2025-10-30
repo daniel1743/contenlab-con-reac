@@ -1,32 +1,28 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
-import AuthModal from '@/components/AuthModal';
-import Dashboard from '@/components/DashboardDynamic';
-import Tools from '@/components/Tools';
-import Calendar from '@/components/Calendar';
-// COMENTADO TEMPORALMENTE - Chat sin backend funcional (solo UI mock)
-// import Chat from '@/components/Chat';
-// COMENTADO TEMPORALMENTE - Inbox sin sistema de mensajería backend
-// import Inbox from '@/components/Inbox';
-import ContentLibrary from '@/components/ContentLibrary';
-import Settings from '@/components/Settings';
 import Footer from '@/components/Footer';
 import LandingPage from '@/components/LandingPage';
-import FakeNotifications from '@/components/FakeNotifications';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-// COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
-// import ThumbnailEditor from '@/components/thumbnail-editor/ThumbnailEditor';
-import SubscriptionModal from '@/components/SubscriptionModal';
 import SEOHead from '@/components/SEOHead';
-// Nuevas secciones del menú de perfil
-import Badges from '@/components/Badges';
-import History from '@/components/History';
-import Profile from '@/components/Profile';
-import Notifications from '@/components/Notifications';
-import Onboarding from '@/components/Onboarding';
-import TermsModal from '@/components/legal/TermsModal';
-import CookieConsentBanner, { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
+import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
+
+// Lazy load de componentes pesados
+const AuthModal = lazy(() => import('@/components/AuthModal'));
+const Dashboard = lazy(() => import('@/components/DashboardDynamic'));
+const Tools = lazy(() => import('@/components/Tools'));
+const Calendar = lazy(() => import('@/components/Calendar'));
+const ContentLibrary = lazy(() => import('@/components/ContentLibrary'));
+const Settings = lazy(() => import('@/components/Settings'));
+const FakeNotifications = lazy(() => import('@/components/FakeNotifications'));
+const SubscriptionModal = lazy(() => import('@/components/SubscriptionModal'));
+const Badges = lazy(() => import('@/components/Badges'));
+const History = lazy(() => import('@/components/History'));
+const Profile = lazy(() => import('@/components/Profile'));
+const Notifications = lazy(() => import('@/components/Notifications'));
+const Onboarding = lazy(() => import('@/components/Onboarding'));
+const TermsModal = lazy(() => import('@/components/legal/TermsModal'));
+const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'));
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -35,6 +31,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
+  const [hasDemoAccess, setHasDemoAccess] = useState(false);
   const isAuthenticated = !!session;
   const termsStorageKey = user ? `creovision_terms_accept_v1_${user.id}` : null;
 
@@ -79,16 +76,30 @@ function App() {
 
   // Secciones que requieren autenticación obligatoria
   const protectedSections = useMemo(() =>
-    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications'], // chat comentado temporalmente
+    ['dashboard', 'tools', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications'], // chat comentado temporalmente
     []
   );
 
   // Redirigir a 'landing' solo si el usuario cierra sesión en una sección protegida
   useEffect(() => {
     if (!isAuthenticated && protectedSections.includes(activeSection)) {
+      if (activeSection === 'tools' && hasDemoAccess) {
+        return;
+      }
       setActiveSection('landing');
     }
-  }, [isAuthenticated, activeSection, protectedSections]);
+  }, [isAuthenticated, activeSection, protectedSections, hasDemoAccess]);
+
+  useEffect(() => {
+    if (isAuthenticated && hasDemoAccess) {
+      setHasDemoAccess(false);
+    }
+  }, [isAuthenticated, hasDemoAccess]);
+
+  const startDemoExperience = () => {
+    setHasDemoAccess(true);
+    setActiveSection('tools');
+  };
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -107,56 +118,80 @@ function App() {
   };
 
   const handleCopyDownload = () => {
-    // padding
-    // padding
-    // padding
-    // padding
-    // padding
+    if (!isAuthenticated) {
+      setShowSubscriptionModal(true);
+      return false;
+    }
     return true;
   };
 
+  const renderLanding = () => (
+    <LandingPage
+      onAuthClick={() => setShowAuthModal(true)}
+      onSectionChange={handleSectionChange}
+      onStartDemo={startDemoExperience}
+    />
+  );
+
+  const LoadingSpinner = () => (
+    <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+    </div>
+  );
+
   const renderContent = () => {
     if (loading) {
-      return (
-        <div className="flex justify-center items-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-      );
+      return <LoadingSpinner />;
     }
 
     // Aseguramos que las secciones protegidas solo se muestren si el usuario está autenticado.
     switch (activeSection) {
       case 'landing':
-        return <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return renderLanding();
       case 'dashboard':
-        return isAuthenticated ? <Dashboard onSectionChange={handleSectionChange} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated
+          ? <Dashboard onSectionChange={handleSectionChange} />
+          : renderLanding();
       // COMENTADO TEMPORALMENTE - Inbox sin sistema de mensajería backend
       // case 'inbox':
       //   return isAuthenticated ? <Inbox /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'calendar':
-        return isAuthenticated ? <Calendar /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <Calendar /> : renderLanding();
       case 'library':
-        return isAuthenticated ? <ContentLibrary onSubscriptionClick={() => setShowSubscriptionModal(true)} /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated
+          ? <ContentLibrary onSubscriptionClick={() => setShowSubscriptionModal(true)} />
+          : renderLanding();
       case 'tools':
-        return <Tools onSectionChange={handleSectionChange} onGenerate={handleGenerateContent} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} onSubscriptionClick={() => setShowSubscriptionModal(true)} />;
+        return (isAuthenticated || hasDemoAccess)
+          ? (
+            <Tools
+              onSectionChange={handleSectionChange}
+              onGenerate={handleGenerateContent}
+              onCopyDownload={handleCopyDownload}
+              onAuthClick={() => setShowAuthModal(true)}
+              onSubscriptionClick={() => setShowSubscriptionModal(true)}
+              isDemoUser={!isAuthenticated}
+            />
+          )
+          : renderLanding();
       // COMENTADO TEMPORALMENTE - Chat sin backend funcional (mensajes hardcoded, no hay persistencia)
       // case 'chat':
       //   return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
       case 'settings':
-        return isAuthenticated ? <Settings /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <Settings /> : renderLanding();
       case 'badges':
-        return isAuthenticated ? <Badges /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <Badges /> : renderLanding();
       case 'history':
-        return isAuthenticated ? <History /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <History /> : renderLanding();
       case 'profile':
-        return isAuthenticated ? <Profile /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <Profile /> : renderLanding();
       case 'notifications':
-        return isAuthenticated ? <Notifications /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return isAuthenticated ? <Notifications /> : renderLanding();
       // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado vs Canva (no usable en producción)
       // case 'thumbnail-editor':
       //   return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
       default:
-        return <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
+        return renderLanding();
     }
   };
 
@@ -187,6 +222,7 @@ function App() {
           <Navbar
             isAuthenticated={isAuthenticated}
             onAuthClick={() => setShowAuthModal(true)}
+            hasDemoAccess={hasDemoAccess}
             activeSection={activeSection}
             onSectionChange={handleSectionChange}
             onSubscriptionClick={() => setShowSubscriptionModal(true)}
@@ -204,57 +240,67 @@ function App() {
               transition={{ duration: 0.3 }}
               className={activeSection !== 'landing' /* && activeSection !== 'thumbnail-editor' */ ? 'container mx-auto px-4 py-8' : ''}
             >
-              {renderContent()}
+              <Suspense fallback={<LoadingSpinner />}>
+                {renderContent()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
         
         {activeSection === 'landing' && !loading && <Footer />}
-        
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-        />
-        
-        <SubscriptionModal
-          isOpen={showSubscriptionModal}
-          onClose={() => setShowSubscriptionModal(false)}
-          onAuthClick={() => {
-            setShowSubscriptionModal(false);
-            setShowAuthModal(true);
-          }}
-        />
 
-        {/* 🚀 ONBOARDING PROFESIONAL - 3 FASES */}
-        {showOnboarding && (
-          <Onboarding
-            onComplete={(profile) => {
-              console.log('✅ Perfil de creador guardado:', profile);
-              localStorage.setItem('onboardingCompleted', 'true');
-              setShowOnboarding(false);
-              // Redirigir a Tools para comenzar a usar el generador
-              setActiveSection('tools');
-            }}
-            onSkip={() => {
-              localStorage.setItem('onboardingCompleted', 'true');
-              setShowOnboarding(false);
-            }}
-          />
-        )}
+        <Suspense fallback={null}>
+          {showAuthModal && (
+            <AuthModal
+              isOpen={showAuthModal}
+              onClose={() => setShowAuthModal(false)}
+            />
+          )}
 
-        {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
-        {!cookiesAccepted && !showTermsModal && (
-          <CookieConsentBanner onAccept={() => setCookiesAccepted(true)} />
-        )}
-        <TermsModal
-          open={showTermsModal && isAuthenticated}
-          onAccept={() => {
-            if (typeof window !== 'undefined' && termsStorageKey) {
-              window.localStorage.setItem(termsStorageKey, new Date().toISOString());
-            }
-            setShowTermsModal(false);
-          }}
-        />
+          {showSubscriptionModal && (
+            <SubscriptionModal
+              isOpen={showSubscriptionModal}
+              onClose={() => setShowSubscriptionModal(false)}
+              onAuthClick={() => {
+                setShowSubscriptionModal(false);
+                setShowAuthModal(true);
+              }}
+            />
+          )}
+
+          {/* 🚀 ONBOARDING PROFESIONAL - 3 FASES */}
+          {showOnboarding && (
+            <Onboarding
+              onComplete={(profile) => {
+                console.log('✅ Perfil de creador guardado:', profile);
+                localStorage.setItem('onboardingCompleted', 'true');
+                setShowOnboarding(false);
+                // Redirigir a Tools para comenzar a usar el generador
+                setActiveSection('tools');
+              }}
+              onSkip={() => {
+                localStorage.setItem('onboardingCompleted', 'true');
+                setShowOnboarding(false);
+              }}
+            />
+          )}
+
+          {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
+          {!cookiesAccepted && !showTermsModal && (
+            <CookieConsentBanner onAccept={() => setCookiesAccepted(true)} />
+          )}
+          {showTermsModal && isAuthenticated && (
+            <TermsModal
+              open={showTermsModal && isAuthenticated}
+              onAccept={() => {
+                if (typeof window !== 'undefined' && termsStorageKey) {
+                  window.localStorage.setItem(termsStorageKey, new Date().toISOString());
+                }
+                setShowTermsModal(false);
+              }}
+            />
+          )}
+        </Suspense>
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,7 +112,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
+const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser = false }) => {
   const [selectedTheme, setSelectedTheme] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
@@ -224,6 +224,60 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick }) => {
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const guardCooldownRef = useRef(0);
+
+  const guardProtectedAction = useCallback((context = 'esta acción') => {
+    if (user) {
+      return false;
+    }
+    const now = Date.now();
+    if (now - guardCooldownRef.current > 1500) {
+      toast({
+        title: 'Función disponible en planes Pro',
+        description: 'Suscríbete para copiar, descargar o exportar tus recursos ilimitados.',
+        variant: 'destructive'
+      });
+      guardCooldownRef.current = now;
+    }
+    onSubscriptionClick?.();
+    return true;
+  }, [user, onSubscriptionClick, toast]);
+
+  useEffect(() => {
+    if (!isDemoUser || user) {
+      return;
+    }
+
+    const handleCopyEvent = (event) => {
+      event.preventDefault();
+      guardProtectedAction('copiar contenido');
+    };
+
+    const handleKeyDown = (event) => {
+      const key = event.key?.toLowerCase();
+      if (event.key === 'PrintScreen' || (event.ctrlKey && ['c', 's', 'p'].includes(key))) {
+        event.preventDefault();
+        guardProtectedAction('acciones premium');
+      }
+    };
+
+    const handleMouseUp = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim().length > 0) {
+        guardProtectedAction('seleccionar contenido');
+      }
+    };
+
+    document.addEventListener('copy', handleCopyEvent);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('copy', handleCopyEvent);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDemoUser, user, guardProtectedAction]);
 
   const handleThemeChange = useCallback((value) => {
     setSelectedTheme(value);
@@ -475,16 +529,13 @@ const handleCopy = useCallback(() => {
     return;
   }
 
-  if (!user) {
-    // 👉 Si no hay usuario logueado, mostramos modal de suscripción
-    onSubscriptionClick?.();
+  if (guardProtectedAction('copiar contenido')) {
     return;
   }
 
-  // ✅ Solo usuarios logueados pueden copiar
   navigator.clipboard.writeText(generatedContent);
   toast({ title: '¡Copiado!', description: 'Contenido copiado al portapapeles' });
-}, [generatedContent, user, toast, onSubscriptionClick]);
+}, [generatedContent, toast, guardProtectedAction]);
 
 
   const cleanScript = useCallback(() => {
@@ -514,31 +565,28 @@ const handleCopy = useCallback(() => {
   }, [generatedContent, user, toast, onAuthClick]);
 
   const handleDownload = useCallback(() => {
-    if (!generatedContent) {
-      toast({
-        title: 'No hay contenido',
-        description: 'Primero genera contenido para descargar.',
-        variant: 'destructive'
-      });
-      return;
-    }
+  if (!generatedContent) {
+    toast({
+      title: 'No hay contenido',
+      description: 'Primero genera contenido para descargar.',
+      variant: 'destructive'
+    });
+    return;
+  }
 
-    if (!user) {
-      // 👉 Si no hay usuario logueado, mostramos modal de suscripción
-      onSubscriptionClick?.();
-      return;
-    }
+  if (guardProtectedAction('descargar contenido')) {
+    return;
+  }
 
-    // ✅ Solo usuarios logueados pueden descargar
-    const element = document.createElement('a');
-    const file = new Blob([generatedContent], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `creovision-script-${Date.now()}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    toast({ title: '¡Descargado!', description: 'Contenido descargado correctamente.' });
-  }, [generatedContent, user, toast, onSubscriptionClick]);
+  const element = document.createElement('a');
+  const file = new Blob([generatedContent], { type: 'text/plain' });
+  element.href = URL.createObjectURL(file);
+  element.download = `creovision-script-${Date.now()}.txt`;
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+  toast({ title: '¡Descargado!', description: 'Contenido descargado correctamente.' });
+}, [generatedContent, toast, guardProtectedAction]);
 
   // ✅ FUNCIÓN LIBRE - Sin restricciones de usuario
   const handleGenerateContent = useCallback(async () => {
@@ -1326,6 +1374,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                         <div className="flex gap-2">
                           <Button
                             onClick={() => {
+                              if (guardProtectedAction('copiar guión limpio')) {
+                                return;
+                              }
                               navigator.clipboard.writeText(contentLimpio);
                               toast({title: '✅ Guión copiado', description: 'Listo para pegar en tu app de text-to-speech'});
                             }}
@@ -1392,6 +1443,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                         </CardTitle>
                         <Button
                           onClick={() => {
+                            if (guardProtectedAction('copiar sugerencias prácticas')) {
+                              return;
+                            }
                             navigator.clipboard.writeText(contentSugerencias);
                             toast({title: '✅ Sugerencias copiadas'});
                           }}
@@ -1439,6 +1493,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                         </CardTitle>
                         <Button
                           onClick={() => {
+                            if (guardProtectedAction('copiar análisis estratégico')) {
+                              return;
+                            }
                             navigator.clipboard.writeText(contentAnalisis || generatedContent);
                             toast({title: '✅ Análisis copiado'});
                           }}
@@ -1844,6 +1901,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                             variant="ghost"
                             size="icon"
                             onClick={() => {
+                              if (guardProtectedAction('copiar hashtag')) {
+                                return;
+                              }
                               navigator.clipboard.writeText(hashtag.tag);
                               toast({ title: '✅ Hashtag copiado!' });
                             }}
@@ -1859,6 +1919,9 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     className="w-full border-green-500/20 hover:bg-green-500/10"
                     onClick={() => {
                       const allTags = generatedHashtags.map(h => h.tag).join(' ');
+                      if (guardProtectedAction('copiar lista de hashtags')) {
+                        return;
+                      }
                       navigator.clipboard.writeText(allTags);
                       toast({ title: '✅ Todos los hashtags copiados!' });
                     }}
@@ -2377,3 +2440,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 };
 
 export default Tools;
+
+
+
+
