@@ -1,4 +1,9 @@
 {
     "git.ignoreLimitWarning": true,
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+    "deepseek.apiKey": "sk-dcd5acf81cd849b49aadf743ef8ecf11",
+    "notebook.defaultFormatter": "esbenp.prettier-vscode",
+    "deepseek.provider": "deepseek",
+    "editor.defaultFormatter": "AMiner.codegeex",
+    "editor.defaultFoldingRangeProvider": "Blackboxapp.blackbox"
 }

@@ -1221,8 +1221,8 @@ const Calendar = () => {
 
       {/* Modal Crear/Editar Evento */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="bg-gray-900 border-purple-500/20 text-white max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="bg-gray-900 border-purple-500/20 text-white max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-2xl">
               {editingEvent ? 'Editar Evento' : 'Crear Nuevo Evento'}
             </DialogTitle>
@@ -1231,7 +1231,7 @@ const Calendar = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="title" className="text-white">Título *</Label>
               <Input
@@ -1430,7 +1430,7 @@ const Calendar = () => {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button
               variant="outline"
               onClick={() => {

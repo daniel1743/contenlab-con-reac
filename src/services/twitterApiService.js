@@ -1,10 +1,13 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
- * ║  🐦 TWITTER/X API SERVICE                                         ║
+ * ║  🐦 TWITTER/X API SERVICE (CON CACHÉ SUPABASE GLOBAL)           ║
  * ╠══════════════════════════════════════════════════════════════════╣
  * ║  Analiza conversación social y sentimiento sobre temas           ║
+ * ║  Cache compartido globalmente entre todos los usuarios           ║
  * ╚══════════════════════════════════════════════════════════════════╝
  */
+
+import { withSupabaseTwitterCache } from './twitterSupabaseCacheService';
 
 const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
 
@@ -21,19 +24,11 @@ const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
  */
 
 /**
- * 🆕 Simula análisis de sentimiento social sobre un tema
- * @param {string} topic - Tema a analizar
- * @returns {Promise<Object>} - Métricas de conversación social
+ * Función interna que genera datos simulados (sin caché)
  */
-export const analyzeSocialSentiment = async (topic) => {
-  // TODO: Cuando tengas las credenciales correctas de Twitter, implementar:
-  // const url = 'https://api.twitter.com/2/tweets/search/recent';
-  // const headers = { 'Authorization': `Bearer ${TWITTER_BEARER_TOKEN}` };
-  // const params = { query: topic, max_results: 100 };
+const _analyzeSocialSentimentRaw = async (topic) => {
+  console.log('🐦 Twitter API: Generando análisis de sentimiento para:', topic);
 
-  console.log('🐦 Twitter API: Analizando sentimiento para:', topic);
-
-  // Por ahora, retornar datos simulados realistas
   return new Promise((resolve) => {
     setTimeout(() => {
       const totalMentions = Math.floor(Math.random() * 50000) + 10000;
@@ -69,14 +64,26 @@ export const analyzeSocialSentiment = async (topic) => {
 };
 
 /**
- * 🆕 Obtiene trending hashtags relacionados con un tema
- * @param {string} topic - Tema base
- * @returns {Promise<Array>} - Hashtags trending
+ * 🆕 Analiza sentimiento social sobre un tema (CON CACHÉ GLOBAL)
+ * @param {string} topic - Tema a analizar
+ * @returns {Promise<Object>} - Métricas de conversación social
  */
-export const getTrendingHashtags = async (topic) => {
-  console.log('🐦 Twitter API: Obteniendo hashtags trending para:', topic);
+export const analyzeSocialSentiment = async (topic) => {
+  const result = await withSupabaseTwitterCache(
+    'sentiment',
+    topic,
+    () => _analyzeSocialSentimentRaw(topic)
+  );
 
-  // Simulación realista
+  return result.data;
+};
+
+/**
+ * Función interna para generar hashtags (sin caché)
+ */
+const _getTrendingHashtagsRaw = async (topic) => {
+  console.log('🐦 Twitter API: Generando hashtags trending para:', topic);
+
   return new Promise((resolve) => {
     setTimeout(() => {
       const baseWord = topic.split(' ')[0].toLowerCase();
@@ -122,6 +129,21 @@ export const getTrendingHashtags = async (topic) => {
       });
     }, 800);
   });
+};
+
+/**
+ * 🆕 Obtiene trending hashtags relacionados con un tema (CON CACHÉ GLOBAL)
+ * @param {string} topic - Tema base
+ * @returns {Promise<Array>} - Hashtags trending
+ */
+export const getTrendingHashtags = async (topic) => {
+  const result = await withSupabaseTwitterCache(
+    'hashtags',
+    topic,
+    () => _getTrendingHashtagsRaw(topic)
+  );
+
+  return result.data;
 };
 
 /**
@@ -222,11 +244,14 @@ export const getAudienceInsights = async (topic) => {
  * @param {string} topic - Tema a analizar
  * @returns {Promise<Object>} - Score viral y predicción
  */
-export const calculateViralScore = async (topic) => {
+/**
+ * Función interna para calcular viral score (sin caché)
+ */
+const _calculateViralScoreRaw = async (topic) => {
   try {
     const [sentiment, hashtags, activity] = await Promise.all([
-      analyzeSocialSentiment(topic),
-      getTrendingHashtags(topic),
+      _analyzeSocialSentimentRaw(topic),
+      _getTrendingHashtagsRaw(topic),
       getConversationActivity(topic)
     ]);
 
@@ -272,4 +297,19 @@ export const calculateViralScore = async (topic) => {
       isSimulated: true
     };
   }
+};
+
+/**
+ * 🆕 Calcula viral score de un tema (CON CACHÉ GLOBAL)
+ * @param {string} topic - Tema a analizar
+ * @returns {Promise<Object>} - Viral score y recomendaciones
+ */
+export const calculateViralScore = async (topic) => {
+  const result = await withSupabaseTwitterCache(
+    'viralscore',
+    topic,
+    () => _calculateViralScoreRaw(topic)
+  );
+
+  return result.data;
 };
