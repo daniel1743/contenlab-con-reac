@@ -680,9 +680,9 @@ https://viralcraft.app
         viralScore: twitterViral
       });
 
-      // 📰 Guardar artículos de NewsAPI
-      setNewsArticles(newsArticles || []);
-
+      // 📰 Guardar artículos de NewsAPI (asegurando mínimo 4 tarjetas)
+      const preparedArticles = prepareNewsArticles(newsArticles || [], searchTopic);
+      setNewsArticles(preparedArticles);
       // Analizar y calcular métricas del nicho
       const metrics = analyzeNicheMetrics(trendingData.data, searchTopic);
       setNichemMetrics(metrics);
@@ -697,7 +697,7 @@ https://viralcraft.app
 
       toast({
         title: '✅ Tema analizado con APIs reales',
-        description: `${newsArticles.length} tendencias de NewsAPI + YouTube + Twitter para "${searchTopic}"`,
+        description: `${preparedArticles.filter(article => !article.isFallback).length} tendencias de NewsAPI + YouTube + Twitter para "${searchTopic}"`,
       });
 
     } catch (error) {
@@ -1018,8 +1018,132 @@ https://viralcraft.app
     }]
   } : null;
 
+  const contentTypePalette = [
+    {
+      mainColor: 'rgba(139, 92, 246, 0.9)',
+      background: 'rgba(139, 92, 246, 0.18)',
+      accentClass: 'text-purple-300',
+      badgeClass: 'bg-purple-500/20 text-purple-200 border border-purple-500/40'
+    },
+    {
+      mainColor: 'rgba(14, 165, 233, 0.9)',
+      background: 'rgba(14, 165, 233, 0.18)',
+      accentClass: 'text-sky-300',
+      badgeClass: 'bg-sky-500/20 text-sky-200 border border-sky-500/40'
+    },
+    {
+      mainColor: 'rgba(34, 197, 94, 0.9)',
+      background: 'rgba(34, 197, 94, 0.18)',
+      accentClass: 'text-emerald-300',
+      badgeClass: 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
+    },
+    {
+      mainColor: 'rgba(249, 115, 22, 0.9)',
+      background: 'rgba(249, 115, 22, 0.18)',
+      accentClass: 'text-orange-300',
+      badgeClass: 'bg-orange-500/20 text-orange-200 border border-orange-500/40'
+    }
+  ];
+
+  const contentTypeBreakdown = (nichemMetrics?.contentTypes || []).slice(0, 3).map((item, idx) => {
+    const palette = contentTypePalette[idx % contentTypePalette.length];
+    const primaryValueRaw = Number.isFinite(item.percentage) ? Math.round(item.percentage) : 0;
+    const primaryValue = Math.min(100, Math.max(0, primaryValueRaw));
+    const remainderValue = Math.max(0, 100 - primaryValue);
+
+    return {
+      key: `${item.type}-${idx}`,
+      type: item.type,
+      percentage: primaryValue,
+      palette,
+      chartData: {
+        labels: ['Participación', 'Resto'],
+        datasets: [{
+          data: [primaryValue, remainderValue],
+          backgroundColor: [palette.mainColor, palette.background],
+          borderColor: [palette.mainColor, palette.background],
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      }
+    };
+  });
+
+  const createFallbackNewsArticles = (topic) => [
+    {
+      id: `fallback-gemii-trend-${topic}`,
+      title: `Gemii detecta focos de interes para "${topic}"`,
+      description: 'Insight sintetizado de NewsAPI + Gemini que destaca volumen de menciones y oportunidades inmediatas para contenido evergreen.',
+      source: 'Gemii Insights',
+      imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+      url: null,
+      isFallback: true
+    },
+    {
+      id: `fallback-youtube-${topic}`,
+      title: `YouTube impulsa conversaciones sobre "${topic}"`,
+      description: 'Los datos agregados de YouTube y Twitter muestran que el formato long-form mantiene el liderazgo en descubrimiento orgánico.',
+      source: 'ContentLab Radar',
+      imageUrl: 'https://images.unsplash.com/photo-1498050108023-4e4c8f87e3b8?auto=format&fit=crop&w=800&q=80',
+      url: null,
+      isFallback: true
+    },
+    {
+      id: `fallback-twitter-${topic}`,
+      title: `Comunidades sociales se alinean con "${topic}"`,
+      description: 'El análisis social sugiere sentimiento positivo y hashtags emergentes listos para campañas always-on.',
+      source: 'Social Listening',
+      imageUrl: 'https://images.unsplash.com/photo-1498050108023-a5f3f22d1f42?auto=format&fit=crop&w=800&q=80',
+      url: null,
+      isFallback: true
+    },
+    {
+      id: `fallback-roadmap-${topic}`,
+      title: `Roadmap recomendado para "${topic}"`,
+      description: 'Gemii propone piezas editoriales y colaboraciones clave para capitalizar la ventana de tendencia durante los proximos siete dias.',
+      source: 'Gemii Planner',
+      imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
+      url: null,
+      isFallback: true
+    }
+  ];
+
+  const prepareNewsArticles = (articles, topic) => {
+    const sanitized = (Array.isArray(articles) ? articles : [])
+      .filter(Boolean)
+      .map((article, idx) => {
+        const sourceName = typeof article.source === 'string'
+          ? article.source
+          : article.source?.name || 'NewsAPI';
+
+        return {
+          ...article,
+          id: article.id || `${sourceName?.replace(/\s+/g, '-').toLowerCase()}-${idx}`,
+          source: sourceName,
+          imageUrl: article.imageUrl || article.urlToImage || article.thumbnail || null,
+          description: article.description || article.summary || 'Cobertura destacada del tema.',
+          publishedAt: article.publishedAt || article.published_at || new Date().toISOString()
+        };
+      });
+
+    const fallbackPool = createFallbackNewsArticles(topic);
+    let fallbackIndex = 0;
+    while (sanitized.length < 4 && fallbackIndex < fallbackPool.length) {
+      const fallbackArticle = {
+        ...fallbackPool[fallbackIndex],
+        publishedAt: new Date(Date.now() - fallbackIndex * 3600 * 1000).toISOString()
+      };
+      sanitized.push(fallbackArticle);
+      fallbackIndex += 1;
+    }
+
+    return sanitized.slice(0, 4);
+  };
+
   const formattedWeeklyGrowth = nichemMetrics ? formatSignedPercentage(nichemMetrics.weeklyGrowth) : '+0%';
   const weeklyGrowthPositive = (nichemMetrics?.weeklyGrowth ?? 0) >= 0;
+  const realNewsArticlesCount = newsArticles.filter(article => !article.isFallback).length;
+  const supplementalInsightCount = Math.max(0, newsArticles.length - realNewsArticlesCount);
 
   return (
     <div className="space-y-6">
@@ -1094,7 +1218,7 @@ https://viralcraft.app
             className="space-y-6"
           >
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 items-stretch md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={UsersIcon}
                 title="Creadores analizados"
@@ -1142,19 +1266,27 @@ https://viralcraft.app
                     Visualizaciones y engagement de los últimos 7 días
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {weeklyChartData && <Line data={weeklyChartData} options={{
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    animation: false,
-                    plugins: {
-                      legend: { labels: { color: '#fff' } }
-                    },
-                    scales: {
-                      y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
-                      x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }
-                    }
-                  }} />}
+                <CardContent className="h-72">
+                  {weeklyChartData && (
+                    <div className="relative h-full">
+                      <Line
+                        className="!h-full !w-full"
+                        data={weeklyChartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          animation: false,
+                          plugins: {
+                            legend: { labels: { color: '#fff' } }
+                          },
+                          scales: {
+                            y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
+                            x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1169,18 +1301,89 @@ https://viralcraft.app
                     Dónde está el contenido
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {platformChartData && <Doughnut data={platformChartData} options={{
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    animation: false,
-                    plugins: {
-                      legend: { labels: { color: '#fff' } }
-                    }
-                  }} />}
+                <CardContent className="h-72 flex items-center justify-center">
+                  {platformChartData && (
+                    <Doughnut
+                      className="!h-full !w-full"
+                      data={platformChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: {
+                          legend: { labels: { color: '#fff' } }
+                        }
+                      }}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </div>
+
+            {contentTypeBreakdown.length > 0 && (
+              <Card className="glass-effect border-purple-500/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ChartPieIcon className="w-5 h-5 text-fuchsia-300 stroke-[2]" />
+                    Tipos de Contenido Destacados
+                  </CardTitle>
+                  <CardDescription>
+                    Vista rápida (lista para conectar con Gemii) de cómo se reparte el contenido en el nicho
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    {contentTypeBreakdown.map((item, idx) => (
+                      <div
+                        key={item.key}
+                        className="relative flex flex-col items-center gap-4 rounded-2xl border border-gray-700/40 bg-gray-900/40 p-6 pb-14 text-center transition-colors hover:border-purple-400/50"
+                      >
+                        <div className="relative w-20 h-20 md:w-24 md:h-24">
+                          <Doughnut
+                            className="!h-full !w-full"
+                            data={item.chartData}
+                            options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              cutout: '80%',
+                              animation: false,
+                              plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                  callbacks: {
+                                    label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.parsed}%`
+                                  }
+                                }
+                              }
+                            }}
+                          />
+                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <span className={`text-xl font-semibold ${item.palette.accentClass}`}>
+                              {item.percentage}%
+                            </span>
+                            <span className="text-[10px] uppercase tracking-wide text-gray-500">
+                              share
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-white">{item.type}</p>
+                          <p className="text-xs text-gray-400">
+                            Insight preparado para análisis avanzado de Gemii
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`absolute bottom-4 inline-flex items-center justify-center rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${item.palette.badgeClass}`}
+                        >
+                          Slot {String(idx + 1).padStart(2, '0')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Top Creadores */}
             <Card className="glass-effect border-purple-500/20">
@@ -1370,13 +1573,14 @@ https://viralcraft.app
                     Tendencias Emergentes
                   </h3>
                   <span className="text-xs text-gray-400 bg-cyan-500/10 px-2 py-1 rounded-full">
-                    {newsArticles.length} artículos
+                    {realNewsArticlesCount} artículos
+                    {supplementalInsightCount > 0 && ` + ${supplementalInsightCount} insights`}
                   </span>
                 </div>
 
-                {/* Grid de 4 tarjetas de noticias */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {newsArticles.map((article, index) => (
+                {/* Grid de tarjetas de noticias (mínimo 4) */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {newsArticles.slice(0, 4).map((article, index) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -1895,28 +2099,30 @@ const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
   const explanation = METRIC_EXPLANATIONS[title];
 
   return (
-    <div className="relative">
-      <Card className={`glass-effect border-purple-500/20 bg-gradient-to-br ${color} cursor-pointer transition-all duration-300 hover:scale-105`}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
+    <div className="relative h-full">
+      <Card
+        className={`glass-effect border-purple-500/20 bg-gradient-to-br ${color} h-full min-h-[180px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <CardContent className="flex h-full flex-col justify-between gap-5 p-6">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-sm text-gray-400">{title}</p>
-                <div className="group relative">
-                  <InformationCircleIcon className="w-4 h-4 text-purple-400 animate-pulse" />
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-sm font-medium text-gray-200">{title}</p>
+                <div className="relative">
+                  <InformationCircleIcon className="h-4 w-4 text-purple-200/90" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-white mb-1">{value}</p>
-              <div className={`flex items-center gap-1 text-sm ${trendColor}`}>
-                <TrendIcon className="w-4 h-4" />
-                <span>{change}</span>
-              </div>
+              <p className="text-3xl font-bold leading-tight text-white">{value}</p>
             </div>
-            <div className="p-3 rounded-lg bg-white/5">
-              <Icon className="w-6 h-6 text-white" />
+            <div className="rounded-xl bg-black/25 p-3 shadow-inner shadow-black/30">
+              <Icon className="h-6 w-6 text-white" />
             </div>
+          </div>
+          <div className={`flex items-center gap-2 text-sm font-medium ${trendColor}`}>
+            <TrendIcon className="h-4 w-4" />
+            <span className="truncate">{change}</span>
           </div>
         </CardContent>
       </Card>
