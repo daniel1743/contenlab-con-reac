@@ -230,7 +230,7 @@ const LandingPage = ({ onSectionChange }) => {
   );
 
 
-  // Módulos reales implementados en ContentLab
+  // Módulos reales implementados en CreoVision
   const modules = [
     {
       icon: BarChart3,
@@ -287,7 +287,7 @@ const LandingPage = ({ onSectionChange }) => {
   const explainerVideos = [
     {
       id: 'video-tour',
-      title: 'Tour completo de ContentLab',
+      title: 'Tour completo de CreoVision',
       description: 'Recorre el dashboard inteligente, el calendario IA y el flujo de publicación omnicanal.',
       duration: '02:45',
       embedUrl: 'https://www.youtube.com/embed/8pOHS7Xk4SI'
@@ -490,7 +490,7 @@ const LandingPage = ({ onSectionChange }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              ContentLab Premium es más que una suite: es tu aliado creativo para{' '}
+              CreoVision Premium es más que una suite: es tu aliado creativo para{' '}
               <span className="text-violet-400 font-semibold">crecer con propósito</span>,{' '}
               <span className="text-purple-400 font-semibold">analizar con precisión</span> y{' '}
               <span className="text-pink-400 font-semibold">conectar con impacto</span>.
@@ -574,7 +574,7 @@ const LandingPage = ({ onSectionChange }) => {
                 viewport={{ once: true }}
               >
                 <PlayCircle className="w-5 h-5 text-purple-200/90" />
-                Mira ContentLab en acción
+                Mira CreoVision en acción
               </motion.p>
               <motion.h2
                 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#f79bff] via-[#c58cff] to-[#8cb0ff] bg-clip-text text-transparent leading-tight"
@@ -673,7 +673,7 @@ const LandingPage = ({ onSectionChange }) => {
               ¿Para quién es esto?
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Cada creador tiene una voz única. Descubre cómo ContentLab se adapta a tu estilo.
+              Cada creador tiene una voz única. Descubre cómo CreoVision se adapta a tu estilo.
             </p>
           </motion.div>
 

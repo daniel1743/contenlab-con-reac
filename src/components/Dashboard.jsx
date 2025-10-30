@@ -631,7 +631,7 @@ const Dashboard = ({ onSectionChange }) => {
                 CL
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">ContentLab</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">CreoVision</p>
                 <p className="text-lg font-semibold text-white">Panel Creativo</p>
               </div>
             </div>

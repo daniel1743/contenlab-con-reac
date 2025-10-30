@@ -88,9 +88,9 @@ function App() {
   return (
     <>
       <Helmet>
-        <title>ContentLab Premium - Suite Profesional de Creación de Contenido</title>
+        <title>CreoVision Premium - Suite Profesional de Creación de Contenido</title>
         <meta name="description" content="Plataforma todo-en-uno para creadores de contenido digital. Herramientas profesionales de IA, análisis de tendencias y editor de miniaturas avanzado." />
-        <meta property="og:title" content="ContentLab Premium - Suite Profesional de Creación de Contenido" />
+        <meta property="og:title" content="CreoVision Premium - Suite Profesional de Creación de Contenido" />
         <meta property="og:description" content="Transforma tu presencia digital con herramientas profesionales de IA, analytics avanzados y un editor de miniaturas de nivel profesional." />
       </Helmet>
       

@@ -104,7 +104,7 @@ const ThumbnailEditor = ({ onBack }) => {
         multiplier: 1,
       });
       const link = document.createElement('a');
-      link.download = 'miniatura-contentlab.png';
+      link.download = 'miniatura-creovision.png';
       link.href = dataURL;
       document.body.appendChild(link);
       link.click();

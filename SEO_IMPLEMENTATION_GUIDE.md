@@ -1,4 +1,4 @@
-# 🔍 GUÍA DE IMPLEMENTACIÓN SEO - ContentLab Premium
+# 🔍 GUÍA DE IMPLEMENTACIÓN SEO - CreoVision Premium
 
 ## ✅ ARCHIVOS CREADOS
 
@@ -61,8 +61,8 @@ Necesitas crear las siguientes imágenes:
 - **Tamaño:** 1200x630px (exacto)
 - **Formato:** PNG o JPG
 - **Contenido sugerido:**
-  - Logo de ContentLab
-  - Texto: "ContentLab Premium"
+  - Logo de CreoVision
+  - Texto: "CreoVision Premium"
   - Subtítulo: "Plataforma de Creación de Contenido con IA"
   - Fondo atractivo (morado/negro tema de la app)
 - **Uso:** Facebook, WhatsApp, LinkedIn shares
@@ -102,7 +102,7 @@ url: 'https://tudominio.com',
 
 // LÍNEA 16-24 - Actualizar info de contacto
 company: {
-  name: 'ContentLab Premium',
+  name: 'CreoVision Premium',
   email: 'contacto@tudominio.com', // TU EMAIL REAL
   phone: '+1-234-567-8900',        // TU TELÉFONO REAL (opcional)
   address: {
@@ -479,5 +479,5 @@ Si encuentras problemas, revisa:
 2. Google Search Console → Coverage
 3. Logs de build (`npm run build`)
 
-**Creado para ContentLab Premium**
+**Creado para CreoVision Premium**
 **Última actualización:** 2025-10-18

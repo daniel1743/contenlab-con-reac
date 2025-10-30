@@ -270,7 +270,7 @@ const Onboarding = ({ onComplete, onSkip }) => {
               </p>
               <p className="text-gray-400 text-xs leading-relaxed">
                 ChatGPT no puede aprender tu estilo narrativo, acceder a tus métricas reales de YouTube/TikTok,
-                ni automatizar tu flujo completo. ContentLab sí. Estás creando tu asistente IA personalizado.
+                ni automatizar tu flujo completo. CreoVision sí. Estás creando tu asistente IA personalizado.
               </p>
             </div>
           </div>
@@ -763,7 +763,7 @@ const Phase3AutomatedWorkflow = ({ workflow, setWorkflow }) => {
               ⚡ Automatización = Más Tiempo para Crear
             </h4>
             <p className="text-gray-300 text-xs leading-relaxed">
-              Activa las funciones que quieras automatizar. ContentLab se encargará del trabajo pesado
+              Activa las funciones que quieras automatizar. CreoVision se encargará del trabajo pesado
               (investigación, SEO, hashtags) mientras tú te enfocas en grabar contenido de calidad.
             </p>
           </div>
@@ -849,7 +849,7 @@ const Phase3AutomatedWorkflow = ({ workflow, setWorkflow }) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-gray-300 text-xs">
             <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
-            <span>ContentLab analiza trending topics {workflow.enableAutoResearch && '✓'}</span>
+            <span>CreoVision analiza trending topics {workflow.enableAutoResearch && '✓'}</span>
           </div>
           <div className="flex items-center gap-2 text-gray-300 text-xs">
             <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />

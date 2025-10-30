@@ -40,7 +40,7 @@ const Settings = () => {
     fullName: user?.user_metadata?.full_name || 'Usuario',
     email: user?.email || '',
     bio: 'Creador de contenido digital',
-    website: 'https://contentlab.com'
+    website: 'https://creovision.com'
   });
 
   const [notifications, setNotifications] = useState({
@@ -214,7 +214,7 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle className="text-white">Cuentas Conectadas</CardTitle>
                 <CardDescription>
-                  Conecta tus redes sociales para publicar y gestionar contenido desde ContentLab
+                  Conecta tus redes sociales para publicar y gestionar contenido desde CreoVision
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -272,7 +272,7 @@ const Settings = () => {
                     <div>
                       <h4 className="font-semibold text-blue-300 mb-1">Permisos requeridos</h4>
                       <p className="text-sm text-blue-200">
-                        Al conectar tus cuentas, ContentLab podrá publicar contenido, leer comentarios y
+                        Al conectar tus cuentas, CreoVision podrá publicar contenido, leer comentarios y
                         analizar métricas en tu nombre. Tus credenciales están protegidas y nunca son almacenadas.
                       </p>
                     </div>

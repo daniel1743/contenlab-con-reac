@@ -30,7 +30,7 @@ const EditorHeader = ({ onBack, onExport, canUndo, canRedo, onUndo, onRedo }) =>
           </Button>
           <div>
             <h1 className="text-lg font-bold text-gradient">Editor de Miniaturas</h1>
-            <p className="text-xs text-gray-400">ContentLab Premium</p>
+            <p className="text-xs text-gray-400">CreoVision Premium</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">

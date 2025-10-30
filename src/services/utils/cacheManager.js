@@ -8,7 +8,7 @@
  */
 
 // ===== CONFIGURACIÓN =====
-const CACHE_PREFIX = 'contentlab_cache_';
+const CACHE_PREFIX = 'creovision_cache_';
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
 const MAX_CACHE_SIZE = 50; // Máximo de items en cache
 

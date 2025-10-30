@@ -36,7 +36,7 @@ const testimonialsData = [
   {
     name: "Ana Estilo de vida",
     role: "Bloguera de estilo de vida",
-    comment: "ContentLab ha mejorado muchísimo la calidad de mi contenido.",
+    comment: "CreoVision ha mejorado muchísimo la calidad de mi contenido.",
     rating: 5,
     avatar: "https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=1972&auto=format&fit=crop"
   }

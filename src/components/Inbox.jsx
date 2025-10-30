@@ -66,7 +66,7 @@ const Inbox = () => {
       platform: 'twitter',
       sender: 'Ana Martínez',
       avatar: 'https://i.pravatar.cc/150?img=5',
-      message: '@ContentLab Este thread está 🔥 ¿Hacen consultoría personalizada?',
+      message: '@CreoVision Este thread está 🔥 ¿Hacen consultoría personalizada?',
       timestamp: 'Hace 1 hora',
       unread: false,
       starred: false,

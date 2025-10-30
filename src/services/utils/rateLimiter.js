@@ -14,7 +14,7 @@ const RATE_LIMITS = {
 };
 
 const TIME_WINDOW = 60 * 60 * 1000; // 1 hora en milisegundos
-const STORAGE_KEY = 'contentlab_rate_limit';
+const STORAGE_KEY = 'creovision_rate_limit';
 
 // ===== OBTENER TIER DEL USUARIO =====
 const getUserTier = (user) => {

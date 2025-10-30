@@ -321,7 +321,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
     setLoadingAnalysis(true);
 
     try {
-      console.log('🎯 Analizando creador con ContentLab AI:', creator.name);
+      console.log('🎯 Analizando creador con CreoVision AI:', creator.name);
       const analysis = await analyzeTopCreator(creator, topic);
 
       setCreatorAnalysis(prev => ({
@@ -342,7 +342,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
   // 🆕 FUNCIÓN PARA GUARDAR CONSEJO EN LOCALSTORAGE
   const saveAdviceToVault = useCallback((advice) => {
     try {
-      const vaultKey = 'viralcraft_saved_advice';
+      const vaultKey = 'creovision_saved_advice';
       const existingVault = JSON.parse(localStorage.getItem(vaultKey) || '[]');
 
       // Agregar timestamp y topic
@@ -380,7 +380,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const downloadAdvice = useCallback((advice, creatorName) => {
     try {
       const content = `═══════════════════════════════════════
-🎯 ANÁLISIS CONTENTLAB AI - CREADOR TOP
+🎯 ANÁLISIS CREOVISION AI - CREADOR TOP
 ═══════════════════════════════════════
 
 📊 Creador: ${creatorName}
@@ -394,15 +394,15 @@ const DashboardDynamic = ({ onSectionChange }) => {
 ${advice}
 
 ───────────────────────────────────────
-Generado por ViralCraft ContentLab AI
-https://viralcraft.app
+Generado por CreoVision AI
+https://creovision.app
 ═══════════════════════════════════════`;
 
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `contentlab-${creatorName.replace(/\s+/g, '-')}-${Date.now()}.txt`;
+      link.download = `creovision-${creatorName.replace(/\s+/g, '-')}-${Date.now()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -461,7 +461,7 @@ https://viralcraft.app
   // 🆕 FUNCIÓN PARA GUARDAR ANÁLISIS SEO EN LOCALSTORAGE
   const saveSEOAdviceToVault = useCallback((seoData, articleTitle) => {
     try {
-      const vaultKey = 'viralcraft_saved_seo_advice';
+      const vaultKey = 'creovision_saved_seo_advice';
       const existingVault = JSON.parse(localStorage.getItem(vaultKey) || '[]');
 
       const savedAdvice = {
@@ -500,7 +500,7 @@ https://viralcraft.app
       const analysis = seoData.analysis;
 
       const content = `═══════════════════════════════════════
-🚀 ANÁLISIS SEO - VIRALCRAFT CONTENTLAB
+🚀 ANÁLISIS SEO - VIRALCRAFT CREOVISION
 ═══════════════════════════════════════
 
 TEMA: ${nichemMetrics.topic}
@@ -552,15 +552,15 @@ ${analysis.formatosRecomendados.map((fmt, i) => `${i + 1}. ${fmt}`).join('\n')}
 ${analysis.consejoRapido}
 
 ───────────────────────────────────────
-Generado por ViralCraft ContentLab AI
-https://viralcraft.app
+Generado por CreoVision AI
+https://creovision.app
 ═══════════════════════════════════════`;
 
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `contentlab-seo-${articleTitle.substring(0, 30).replace(/\s+/g, '-')}-${Date.now()}.txt`;
+      link.download = `creovision-seo-${articleTitle.substring(0, 30).replace(/\s+/g, '-')}-${Date.now()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1083,7 +1083,7 @@ https://viralcraft.app
       id: `fallback-youtube-${topic}`,
       title: `YouTube impulsa conversaciones sobre "${topic}"`,
       description: 'Los datos agregados de YouTube y Twitter muestran que el formato long-form mantiene el liderazgo en descubrimiento orgánico.',
-      source: 'ContentLab Radar',
+      source: 'CreoVision Radar',
       imageUrl: 'https://images.unsplash.com/photo-1498050108023-4e4c8f87e3b8?auto=format&fit=crop&w=800&q=80',
       url: null,
       isFallback: true
@@ -1157,7 +1157,7 @@ https://viralcraft.app
           <div>
             <h1 className="text-4xl font-bold text-gradient flex items-center gap-3">
               <ChartBarIcon className="w-10 h-10 stroke-[1.5]" />
-              Mi Craft Viral
+              CreoVision Intelligence
             </h1>
             <p className="text-lg text-gray-400 mt-2">
               {currentTopic
@@ -1474,7 +1474,7 @@ https://viralcraft.app
                   Playbooks expertos para "{nichemMetrics.topic}"
                 </CardTitle>
                 <CardDescription>
-                  Recomendaciones generadas por nuestro estratega ContentLab AI para accionar de inmediato
+                  Recomendaciones generadas por nuestro estratega CreoVision AI para accionar de inmediato
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1776,7 +1776,7 @@ https://viralcraft.app
                   <SparklesSolidIcon className="w-6 h-6 text-yellow-400 animate-pulse" />
                   <div>
                     <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200">
-                      Análisis ContentLab AI
+                      Análisis CreoVision AI
                     </h3>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {selectedCreator.name} • {selectedCreator.platform}
@@ -1821,7 +1821,7 @@ https://viralcraft.app
                   {loadingAnalysis ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-4">
                       <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-sm text-gray-300">ContentLab está analizando este creador...</p>
+                      <p className="text-sm text-gray-300">CreoVision está analizando este creador...</p>
                     </div>
                   ) : (
                     <div className="text-sm sm:text-base text-gray-100 leading-relaxed whitespace-pre-wrap bg-black/20 rounded-lg p-4">
@@ -1863,7 +1863,7 @@ https://viralcraft.app
                   </Button>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
-                  Powered by ContentLab AI Coach
+                  Powered by CreoVision AI Coach
                 </p>
               </div>
             </motion.div>
@@ -2056,7 +2056,7 @@ https://viralcraft.app
                   </Button>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
-                  Powered by Gemini AI + ContentLab
+                  Powered by Gemini AI + CreoVision
                 </p>
               </div>
             </motion.div>
@@ -2067,27 +2067,27 @@ https://viralcraft.app
   );
 };
 
-// Diccionario de explicaciones ContentLab AI para cada métrica
+// Diccionario de explicaciones CreoVision AI para cada métrica
 const METRIC_EXPLANATIONS = {
   "Creadores analizados": {
     title: "¿Qué significa 'Creadores analizados'?",
     explanation: "📊 Este número representa cuántos creadores de contenido están activos en este nicho según los datos de YouTube. Un rango alto (100+) indica saturación - será más difícil destacar. Un rango bajo (<30) puede significar una oportunidad emergente o un nicho demasiado específico.",
-    advice: "💡 Consejo ContentLab: Si ves 100+ creadores, no te desanimes. Busca un sub-nicho más específico donde puedas diferenciarte. Por ejemplo, en vez de 'cocina', prueba 'cocina keto para principiantes'."
+    advice: "💡 Consejo CreoVision: Si ves 100+ creadores, no te desanimes. Busca un sub-nicho más específico donde puedas diferenciarte. Por ejemplo, en vez de 'cocina', prueba 'cocina keto para principiantes'."
   },
   "Rango de vistas por video": {
     title: "¿Cómo interpretar el rango de vistas?",
     explanation: "👁️ Este rango muestra las visualizaciones promedio que están obteniendo los videos en este tema. Si ves '5K-50K', significa que los videos típicos obtienen entre 5,000 y 50,000 vistas. Un rango amplio indica alta variabilidad - algunos videos explotan mientras otros no.",
-    advice: "💡 Consejo ContentLab: Si el rango es bajo (menos de 10K), el tema puede estar poco demandado O puedes ser pionero. Si es alto (100K+), hay audiencia masiva pero también más competencia. Tu calidad debe ser impecable."
+    advice: "💡 Consejo CreoVision: Si el rango es bajo (menos de 10K), el tema puede estar poco demandado O puedes ser pionero. Si es alto (100K+), hay audiencia masiva pero también más competencia. Tu calidad debe ser impecable."
   },
   "Engagement estimado": {
     title: "¿Qué es el engagement y por qué importa?",
     explanation: "❤️ El engagement mide cuánto interactúa la audiencia (likes, comentarios, compartidos). Un buen engagement (>5%) indica que el tema REALMENTE conecta con las personas, no solo que lo miran. Esto es oro para el algoritmo de YouTube.",
-    advice: "💡 Consejo ContentLab: Engagement alto = audiencia apasionada. Estos nichos son mejores para monetización porque la comunidad es leal. Si ves engagement bajo (<2%), el tema puede ser aburrido o estar saturado de contenido genérico."
+    advice: "💡 Consejo CreoVision: Engagement alto = audiencia apasionada. Estos nichos son mejores para monetización porque la comunidad es leal. Si ves engagement bajo (<2%), el tema puede ser aburrido o estar saturado de contenido genérico."
   },
   "Momentum del tema": {
     title: "¿Qué significa el 'Momentum'?",
-    explanation: "🚀 El Momentum (0-100) mide si un tema está creciendo, estable o muriendo. 75+ es explosivo (sube ahora al tren), 50-75 es saludable (crecimiento sostenido), 25-50 es estable, <25 está decayendo. ContentLab calcula esto analizando vistas, engagement y frecuencia de publicación.",
-    advice: "💡 Consejo ContentLab: Momentum alto NO siempre es mejor. Si está en 90+, llegas tarde - ya es mainstream. Busca temas en 50-70: tienen tracción pero aún hay espacio para crecer con ellos."
+    explanation: "🚀 El Momentum (0-100) mide si un tema está creciendo, estable o muriendo. 75+ es explosivo (sube ahora al tren), 50-75 es saludable (crecimiento sostenido), 25-50 es estable, <25 está decayendo. CreoVision calcula esto analizando vistas, engagement y frecuencia de publicación.",
+    advice: "💡 Consejo CreoVision: Momentum alto NO siempre es mejor. Si está en 90+, llegas tarde - ya es mainstream. Busca temas en 50-70: tienen tracción pero aún hay espacio para crecer con ellos."
   }
 };
 
@@ -2127,7 +2127,7 @@ const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
         </CardContent>
       </Card>
 
-      {/* 🆕 TOOLTIP EXPLICATIVO CONTENTLAB AI */}
+      {/* 🆕 TOOLTIP EXPLICATIVO CREOVISION AI */}
       {showTooltip && explanation && (
         <div className="absolute left-0 right-0 top-full mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="relative">
@@ -2155,7 +2155,7 @@ const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
               {/* Footer */}
               <div className="mt-3 pt-2 border-t border-purple-400/10 flex items-center justify-between">
                 <span className="text-[10px] text-gray-400 italic">
-                  Powered by ContentLab AI Coach
+                  Powered by CreoVision AI Coach
                 </span>
                 <div className="flex gap-1">
                   {[...Array(3)].map((_, i) => (

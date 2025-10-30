@@ -1,6 +1,6 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
- * ║  🔍 CONFIGURACIÓN SEO CENTRALIZADA - ContentLab Premium          ║
+ * ║  🔍 CONFIGURACIÓN SEO CENTRALIZADA - CreoVision Premium          ║
  * ╠══════════════════════════════════════════════════════════════════╣
  * ║  Todas las configuraciones de SEO, meta tags, Open Graph         ║
  * ║  y Structured Data en un solo lugar                              ║
@@ -11,15 +11,15 @@
 export const siteConfig = {
   // IMPORTANTE: Reemplazar con tu dominio real
   url: 'https://tudominio.com',
-  name: 'ViralCraft',
-  title: 'ViralCraft - Plataforma de Creación de Contenido con IA',
+  name: 'CreoVision',
+  title: 'CreoVision - Plataforma de Creación de Contenido con IA',
   description: 'Genera contenido viral optimizado con IA, crea miniaturas profesionales y optimiza tu SEO. Herramientas premium para YouTubers, TikTokers y creadores digitales.',
   locale: 'es_ES',
   language: 'es',
 
   // Información de la empresa
   company: {
-    name: 'ViralCraft',
+    name: 'CreoVision',
     email: 'contacto@tudominio.com',
     phone: '+1-234-567-8900',
     address: {
@@ -33,11 +33,11 @@ export const siteConfig = {
 
   // Redes sociales
   social: {
-    twitter: '@viralcraft',
-    facebook: 'https://facebook.com/contentlab',
-    instagram: 'https://instagram.com/contentlab',
-    youtube: 'https://youtube.com/@contentlab',
-    linkedin: 'https://linkedin.com/company/contentlab'
+    twitter: '@creovision',
+    facebook: 'https://facebook.com/creovision',
+    instagram: 'https://instagram.com/creovision',
+    youtube: 'https://youtube.com/@creovision',
+    linkedin: 'https://linkedin.com/company/creovision'
   },
 
   // Imágenes (crear estas imágenes en /public/images/seo/)
@@ -52,7 +52,7 @@ export const siteConfig = {
 // ===== META TAGS POR PÁGINA =====
 export const pageMetadata = {
   landing: {
-    title: 'ViralCraft - Crea Contenido Viral con IA',
+    title: 'CreoVision - Crea Contenido Viral con IA',
     description: 'Plataforma todo-en-uno para creadores de contenido. Genera scripts virales, crea miniaturas profesionales y optimiza tu SEO con inteligencia artificial.',
     keywords: [
       'generador de contenido con IA',
@@ -70,7 +70,7 @@ export const pageMetadata = {
   },
 
   tools: {
-    title: 'Generador de Contenido Viral con IA - ViralCraft',
+    title: 'Generador de Contenido Viral con IA - CreoVision',
     description: 'Genera scripts virales optimizados con múltiples IA (Gemini, Claude, GPT-4). Análisis de SEO, keywords y sugerencias por plataforma en segundos.',
     keywords: [
       'generador de scripts con IA',
@@ -87,7 +87,7 @@ export const pageMetadata = {
 
   // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
   // thumbnailEditor: {
-  //   title: 'Editor de Miniaturas Profesional - ContentLab',
+  //   title: 'Editor de Miniaturas Profesional - CreoVision',
   //   description: 'Editor de miniaturas avanzado con IA. Biblioteca Unsplash, remover fondos, filtros profesionales, Google Fonts y herramientas de diseño.',
   //   keywords: [
   //     'editor de miniaturas youtube',
@@ -103,7 +103,7 @@ export const pageMetadata = {
   // },
 
   dashboard: {
-    title: 'Dashboard - ViralCraft',
+    title: 'Dashboard - CreoVision',
     description: 'Panel de control con analíticas avanzadas, estadísticas de rendimiento y gestión de contenido en tiempo real.',
     keywords: [
       'dashboard de creadores',
@@ -116,10 +116,10 @@ export const pageMetadata = {
   },
 
   pricing: {
-    title: 'Planes y Precios - ViralCraft',
+    title: 'Planes y Precios - CreoVision',
     description: 'Planes flexibles para creadores de contenido. Desde Free hasta Enterprise. Prueba gratis todas las funcionalidades premium.',
     keywords: [
-      'precios contentlab',
+      'precios creovision',
       'planes para creadores',
       'suscripción creadores contenido',
       'herramientas premium youtube'
@@ -141,7 +141,7 @@ export const openGraphConfig = {
     image: `${siteConfig.url}${siteConfig.images.ogImage}`,
     imageWidth: 1200,
     imageHeight: 630,
-    imageAlt: 'ViralCraft - Plataforma de Creación de Contenido con IA'
+    imageAlt: 'CreoVision - Plataforma de Creación de Contenido con IA'
   }
 };
 
@@ -156,7 +156,7 @@ export const twitterConfig = {
     title: siteConfig.title,
     description: siteConfig.description,
     image: `${siteConfig.url}${siteConfig.images.twitterImage}`,
-    imageAlt: 'ViralCraft - Plataforma de Creación de Contenido'
+    imageAlt: 'CreoVision - Plataforma de Creación de Contenido'
   }
 };
 
@@ -273,26 +273,26 @@ export const structuredData = {
     mainEntity: [
       {
         '@type': 'Question',
-        name: '¿Qué es ViralCraft?',
+        name: '¿Qué es CreoVision?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'ViralCraft es una plataforma todo-en-uno para creadores de contenido que combina múltiples herramientas de IA para generar contenido viral, crear miniaturas profesionales y optimizar SEO.'
+          text: 'CreoVision es una plataforma todo-en-uno para creadores de contenido que combina múltiples herramientas de IA para generar contenido viral, crear miniaturas profesionales y optimizar SEO.'
         }
       },
       {
         '@type': 'Question',
-        name: '¿ViralCraft es gratis?',
+        name: '¿CreoVision es gratis?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, ViralCraft ofrece un plan gratuito con acceso a herramientas básicas de generación de contenido y editor de miniaturas. Los planes Premium y Enterprise ofrecen funcionalidades avanzadas.'
+          text: 'Sí, CreoVision ofrece un plan gratuito con acceso a herramientas básicas de generación de contenido y editor de miniaturas. Los planes Premium y Enterprise ofrecen funcionalidades avanzadas.'
         }
       },
       {
         '@type': 'Question',
-        name: '¿Qué IAs utiliza ViralCraft?',
+        name: '¿Qué IAs utiliza CreoVision?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'ViralCraft integra múltiples proveedores de IA incluyendo Google Gemini, Claude (Anthropic), GPT-4 (OpenAI), DeepSeek y Cohere, con sistema de fallback automático para máxima disponibilidad.'
+          text: 'CreoVision integra múltiples proveedores de IA incluyendo Google Gemini, Claude (Anthropic), GPT-4 (OpenAI), DeepSeek y Cohere, con sistema de fallback automático para máxima disponibilidad.'
         }
       },
       // COMENTADO TEMPORALMENTE - ThumbnailEditor no disponible
@@ -301,23 +301,23 @@ export const structuredData = {
       //   name: '¿Puedo crear miniaturas para YouTube?',
       //   acceptedAnswer: {
       //     '@type': 'Answer',
-      //     text: 'Sí, ContentLab incluye un editor de miniaturas profesional con acceso a Unsplash, herramientas de remover fondos con IA, filtros profesionales y Google Fonts.'
+      //     text: 'Sí, CreoVision incluye un editor de miniaturas profesional con acceso a Unsplash, herramientas de remover fondos con IA, filtros profesionales y Google Fonts.'
       //   }
       // },
       {
         '@type': 'Question',
-        name: '¿ViralCraft ayuda con el SEO de mis videos?',
+        name: '¿CreoVision ayuda con el SEO de mis videos?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Absolutamente. ViralCraft genera títulos optimizados para SEO, keywords relevantes, análisis de tendencias y sugerencias específicas por plataforma (YouTube, TikTok, Instagram).'
+          text: 'Absolutamente. CreoVision genera títulos optimizados para SEO, keywords relevantes, análisis de tendencias y sugerencias específicas por plataforma (YouTube, TikTok, Instagram).'
         }
       },
       {
         '@type': 'Question',
-        name: '¿Necesito conocimientos técnicos para usar ViralCraft?',
+        name: '¿Necesito conocimientos técnicos para usar CreoVision?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'No. ViralCraft está diseñado para ser intuitivo y fácil de usar. Solo selecciona tu tema, estilo y duración, y la IA generará contenido optimizado en segundos.'
+          text: 'No. CreoVision está diseñado para ser intuitivo y fácil de usar. Solo selecciona tu tema, estilo y duración, y la IA generará contenido optimizado en segundos.'
         }
       }
     ]

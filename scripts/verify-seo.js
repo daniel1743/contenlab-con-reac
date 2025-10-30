@@ -263,7 +263,7 @@ function main() {
 ${colors.magenta}
 ╔══════════════════════════════════════════════════════════════════╗
 ║                                                                  ║
-║  🔍 SEO VERIFICATION TOOL - ContentLab Premium                   ║
+║  🔍 SEO VERIFICATION TOOL - CreoVision Premium                   ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ${colors.reset}

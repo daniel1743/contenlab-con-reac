@@ -62,7 +62,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                   <Star className="w-10 h-10 text-yellow-300" />
                 </div>
                 <DialogHeader>
-                  <DialogTitle className="text-3xl font-bold text-gradient">Desbloquea Todo el Poder de ViralCraft</DialogTitle>
+                  <DialogTitle className="text-3xl font-bold text-gradient">Desbloquea Todo el Poder de CreoVision</DialogTitle>
                   <DialogDescription className="text-lg text-gray-300 mt-2">
                     {user
                       ? '¡Únete a Premium para continuar creando sin límites!'

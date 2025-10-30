@@ -130,7 +130,7 @@ const History = () => {
       >
         <h1 className="text-4xl font-bold text-gradient">Mis Forjados</h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          Historial completo de todo el contenido que has generado con ViralCraft
+          Historial completo de todo el contenido que has generado con CreoVision
         </p>
       </motion.div>
 

@@ -68,7 +68,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   // Navegación actualizada con nuevas secciones
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: HomeIcon },
-    { id: 'dashboard', label: 'Mi Craft Viral', icon: ChartBarIcon, authRequired: true },
+    { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
     { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon },
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
     // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
@@ -129,9 +129,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             onClick={() => onSectionChange('landing')}
             whileHover={{ scale: 1.05 }}
           >
-            <img src="/mascota.png" alt="ViralCraft" className="w-10 h-10 rounded-full object-cover" />
+            <img src="/mascota.png" alt="CreoVision" className="w-10 h-10 rounded-full object-cover" />
             <div className="relative">
-              <span className="text-xl font-bold text-gradient">ViralCraft</span>
+              <span className="text-xl font-bold text-gradient">CreoVision</span>
               <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
                 BETA
               </span>

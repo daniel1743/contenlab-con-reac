@@ -35,7 +35,7 @@ const Footer = () => {
     {
       title: 'Producto',
       links: [
-        { name: 'Características', content: 'ContentLab Premium ofrece un generador de contenido IA, un editor de miniaturas profesional, un calendario de publicaciones inteligente y análisis de rendimiento en tiempo real. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
+        { name: 'Características', content: 'CreoVision Premium ofrece un generador de contenido IA, un editor de miniaturas profesional, un calendario de publicaciones inteligente y análisis de rendimiento en tiempo real. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
         { name: 'Precios', content: 'Ofrecemos planes flexibles adaptados a tus necesidades, desde opciones gratuitas hasta suscripciones Premium con acceso ilimitado a todas nuestras herramientas avanzadas. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
         { name: 'Blog', content: 'Visita nuestro blog para obtener las últimas noticias, tutoriales, consejos y trucos sobre creación de contenido, marketing digital y las tendencias más recientes en redes sociales. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' },
       ],
@@ -43,7 +43,7 @@ const Footer = () => {
     {
       title: 'Soporte',
       links: [
-        { name: 'FAQ', content: 'Encuentra respuestas a las preguntas más frecuentes sobre el uso de ContentLab Premium, solución de problemas y optimización de tu flujo de trabajo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
+        { name: 'FAQ', content: 'Encuentra respuestas a las preguntas más frecuentes sobre el uso de CreoVision Premium, solución de problemas y optimización de tu flujo de trabajo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
         { name: 'Contáctanos', content: '¿Necesitas ayuda personalizada? Nuestro equipo de soporte está disponible 24/7 para asistirte con cualquier consulta o problema que puedas tener. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
         { name: 'Estado del Servicio', content: 'Consulta el estado actual de nuestros servicios y mantente informado sobre cualquier mantenimiento programado o interrupción. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' },
       ],
@@ -51,7 +51,7 @@ const Footer = () => {
     {
       title: 'Legal',
       links: [
-        { name: 'Términos de Servicio', content: 'Lee nuestros términos y condiciones de uso para entender tus derechos y responsabilidades al utilizar ContentLab Premium. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
+        { name: 'Términos de Servicio', content: 'Lee nuestros términos y condiciones de uso para entender tus derechos y responsabilidades al utilizar CreoVision Premium. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
         { name: 'Política de Privacidad', content: 'Conoce cómo recopilamos, usamos y protegemos tu información personal de acuerdo con nuestra política de privacidad. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
       ],
     },
@@ -66,7 +66,7 @@ const Footer = () => {
               <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gradient">ContentLab Premium</span>
+              <span className="text-xl font-bold text-gradient">CreoVision Premium</span>
             </div>
             <p className="text-gray-400 text-sm">
               Transformando la creación de contenido con el poder de la IA.
@@ -94,7 +94,7 @@ const Footer = () => {
 
         <div className="mt-12 border-t border-purple-500/20 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} ContentLab Premium. Todos los derechos reservados.
+            © {new Date().getFullYear()} CreoVision Premium. Todos los derechos reservados.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
             {socialLinks.map((social, index) => {

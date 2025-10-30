@@ -7,16 +7,18 @@
  * Si un usuario en Colombia busca "marketing digital", un usuario en Venezuela
  * puede reutilizar esos datos sin llamar a la API.
  *
- * @author CreoVision (antes ContentLab)
+ * @author CreoVision
  */
 
 import { supabase } from '@/lib/customSupabaseClient';
 
 // Configuración del cache optimizada para tier FREE
 const CACHE_CONFIG = {
-  TABLE_NAME: 'twitter_api_cache',
-  TTL_SECONDS: 2 * 24 * 60 * 60, // 2 días (Twitter data cambia más lento que YouTube)
-  MAX_ENTRIES: 5000, // Límite de entradas
+  VIEW_NAME: 'twitter_api_cache',  // Vista para lectura
+  TABLE_NAME: 'api_cache',         // Tabla real para escritura
+  API_NAME: 'twitter',             // Identificador de API
+  TTL_SECONDS: 2 * 24 * 60 * 60,   // 2 días (Twitter data cambia más lento que YouTube)
+  MAX_ENTRIES: 5000,               // Límite de entradas
   VERSION: 'v1'
 };
 
@@ -60,11 +62,11 @@ const generateCacheKey = (apiEndpoint, query, params = {}) => {
 export const getSupabaseCache = async (cacheKey) => {
   try {
     const { data, error } = await supabase
-      .from(CACHE_CONFIG.TABLE_NAME)
+      .from(CACHE_CONFIG.VIEW_NAME)
       .select('*')
       .eq('cache_key', cacheKey)
       .eq('version', CACHE_CONFIG.VERSION)
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -86,9 +88,13 @@ export const getSupabaseCache = async (cacheKey) => {
     if (now > expiresAt) {
       console.log('⏰ [Twitter Cache] Entrada expirada, eliminando:', cacheKey);
       // Eliminar entrada expirada en background
-      supabase.from(CACHE_CONFIG.TABLE_NAME).delete().eq('cache_key', cacheKey).then(() => {
-        console.log('🗑️ [Twitter Cache] Entrada expirada eliminada');
-      });
+      supabase.from(CACHE_CONFIG.TABLE_NAME)
+        .delete()
+        .eq('api_name', CACHE_CONFIG.API_NAME)
+        .eq('query_hash', cacheKey)
+        .then(() => {
+          console.log('🗑️ [Twitter Cache] Entrada expirada eliminada');
+        });
       return null;
     }
 
@@ -114,9 +120,10 @@ export const setSupabaseCache = async (cacheKey, data, query) => {
     const expiresAt = new Date(now.getTime() + CACHE_CONFIG.TTL_SECONDS * 1000);
 
     const cacheEntry = {
-      cache_key: cacheKey,
+      api_name: CACHE_CONFIG.API_NAME,
+      query_hash: cacheKey,
       query: query,
-      cached_data: data,
+      result: data,
       version: CACHE_CONFIG.VERSION,
       created_at: now.toISOString(),
       updated_at: now.toISOString(),
@@ -126,7 +133,7 @@ export const setSupabaseCache = async (cacheKey, data, query) => {
     const { error } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .upsert(cacheEntry, {
-        onConflict: 'cache_key,version'
+        onConflict: 'api_name,query_hash,version'
       });
 
     if (error) {
@@ -155,6 +162,7 @@ const cleanupOldEntries = async () => {
     const { count, error: countError } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .select('*', { count: 'exact', head: true })
+      .eq('api_name', CACHE_CONFIG.API_NAME)
       .eq('version', CACHE_CONFIG.VERSION);
 
     if (countError) {
@@ -168,6 +176,7 @@ const cleanupOldEntries = async () => {
       const { error: deleteError } = await supabase
         .from(CACHE_CONFIG.TABLE_NAME)
         .delete()
+        .eq('api_name', CACHE_CONFIG.API_NAME)
         .eq('version', CACHE_CONFIG.VERSION)
         .order('created_at', { ascending: true })
         .limit(deleteCount);
@@ -191,6 +200,7 @@ export const cleanupExpiredEntries = async () => {
     const { error, count } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .delete()
+      .eq('api_name', CACHE_CONFIG.API_NAME)
       .eq('version', CACHE_CONFIG.VERSION)
       .lt('expires_at', now.toISOString());
 

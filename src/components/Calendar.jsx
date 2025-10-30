@@ -228,7 +228,7 @@ const Calendar = () => {
       primaryGoal: 'awareness',
       contentType: 'video',
       aiScore: 88,
-      hashtags: ['#IA', '#Productividad', '#ContentLab'],
+      hashtags: ['#IA', '#Productividad', '#CreoVision'],
       optimalTime: 'Jueves 16:00'
     },
     {
@@ -260,7 +260,7 @@ const Calendar = () => {
       primaryGoal: 'thought_leadership',
       contentType: 'thread',
       aiScore: 76,
-      hashtags: ['#Tendencias', '#IA', '#ContentLab'],
+      hashtags: ['#Tendencias', '#IA', '#CreoVision'],
       optimalTime: 'Martes 09:00'
     },
     {
@@ -352,7 +352,7 @@ const Calendar = () => {
       primaryGoal: formData.primaryGoal,
       contentType: formData.contentType,
       aiScore,
-      hashtags: hashtags.length ? hashtags : ['#ContentLab'],
+      hashtags: hashtags.length ? hashtags : ['#CreoVision'],
       optimalTime
     };
 
@@ -469,7 +469,7 @@ const Calendar = () => {
 
   // Exportar a iCal
   const exportToICal = useCallback(() => {
-    let icalContent = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ContentLab//Calendar//ES\n';
+    let icalContent = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CreoVision//Calendar//ES\n';
 
     filteredEvents.forEach(event => {
       const dateTime = new Date(`${event.date.toISOString().split('T')[0]}T${event.time}`);
@@ -491,7 +491,7 @@ const Calendar = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'contentlab-calendar.ics';
+    link.download = 'creovision-calendar.ics';
     link.click();
 
     toast({
@@ -1128,7 +1128,7 @@ const Calendar = () => {
                 Playbooks omnicanal
               </CardTitle>
               <CardDescription>
-                Secuencias inspiradas en los flujos de Hootsuite con boost ContentLab.
+                Secuencias inspiradas en los flujos de Hootsuite con boost CreoVision.
               </CardDescription>
             </CardHeader>
             <CardContent>

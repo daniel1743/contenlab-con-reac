@@ -4,7 +4,7 @@
 -- Tabla para almacenar caché global de datos de Twitter API
 -- Compartida entre TODOS los usuarios para minimizar llamadas a la API
 --
--- @author CreoVision (antes ContentLab)
+-- @author CreoVision
 -- ============================================================================
 
 -- Crear tabla si no existe

@@ -533,7 +533,7 @@ const handleCopy = useCallback(() => {
     const element = document.createElement('a');
     const file = new Blob([generatedContent], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = `viralcraft-script-${Date.now()}.txt`;
+    element.download = `creovision-script-${Date.now()}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -557,7 +557,7 @@ const handleCopy = useCallback(() => {
 
     // 🆕 MENSAJES DE CARGA PROFESIONALES
     toast({
-      title: '🚀 ViralCraft está trabajando para ti',
+      title: '🚀 CreoVision está trabajando para ti',
       description: 'Espera un momento... Nuestro editor senior está analizando tu temática y creando el mejor ángulo narrativo posible.',
       duration: 4000,
     });
@@ -602,10 +602,10 @@ const handleCopy = useCallback(() => {
       setGeneratedContent(generatedScript);
 
       toast({
-        title: '✨ ViralCraft está creando tu guión profesional',
+        title: '✨ CreoVision está creando tu guión profesional',
         description: creatorPersonality.role
           ? 'Adaptando el contenido a tu estilo único y audiencia. En breve recibirás un análisis estratégico completo...'
-          : 'Nuestro motor de IA está diseñando tu contenido viral. Prepárate para recibir algo grandioso...',
+          : 'Nuestro motor de IA está diseñando tu contenido premium. Prepárate para recibir algo grandioso...',
         duration: 5000,
       });
 
@@ -619,8 +619,8 @@ const handleCopy = useCallback(() => {
         await generateAllSupplementaryData();
 
         toast({
-          title: '✅ ¡Tu contenido viral está listo!',
-          description: 'ViralCraft ha terminado. Revisa los 3 paneles profesionales y continúa a tu Craft Viral cuando estés listo.',
+          title: '✅ ¡Tu contenido premium está listo!',
+          description: 'CreoVision ha terminado. Revisa los 3 paneles profesionales y continúa al Panel CreoVision cuando estés listo.',
           duration: 6000,
         });
       } catch (supplementaryError) {
@@ -656,7 +656,7 @@ const handleCopy = useCallback(() => {
 
       toast({
         title: '⚠️ Ups, algo no salió bien',
-        description: 'ViralCraft encontró un problema al generar tu contenido. Estamos usando un ejemplo mientras lo solucionamos.',
+        description: 'CreoVision encontró un problema al generar tu contenido. Estamos usando un ejemplo mientras lo solucionamos.',
         variant: 'destructive'
       });
       
@@ -854,7 +854,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     {
       id: 'ai-content',
       title: 'Generador de Contenido IA',
-      description: 'Crea contenido viral optimizado para cada plataforma',
+      description: 'Crea contenido premium optimizado para cada plataforma',
       icon: SparklesIcon,
       color: 'from-purple-500 to-pink-500',
       action: () => {},
@@ -968,7 +968,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold text-gradient">Centro Creativo</h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          Suite completa de herramientas impulsadas por IA para crear contenido viral
+          Suite completa de herramientas impulsadas por IA para crear contenido premium
         </p>
       </div>
 
@@ -1285,7 +1285,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 <BoltSolidIcon className="w-4 h-4 mr-2" />
               )}
               <span>
-                {isGenerating ? 'ViralCraft está creando tu guión...' : 'Generar Contenido Viral'}
+                {isGenerating ? 'CreoVision está creando tu guión...' : 'Generar Contenido Premium'}
               </span>
             </Button>
 
@@ -1478,7 +1478,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <ChartBarIcon className="w-5 h-5 mr-2 text-blue-400 stroke-[2]"/>
-                📈 Tendencias del Tema (ViralCraft IA)
+                📈 Tendencias del Tema (CreoVision IA)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1566,13 +1566,13 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
         </div>
       )}
 
-      {/* 🆕 BOTÓN CONTINUAR A TU CRAFT VIRAL */}
+      {/* 🆕 BOTÓN CONTINUAR AL PANEL CREOVISION */}
       {generatedContent && (
         <div className="flex justify-center pt-8">
           <Button
             onClick={() => {
               // Guardar datos en sessionStorage para el Dashboard
-              sessionStorage.setItem('craftViralData', JSON.stringify({
+              sessionStorage.setItem('creovisionPanelData', JSON.stringify({
                 titles: realTitles,
                 keywords: realKeywords,
                 topic: contentTopic,
@@ -1581,7 +1581,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 duration: selectedDuration,
                 generatedContent: generatedContent
               }));
-              // Navegar al Dashboard (Craft Viral)
+              // Navegar al Dashboard (Panel CreoVision)
               if (onSectionChange) {
                 onSectionChange('dashboard');
               }
@@ -1590,7 +1590,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             size="lg"
           >
             <BoltSolidIcon className="w-5 h-5 mr-2" />
-            Continuar a tu Craft Viral
+            Continuar a tu Panel CreoVision
             <ChevronRightIcon className="w-5 h-5 ml-2 stroke-[2]" />
           </Button>
         </div>
@@ -2249,7 +2249,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               {/* Beneficios resumidos */}
               <div className="space-y-2">
                 {[
-                  { text: 'Generador de contenido viral', detail: '20 peticiones/día' },
+                  { text: 'Generador de contenido premium', detail: '20 peticiones/día' },
                   { text: 'Personalización de narración/guion', detail: '✨ NUEVO' },
                   { text: 'Auditoría de contenido', detail: null },
                   { text: 'Dashboard interactivo', detail: '20 consultas/día' },

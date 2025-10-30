@@ -8,7 +8,7 @@
  * - Limpia automáticamente datos expirados
  * - Limita el tamaño total del caché
  *
- * @author ViralCraft ContentLab
+ * @author CreoVision CreoVision
  */
 
 const CACHE_CONFIG = {

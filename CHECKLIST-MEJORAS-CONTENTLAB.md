@@ -1,4 +1,4 @@
-# CHECKLIST DE MEJORAS - CONTENTLAB
+# CHECKLIST DE MEJORAS - CREOVISION
 ## Plan de Acción Priorizado
 
 **Estado Actual:** 70% listo para lanzamiento

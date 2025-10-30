@@ -10,7 +10,7 @@
  * - Análisis de métricas SEO y tendencias
  * - Recomendaciones personalizadas basadas en el nicho del usuario
  *
- * @author CreoVision (antes ContentLab)
+ * @author CreoVision
  */
 
 const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
@@ -24,7 +24,7 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const generateSystemPrompt = (userContext) => {
   const { name, topic, plan = 'FREE' } = userContext;
 
-  return `Eres el asistente virtual de CreoVision (antes ContentLab), una plataforma de creación de contenido viral con IA.
+  return `Eres el asistente virtual de CreoVision, una plataforma de creación de contenido viral con IA.
 
 Tu personalidad:
 - Amigable, motivacional y cercano

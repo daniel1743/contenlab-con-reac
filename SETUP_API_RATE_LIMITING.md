@@ -1,6 +1,6 @@
 # 🔒 Sistema de Rate Limiting y Caching de APIs
 
-Este documento explica cómo funciona el sistema de optimización de costos de API implementado en ViralCraft.
+Este documento explica cómo funciona el sistema de optimización de costos de API implementado en CreoVision.
 
 ## 📋 Tabla de Contenidos
 
@@ -329,4 +329,4 @@ Si tienes problemas:
 
 ---
 
-**Desarrollado con ❤️ para ViralCraft**
+**Desarrollado con ❤️ para CreoVision**

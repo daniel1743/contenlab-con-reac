@@ -129,7 +129,7 @@ const AuthModal = ({ isOpen, onClose }) => {
           <div className="flex flex-col bg-white min-h-0">
             <div className="flex-shrink-0 p-6 pb-4 border-b border-gray-100">
               <DialogHeader className="text-center lg:text-left">
-                <DialogTitle className="text-2xl font-bold text-gradient">Accede a ContentLab Premium</DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-gradient">Accede a CreoVision Premium</DialogTitle>
               </DialogHeader>
             </div>
 

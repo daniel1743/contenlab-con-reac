@@ -1,4 +1,4 @@
-# robots.txt para ContentLab Premium
+# robots.txt para CreoVision Premium
 # Última actualización: 2025-10-18
 
 # ========================================

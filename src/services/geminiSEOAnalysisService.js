@@ -4,7 +4,7 @@
  * Servicio para analizar tendencias de NewsAPI con Gemini AI
  * y generar recomendaciones SEO personalizadas
  *
- * @author ViralCraft ContentLab
+ * @author CreoVision
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -13,10 +13,10 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 /**
- * Analiza un artículo de tendencia y genera recomendaciones SEO
- * @param {Object} article - Artículo de NewsAPI con {title, description, source}
- * @param {string} userTopic - Tema original de búsqueda del usuario
- * @returns {Promise<Object>} - Análisis SEO estructurado con recomendaciones
+ * Analiza un artï¿½culo de tendencia y genera recomendaciones SEO
+ * @param {Object} article - Artï¿½culo de NewsAPI con {title, description, source}
+ * @param {string} userTopic - Tema original de bï¿½squeda del usuario
+ * @returns {Promise<Object>} - Anï¿½lisis SEO estructurado con recomendaciones
  */
 export const analyzeTrendingSEO = async (article, userTopic) => {
   try {
@@ -25,21 +25,21 @@ export const analyzeTrendingSEO = async (article, userTopic) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const prompt = `
-Eres un experto en SEO y marketing de contenidos. Analiza esta tendencia emergente de noticias y proporciona recomendaciones SEO estratégicas.
+Eres un experto en SEO y marketing de contenidos. Analiza esta tendencia emergente de noticias y proporciona recomendaciones SEO estratï¿½gicas.
 
 **CONTEXTO DEL USUARIO:**
 - Nicho/Tema: ${userTopic}
 
 **TENDENCIA IDENTIFICADA:**
-- Título: ${article.title}
-- Descripción: ${article.description}
+- Tï¿½tulo: ${article.title}
+- Descripciï¿½n: ${article.description}
 - Fuente: ${article.source}
 
 **TAREA:**
-Proporciona un análisis SEO estructurado en formato JSON con esta estructura EXACTA:
+Proporciona un anï¿½lisis SEO estructurado en formato JSON con esta estructura EXACTA:
 
 {
-  "oportunidadSEO": "Descripción de por qué esta tendencia es relevante para SEO (50-80 palabras)",
+  "oportunidadSEO": "Descripciï¿½n de por quï¿½ esta tendencia es relevante para SEO (50-80 palabras)",
   "palabrasClave": [
     "palabra clave 1",
     "palabra clave 2",
@@ -47,7 +47,7 @@ Proporciona un análisis SEO estructurado en formato JSON con esta estructura EXA
     "palabra clave 4",
     "palabra clave 5"
   ],
-  "tituloOptimizado": "Título SEO optimizado relacionado a la tendencia (máx 60 caracteres)",
+  "tituloOptimizado": "Tï¿½tulo SEO optimizado relacionado a la tendencia (mï¿½x 60 caracteres)",
   "estrategiasContenido": [
     "Estrategia concreta 1",
     "Estrategia concreta 2",
@@ -63,10 +63,10 @@ Proporciona un análisis SEO estructurado en formato JSON con esta estructura EXA
     "dificultadSEO": "Baja/Media/Alta",
     "potencialViral": "Bajo/Medio/Alto"
   },
-  "consejoRapido": "Un consejo accionable de 1-2 líneas para aprovechar esta tendencia YA"
+  "consejoRapido": "Un consejo accionable de 1-2 lï¿½neas para aprovechar esta tendencia YA"
 }
 
-IMPORTANTE: Responde ÚNICAMENTE con el JSON, sin texto adicional antes o después.
+IMPORTANTE: Responde ï¿½NICAMENTE con el JSON, sin texto adicional antes o despuï¿½s.
 `;
 
     const result = await model.generateContent(prompt);
@@ -81,7 +81,7 @@ IMPORTANTE: Responde ÚNICAMENTE con el JSON, sin texto adicional antes o después
 
     const analysis = JSON.parse(jsonMatch[0]);
 
-    console.log(` [Gemini SEO] Análisis completado para: "${article.title}"`);
+    console.log(` [Gemini SEO] Anï¿½lisis completado para: "${article.title}"`);
 
     return {
       articleId: article.id,
@@ -92,20 +92,20 @@ IMPORTANTE: Responde ÚNICAMENTE con el JSON, sin texto adicional antes o después
 
   } catch (error) {
     console.error('L [Gemini SEO] Error analizando tendencia:', error);
-    // Retornar análisis de ejemplo en caso de error
+    // Retornar anï¿½lisis de ejemplo en caso de error
     return generateFallbackAnalysis(article, userTopic);
   }
 };
 
 /**
- * Analiza múltiples artículos en paralelo
- * @param {Array} articles - Array de artículos de NewsAPI
+ * Analiza mï¿½ltiples artï¿½culos en paralelo
+ * @param {Array} articles - Array de artï¿½culos de NewsAPI
  * @param {string} userTopic - Tema del usuario
- * @returns {Promise<Array>} - Array de análisis SEO
+ * @returns {Promise<Array>} - Array de anï¿½lisis SEO
  */
 export const analyzeTrendingBatch = async (articles, userTopic) => {
   try {
-    console.log(`> [Gemini SEO] Analizando ${articles.length} artículos en paralelo...`);
+    console.log(`> [Gemini SEO] Analizando ${articles.length} artï¿½culos en paralelo...`);
 
     const analysisPromises = articles.map(article =>
       analyzeTrendingSEO(article, userTopic)
@@ -113,45 +113,45 @@ export const analyzeTrendingBatch = async (articles, userTopic) => {
 
     const results = await Promise.all(analysisPromises);
 
-    console.log(` [Gemini SEO] ${results.length} análisis completados`);
+    console.log(` [Gemini SEO] ${results.length} anï¿½lisis completados`);
     return results;
 
   } catch (error) {
-    console.error('L [Gemini SEO] Error en análisis batch:', error);
+    console.error('L [Gemini SEO] Error en anï¿½lisis batch:', error);
     return articles.map(article => generateFallbackAnalysis(article, userTopic));
   }
 };
 
 /**
- * Genera análisis de ejemplo cuando Gemini falla
- * @param {Object} article - Artículo original
+ * Genera anï¿½lisis de ejemplo cuando Gemini falla
+ * @param {Object} article - Artï¿½culo original
  * @param {string} userTopic - Tema del usuario
- * @returns {Object} - Análisis SEO de ejemplo
+ * @returns {Object} - Anï¿½lisis SEO de ejemplo
  */
 const generateFallbackAnalysis = (article, userTopic) => {
-  console.log(`= [Gemini SEO] Generando análisis de ejemplo para: "${article.title}"`);
+  console.log(`= [Gemini SEO] Generando anï¿½lisis de ejemplo para: "${article.title}"`);
 
   return {
     articleId: article.id,
     articleTitle: article.title,
     analysis: {
-      oportunidadSEO: `Esta tendencia relacionada con "${userTopic}" presenta una oportunidad para captar tráfico orgánico emergente. Al crear contenido optimizado tempranamente, puedes posicionarte como referencia en este tema antes que tu competencia.`,
+      oportunidadSEO: `Esta tendencia relacionada con "${userTopic}" presenta una oportunidad para captar trï¿½fico orgï¿½nico emergente. Al crear contenido optimizado tempranamente, puedes posicionarte como referencia en este tema antes que tu competencia.`,
       palabrasClave: [
         `${userTopic} tendencias`,
         `${userTopic} 2025`,
         `${userTopic} estrategias`,
-        `${userTopic} mejores prácticas`,
+        `${userTopic} mejores prï¿½cticas`,
         `${userTopic} actualizado`
       ],
-      tituloOptimizado: `Guía Completa: ${userTopic} - Lo Que Necesitas Saber`,
+      tituloOptimizado: `Guï¿½a Completa: ${userTopic} - Lo Que Necesitas Saber`,
       estrategiasContenido: [
-        `Crear guía paso a paso sobre ${userTopic} basada en esta tendencia`,
-        `Publicar análisis comparativo con datos actualizados`,
-        `Desarrollar infografías visuales que simplifiquen conceptos clave`
+        `Crear guï¿½a paso a paso sobre ${userTopic} basada en esta tendencia`,
+        `Publicar anï¿½lisis comparativo con datos actualizados`,
+        `Desarrollar infografï¿½as visuales que simplifiquen conceptos clave`
       ],
       formatosRecomendados: [
         `Video tutorial de 8-12 minutos`,
-        `Artículo blog de 1500-2000 palabras`,
+        `Artï¿½culo blog de 1500-2000 palabras`,
         `Carrusel de Instagram con 10 slides informativos`
       ],
       metricasObjetivo: {
@@ -159,7 +159,7 @@ const generateFallbackAnalysis = (article, userTopic) => {
         dificultadSEO: 'Media',
         potencialViral: 'Medio-Alto'
       },
-      consejoRapido: `Publica contenido sobre esta tendencia en las próximas 48 horas para aprovechar el pico de búsquedas y posicionarte antes que la competencia.`
+      consejoRapido: `Publica contenido sobre esta tendencia en las prï¿½ximas 48 horas para aprovechar el pico de bï¿½squedas y posicionarte antes que la competencia.`
     },
     generatedAt: new Date().toISOString(),
     isFallback: true
@@ -167,8 +167,8 @@ const generateFallbackAnalysis = (article, userTopic) => {
 };
 
 /**
- * Valida si Gemini está configurado correctamente
- * @returns {boolean} - true si está configurado
+ * Valida si Gemini estï¿½ configurado correctamente
+ * @returns {boolean} - true si estï¿½ configurado
  */
 export const isGeminiConfigured = () => {
   return Boolean(GEMINI_API_KEY && GEMINI_API_KEY !== 'tu_key_aqui');

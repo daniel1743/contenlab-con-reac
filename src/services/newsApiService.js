@@ -1,29 +1,29 @@
 /**
- * =ð NEWS API SERVICE
+ * =ï¿½ NEWS API SERVICE
  *
  * Servicio para obtener tendencias emergentes y noticias relevantes
  * usando NewsAPI (https://newsapi.org/)
  *
- * @author ViralCraft ContentLab
+ * @author CreoVision
  */
 
 const NEWSAPI_KEY = import.meta.env.VITE_NEWSAPI_KEY;
 const NEWSAPI_BASE_URL = 'https://newsapi.org/v2';
 
 /**
- * Obtiene las 4 noticias más relevantes sobre un tema específico
- * @param {string} topic - Tema de búsqueda (ej: "marketing digital", "cocina saludable")
- * @returns {Promise<Array>} - Array de 4 noticias con título, descripción, URL, imagen
+ * Obtiene las 4 noticias mï¿½s relevantes sobre un tema especï¿½fico
+ * @param {string} topic - Tema de bï¿½squeda (ej: "marketing digital", "cocina saludable")
+ * @returns {Promise<Array>} - Array de 4 noticias con tï¿½tulo, descripciï¿½n, URL, imagen
  */
 export const getTrendingTopicsByKeyword = async (topic) => {
   try {
-    console.log(`=ð [NewsAPI] Buscando tendencias para: "${topic}"`);
+    console.log(`=ï¿½ [NewsAPI] Buscando tendencias para: "${topic}"`);
 
-    // Llamar a NewsAPI endpoint "everything" para buscar artículos recientes
+    // Llamar a NewsAPI endpoint "everything" para buscar artï¿½culos recientes
     const response = await fetch(
       `${NEWSAPI_BASE_URL}/everything?` +
       `q=${encodeURIComponent(topic)}&` +
-      `language=es&` + // Español
+      `language=es&` + // Espaï¿½ol
       `sortBy=popularity&` + // Ordenar por popularidad
       `pageSize=4&` + // Solo 4 resultados
       `apiKey=${NEWSAPI_KEY}`
@@ -36,15 +36,15 @@ export const getTrendingTopicsByKeyword = async (topic) => {
     const data = await response.json();
 
     if (!data.articles || data.articles.length === 0) {
-      console.warn(`  [NewsAPI] No se encontraron noticias para: "${topic}"`);
+      console.warn(`ï¿½ [NewsAPI] No se encontraron noticias para: "${topic}"`);
       return generateFallbackNews(topic);
     }
 
     // Mapear resultados al formato que necesitamos
     const formattedArticles = data.articles.map((article, index) => ({
       id: `news-${Date.now()}-${index}`,
-      title: article.title || 'Sin título',
-      description: article.description || article.content?.substring(0, 150) || 'Sin descripción disponible',
+      title: article.title || 'Sin tï¿½tulo',
+      description: article.description || article.content?.substring(0, 150) || 'Sin descripciï¿½n disponible',
       url: article.url,
       imageUrl: article.urlToImage || `https://via.placeholder.com/400x200?text=${encodeURIComponent(topic)}`,
       source: article.source?.name || 'Fuente desconocida',
@@ -64,12 +64,12 @@ export const getTrendingTopicsByKeyword = async (topic) => {
 
 /**
  * Obtiene los trending topics generales (top headlines)
- * @param {string} category - Categoría (business, technology, entertainment, etc)
+ * @param {string} category - Categorï¿½a (business, technology, entertainment, etc)
  * @returns {Promise<Array>} - Array de 4 noticias trending
  */
 export const getTopHeadlines = async (category = 'technology') => {
   try {
-    console.log(`=ð [NewsAPI] Obteniendo top headlines de categoría: "${category}"`);
+    console.log(`=ï¿½ [NewsAPI] Obteniendo top headlines de categorï¿½a: "${category}"`);
 
     const response = await fetch(
       `${NEWSAPI_BASE_URL}/top-headlines?` +
@@ -86,14 +86,14 @@ export const getTopHeadlines = async (category = 'technology') => {
     const data = await response.json();
 
     if (!data.articles || data.articles.length === 0) {
-      console.warn(`  [NewsAPI] No se encontraron top headlines`);
+      console.warn(`ï¿½ [NewsAPI] No se encontraron top headlines`);
       return generateFallbackNews('tendencias generales');
     }
 
     const formattedArticles = data.articles.map((article, index) => ({
       id: `headline-${Date.now()}-${index}`,
-      title: article.title || 'Sin título',
-      description: article.description || article.content?.substring(0, 150) || 'Sin descripción disponible',
+      title: article.title || 'Sin tï¿½tulo',
+      description: article.description || article.content?.substring(0, 150) || 'Sin descripciï¿½n disponible',
       url: article.url,
       imageUrl: article.urlToImage || 'https://via.placeholder.com/400x200?text=News',
       source: article.source?.name || 'Fuente desconocida',
@@ -112,7 +112,7 @@ export const getTopHeadlines = async (category = 'technology') => {
 
 /**
  * Genera noticias de ejemplo cuando la API falla o no hay resultados
- * @param {string} topic - Tema de búsqueda
+ * @param {string} topic - Tema de bï¿½squeda
  * @returns {Array} - Array de 4 noticias de ejemplo
  */
 const generateFallbackNews = (topic) => {
@@ -122,53 +122,53 @@ const generateFallbackNews = (topic) => {
     {
       id: `fallback-${Date.now()}-1`,
       title: `Tendencias emergentes en ${topic}`,
-      description: `Descubre las últimas tendencias y estrategias efectivas en ${topic} que están ganando popularidad.`,
+      description: `Descubre las ï¿½ltimas tendencias y estrategias efectivas en ${topic} que estï¿½n ganando popularidad.`,
       url: '#',
       imageUrl: `https://via.placeholder.com/400x200?text=${encodeURIComponent(topic)}`,
-      source: 'Análisis de Tendencias',
+      source: 'Anï¿½lisis de Tendencias',
       publishedAt: new Date().toISOString(),
-      author: 'ViralCraft ContentLab',
+      author: 'CreoVision',
       isFallback: true
     },
     {
       id: `fallback-${Date.now()}-2`,
-      title: `Cómo optimizar tu estrategia de ${topic}`,
-      description: `Estrategias probadas y técnicas avanzadas para destacar en ${topic} y aumentar tu alcance.`,
+      title: `Cï¿½mo optimizar tu estrategia de ${topic}`,
+      description: `Estrategias probadas y tï¿½cnicas avanzadas para destacar en ${topic} y aumentar tu alcance.`,
       url: '#',
       imageUrl: `https://via.placeholder.com/400x200?text=Estrategia`,
-      source: 'Guías de Contenido',
+      source: 'Guï¿½as de Contenido',
       publishedAt: new Date().toISOString(),
-      author: 'ViralCraft ContentLab',
+      author: 'CreoVision',
       isFallback: true
     },
     {
       id: `fallback-${Date.now()}-3`,
       title: `Lo que debes saber sobre ${topic} en 2025`,
-      description: `Predicciones y análisis de expertos sobre el futuro de ${topic} y cómo prepararte.`,
+      description: `Predicciones y anï¿½lisis de expertos sobre el futuro de ${topic} y cï¿½mo prepararte.`,
       url: '#',
       imageUrl: `https://via.placeholder.com/400x200?text=2025`,
-      source: 'Análisis de Mercado',
+      source: 'Anï¿½lisis de Mercado',
       publishedAt: new Date().toISOString(),
-      author: 'ViralCraft ContentLab',
+      author: 'CreoVision',
       isFallback: true
     },
     {
       id: `fallback-${Date.now()}-4`,
       title: `Errores comunes en ${topic} que debes evitar`,
-      description: `Aprende de los errores más frecuentes en ${topic} y cómo evitarlos para maximizar tus resultados.`,
+      description: `Aprende de los errores mï¿½s frecuentes en ${topic} y cï¿½mo evitarlos para maximizar tus resultados.`,
       url: '#',
       imageUrl: `https://via.placeholder.com/400x200?text=Consejos`,
-      source: 'Mejores Prácticas',
+      source: 'Mejores Prï¿½cticas',
       publishedAt: new Date().toISOString(),
-      author: 'ViralCraft ContentLab',
+      author: 'CreoVision',
       isFallback: true
     }
   ];
 };
 
 /**
- * Valida si la API key de NewsAPI está configurada
- * @returns {boolean} - true si la key está configurada
+ * Valida si la API key de NewsAPI estï¿½ configurada
+ * @returns {boolean} - true si la key estï¿½ configurada
  */
 export const isNewsApiConfigured = () => {
   return Boolean(NEWSAPI_KEY && NEWSAPI_KEY !== 'tu_key_aqui');

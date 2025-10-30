@@ -1,8 +1,8 @@
-# 🤖 Sistema de IA Profesional - ContentLab
+# 🤖 Sistema de IA Profesional - CreoVision
 
 ## 📋 Visión General
 
-ContentLab ha sido actualizado con un **Sistema de IA Profesional** que va más allá de la generación básica de contenido. Nuestro motor, potenciado por **Gemini 2.0 Flash Experimental**, no solo genera texto, sino que **piensa estratégicamente como un editor senior**.
+CreoVision ha sido actualizado con un **Sistema de IA Profesional** que va más allá de la generación básica de contenido. Nuestro motor, potenciado por **Gemini 2.0 Flash Experimental**, no solo genera texto, sino que **piensa estratégicamente como un editor senior**.
 
 ---
 
@@ -280,7 +280,7 @@ VITE_GEMINI_API_KEY=AIzaSyCztlhKh33ffQdvFiYIFhfR1IIXSBpbj0g
 
 ## 📊 Ventajas Competitivas
 
-| Característica | ContentLab Pro | Competidores |
+| Característica | CreoVision Pro | Competidores |
 |---------------|----------------|--------------|
 | Análisis Estratégico | ✅ Incluido | ❌ No |
 | 3 Variantes de Títulos | ✅ Con justificación | ❌ Solo 1 título |
@@ -321,7 +321,7 @@ VITE_GEMINI_API_KEY=AIzaSyCztlhKh33ffQdvFiYIFhfR1IIXSBpbj0g
 ## 📞 Soporte y Contacto
 
 Para consultas sobre el sistema de IA profesional:
-- 📧 Email: soporte@contentlab.com
+- 📧 Email: soporte@creovision.com
 - 📚 Documentación: `/docs`
 - 🐛 Reportar bugs: GitHub Issues
 
@@ -329,7 +329,7 @@ Para consultas sobre el sistema de IA profesional:
 
 ## 🎉 Conclusión
 
-**ContentLab** no es solo una herramienta de generación de contenido. Es un **consultor de estrategia de contenido** que:
+**CreoVision** no es solo una herramienta de generación de contenido. Es un **consultor de estrategia de contenido** que:
 
 1. ✅ Piensa estratégicamente como un editor senior
 2. ✅ Proporciona múltiples opciones con justificación

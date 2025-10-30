@@ -102,7 +102,7 @@ export const createPaymentPreference = async (planId, userData) => {
   const preferenceData = {
     items: [
       {
-        title: `Plan ${plan.name} - ViralCraft`,
+        title: `Plan ${plan.name} - CreoVision`,
         description: `Suscripción mensual al plan ${plan.name}`,
         quantity: 1,
         unit_price: plan.price,

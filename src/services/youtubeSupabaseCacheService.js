@@ -8,14 +8,20 @@
  * - Ahorra hasta 90% de llamadas a la API
  * - Datos reales reutilizados eficientemente
  *
- * @author ViralCraft ContentLab
+ * @author CreoVision CreoVision
  */
 
 import { supabase } from '@/lib/customSupabaseClient';
 
 const CACHE_CONFIG = {
-  // Tabla en Supabase donde se guarda el caché
-  TABLE_NAME: 'youtube_api_cache',
+  // Vista para lectura (filtra por api_name='youtube')
+  VIEW_NAME: 'youtube_api_cache',
+
+  // Tabla real para escritura
+  TABLE_NAME: 'api_cache',
+
+  // Identificador de API
+  API_NAME: 'youtube',
 
   // TTL: Tiempo de vida del caché (2 días - optimizado para plan gratuito)
   TTL_SECONDS: 2 * 24 * 60 * 60, // 172,800 segundos (2 días)
@@ -68,11 +74,11 @@ export const getSupabaseCache = async (cacheKey) => {
     console.log(`🔍 [Supabase Cache] Buscando: ${cacheKey.substring(0, 60)}...`);
 
     const { data, error } = await supabase
-      .from(CACHE_CONFIG.TABLE_NAME)
+      .from(CACHE_CONFIG.VIEW_NAME)
       .select('*')
       .eq('cache_key', cacheKey)
       .eq('version', CACHE_CONFIG.VERSION)
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -124,7 +130,8 @@ const enforceCacheLimit = async () => {
   try {
     const { count, error } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('api_name', CACHE_CONFIG.API_NAME);
 
     if (error) {
       console.error('❌ [Cache Limit] Error verificando tamaño:', error);
@@ -140,6 +147,7 @@ const enforceCacheLimit = async () => {
       const { data: oldestEntries } = await supabase
         .from(CACHE_CONFIG.TABLE_NAME)
         .select('id')
+        .eq('api_name', CACHE_CONFIG.API_NAME)
         .order('created_at', { ascending: true })
         .limit(entriesToDelete);
 
@@ -184,14 +192,15 @@ export const setSupabaseCache = async (cacheKey, data, query) => {
     const { error } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .upsert({
-        cache_key: cacheKey,
+        api_name: CACHE_CONFIG.API_NAME,
+        query_hash: cacheKey,
         query: query.substring(0, 200), // Query original para referencia
-        cached_data: data,
+        result: data,
         version: CACHE_CONFIG.VERSION,
         expires_at: expiresAt.toISOString(),
         updated_at: now.toISOString()
       }, {
-        onConflict: 'cache_key'
+        onConflict: 'api_name,query_hash,version'
       });
 
     if (error) {
@@ -221,6 +230,7 @@ export const cleanExpiredSupabaseCache = async () => {
     const { data, error } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .delete()
+      .eq('api_name', CACHE_CONFIG.API_NAME)
       .lt('expires_at', now)
       .select();
 
@@ -254,24 +264,28 @@ export const getSupabaseCacheStats = async () => {
     // Total de entradas
     const { count: totalCount } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('api_name', CACHE_CONFIG.API_NAME);
 
     // Entradas válidas (no expiradas)
     const { count: validCount } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .select('*', { count: 'exact', head: true })
+      .eq('api_name', CACHE_CONFIG.API_NAME)
       .gte('expires_at', now);
 
     // Entradas expiradas
     const { count: expiredCount } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .select('*', { count: 'exact', head: true })
+      .eq('api_name', CACHE_CONFIG.API_NAME)
       .lt('expires_at', now);
 
     // Queries más cacheadas (top 5)
     const { data: topQueries } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
       .select('query')
+      .eq('api_name', CACHE_CONFIG.API_NAME)
       .gte('expires_at', now)
       .limit(5);
 

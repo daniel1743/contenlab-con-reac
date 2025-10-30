@@ -194,7 +194,7 @@ export default SEOHead;
  * // Uso con título personalizado
  * <SEOHead
  *   page="tools"
- *   customTitle="Generador de Scripts Virales | ContentLab"
+ *   customTitle="Generador de Scripts Virales | CreoVision"
  * />
  *
  * // Uso con schemas específicos
