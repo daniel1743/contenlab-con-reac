@@ -4,11 +4,11 @@
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 
   <!-- ========================================
-       PÁGINA PRINCIPAL
+       PAGINA PRINCIPAL
        ======================================== -->
   <url>
-    <loc>https://tudominio.com/</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -17,25 +17,25 @@
        LANDING PAGE
        ======================================== -->
   <url>
-    <loc>https://tudominio.com/#landing</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#landing</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- ========================================
-       HERRAMIENTAS (Públicas)
+       HERRAMIENTAS (Publicas)
        ======================================== -->
   <url>
-    <loc>https://tudominio.com/#tools</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#tools</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://tudominio.com/#thumbnail-editor</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#thumbnail-editor</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -44,39 +44,39 @@
        SECCIONES INFORMATIVAS
        ======================================== -->
   <url>
-    <loc>https://tudominio.com/#pricing</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#pricing</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://tudominio.com/#features</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#features</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://tudominio.com/#testimonials</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#testimonials</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <!-- ========================================
-       PÁGINAS DE AUTENTICACIÓN (indexables)
+       PAGINAS DE AUTENTICACION (indexables)
        ======================================== -->
   <url>
-    <loc>https://tudominio.com/#login</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#login</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://tudominio.com/#signup</loc>
-    <lastmod>2025-10-18</lastmod>
+    <loc>https://creovision.io/#signup</loc>
+    <lastmod>2025-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -85,42 +85,31 @@
 
 <!--
   ========================================
-  INSTRUCCIONES DE CONFIGURACIÓN
+  INSTRUCCIONES DE CONFIGURACION
   ========================================
 
-  1. REEMPLAZAR "tudominio.com" con tu dominio real en TODAS las URLs
+  1. Si cambias de dominio, actualiza todas las URLs (dominio actual: https://creovision.io).
 
-  2. Actualizar <lastmod> con la fecha de última modificación
-     Formato: YYYY-MM-DD
+  2. Actualiza <lastmod> con la fecha de ultima modificacion (YYYY-MM-DD).
 
   3. PRIORITY (0.0 a 1.0):
-     - 1.0: Página principal (más importante)
-     - 0.9: Páginas muy importantes (landing, tools)
-     - 0.8: Páginas importantes (pricing, editor)
-     - 0.7: Páginas secundarias (features)
-     - 0.5: Páginas de utilidad (login, signup)
+     - 1.0: Pagina principal (mas importante)
+     - 0.9: Paginas muy importantes (landing, tools)
+     - 0.8: Paginas importantes (pricing, editor)
+     - 0.7: Paginas secundarias (features)
+     - 0.5: Paginas de utilidad (login, signup)
 
   4. CHANGEFREQ (frecuencia de cambio):
-     - daily: Contenido que cambia diariamente (tools, generador)
-     - weekly: Contenido que cambia semanalmente (landing, features)
-     - monthly: Contenido estable (pricing, testimonials)
-     - yearly: Contenido casi estático (auth pages)
+     - daily: contenido que cambia diariamente (tools, generador)
+     - weekly: contenido semanal (landing)
+     - monthly: contenido estable (pricing, testimonials)
+     - yearly: contenido casi estatico (auth pages)
 
-  5. VERIFICACIÓN POST-DEPLOY:
-     - Acceder a: https://tudominio.com/sitemap.xml
-     - Debe mostrar este XML correctamente
-     - Enviar a Google Search Console
-     - Enviar a Bing Webmaster Tools
+  5. VERIFICACION POST-DEPLOY:
+     - Accede a: https://creovision.io/sitemap.xml
+     - Envia el sitemap a Google Search Console y Bing Webmaster Tools.
 
-  6. ACTUALIZACIÓN AUTOMÁTICA (Opcional):
-     Si quieres generar el sitemap dinámicamente:
-     - Crear script Node.js que genere XML desde las rutas
-     - Ejecutar en pre-build: "prebuild": "node generate-sitemap.js"
-
-  7. SITEMAP INDEX (Si crece mucho):
-     Si tienes +1000 URLs, considera crear sitemap index:
-     - sitemap-index.xml (apunta a múltiples sitemaps)
-     - sitemap-pages.xml
-     - sitemap-tools.xml
-     - sitemap-blog.xml (si agregas blog)
+  6. AUTOMATIZACION (opcional):
+     - Crear script Node.js que genere el XML desde las rutas.
+     - Ejecutar en pre-build: "prebuild": "node generate-sitemap.js".
 -->

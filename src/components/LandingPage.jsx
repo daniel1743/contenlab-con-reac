@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useTransform, useScroll, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
+import { AnimatePresence, motion, useTransform, useScroll, useInView, useMotionValue, useSpring, animate } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import PricingSection from '@/components/PricingSection';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
@@ -36,12 +36,15 @@ import {
   Bell,
   Search,
   PlayCircle,
-  Clock3
+  Clock3,
+  X
 } from 'lucide-react';
 
 
 const LandingPage = ({ onSectionChange }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [isVideoCarouselHovered, setIsVideoCarouselHovered] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
@@ -151,6 +154,51 @@ const LandingPage = ({ onSectionChange }) => {
         />
       </span>
     );
+  };
+
+  useEffect(() => {
+    if (!selectedVideo) {
+      return;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedVideo(null);
+      }
+    };
+
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedVideo]);
+
+  const isVideoCarouselPaused = isVideoCarouselHovered || Boolean(selectedVideo);
+
+  const handleVideoHoverStart = () => setIsVideoCarouselHovered(true);
+  const handleVideoHoverEnd = () => setIsVideoCarouselHovered(false);
+
+  const handleVideoCardClick = (video) => {
+    setSelectedVideo(video);
+  };
+
+  const handleVideoCardKeyDown = (event, video) => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+      event.preventDefault();
+      setSelectedVideo(video);
+    }
+  };
+
+  const closeSelectedVideo = () => {
+    setSelectedVideo(null);
   };
 
   // Componente Ripple Button
@@ -597,19 +645,26 @@ const LandingPage = ({ onSectionChange }) => {
             </div>
           </motion.div>
 
-          <div className="relative overflow-hidden">
+          <div
+            className="relative overflow-hidden"
+            onMouseEnter={handleVideoHoverStart}
+            onMouseLeave={handleVideoHoverEnd}
+          >
             <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#080c1d] via-[#080c1d]/80 to-transparent z-10" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#080c1d] via-[#080c1d]/80 to-transparent z-10" />
 
             <motion.div
-              className="flex gap-6 lg:gap-8"
-              animate={{ x: ['0%', '-50%'] }}
-              transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
+              className="flex gap-6 lg:gap-8 video-marquee"
+              style={{ animationPlayState: isVideoCarouselPaused ? 'paused' : 'running' }}
             >
               {explainerVideos.concat(explainerVideos).map((video, index) => (
                 <div
                   key={`${video.id}-${index}`}
-                  className="min-w-[280px] sm:min-w-[340px] lg:min-w-[410px] max-w-[410px] bg-[#0b1124]/95 border border-white/10 rounded-3xl overflow-hidden shadow-[0_18px_45px_-25px] shadow-purple-500/40 backdrop-blur-xl"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleVideoCardClick(video)}
+                  onKeyDown={(event) => handleVideoCardKeyDown(event, video)}
+                  className="min-w-[280px] sm:min-w-[340px] lg:min-w-[410px] max-w-[410px] bg-[#0b1124]/95 border border-white/10 rounded-3xl overflow-hidden shadow-[0_18px_45px_-25px] shadow-purple-500/40 backdrop-blur-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400/70 focus:ring-offset-2 focus:ring-offset-[#080c1d]"
                 >
                   <div className="relative aspect-video">
                     {video.videoUrl ? (
@@ -1096,6 +1151,73 @@ const LandingPage = ({ onSectionChange }) => {
           </motion.div>
         </div>
       </section>
+
+      <AnimatePresence>
+        {selectedVideo && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-8 bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeSelectedVideo}
+          >
+            <motion.div
+              className="relative w-full max-w-5xl bg-[#0b1124]/95 border border-white/10 rounded-3xl shadow-[0_28px_80px_-25px_rgba(124,58,237,0.65)] overflow-hidden"
+              initial={{ opacity: 0, y: 40, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedVideo.title}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={closeSelectedVideo}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 transition"
+                aria-label="Cerrar video"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="relative aspect-video bg-black">
+                {selectedVideo.videoUrl ? (
+                  <video
+                    src={selectedVideo.videoUrl}
+                    className="w-full h-full object-contain"
+                    controls
+                    autoPlay
+                    playsInline
+                  />
+                ) : (
+                  <iframe
+                    src={`${selectedVideo.embedUrl}?rel=0&controls=1&modestbranding=1&autoplay=1`}
+                    title={selectedVideo.title}
+                    className="w-full h-full"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                )}
+              </div>
+
+              <div className="p-6 md:p-8 space-y-4">
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-purple-200/80">
+                  <Clock3 className="w-4 h-4" />
+                  {selectedVideo.duration}
+                </div>
+                <h3 className="text-2xl md:text-3xl font-semibold text-white">
+                  {selectedVideo.title}
+                </h3>
+                <p className="text-sm md:text-base text-slate-300 leading-relaxed">
+                  {selectedVideo.description}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

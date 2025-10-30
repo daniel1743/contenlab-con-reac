@@ -1,5 +1,5 @@
-# robots.txt para CreoVision Premium
-# Última actualización: 2025-10-18
+# robots.txt para CreoVision
+# Ultima actualizacion: 2025-10-30
 
 # ========================================
 # REGLAS PARA TODOS LOS BOTS
@@ -10,33 +10,24 @@ Allow: /
 # ========================================
 # RUTAS BLOQUEADAS (Privadas)
 # ========================================
-# API routes (si las tienes)
 Disallow: /api/
-
-# Rutas de administración
 Disallow: /admin/
 Disallow: /dashboard/
 Disallow: /settings/
-
-# Archivos de autenticación
 Disallow: /auth/
 Disallow: /login/
 Disallow: /signup/
-
-# Rutas privadas de usuario
 Disallow: /user/
 Disallow: /profile/
 Disallow: /calendar/
 Disallow: /inbox/
 Disallow: /library/
-
-# Archivos técnicos
 Disallow: /*.json$
 Disallow: /dist/
 Disallow: /src/
 
 # ========================================
-# REGLAS ESPECÍFICAS PARA GOOGLEBOT
+# REGLAS ESPECIFICAS PARA GOOGLEBOT
 # ========================================
 User-agent: Googlebot
 Allow: /
@@ -66,13 +57,11 @@ Disallow: /
 # ========================================
 # SITEMAP
 # ========================================
-# IMPORTANTE: Actualizar con tu dominio real
-Sitemap: https://tudominio.com/sitemap.xml
+Sitemap: https://creovision.io/sitemap.xml
 
 # ========================================
-# NOTAS DE CONFIGURACIÓN
+# NOTAS DE CONFIGURACION
 # ========================================
-# 1. Reemplazar "tudominio.com" con tu dominio real
-# 2. Este archivo debe estar en /public para que Vite lo copie a /dist
-# 3. Después del deploy, verificar en: https://tudominio.com/robots.txt
-# 4. Enviar a Google Search Console después de configurar
+# 1. Mantener este archivo en /public para que Vite lo copie a /dist.
+# 2. Tras cada deploy verificar https://creovision.io/robots.txt.
+# 3. Registrar el sitemap en Google Search Console y Bing Webmaster Tools.

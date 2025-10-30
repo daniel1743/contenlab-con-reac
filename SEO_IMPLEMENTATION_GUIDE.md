@@ -98,12 +98,12 @@ mkdir -p public/images/seo
 
 ```javascript
 // LÍNEA 11 - Cambiar dominio
-url: 'https://tudominio.com',
+url: 'https://creovision.io',
 
 // LÍNEA 16-24 - Actualizar info de contacto
 company: {
   name: 'CreoVision Premium',
-  email: 'contacto@tudominio.com', // TU EMAIL REAL
+  email: 'contacto@creovision.io', // TU EMAIL REAL
   phone: '+1-234-567-8900',        // TU TELÉFONO REAL (opcional)
   address: {
     street: 'Tu Dirección',        // TU DIRECCIÓN
@@ -134,10 +134,10 @@ social: {
 **LÍNEA 64 - Cambiar URL del sitemap:**
 ```txt
 # Antes
-Sitemap: https://tudominio.com/sitemap.xml
+Sitemap: https://creovision.io/sitemap.xml
 
 # Después
-Sitemap: https://TUDOMINIO-REAL.com/sitemap.xml
+Sitemap: https://CREOVISION-REAL.com/sitemap.xml
 ```
 
 #### 3.2. Sitemap.xml
@@ -146,19 +146,19 @@ Sitemap: https://TUDOMINIO-REAL.com/sitemap.xml
 **Buscar y reemplazar TODAS las ocurrencias:**
 ```xml
 <!-- Antes -->
-<loc>https://tudominio.com/</loc>
+<loc>https://creovision.io/</loc>
 
 <!-- Después -->
-<loc>https://TUDOMINIO-REAL.com/</loc>
+<loc>https://CREOVISION-REAL.com/</loc>
 ```
 
 **Comando rápido (en terminal):**
 ```bash
 # En Windows PowerShell
-(Get-Content public/sitemap.xml) -replace 'tudominio.com', 'TUDOMINIO-REAL.com' | Set-Content public/sitemap.xml
+(Get-Content public/sitemap.xml) -replace 'creovision.io', 'CREOVISION-REAL.com' | Set-Content public/sitemap.xml
 
 # En Linux/Mac
-sed -i 's/tudominio.com/TUDOMINIO-REAL.com/g' public/sitemap.xml
+sed -i 's/creovision.io/CREOVISION-REAL.com/g' public/sitemap.xml
 ```
 
 ---
@@ -170,7 +170,7 @@ sed -i 's/tudominio.com/TUDOMINIO-REAL.com/g' public/sitemap.xml
 **Buscar y reemplazar:**
 ```html
 <!-- LÍNEA 42, 51, 52, 64, 75 - Cambiar dominio -->
-https://tudominio.com → https://TUDOMINIO-REAL.com
+https://creovision.io → https://CREOVISION-REAL.com
 ```
 
 ---
@@ -238,19 +238,19 @@ firebase deploy        # Firebase
 
 ### 1. Verificar robots.txt
 ```
-https://TUDOMINIO.com/robots.txt
+https://CREOVISION.com/robots.txt
 ```
 **Debe mostrar:** El contenido del archivo robots.txt
 
 ### 2. Verificar sitemap.xml
 ```
-https://TUDOMINIO.com/sitemap.xml
+https://CREOVISION.com/sitemap.xml
 ```
 **Debe mostrar:** XML con todas las URLs
 
 ### 3. Verificar Meta Tags
 ```
-https://TUDOMINIO.com/
+https://CREOVISION.com/
 ```
 **Inspeccionar elemento → Head → Verificar:**
 - ✅ `<title>` correcto
@@ -308,13 +308,13 @@ https://www.linkedin.com/post-inspector/
 1. En Google Search Console → Sitemaps
 2. Agregar nuevo sitemap:
 ```
-https://TUDOMINIO.com/sitemap.xml
+https://CREOVISION.com/sitemap.xml
 ```
 3. Click en "Enviar"
 
 ### 3. Solicitar Indexación
 1. Ir a "Inspección de URLs"
-2. Ingresar: `https://TUDOMINIO.com`
+2. Ingresar: `https://CREOVISION.com`
 3. Click en "Solicitar indexación"
 
 ---

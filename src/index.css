@@ -104,6 +104,16 @@ body {
   to { box-shadow: 0 0 40px rgba(139, 92, 246, 0.8); }
 }
 
+.video-marquee {
+  animation: video-marquee 32s linear infinite;
+  will-change: transform;
+}
+
+@keyframes video-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 
 /* === ESTILOS DE LOS AROS DEL AVATAR (NUEVOS Y CORREGIDOS) === */
 .avatar-ring-wrapper {

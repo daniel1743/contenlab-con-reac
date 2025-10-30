@@ -9,8 +9,8 @@
 
 // ===== CONFIGURACIÓN BASE =====
 export const siteConfig = {
-  // IMPORTANTE: Reemplazar con tu dominio real
-  url: 'https://tudominio.com',
+  // Dominio oficial
+  url: 'https://creovision.io',
   name: 'CreoVision',
   title: 'CreoVision - Plataforma de Creación de Contenido con IA',
   description: 'Genera contenido viral optimizado con IA, crea miniaturas profesionales y optimiza tu SEO. Herramientas premium para YouTubers, TikTokers y creadores digitales.',
@@ -20,7 +20,7 @@ export const siteConfig = {
   // Información de la empresa
   company: {
     name: 'CreoVision',
-    email: 'contacto@tudominio.com',
+    email: 'contacto@creovision.io',
     phone: '+1-234-567-8900',
     address: {
       street: 'Tu Dirección',

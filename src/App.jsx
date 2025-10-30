@@ -25,13 +25,17 @@ import History from '@/components/History';
 import Profile from '@/components/Profile';
 import Notifications from '@/components/Notifications';
 import Onboarding from '@/components/Onboarding';
+import TermsModal from '@/components/legal/TermsModal';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
 
 function App() {
-  const { session, loading } = useAuth();
+  const { session, loading, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const isAuthenticated = !!session;
+  const termsStorageKey = user ? `creovision_terms_accept_v1_${user.id}` : null;
 
   // 🆕 Verificar si el usuario ya completó el onboarding
   useEffect(() => {
@@ -49,6 +53,17 @@ function App() {
       }
     }
   }, [isAuthenticated, loading]);
+  
+  useEffect(() => {
+    if (!loading && user && typeof window !== 'undefined') {
+      const hasAccepted = window.localStorage.getItem(termsStorageKey);
+      setShowTermsModal(!hasAccepted);
+    }
+
+    if (!user) {
+      setShowTermsModal(false);
+    }
+  }, [user, loading, termsStorageKey]);
   
   // El estado inicial de la sección activa siempre será 'landing'.
   const [activeSection, setActiveSection] = useState('landing');
@@ -220,6 +235,28 @@ function App() {
         )}
 
         {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
+        <CookieConsentBanner />
+        <TermsModal
+          open={showTermsModal && isAuthenticated}
+          onAccept={() => {
+            if (typeof window !== 'undefined' && termsStorageKey) {
+              window.localStorage.setItem(termsStorageKey, new Date().toISOString());
+            }
+            setShowTermsModal(false);
+          }}
+          onClose={() => {
+            if (typeof window !== 'undefined' && termsStorageKey) {
+              const hasAccepted = window.localStorage.getItem(termsStorageKey);
+              if (hasAccepted) {
+                setShowTermsModal(false);
+              } else {
+                setShowTermsModal(true);
+              }
+            } else {
+              setShowTermsModal(false);
+            }
+          }}
+        />
       </div>
     </>
   );
