@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-const STORAGE_KEY = 'creovision_cookie_consent_v1';
+export const COOKIE_STORAGE_KEY = 'creovision_cookie_consent_v1';
 
-const CookieConsentBanner = () => {
+const CookieConsentBanner = ({ onAccept }) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const hasConsented = window.localStorage.getItem(STORAGE_KEY);
+      const hasConsented = window.localStorage.getItem(COOKIE_STORAGE_KEY);
       if (!hasConsented) {
         setVisible(true);
       }
@@ -17,9 +17,10 @@ const CookieConsentBanner = () => {
 
   const handleAccept = () => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, 'accepted');
+      window.localStorage.setItem(COOKIE_STORAGE_KEY, 'accepted');
     }
     setVisible(false);
+    onAccept?.();
   };
 
   if (!visible) {
@@ -27,7 +28,7 @@ const CookieConsentBanner = () => {
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-6 z-[70] md:inset-x-auto md:right-6 md:max-w-xl bg-gray-900/95 border border-purple-500/30 backdrop-blur-lg rounded-2xl shadow-lg p-6 text-sm text-gray-200">
+    <div className="fixed inset-x-4 bottom-6 z-[80] md:inset-x-auto md:right-6 md:max-w-xl bg-gray-900/95 border border-purple-500/30 backdrop-blur-lg rounded-2xl shadow-lg p-6 text-sm text-gray-200">
       <div className="space-y-3">
         <p className="font-semibold text-white">Usamos cookies para mejorar tu experiencia</p>
         <p className="text-gray-300 leading-relaxed">

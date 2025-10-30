@@ -26,7 +26,7 @@ import Profile from '@/components/Profile';
 import Notifications from '@/components/Notifications';
 import Onboarding from '@/components/Onboarding';
 import TermsModal from '@/components/legal/TermsModal';
-import CookieConsentBanner from '@/components/CookieConsentBanner';
+import CookieConsentBanner, { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -34,10 +34,18 @@ function App() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const isAuthenticated = !!session;
   const termsStorageKey = user ? `creovision_terms_accept_v1_${user.id}` : null;
 
   // 🆕 Verificar si el usuario ya completó el onboarding
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const consent = window.localStorage.getItem(COOKIE_STORAGE_KEY);
+      setCookiesAccepted(consent === 'accepted');
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated && !loading) {
       const creatorProfile = localStorage.getItem('creatorProfile');
@@ -55,7 +63,7 @@ function App() {
   }, [isAuthenticated, loading]);
   
   useEffect(() => {
-    if (!loading && user && typeof window !== 'undefined') {
+    if (!loading && user && cookiesAccepted && typeof window !== 'undefined' && termsStorageKey) {
       const hasAccepted = window.localStorage.getItem(termsStorageKey);
       setShowTermsModal(!hasAccepted);
     }
@@ -63,7 +71,7 @@ function App() {
     if (!user) {
       setShowTermsModal(false);
     }
-  }, [user, loading, termsStorageKey]);
+  }, [user, loading, termsStorageKey, cookiesAccepted]);
   
   // El estado inicial de la sección activa siempre será 'landing'.
   const [activeSection, setActiveSection] = useState('landing');
@@ -235,7 +243,9 @@ function App() {
         )}
 
         {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
-        <CookieConsentBanner />
+        {!cookiesAccepted && !showTermsModal && (
+          <CookieConsentBanner onAccept={() => setCookiesAccepted(true)} />
+        )}
         <TermsModal
           open={showTermsModal && isAuthenticated}
           onAccept={() => {
@@ -243,18 +253,6 @@ function App() {
               window.localStorage.setItem(termsStorageKey, new Date().toISOString());
             }
             setShowTermsModal(false);
-          }}
-          onClose={() => {
-            if (typeof window !== 'undefined' && termsStorageKey) {
-              const hasAccepted = window.localStorage.getItem(termsStorageKey);
-              if (hasAccepted) {
-                setShowTermsModal(false);
-              } else {
-                setShowTermsModal(true);
-              }
-            } else {
-              setShowTermsModal(false);
-            }
           }}
         />
       </div>
