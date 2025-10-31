@@ -1,0 +1,335 @@
+sampleData:
+  site: creovision.io
+  period: &id001
+    from: '2025-09-01'
+    to: '2025-09-30'
+    compareFrom: '2025-08-01'
+    compareTo: '2025-08-31'
+  totals: &id002
+    sessions: 42310
+    users: 35210
+    conversions: 1210
+    revenue: 17450.25
+    pagesIndexed: 412
+    healthScore: 80.6
+  kpis:
+  - id: traffic
+    label: Tráfico orgánico
+    value: 27650
+    prev: 25110
+  - id: ctr
+    label: CTR
+    value: 4.8
+    prev: 4.2
+    unit: '%'
+  - id: avgPos
+    label: Posición media
+    value: 14.2
+    prev: 16.8
+    invert: true
+  - id: pagesSpeed
+    label: PageSpeed
+    value: 86
+    prev: 78
+    unit: /100
+  - id: coreWebVitals
+    label: CWV OK
+    value: 68
+    prev: 61
+    unit: '%'
+  - id: backlinks
+    label: Backlinks nuevos
+    value: 132
+    prev: 97
+  - id: domainRating
+    label: Autoridad (DR)
+    value: 44
+    prev: 41
+    unit: /100
+  - id: bounce
+    label: Rebote
+    value: 38
+    prev: 41
+    unit: '%'
+    invert: true
+  topicClusters:
+  - name: IA para Pymes
+    traffic: 9800
+    conversionRate: 3.2
+    contentScore: 72
+  - name: Automatización SEO
+    traffic: 6400
+    conversionRate: 2.6
+    contentScore: 66
+  - name: Diseño Web + Core Web V.
+    traffic: 5200
+    conversionRate: 4.1
+    contentScore: 79
+  - name: Marketing local
+    traffic: 4270
+    conversionRate: 2.1
+    contentScore: 58
+  - name: E-commerce
+    traffic: 3990
+    conversionRate: 1.8
+    contentScore: 55
+  - name: Analítica
+    traffic: 3200
+    conversionRate: 3.6
+    contentScore: 70
+  - name: Contenido largo
+    traffic: 2800
+    conversionRate: 2.9
+    contentScore: 63
+  - name: Branding
+    traffic: 2100
+    conversionRate: 1.2
+    contentScore: 51
+  pipeline:
+  - step: 1
+    name: Research
+    status: 0.9
+    notes: KWs priorizadas
+  - step: 2
+    name: Clusterización
+    status: 0.7
+    notes: 8 clusters listos
+  - step: 3
+    name: Auditoría técnica
+    status: 0.6
+    notes: CWV en progreso
+  - step: 4
+    name: Contenido
+    status: 0.5
+    notes: 5 artículos en cola
+  - step: 5
+    name: On-page
+    status: 0.4
+    notes: Meta + Schema
+  - step: 6
+    name: Off-page
+    status: 0.3
+    notes: Prospección
+  - step: 7
+    name: Monitoreo
+    status: 0.8
+    notes: Dashboards OK
+  - step: 8
+    name: Iteración
+    status: 0.2
+    notes: Backlog priorizado
+adaptedData:
+  site: creovision.io
+  period: *id001
+  health: 80.6
+  totals: *id002
+  clusters:
+  - name: IA para Pymes
+    traffic: 9800
+    conversionRate: 3.2
+    contentScore: 72
+    share: 26.0
+    angleStart: 0
+    angleEnd: 1.6306995765455492
+    angleDegrees: 93.4
+  - name: Automatización SEO
+    traffic: 6400
+    conversionRate: 2.6
+    contentScore: 66
+    share: 16.9
+    angleStart: 1.6306995765455492
+    angleEnd: 2.6956462387793776
+    angleDegrees: 61.0
+  - name: Diseño Web + Core Web V.
+    traffic: 5200
+    conversionRate: 4.1
+    contentScore: 79
+    share: 13.8
+    angleStart: 2.6956462387793776
+    angleEnd: 3.5609154018443627
+    angleDegrees: 49.6
+  - name: Marketing local
+    traffic: 4270
+    conversionRate: 2.1
+    contentScore: 58
+    share: 11.3
+    angleStart: 3.5609154018443627
+    angleEnd: 4.271434503053495
+    angleDegrees: 40.7
+  - name: E-commerce
+    traffic: 3990
+    conversionRate: 1.8
+    contentScore: 55
+    share: 10.6
+    angleStart: 4.271434503053495
+    angleEnd: 4.935362187789897
+    angleDegrees: 38.0
+  - name: Analítica
+    traffic: 3200
+    conversionRate: 3.6
+    contentScore: 70
+    share: 8.5
+    angleStart: 4.935362187789897
+    angleEnd: 5.467835518906811
+    angleDegrees: 30.5
+  - name: Contenido largo
+    traffic: 2800
+    conversionRate: 2.9
+    contentScore: 63
+    share: 7.4
+    angleStart: 5.467835518906811
+    angleEnd: 5.933749683634111
+    angleDegrees: 26.7
+  - name: Branding
+    traffic: 2100
+    conversionRate: 1.2
+    contentScore: 51
+    share: 5.6
+    angleStart: 5.933749683634111
+    angleEnd: 6.283185307179585
+    angleDegrees: 20.0
+  kpis:
+  - id: traffic
+    label: Tráfico orgánico
+    value: 27650
+    prev: 25110
+    percent: 55.3
+    change: 10.1
+    changeAbs: 2540
+  - id: ctr
+    label: CTR
+    value: 4.8
+    prev: 4.2
+    unit: '%'
+    percent: 4.8
+    change: 14.3
+    changeAbs: 0.6
+  - id: avgPos
+    label: Posición media
+    value: 14.2
+    prev: 16.8
+    invert: true
+    percent: 22.4
+    change: -15.5
+    changeAbs: -2.6
+  - id: pagesSpeed
+    label: PageSpeed
+    value: 86
+    prev: 78
+    unit: /100
+    percent: 86
+    change: 10.3
+    changeAbs: 8
+  - id: coreWebVitals
+    label: CWV OK
+    value: 68
+    prev: 61
+    unit: '%'
+    percent: 68
+    change: 11.5
+    changeAbs: 7
+  - id: backlinks
+    label: Backlinks nuevos
+    value: 132
+    prev: 97
+    percent: 66.0
+    change: 36.1
+    changeAbs: 35
+  - id: domainRating
+    label: Autoridad (DR)
+    value: 44
+    prev: 41
+    unit: /100
+    percent: 44
+    change: 7.3
+    changeAbs: 3
+  - id: bounce
+    label: Rebote
+    value: 38
+    prev: 41
+    unit: '%'
+    invert: true
+    percent: 62
+    change: -7.3
+    changeAbs: -3
+  pipeline:
+  - step: 1
+    name: Research
+    status: 0.9
+    notes: KWs priorizadas
+    statusPercent: 90.0
+  - step: 2
+    name: Clusterización
+    status: 0.7
+    notes: 8 clusters listos
+    statusPercent: 70.0
+  - step: 3
+    name: Auditoría técnica
+    status: 0.6
+    notes: CWV en progreso
+    statusPercent: 60.0
+  - step: 4
+    name: Contenido
+    status: 0.5
+    notes: 5 artículos en cola
+    statusPercent: 50.0
+  - step: 5
+    name: On-page
+    status: 0.4
+    notes: Meta + Schema
+    statusPercent: 40.0
+  - step: 6
+    name: Off-page
+    status: 0.3
+    notes: Prospección
+    statusPercent: 30.0
+  - step: 7
+    name: Monitoreo
+    status: 0.8
+    notes: Dashboards OK
+    statusPercent: 80.0
+  - step: 8
+    name: Iteración
+    status: 0.2
+    notes: Backlog priorizado
+    statusPercent: 20.0
+colorPalettes:
+  clusters:
+  - '#6366F1'
+  - '#8B5CF6'
+  - '#EC4899'
+  - '#F43F5E'
+  - '#F97316'
+  - '#FBBF24'
+  - '#10B981'
+  - '#06B6D4'
+  kpis:
+  - '#3B82F6'
+  - '#8B5CF6'
+  - '#EC4899'
+  - '#F43F5E'
+  - '#F59E0B'
+  - '#10B981'
+  - '#06B6D4'
+  - '#64748B'
+  pipeline:
+  - '#6366F1'
+  - '#8B5CF6'
+  - '#A855F7'
+  - '#C026D3'
+  - '#DB2777'
+  - '#E11D48'
+  - '#F97316'
+  - '#FBBF24'
+config:
+  animations:
+    duration: 600
+    easing: cubic-bezier(0.4, 0, 0.2, 1)
+  responsive:
+    mobile: 640
+    tablet: 1024
+    desktop: 1280
+  accessibility:
+    minContrast: 4.5
+    ariaLabels: true
+    keyboardNav: true
