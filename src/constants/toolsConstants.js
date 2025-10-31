@@ -106,9 +106,10 @@ export const contentOptions = [
 ];
 
 export const contentDurations = [
-  { value: 'short', label: '⚡ Corto (1-3min)' },
-  { value: 'medium', label: '⏱️ Medio (5-10min)' },
-  { value: 'long', label: '🎞️ Largo (15min+)' }
+  { value: 'short', label: 'Corto (1-3 min)' },
+  { value: 'short_plus', label: 'Corto extendido (3-5 min)' },
+  { value: 'medium', label: 'Medio (5-10 min)', requiresPro: true },
+  { value: 'long', label: 'Largo (15+ min)', requiresPro: true }
 ];
 
 export const creatorRoles = [
@@ -160,3 +161,4 @@ export const contentGoals = [
   { value: 'viral', label: '🔥 Volverse Viral' },
   { value: 'brand', label: '🏆 Construir Marca Personal' }
 ];
+

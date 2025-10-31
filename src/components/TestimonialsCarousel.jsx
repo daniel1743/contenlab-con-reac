@@ -56,15 +56,17 @@ const cardVariants = {
     transition: { type: "spring", bounce: 0.25, duration: 0.7 }
   },
   hover: {
-    scale: 1.06,
-    boxShadow: "0 20px 40px rgba(139, 92, 246, 0.4)",
-    transition: { type: "spring", stiffness: 320, damping: 25 }
+    scale: 1.04,
+    y: -12,
+    zIndex: 5,
+    boxShadow: "0 24px 48px rgba(139, 92, 246, 0.35)",
+    transition: { type: "spring", stiffness: 300, damping: 26 }
   }
 };
 
 const TestimonialCard = ({ name, role, comment, rating, avatar }) => (
   <motion.div
-    className="w-full max-w-sm mx-auto h-[420px] bg-gray-800 bg-opacity-70 rounded-3xl p-8 flex flex-col items-center text-center cursor-pointer glass-effect border border-purple-500/30 shadow-lg"
+    className="relative w-full max-w-sm mx-auto h-[420px] bg-gray-800 bg-opacity-70 rounded-3xl p-8 flex flex-col items-center text-center cursor-pointer glass-effect border border-purple-500/30 shadow-lg my-8"
     initial="offscreen"
     whileInView="onscreen"
     viewport={{ once: true, amount: 0.3 }}
@@ -117,7 +119,7 @@ const TestimonialsCarousel = () => {
           customTransition="transform 600ms cubic-bezier(0.45, 0, 0.55, 1)"
           containerClass="carousel-container"
           removeArrowOnDeviceType={["tablet", "mobile"]}
-          itemClass="carousel-item-padding-40-px py-4"
+          itemClass="carousel-item-padding-40-px px-6 py-4"
           arrows={false}
         >
           {testimonialsData.map((testimonial, index) => (

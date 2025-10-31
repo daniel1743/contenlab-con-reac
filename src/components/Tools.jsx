@@ -224,6 +224,7 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const isFreePlan = isDemoUser;
   const guardCooldownRef = useRef(0);
 
   const guardProtectedAction = useCallback((context = 'esta acción') => {
@@ -283,6 +284,42 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
     setSelectedTheme(value);
     setSelectedStyle(''); // Reset style when theme changes
   }, []);
+
+  const handleDurationChange = useCallback(
+    (value) => {
+      const durationOption = contentDurations.find((duration) => duration.value === value);
+      if (isFreePlan && durationOption?.requiresPro) {
+        guardProtectedAction('formatos premium');
+        return;
+      }
+      setSelectedDuration(value);
+    },
+    [isFreePlan, guardProtectedAction, contentDurations]
+  );
+
+  const handleToggleAdvancedSettings = useCallback(() => {
+    if (isFreePlan) {
+      guardProtectedAction('personalizacion avanzada');
+      return;
+    }
+    setShowAdvancedSettings((prev) => !prev);
+  }, [isFreePlan, guardProtectedAction]);
+
+  useEffect(() => {
+    if (!isFreePlan) {
+      return;
+    }
+    const durationOption = contentDurations.find((duration) => duration.value === selectedDuration);
+    if (durationOption?.requiresPro) {
+      setSelectedDuration('');
+    }
+  }, [isFreePlan, selectedDuration, contentDurations]);
+
+  useEffect(() => {
+    if (isFreePlan && showAdvancedSettings) {
+      setShowAdvancedSettings(false);
+    }
+  }, [isFreePlan, showAdvancedSettings]);
 
   // 💎 FUNCIÓN FALLBACK PARA TARJETAS PREMIUM
   const getFallbackPremiumCards = useCallback((topic) => [
@@ -1119,13 +1156,17 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 id="duration-select"
                 name="duration"
                 value={selectedDuration}
-                onChange={(e) => setSelectedDuration(e.target.value)}
+                onChange={(e) => handleDurationChange(e.target.value)}
                 className="w-full p-3 bg-gray-800 border border-purple-500/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               >
-                <option value="">Selecciona duración</option>
+                <option value="">Selecciona duracion</option>
                 {contentDurations.map((duration) => (
-                  <option key={duration.value} value={duration.value}>
-                    {duration.label}
+                  <option
+                    key={duration.value}
+                    value={duration.value}
+                    disabled={isFreePlan && duration.requiresPro}
+                  >
+                    {isFreePlan && duration.requiresPro ? `${duration.label} (Solo Pro)` : duration.label}
                   </option>
                 ))}
               </select>
@@ -1166,11 +1207,12 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                onClick={handleToggleAdvancedSettings}
+                aria-disabled={isFreePlan}
+                className={`text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 ${isFreePlan ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <Cog6ToothIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                {showAdvancedSettings ? 'Ocultar' : 'Personalizar'}
+                {showAdvancedSettings ? 'Ocultar' : isFreePlan ? 'Personalizar (Solo Pro)' : 'Personalizar'}
               </Button>
             </div>
           ) : (
@@ -1179,11 +1221,12 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                onClick={handleToggleAdvancedSettings}
+                aria-disabled={isFreePlan}
+                className={`border-purple-500/30 text-purple-400 hover:bg-purple-500/10 ${isFreePlan ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <Cog6ToothIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                {showAdvancedSettings ? 'Ocultar Ajustes Avanzados' : '⚙️ Personalización Avanzada (Opcional)'}
+                {showAdvancedSettings ? 'Ocultar Ajustes Avanzados' : isFreePlan ? 'Personalizacion Avanzada (Solo Pro)' : 'Personalizacion Avanzada (Opcional)'}
               </Button>
             </div>
           )}
@@ -2440,7 +2483,3 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 };
 
 export default Tools;
-
-
-
-
