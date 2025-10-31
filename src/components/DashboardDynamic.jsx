@@ -74,6 +74,7 @@ import {
 import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiService';
 import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
 import PuzzleC from '@/components/charts/PuzzleC';
+import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer';
 
 ChartJS.register(
   CategoryScale,
@@ -1506,6 +1507,11 @@ https://creovision.app
                 )}
               </CardContent>
             </Card>
+
+            {/* SEO Infografías Premium */}
+            <div className="glass-effect border-purple-500/30 rounded-3xl overflow-hidden">
+              <SEOInfographicsContainer />
+            </div>
 
             {/* Crecimiento Semanal */}
             <Card className="glass-effect border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
