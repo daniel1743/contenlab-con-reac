@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { formatPercent, formatNumber } from '@/utils/seoDataAdapter';
+import { formatNumber } from '@/utils/seoDataAdapter';
 
 const COLORS = {
   clusters: [
@@ -32,6 +32,16 @@ const COLORS = {
     'hsl(60, 80%, 60%)',
     'hsl(30, 80%, 60%)'
   ]
+};
+
+const BRAND_SURFACE = {
+  backdrop: ['#070814', '#111531', '#1b163f'],
+  ringBase: 'rgba(216, 180, 254, 0.12)',
+  ringBorder: 'rgba(147, 197, 253, 0.32)',
+  grid: 'rgba(255, 255, 255, 0.04)',
+  center: 'rgba(17, 24, 39, 0.82)',
+  centerBorder: 'rgba(165, 180, 252, 0.35)',
+  labelStroke: 'rgba(7, 11, 25, 0.85)'
 };
 
 export default function DonutA({ data, size = 600 }) {
@@ -68,14 +78,41 @@ export default function DonutA({ data, size = 600 }) {
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto">
+        <defs>
+          <radialGradient id="donutA-glow" cx="50%" cy="45%" r="70%">
+            <stop offset="0%" stopColor={BRAND_SURFACE.backdrop[0]} />
+            <stop offset="55%" stopColor={BRAND_SURFACE.backdrop[1]} />
+            <stop offset="100%" stopColor={BRAND_SURFACE.backdrop[2]} />
+          </radialGradient>
+          <linearGradient id="donutA-grid" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={BRAND_SURFACE.grid} />
+            <stop offset="100%" stopColor="transparent" />
+          </linearGradient>
+        </defs>
+
+        <rect width={size} height={size} rx={36} fill="url(#donutA-glow)" />
+        <rect width={size} height={size} rx={36} fill="url(#donutA-grid)" />
+
+        {[r2 + 18, r2 + 42].map((radius, idx) => (
+          <circle
+            key={`halo-${radius}`}
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="none"
+            stroke={idx === 0 ? 'rgba(148, 163, 255, 0.18)' : 'rgba(236, 233, 255, 0.07)'}
+            strokeWidth={idx === 0 ? 1.4 : 1}
+          />
+        ))}
+
         {/* Inner Ring - Topic Clusters */}
         {data.clusters.map((cluster, i) => (
           <motion.path
             key={`cluster-${i}`}
             d={describeDonut(cx, cy, r0, r1, cluster.angleStart, cluster.angleEnd)}
             fill={COLORS.clusters[i]}
-            stroke="white"
-            strokeWidth={2}
+            stroke="rgba(248, 250, 255, 0.38)"
+            strokeWidth={1.6}
             opacity={0.9}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 0.9, scale: 1 }}
@@ -99,9 +136,9 @@ export default function DonutA({ data, size = 600 }) {
               {/* Background */}
               <path
                 d={describeDonut(cx, cy, r1 + 10, r2, startAngle, endAngle)}
-                fill="rgba(255, 255, 255, 0.1)"
-                stroke="rgba(255, 255, 255, 0.2)"
-                strokeWidth={1}
+                fill={BRAND_SURFACE.ringBase}
+                stroke={BRAND_SURFACE.ringBorder}
+                strokeWidth={1.2}
               />
               {/* Progress */}
               <motion.path
@@ -127,7 +164,14 @@ export default function DonutA({ data, size = 600 }) {
         })}
 
         {/* Center Circle Background */}
-        <circle cx={cx} cy={cy} r={r0 - 10} fill="rgba(0, 0, 0, 0.5)" />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r0 - 10}
+          fill={BRAND_SURFACE.center}
+          stroke={BRAND_SURFACE.centerBorder}
+          strokeWidth={1.4}
+        />
 
         {/* Center Text - Site Name */}
         <text
@@ -203,7 +247,7 @@ function LabelPolar({ cx, cy, r, angle, kpi }) {
         y={pos.y}
         textAnchor={anchor}
         className="fill-white text-[10px] font-semibold"
-        style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.8)', strokeWidth: 3 }}
+        style={{ paintOrder: 'stroke', stroke: BRAND_SURFACE.labelStroke, strokeWidth: 3 }}
       >
         <tspan>{kpi.label}</tspan>
         <tspan> · {kpi.value}{kpi.unit || ''}</tspan>

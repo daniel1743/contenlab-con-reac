@@ -3,7 +3,6 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
-  DocumentProtectionType,
   Footer,
   Header,
   HeadingLevel,

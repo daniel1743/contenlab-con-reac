@@ -5,5 +5,6 @@
     "notebook.defaultFormatter": "esbenp.prettier-vscode",
     "deepseek.provider": "deepseek",
     "editor.defaultFormatter": "AMiner.codegeex",
-    "editor.defaultFoldingRangeProvider": "Blackboxapp.blackbox"
+    "editor.defaultFoldingRangeProvider": "Blackboxapp.blackbox",
+    "Codegeex.RepoIndex": true
 }

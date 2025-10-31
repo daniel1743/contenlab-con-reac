@@ -10,17 +10,27 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const STEP_COLORS = [
-  'hsl(270, 70%, 55%)',
-  'hsl(240, 70%, 55%)',
-  'hsl(210, 70%, 55%)',
-  'hsl(180, 70%, 55%)',
-  'hsl(150, 70%, 55%)',
-  'hsl(120, 70%, 55%)',
-  'hsl(60, 70%, 55%)',
-  'hsl(30, 70%, 55%)'
+  '#7c3aed', // Indigo
+  '#6366f1', // Indigo bright
+  '#3b82f6', // Blue
+  '#22d3ee', // Cyan
+  '#14b8a6', // Teal
+  '#f97316', // Orange
+  '#fb7185', // Rose
+  '#facc15'  // Amber
 ];
 
-export default function WheelB({ data, title = "8 Steps – Programmatic SEO", size = 420 }) {
+const SURFACE = {
+  background: ['#080a1d', '#111531', '#1c1945'],
+  grid: 'rgba(255, 255, 255, 0.05)',
+  halo: ['rgba(129, 140, 248, 0.22)', 'rgba(236, 233, 255, 0.08)'],
+  arcBase: 'rgba(148, 163, 255, 0.18)',
+  center: 'rgba(17, 24, 39, 0.88)',
+  centerBorder: 'rgba(165, 180, 252, 0.35)',
+  labelStroke: 'rgba(7, 11, 25, 0.85)'
+};
+
+export default function WheelB({ data, title = "8 Steps - Programmatic SEO", size = 420 }) {
   const cx = size / 2;
   const cy = size / 2;
   const r = size * 0.33; // 140px for default 420px
@@ -57,6 +67,33 @@ export default function WheelB({ data, title = "8 Steps – Programmatic SEO", s
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-auto">
+        <defs>
+          <radialGradient id="wheelB-glow" cx="50%" cy="45%" r="75%">
+            <stop offset="0%" stopColor={SURFACE.background[0]} />
+            <stop offset="55%" stopColor={SURFACE.background[1]} />
+            <stop offset="100%" stopColor={SURFACE.background[2]} />
+          </radialGradient>
+          <linearGradient id="wheelB-grid" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={SURFACE.grid} />
+            <stop offset="100%" stopColor="transparent" />
+          </linearGradient>
+        </defs>
+
+        <rect width={size} height={size} rx={32} fill="url(#wheelB-glow)" />
+        <rect width={size} height={size} rx={32} fill="url(#wheelB-grid)" />
+
+        {[r + 32, r + 58].map((radius, idx) => (
+          <circle
+            key={`halo-${radius}`}
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="none"
+            stroke={idx === 0 ? SURFACE.halo[0] : SURFACE.halo[1]}
+            strokeWidth={idx === 0 ? 1.6 : 1}
+          />
+        ))}
+
         {/* 8 Petals */}
         {data.pipeline.map((step, i) => {
           const startAngle = i * sectorAngle;
@@ -72,8 +109,8 @@ export default function WheelB({ data, title = "8 Steps – Programmatic SEO", s
                 d={describeSector(cx, cy, r, startAngle, endAngle)}
                 fill={STEP_COLORS[i]}
                 opacity={0.9}
-                stroke="white"
-                strokeWidth={2}
+                stroke="rgba(248, 250, 255, 0.25)"
+                strokeWidth={1.6}
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 0.9, scale: 1 }}
                 transition={{
@@ -92,13 +129,13 @@ export default function WheelB({ data, title = "8 Steps – Programmatic SEO", s
                 cy={cy}
                 r={r - 16}
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.1)"
+                stroke={SURFACE.arcBase}
                 strokeWidth={6}
               />
               <motion.path
                 d={describeArc(cx, cy, r - 16, startAngle, progressAngle)}
                 fill="none"
-                stroke="white"
+                stroke="rgba(250, 250, 255, 0.85)"
                 strokeWidth={6}
                 strokeLinecap="round"
                 initial={{ pathLength: 0 }}
@@ -113,7 +150,7 @@ export default function WheelB({ data, title = "8 Steps – Programmatic SEO", s
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="fill-white text-sm font-bold"
-                style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.8)', strokeWidth: 3 }}
+                style={{ paintOrder: 'stroke', stroke: SURFACE.labelStroke, strokeWidth: 3 }}
               >
                 {String(step.step).padStart(2, '0')}
               </text>
@@ -122,7 +159,14 @@ export default function WheelB({ data, title = "8 Steps – Programmatic SEO", s
         })}
 
         {/* Center circle */}
-        <circle cx={cx} cy={cy} r={60} fill="rgba(0, 0, 0, 0.4)" />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={60}
+          fill={SURFACE.center}
+          stroke={SURFACE.centerBorder}
+          strokeWidth={1.4}
+        />
 
         {/* Center title */}
         <text
