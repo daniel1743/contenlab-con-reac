@@ -21,8 +21,31 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
  * @param {Object} userContext - Contexto del usuario {name, topic, seoData, metrics}
  * @returns {string} - System prompt personalizado
  */
-const generateSystemPrompt = (userContext) => {
-  const { name, topic, plan = 'FREE' } = userContext;
+const STAGE_DIRECTIVES = {
+  intro: `Estás en la etapa "descubrimiento".
+- Da la bienvenida en máximo 2 frases.
+- Haz UNA pregunta abierta sobre la meta de contenido del usuario.
+- Menciona que puedes guiarlo paso a paso en el Centro Creativo.`,
+  explore: `Estás en la etapa "exploración".
+- Conecta la respuesta del usuario con una recomendación concreta (ej. idear guiones, títulos, calendarios).
+- Sugiere avanzar al Centro Creativo y ofrece guiarlo configurando tema, tono y duración.
+- Mantén el mensaje enfocado en ayudarle a probar la generación de contenido.`,
+  cta: `Estás en la etapa "acción".
+- Refuerza los beneficios de abrir el Centro Creativo ahora mismo.
+- Invita explícitamente a pulsar el botón "Abrir Centro Creativo" o "Probar Gratis".
+- Resalta que podrá experimentar y que las descargas completas requieren plan premium.`
+};
+
+const generateSystemPrompt = (userContext = {}) => {
+  const {
+    name,
+    topic,
+    plan = 'FREE',
+    conversationGoal = 'Guiar al usuario para que pruebe la generación de contenido en el Centro Creativo.',
+    stage = 'intro'
+  } = userContext;
+
+  const stageDirective = STAGE_DIRECTIVES[stage] || STAGE_DIRECTIVES.intro;
 
   return `Eres el asistente virtual de CreoVision, una plataforma de creación de contenido viral con IA.
 
@@ -31,6 +54,12 @@ Tu personalidad:
 - Tratas al usuario por su nombre: "${name || 'Creador'}"
 - Haces preguntas para mantener la conversación activa
 - Das respuestas CORTAS (máximo 2-3 oraciones)
+
+Tu meta estratégica:
+- ${conversationGoal}
+
+Directriz de etapa actual:
+${stageDirective}
 
 Contexto del usuario:
 - Nombre: ${name || 'Usuario nuevo'}
@@ -57,7 +86,7 @@ Ejemplo INCORRECTO (demasiado largo):
  * @returns {Promise<string>} - Mensaje de bienvenida personalizado
  */
 export const generateWelcomeMessage = async (userContext) => {
-  const { name, topic, seoData } = userContext;
+  const { name, topic, seoData, stage = 'intro' } = userContext;
 
   // Validar que DeepSeek esté configurado
   if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === 'tu_deepseek_key_aqui') {
@@ -71,8 +100,8 @@ export const generateWelcomeMessage = async (userContext) => {
     const systemPrompt = generateSystemPrompt(userContext);
 
     const userPrompt = topic
-      ? `El usuario buscó "${topic}". Salúdalo MUY BREVE (máximo 2 oraciones) y hazle UNA pregunta para guiarlo.`
-      : `Usuario nuevo. Salúdalo MUY BREVE y hazle UNA pregunta simple.`;
+      ? `El usuario buscó "${topic}". Salúdalo MUY BREVE (máximo 2 oraciones) y hazle UNA pregunta para guiarlo. Etapa actual: ${stage}.`
+      : `Usuario nuevo. Salúdalo MUY BREVE y hazle UNA pregunta simple. Etapa actual: ${stage}.`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
@@ -87,6 +116,7 @@ export const generateWelcomeMessage = async (userContext) => {
         model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemPrompt },
+          { role: 'system', content: STAGE_DIRECTIVES[stage] || STAGE_DIRECTIVES.intro },
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.9,
@@ -132,11 +162,16 @@ export const generateWelcomeMessage = async (userContext) => {
  * @param {string} userMessage - Mensaje actual del usuario
  * @returns {Promise<string>} - Respuesta del asistente
  */
-export const chat = async (userContext, conversationHistory, userMessage) => {
+export const chat = async (
+  userContext = {},
+  conversationHistory = [],
+  userMessage = '',
+  options = {}
+) => {
   // Validar que DeepSeek esté configurado
   if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === 'tu_deepseek_key_aqui') {
     console.warn('⚠️ [DeepSeek Assistant] API key no configurada');
-    return 'Lo siento, el asistente de IA no está configurado correctamente. Por favor contacta al administrador. 🙏';
+    return 'Por ahora no puedo conectarme a la IA, pero puedo guiarte manualmente. Cuéntame qué quieres crear y te daré los siguientes pasos. 🤝';
   }
 
   try {
@@ -145,8 +180,23 @@ export const chat = async (userContext, conversationHistory, userMessage) => {
     // Limitar historial a últimos 10 mensajes para evitar exceder límites de tokens
     const recentHistory = conversationHistory.slice(-10);
 
+    const developerMessages =
+      Array.isArray(options.developerMessages) && options.developerMessages.length > 0
+        ? options.developerMessages.map((content) => ({
+            role: 'system',
+            content
+          }))
+        : [];
+
+    const stageDirective =
+      typeof options.stage === 'string'
+        ? STAGE_DIRECTIVES[options.stage] || null
+        : options.stageInstruction || null;
+
     const messages = [
       { role: 'system', content: systemPrompt },
+      ...developerMessages,
+      ...(stageDirective ? [{ role: 'system', content: stageDirective }] : []),
       ...recentHistory,
       { role: 'user', content: userMessage }
     ];

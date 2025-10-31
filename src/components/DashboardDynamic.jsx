@@ -73,6 +73,7 @@ import {
 } from '@/services/twitterApiService';
 import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiService';
 import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
+import PuzzleC from '@/components/charts/PuzzleC';
 
 ChartJS.register(
   CategoryScale,
@@ -1320,7 +1321,7 @@ https://creovision.app
               </Card>
             </div>
 
-            {contentTypeBreakdown.length > 0 && (
+            {(nichemMetrics?.contentTypes || []).length > 0 && (
               <Card className="glass-effect border-purple-500/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1328,58 +1329,25 @@ https://creovision.app
                     Tipos de Contenido Destacados
                   </CardTitle>
                   <CardDescription>
-                    Vista rápida (lista para conectar con Gemii) de cómo se reparte el contenido en el nicho
+                    Distribución de tipos de contenido en el nicho (análisis visual circular)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {contentTypeBreakdown.map((item, idx) => (
-                      <div
-                        key={item.key}
-                        className="relative flex flex-col items-center gap-4 rounded-2xl border border-gray-700/40 bg-gray-900/40 p-6 pb-14 text-center transition-colors hover:border-purple-400/50"
-                      >
-                        <div className="relative w-20 h-20 md:w-24 md:h-24">
-                          <Doughnut
-                            className="!h-full !w-full"
-                            data={item.chartData}
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              cutout: '80%',
-                              animation: false,
-                              plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                  callbacks: {
-                                    label: (tooltipItem) => `${tooltipItem.label}: ${tooltipItem.parsed}%`
-                                  }
-                                }
-                              }
-                            }}
-                          />
-                          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                            <span className={`text-xl font-semibold ${item.palette.accentClass}`}>
-                              {item.percentage}%
-                            </span>
-                            <span className="text-[10px] uppercase tracking-wide text-gray-500">
-                              share
-                            </span>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-white">{item.type}</p>
-                          <p className="text-xs text-gray-400">
-                            Insight preparado para análisis avanzado de Gemii
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className={`absolute bottom-4 inline-flex items-center justify-center rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${item.palette.badgeClass}`}
-                        >
-                          Slot {String(idx + 1).padStart(2, '0')}
-                        </button>
-                      </div>
-                    ))}
+                  <div className="max-w-xl mx-auto">
+                    <PuzzleC
+                      mode="distribution"
+                      items={(nichemMetrics?.contentTypes || []).map(ct => ({
+                        label: ct.type,
+                        value: ct.percentage
+                      }))}
+                      centerTitle="Tipos"
+                      size={420}
+                    />
+                  </div>
+                  <div className="mt-6 text-center">
+                    <p className="text-xs text-gray-400">
+                      💡 Cada pieza representa un tipo de contenido y su peso relativo en el nicho
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -1604,7 +1572,7 @@ https://creovision.app
                               alt={article.title}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                               onError={(e) => {
-                                e.target.src = 'https://via.placeholder.com/400x200?text=News';
+                                e.target.src = 'https://placehold.co/400x200/6366f1/white?text=News';
                               }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
@@ -1920,7 +1888,7 @@ https://creovision.app
                       alt={selectedArticle.title}
                       className="w-24 h-24 rounded-lg object-cover"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/96?text=News';
+                        e.target.src = 'https://placehold.co/96x96/6366f1/white?text=News';
                       }}
                     />
                   )}

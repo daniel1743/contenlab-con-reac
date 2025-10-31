@@ -259,7 +259,7 @@ export const withSupabaseTwitterCache = async (apiEndpoint, query, apiFunction, 
         .from(CACHE_CONFIG.TABLE_NAME)
         .select('cached_data')
         .eq('cache_key', cacheKey)
-        .single();
+        .maybeSingle();
 
       if (data) {
         console.warn('⚠️ [Twitter Cache] Usando caché expirado debido a error en API');
@@ -299,7 +299,7 @@ export const getCacheStats = async () => {
       .eq('version', CACHE_CONFIG.VERSION)
       .order('created_at', { ascending: true })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const { data: newestEntry } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
@@ -307,7 +307,7 @@ export const getCacheStats = async () => {
       .eq('version', CACHE_CONFIG.VERSION)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     return {
       totalEntries: count,

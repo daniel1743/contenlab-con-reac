@@ -182,7 +182,7 @@ serve(async (req) => {
     .from('rate_limits')
     .select('requests')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   // Lógica de verificación...
 

@@ -55,7 +55,7 @@ export const getUserPlan = async (userId) => {
       .from('user_profiles')
       .select('plan')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.warn('⚠️ Error obteniendo plan, asumiendo free:', error);
@@ -147,7 +147,7 @@ export const fetchCache = async (apiName, query, ttl) => {
       .gte('created_at', cutoffTime.toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return null;
@@ -171,12 +171,14 @@ export const setCache = async (apiName, query, result) => {
   try {
     const { error } = await supabase
       .from('api_cache')
-      .insert({
+      .upsert({
         api_name: apiName,
         query_hash: hashQuery(query),
         query: query,
         result: result,
         created_at: new Date().toISOString()
+      }, {
+        onConflict: 'api_name,query_hash'
       });
 
     if (error) {
