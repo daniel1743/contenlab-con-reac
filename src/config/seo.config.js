@@ -13,7 +13,7 @@ export const siteConfig = {
   url: 'https://creovision.io',
   name: 'CreoVision',
   title: 'CreoVision - Plataforma de Creación de Contenido con IA',
-  description: 'Genera contenido viral optimizado con IA, crea miniaturas profesionales y optimiza tu SEO. Herramientas premium para YouTubers, TikTokers y creadores digitales.',
+  description: 'Creovision es la plataforma de IA que impulsa a creadores e influencers a crecer en Instagram, TikTok y YouTube. Supera el estancamiento, genera contenido viral y optimiza tu estrategia digital con analisis de tendencias y planificacion estrategica.',
   locale: 'es_ES',
   language: 'es',
 
@@ -53,18 +53,16 @@ export const siteConfig = {
 export const pageMetadata = {
   landing: {
     title: 'CreoVision - Crea Contenido Viral con IA',
-    description: 'Plataforma todo-en-uno para creadores de contenido. Genera scripts virales, crea miniaturas profesionales y optimiza tu SEO con inteligencia artificial.',
+    description: 'Creovision, plataforma de IA, ayuda a creadores e influencers a superar el estancamiento y crecer en Instagram, TikTok y YouTube. Ofrece planificacion estrategica y analisis de tendencias para generar ideas de contenido viral y optimizar tu estrategia digital.',
     keywords: [
-      'generador de contenido con IA',
-      'herramientas para youtubers',
-      'crear miniaturas youtube',
-      'optimización SEO para videos',
-      'contenido viral',
-      'generador de scripts',
-      'herramientas para creadores',
-      'IA para contenido digital',
-      'editor de miniaturas',
-      'análisis de tendencias'
+      'como crecer en instagram',
+      'como crecer en tiktok',
+      'como crecer en youtube',
+      'como encontrar ideas de contenido',
+      'como hacer contenido viral',
+      'como volverse viral',
+      'como mejorar su estrategia digital',
+      'como crecer en redes sociales'
     ],
     canonical: '/'
   },
