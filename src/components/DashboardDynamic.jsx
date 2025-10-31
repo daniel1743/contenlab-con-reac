@@ -2,6 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 // 🎨 Heroicons - Íconos profesionales con estilo moderno
 import {
@@ -75,6 +81,7 @@ import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiS
 import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
 import PuzzleC from '@/components/charts/PuzzleC';
 import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer';
+import { exportCreatorReport, exportSeoReport } from '@/utils/reportExporter';
 
 ChartJS.register(
   CategoryScale,
@@ -379,50 +386,34 @@ const DashboardDynamic = ({ onSectionChange }) => {
   }, [nichemMetrics, toast]);
 
   // 🆕 FUNCIÓN PARA DESCARGAR CONSEJO
-  const downloadAdvice = useCallback((advice, creatorName) => {
-    try {
-      const content = `═══════════════════════════════════════
-🎯 ANÁLISIS CREOVISION AI - CREADOR TOP
-═══════════════════════════════════════
+  const downloadAdvice = useCallback(
+    async (advice, creatorName, format) => {
+      try {
+        await exportCreatorReport({
+          analysisText: advice,
+          creatorName,
+          topic: nichemMetrics.topic,
+          format
+        });
 
-📊 Creador: ${creatorName}
-🔍 Tema: ${nichemMetrics.topic}
-📅 Fecha: ${new Date().toLocaleDateString('es-ES')}
-
-───────────────────────────────────────
-📝 ANÁLISIS Y RECOMENDACIONES:
-───────────────────────────────────────
-
-${advice}
-
-───────────────────────────────────────
-Generado por CreoVision AI
-https://creovision.app
-═══════════════════════════════════════`;
-
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `creovision-${creatorName.replace(/\s+/g, '-')}-${Date.now()}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: '✅ Consejo descargado',
-        description: 'El análisis se guardó en tu carpeta de descargas'
-      });
-    } catch (error) {
-      console.error('Error descargando consejo:', error);
-      toast({
-        title: '❌ Error',
-        description: 'No pudimos descargar el archivo',
-        variant: 'destructive'
-      });
-    }
-  }, [nichemMetrics, toast]);
+        toast({
+          title: '📥 Informe exportado',
+          description:
+            format === 'pdf'
+              ? 'Se descargó el PDF protegido con branding CreoVision.'
+              : 'Se descargó el documento Word con marca de agua CreoVision.'
+        });
+      } catch (error) {
+        console.error('Error exportando informe de creador:', error);
+        toast({
+          title: '❌ Error al exportar',
+          description: 'No pudimos generar el informe. Intenta nuevamente.',
+          variant: 'destructive'
+        });
+      }
+    },
+    [nichemMetrics, toast]
+  );
 
   // 🆕 FUNCIÓN PARA ANALIZAR ARTÍCULO DE NEWS CON SEO AL HACER HOVER
   const handleArticleHover = useCallback(async (article) => {
@@ -497,90 +488,34 @@ https://creovision.app
   }, [nichemMetrics, toast]);
 
   // 🆕 FUNCIÓN PARA DESCARGAR ANÁLISIS SEO
-  const downloadSEOAdvice = useCallback((seoData, articleTitle) => {
-    try {
-      const analysis = seoData.analysis;
+  const downloadSEOAdvice = useCallback(
+    async (seoData, articleTitle, format) => {
+      try {
+        await exportSeoReport({
+          seoAnalysis: seoData,
+          articleTitle,
+          topic: nichemMetrics.topic,
+          format
+        });
 
-      const content = `═══════════════════════════════════════
-🚀 ANÁLISIS SEO - VIRALCRAFT CREOVISION
-═══════════════════════════════════════
-
-TEMA: ${nichemMetrics.topic}
-ARTÍCULO: ${articleTitle}
-FECHA: ${new Date().toLocaleDateString('es')}
-
-───────────────────────────────────────
-📊 OPORTUNIDAD SEO:
-───────────────────────────────────────
-
-${analysis.oportunidadSEO}
-
-───────────────────────────────────────
-🔑 PALABRAS CLAVE ESTRATÉGICAS:
-───────────────────────────────────────
-
-${analysis.palabrasClave.map((kw, i) => `${i + 1}. ${kw}`).join('\n')}
-
-───────────────────────────────────────
-📝 TÍTULO OPTIMIZADO:
-───────────────────────────────────────
-
-${analysis.tituloOptimizado}
-
-───────────────────────────────────────
-💡 ESTRATEGIAS DE CONTENIDO:
-───────────────────────────────────────
-
-${analysis.estrategiasContenido.map((est, i) => `${i + 1}. ${est}`).join('\n\n')}
-
-───────────────────────────────────────
-🎯 FORMATOS RECOMENDADOS:
-───────────────────────────────────────
-
-${analysis.formatosRecomendados.map((fmt, i) => `${i + 1}. ${fmt}`).join('\n')}
-
-───────────────────────────────────────
-📈 MÉTRICAS OBJETIVO:
-───────────────────────────────────────
-
-• Alcance Estimado: ${analysis.metricasObjetivo.alcanceEstimado}
-• Dificultad SEO: ${analysis.metricasObjetivo.dificultadSEO}
-• Potencial Viral: ${analysis.metricasObjetivo.potencialViral}
-
-───────────────────────────────────────
-⚡ CONSEJO RÁPIDO:
-───────────────────────────────────────
-
-${analysis.consejoRapido}
-
-───────────────────────────────────────
-Generado por CreoVision AI
-https://creovision.app
-═══════════════════════════════════════`;
-
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `creovision-seo-${articleTitle.substring(0, 30).replace(/\s+/g, '-')}-${Date.now()}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: '✅ Análisis SEO descargado',
-        description: 'El análisis se guardó en tu carpeta de descargas'
-      });
-    } catch (error) {
-      console.error('Error descargando análisis SEO:', error);
-      toast({
-        title: '❌ Error',
-        description: 'No pudimos descargar el archivo',
-        variant: 'destructive'
-      });
-    }
-  }, [nichemMetrics, toast]);
+        toast({
+          title: '📥 Reporte SEO exportado',
+          description:
+            format === 'pdf'
+              ? 'Tu PDF con sello CreoVision está listo.'
+              : 'Tu versión Word con protección de edición está lista.'
+        });
+      } catch (error) {
+        console.error('Error exportando análisis SEO:', error);
+        toast({
+          title: '❌ Error al exportar',
+          description: 'No pudimos generar el reporte SEO. Vuelve a intentarlo.',
+          variant: 'destructive'
+        });
+      }
+    },
+    [nichemMetrics, toast]
+  );
 
   const fetchExpertInsights = useCallback(
     async (topic, metricsContext = {}) => {
@@ -1821,20 +1756,49 @@ https://creovision.app
                     <BookmarkIcon className="w-4 h-4 mr-2 stroke-[2]" />
                     Guardar en Bóveda
                   </Button>
-                  <Button
-                    onClick={() => {
-                      const analysis = creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`];
-                      if (analysis) {
-                        downloadAdvice(analysis, selectedCreator.name);
-                      }
-                    }}
-                    disabled={loadingAnalysis}
-                    variant="outline"
-                    className="flex-1 border-purple-500/30 hover:bg-purple-500/10"
-                  >
-                    <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                    Descargar
-                  </Button>
+                  <div className="flex-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          disabled={loadingAnalysis}
+                          variant="outline"
+                          className="w-full border-purple-500/30 hover:bg-purple-500/10"
+                        >
+                          <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                          Descargar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-64 bg-[#0f0a1f]/95 border border-purple-500/30 text-gray-100 backdrop-blur-xl"
+                      >
+                        <DropdownMenuItem
+                          className="text-sm text-gray-200 focus:bg-purple-500/20 focus:text-white"
+                          onSelect={() => {
+                            if (loadingAnalysis) return;
+                            const analysis = creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`];
+                            if (analysis) {
+                              void downloadAdvice(analysis, selectedCreator.name, 'pdf');
+                            }
+                          }}
+                        >
+                          📄 PDF profesional (protegido)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-sm text-gray-200 focus:bg-purple-500/20 focus:text-white"
+                          onSelect={() => {
+                            if (loadingAnalysis) return;
+                            const analysis = creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`];
+                            if (analysis) {
+                              void downloadAdvice(analysis, selectedCreator.name, 'docx');
+                            }
+                          }}
+                        >
+                          📝 Word con marca de agua
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
                   Powered by CreoVision AI Coach
@@ -2018,16 +1982,47 @@ https://creovision.app
                     <BookmarkIcon className="w-4 h-4 mr-2 stroke-[2]" />
                     Guardar en Vault
                   </Button>
-                  <Button
-                    onClick={() => {
-                      downloadSEOAdvice(seoAnalysis[selectedArticle.id], selectedArticle.title);
-                    }}
-                    variant="outline"
-                    className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
-                  >
-                    <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                    Descargar
-                  </Button>
+                  <div className="flex-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          disabled={!seoAnalysis[selectedArticle.id]}
+                          variant="outline"
+                          className="w-full border-cyan-500/30 hover:bg-cyan-500/10"
+                        >
+                          <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                          Descargar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-64 bg-[#031423]/95 border border-cyan-500/30 text-gray-100 backdrop-blur-xl"
+                      >
+                        <DropdownMenuItem
+                          className="text-sm text-gray-200 focus:bg-cyan-500/20 focus:text-white"
+                          onSelect={() => {
+                            const analysis = seoAnalysis[selectedArticle.id];
+                            if (analysis) {
+                              void downloadSEOAdvice(analysis, selectedArticle.title, 'pdf');
+                            }
+                          }}
+                        >
+                          📄 PDF profesional (protegido)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-sm text-gray-200 focus:bg-cyan-500/20 focus:text-white"
+                          onSelect={() => {
+                            const analysis = seoAnalysis[selectedArticle.id];
+                            if (analysis) {
+                              void downloadSEOAdvice(analysis, selectedArticle.title, 'docx');
+                            }
+                          }}
+                        >
+                          📝 Word con marca de agua
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
                   Powered by Gemini AI + CreoVision
