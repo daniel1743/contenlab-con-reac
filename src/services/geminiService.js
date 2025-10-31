@@ -745,3 +745,113 @@ FORMATO: Texto directo en párrafos cortos, NO markdown complejo.
 
   return await generateContent(prompt);
 };
+
+/**
+ * 🆕 SEO COACH CONVERSACIONAL
+ * Genera una respuesta experta y contextual para el asistente SEO premium
+ * @param {Object} cardContext - Contexto de la tarjeta (title, description, tags, metrics, insights)
+ * @param {Array<{role: 'user' | 'assistant', content: string}>} conversationHistory - Mensajes previos en orden cronológico
+ * @returns {Promise<string>} - Respuesta del mentor SEO
+ */
+export const generateSeoCoachMessage = async (cardContext, conversationHistory = []) => {
+  if (!cardContext) {
+    throw new Error('SEO Coach context is required');
+  }
+
+  const {
+    type,
+    title,
+    description,
+    source,
+    topic,
+    category,
+    tags = [],
+    trendScore,
+    metrics,
+    insights,
+  } = cardContext;
+
+  const sanitizeValue = (value) => {
+    if (value === undefined || value === null) return 'N/D';
+    return String(value);
+  };
+
+  const tagsLine = Array.isArray(tags) && tags.length
+    ? tags.filter(Boolean).join(', ')
+    : 'Sin etiquetas registradas';
+
+  const metricsBlock = metrics && typeof metrics === 'object' && Object.keys(metrics).length
+    ? Object.entries(metrics)
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([label, value]) => `  - ${label}: ${sanitizeValue(value)}`)
+        .join('\n')
+    : '  - No se proporcionaron métricas específicas';
+
+  const insightsBlock = insights
+    ? insights
+    : 'Sin insights analíticos disponibles. Enfócate en derivar hipótesis SEO a partir del tema y las palabras clave.';
+
+  const assistantTurns = conversationHistory.filter((message) => message.role === 'assistant').length;
+  const totalTurns = conversationHistory.length;
+
+  const historyBlock = conversationHistory.length
+    ? conversationHistory
+        .map((message, index) => `${index + 1}. ${message.role === 'user' ? 'Usuario' : 'Coach'}: ${message.content}`)
+        .join('\n')
+    : 'Sin interacciones previas. Inicia con un saludo cercano, valora la iniciativa del usuario y ofrece un análisis estratégico personalizado.';
+
+  const prompt = `
+MANUAL DE IDENTIDAD CONVERSACIONAL — CREOVISION COACH
+
+ROL: Eres el Creovision Coach, mentor humano, emocional y estratégico. No eres una IA ni un bot. Hablas como profesional senior de Creovision y refuerzas la marca en cada acompañamiento sin repetir la mención más de tres veces durante toda la sesión.
+
+MISIÓN:
+- Guiar, inspirar y orientar con empatía y claridad.
+- Cada intervención debe dejar al usuario con aprendizaje aplicable, sensación de comprensión y ganas de volver a conversar.
+
+ESTRUCTURA OBLIGATORIA DE CADA RESPUESTA:
+1. Reconocimiento genuino de lo que el usuario plantea.
+2. Dirección estratégica clara (qué camino seguir y por qué).
+3. Consejo accionable con dos o más alternativas y recursos concretos.
+4. Motivación final inspiradora que conecte con propósito y mencione a Creovision.
+
+NORMAS DEL DIÁLOGO:
+- Lenguaje natural, cálido, profesional. 0 a 3 emojis útiles (🎯✨💡🔥 etc.).
+- Nunca menciones IA, APIs ni tecnología interna.
+- Una única pregunta estratégica por respuesta y solo cuando aporte claridad o empuje a la acción.
+- Da rutas múltiples (ej. “1️⃣ ... 2️⃣ ...”) y herramientas prácticas (Notion, Trello, Creovision Studio, Google Trends, etc.).
+- Explica el porqué (intención de búsqueda, diferenciación, storytelling, autoridad, conversión). Vincula cada sugerencia con impacto emocional y de negocio.
+- Varía tu vocabulario: evita repetir frases, usa sinónimos, analogías y metáforas diferentes en cada turno.
+- Cierres inspiradores distintos cada vez; menciona a Creovision en el cierre solo cuando tenga sentido y evitando repetir la marca de forma excesiva.
+- Longitud máxima: 180 palabras.
+
+CONTROL DE SESIÓN:
+- Respuestas previas del coach: ${assistantTurns}
+- Mensajes totales en la sesión: ${totalTurns}
+- Límite absoluto de respuestas del coach: 10.
+- Si ya diste 9 respuestas, esta debe ser la despedida final: agradece, refuerza propósito, invita a volver y no formulés más preguntas.
+
+CONTEXTO DE LA TARJETA:
+- Tipo de tarjeta: ${sanitizeValue(type)}
+- Tema o nicho: ${sanitizeValue(topic || category)}
+- Título o gancho: ${sanitizeValue(title)}
+- Fuente / Plataforma: ${sanitizeValue(source)}
+- Resumen: ${sanitizeValue(description)}
+- Etiquetas / Categorías: ${tagsLine}
+- Trend score / Momentum: ${sanitizeValue(trendScore)}
+- Métricas relevantes:
+${metricsBlock}
+- Insights destacados:
+${insightsBlock}
+
+HISTORIAL DE CONVERSACIÓN:
+${historyBlock}
+
+RESPONDE AHORA COMO CREOVISION COACH.
+`;
+
+  return await generateContent(prompt);
+};
+- Cuando llegues al límite de mensajes, hospeda la despedida con energía positiva, invita a retomar más adelante y nombra una sección inspiradora dentro de la plataforma (ej. Centro Creativo, Taller de Estrategia, Laboratorio de Ideas) para que el usuario continue allí.
+CONTEXTO DE INTERFAZ:
+- Tras tu despedida se mostrará “El coach cerró la conversación, explora el Centro Creativo para seguir avanzando”. Usa un cierre coherente con ese mensaje.

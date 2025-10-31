@@ -81,6 +81,7 @@ import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiS
 import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
 import PuzzleC from '@/components/charts/PuzzleC';
 import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer';
+import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import { exportCreatorReport, exportSeoReport } from '@/utils/reportExporter';
 
 ChartJS.register(
@@ -315,6 +316,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [loadingSEOAnalysis, setLoadingSEOAnalysis] = useState(false);
   const [showSEOModal, setShowSEOModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [isCoachOpen, setIsCoachOpen] = useState(false);
+  const [coachContext, setCoachContext] = useState(null);
 
   // 🆕 FUNCIÓN PARA ANALIZAR CREADOR AL HACER HOVER
   const handleCreatorHover = useCallback(async (creator, topic) => {
@@ -516,6 +519,128 @@ const DashboardDynamic = ({ onSectionChange }) => {
     },
     [nichemMetrics, toast]
   );
+
+  const openCoachWithContext = useCallback((context) => {
+    if (!context) {
+      return;
+    }
+    setCoachContext(context);
+    setIsCoachOpen(true);
+  }, []);
+
+  const handleOpenCreatorCoach = useCallback(() => {
+    if (!selectedCreator || !nichemMetrics) {
+      toast({
+        title: 'Selecciona un creador',
+        description: 'Primero elige un creador para que el coach pueda analizarlo.',
+      });
+      return;
+    }
+
+    const analysisKey = `${selectedCreator.name}-${nichemMetrics.topic}`;
+    const insight = creatorAnalysis[analysisKey];
+
+    if (!insight) {
+      toast({
+        title: 'Análisis en progreso',
+        description: 'Genera el análisis del creador antes de hablar con el SEO Coach.',
+      });
+      return;
+    }
+
+    const aggregatedTags = [
+      nichemMetrics.topic,
+      nichemMetrics.category,
+      selectedCreator.platform,
+      ...(Array.isArray(selectedCreator.categories) ? selectedCreator.categories : []),
+      ...(Array.isArray(selectedCreator.tags) ? selectedCreator.tags : []),
+    ].filter(Boolean);
+
+    const metrics = Object.fromEntries(
+      Object.entries({
+        Seguidores: selectedCreator.followers,
+        'Vistas promedio': selectedCreator.avgViews,
+        Engagement: selectedCreator.engagement,
+        'Trend score nicho': nichemMetrics?.trendScore ? `${nichemMetrics.trendScore}/100` : undefined,
+      }).filter(([, value]) => value !== undefined && value !== null && value !== '')
+    );
+
+    openCoachWithContext({
+      type: 'Análisis de creador top',
+      title: selectedCreator.name,
+      description:
+        selectedCreator.bio ||
+        selectedCreator.description ||
+        `Perfil destacado en ${selectedCreator.platform} dentro del nicho ${nichemMetrics.topic}.`,
+      source: selectedCreator.platform,
+      topic: nichemMetrics.topic,
+      category: selectedCreator.category,
+      tags: aggregatedTags,
+      trendScore: nichemMetrics?.trendScore,
+      metrics,
+      insights: insight,
+    });
+  }, [selectedCreator, nichemMetrics, creatorAnalysis, toast, openCoachWithContext]);
+
+  const handleOpenArticleCoach = useCallback(() => {
+    if (!selectedArticle || !nichemMetrics) {
+      toast({
+        title: 'Selecciona un artículo',
+        description: 'Elige una tarjeta de tendencia para activar el SEO Coach.',
+      });
+      return;
+    }
+
+    const articleAnalysis = seoAnalysis[selectedArticle.id];
+    if (!articleAnalysis || articleAnalysis.error) {
+      toast({
+        title: 'Análisis SEO pendiente',
+        description: 'Genera el análisis SEO de la tarjeta antes de conversar con el coach.',
+      });
+      return;
+    }
+
+    const detail = articleAnalysis.analysis || {};
+    const insightBlocks = [
+      detail.oportunidadSEO && `Oportunidad SEO: ${detail.oportunidadSEO}`,
+      Array.isArray(detail.estrategiasContenido) && detail.estrategiasContenido.length
+        ? `Estrategias destacadas:\n${detail.estrategiasContenido.map((item, index) => `${index + 1}. ${item}`).join('\n')}`
+        : null,
+      Array.isArray(detail.formatosRecomendados) && detail.formatosRecomendados.length
+        ? `Formatos recomendados: ${detail.formatosRecomendados.join(', ')}`
+        : null,
+      detail.consejoRapido && `Acción inmediata sugerida: ${detail.consejoRapido}`,
+    ].filter(Boolean);
+
+    const keywords = Array.isArray(detail.palabrasClave) ? detail.palabrasClave : [];
+
+    const metrics = Object.fromEntries(
+      Object.entries({
+        'Alcance estimado': detail.metricasObjetivo?.alcanceEstimado,
+        'Dificultad SEO': detail.metricasObjetivo?.dificultadSEO,
+        'Potencial viral': detail.metricasObjetivo?.potencialViral,
+        'Trend score nicho': nichemMetrics?.trendScore ? `${nichemMetrics.trendScore}/100` : undefined,
+      }).filter(([, value]) => value !== undefined && value !== null && value !== '')
+    );
+
+    openCoachWithContext({
+      type: 'Tarjeta de tendencia SEO',
+      title: selectedArticle.title,
+      description: selectedArticle.description,
+      source: selectedArticle.source,
+      topic: nichemMetrics.topic,
+      category: selectedArticle.category,
+      tags: [
+        nichemMetrics.topic,
+        selectedArticle.category,
+        ...(Array.isArray(selectedArticle.tags) ? selectedArticle.tags : []),
+        ...keywords,
+      ].filter(Boolean),
+      trendScore: nichemMetrics?.trendScore,
+      metrics,
+      insights: insightBlocks.join('\n\n') || detail.oportunidadSEO || 'Sin insights adicionales.',
+    });
+  }, [selectedArticle, nichemMetrics, seoAnalysis, toast, openCoachWithContext]);
 
   const fetchExpertInsights = useCallback(
     async (topic, metricsContext = {}) => {
@@ -1742,7 +1867,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
               {/* Footer con acciones */}
               <div className="flex-shrink-0 p-4 sm:p-6 border-t border-purple-400/20 bg-black/30">
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <Button
                     onClick={() => {
                       const analysis = creatorAnalysis[`${selectedCreator.name}-${nichemMetrics.topic}`];
@@ -1799,6 +1924,18 @@ const DashboardDynamic = ({ onSectionChange }) => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                  <Button
+                    type="button"
+                    disabled={loadingAnalysis}
+                    onClick={handleOpenCreatorCoach}
+                    className="h-12 w-full sm:w-12 rounded-full bg-gradient-to-br from-purple-500 via-fuchsia-500 to-amber-400 text-white shadow-lg shadow-purple-500/40 transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-purple-300 disabled:opacity-60"
+                    title="Abrir SEO Coach"
+                  >
+                    <div className="flex items-center justify-center gap-2 sm:gap-0">
+                      <img src="/mascota.png" alt="SEO Coach CreoVision" className="h-7 w-7 object-contain drop-shadow" />
+                      <span className="text-sm font-semibold sm:hidden">SEO Coach</span>
+                    </div>
+                  </Button>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
                   Powered by CreoVision AI Coach
@@ -1971,7 +2108,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
               {/* Footer - Botones */}
               <div className="border-t border-cyan-400/20 p-4 flex-shrink-0 bg-black/20">
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <Button
                     onClick={() => {
                       saveSEOAdviceToVault(seoAnalysis[selectedArticle.id], selectedArticle.title);
@@ -2023,6 +2160,18 @@ const DashboardDynamic = ({ onSectionChange }) => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                  <Button
+                    type="button"
+                    disabled={!seoAnalysis[selectedArticle.id]}
+                    onClick={handleOpenArticleCoach}
+                    className="h-12 w-full sm:w-12 rounded-full bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 text-white shadow-lg shadow-cyan-500/30 transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:opacity-60"
+                    title="Abrir SEO Coach"
+                  >
+                    <div className="flex items-center justify-center gap-2 sm:gap-0">
+                      <img src="/mascota.png" alt="SEO Coach CreoVision" className="h-7 w-7 object-contain drop-shadow" />
+                      <span className="text-sm font-semibold sm:hidden">SEO Coach</span>
+                    </div>
+                  </Button>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
                   Powered by Gemini AI + CreoVision
@@ -2032,6 +2181,16 @@ const DashboardDynamic = ({ onSectionChange }) => {
           </motion.div>
         )}
       </AnimatePresence>
+      <SEOCoachModal
+        open={isCoachOpen}
+        onOpenChange={(open) => {
+          setIsCoachOpen(open);
+          if (!open) {
+            setCoachContext(null);
+          }
+        }}
+        context={coachContext}
+      />
     </div>
   );
 };
