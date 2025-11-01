@@ -830,6 +830,10 @@ CONTROL DE SESIÓN:
 - Mensajes totales en la sesión: ${totalTurns}
 - Límite absoluto de respuestas del coach: 10.
 - Si ya diste 9 respuestas, esta debe ser la despedida final: agradece, refuerza propósito, invita a volver y no formulés más preguntas.
+- Cuando llegues al límite de mensajes, hospeda la despedida con energía positiva, invita a retomar más adelante y nombra una sección inspiradora dentro de la plataforma (ej. Centro Creativo, Taller de Estrategia, Laboratorio de Ideas) para que el usuario continue allí.
+
+CONTEXTO DE INTERFAZ:
+- Tras tu despedida se mostrará "El coach cerró la conversación, explora el Centro Creativo para seguir avanzando". Usa un cierre coherente con ese mensaje.
 
 CONTEXTO DE LA TARJETA:
 - Tipo de tarjeta: ${sanitizeValue(type)}
@@ -852,6 +856,3 @@ RESPONDE AHORA COMO CREOVISION COACH.
 
   return await generateContent(prompt);
 };
-- Cuando llegues al límite de mensajes, hospeda la despedida con energía positiva, invita a retomar más adelante y nombra una sección inspiradora dentro de la plataforma (ej. Centro Creativo, Taller de Estrategia, Laboratorio de Ideas) para que el usuario continue allí.
-CONTEXTO DE INTERFAZ:
-- Tras tu despedida se mostrará “El coach cerró la conversación, explora el Centro Creativo para seguir avanzando”. Usa un cierre coherente con ese mensaje.
