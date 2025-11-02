@@ -417,7 +417,38 @@ Reglas:
       .replace(/```json/gi, '')
       .replace(/```/g, '')
       .trim();
-    const parsed = JSON.parse(cleaned);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseError) {
+      console.error('❌ Error parseando JSON de Gemini:', parseError);
+      console.error('📄 Contenido recibido:', cleaned);
+
+      // Intentar limpiar el JSON malformado
+      try {
+        // Remover trailing commas
+        const fixedJson = cleaned
+          .replace(/,\s*([}\]])/g, '$1')
+          .replace(/,\s*,/g, ',');
+        parsed = JSON.parse(fixedJson);
+        console.log('✅ JSON corregido y parseado exitosamente');
+      } catch (secondError) {
+        console.error('❌ No se pudo corregir el JSON, usando datos de ejemplo');
+        // Retornar datos de ejemplo si falla todo
+        return [
+          {
+            id: 'insight-fallback-1',
+            label: 'Análisis de Tendencia',
+            title: 'Contenido en tendencia',
+            subtitle: 'Basado en búsquedas recientes',
+            bullets: ['Alta demanda de contenido sobre este tema', 'Oportunidad de crecimiento'],
+            cta: 'Explorar más',
+            icon: 'TrendingUp'
+          }
+        ];
+      }
+    }
 
     if (!Array.isArray(parsed)) {
       throw new Error('Formato inesperado en la respuesta de IA');

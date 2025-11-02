@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LandingPage from '@/components/LandingPage';
+import PWALoadingScreen from '@/components/PWALoadingScreen';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
@@ -133,15 +134,9 @@ function App() {
     />
   );
 
-  const LoadingSpinner = () => (
-    <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
-    </div>
-  );
-
   const renderContent = () => {
     if (loading) {
-      return <LoadingSpinner />;
+      return <PWALoadingScreen />;
     }
 
     // Aseguramos que las secciones protegidas solo se muestren si el usuario está autenticado.
@@ -240,7 +235,7 @@ function App() {
               transition={{ duration: 0.3 }}
               className={activeSection !== 'landing' /* && activeSection !== 'thumbnail-editor' */ ? 'container mx-auto px-4 py-8' : ''}
             >
-              <Suspense fallback={<LoadingSpinner />}>
+              <Suspense fallback={<PWALoadingScreen />}>
                 {renderContent()}
               </Suspense>
             </motion.div>

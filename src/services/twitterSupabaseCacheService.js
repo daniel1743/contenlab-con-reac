@@ -119,22 +119,42 @@ export const setSupabaseCache = async (cacheKey, data, query) => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + CACHE_CONFIG.TTL_SECONDS * 1000);
 
-    const cacheEntry = {
-      api_name: CACHE_CONFIG.API_NAME,
-      query_hash: cacheKey,
-      query: query,
-      result: data,
-      version: CACHE_CONFIG.VERSION,
-      created_at: now.toISOString(),
-      updated_at: now.toISOString(),
-      expires_at: expiresAt.toISOString()
-    };
-
-    const { error } = await supabase
+    // Primero intentar actualizar si existe
+    const { data: existing } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
-      .upsert(cacheEntry, {
-        onConflict: 'api_name,query_hash,version'
-      });
+      .select('id')
+      .eq('api_name', CACHE_CONFIG.API_NAME)
+      .eq('query_hash', cacheKey)
+      .eq('version', CACHE_CONFIG.VERSION)
+      .single();
+
+    let error;
+    if (existing) {
+      // Actualizar registro existente
+      ({ error } = await supabase
+        .from(CACHE_CONFIG.TABLE_NAME)
+        .update({
+          query: query,
+          result: data,
+          expires_at: expiresAt.toISOString(),
+          updated_at: now.toISOString()
+        })
+        .eq('id', existing.id));
+    } else {
+      // Insertar nuevo registro
+      ({ error } = await supabase
+        .from(CACHE_CONFIG.TABLE_NAME)
+        .insert({
+          api_name: CACHE_CONFIG.API_NAME,
+          query_hash: cacheKey,
+          query: query,
+          result: data,
+          version: CACHE_CONFIG.VERSION,
+          created_at: now.toISOString(),
+          updated_at: now.toISOString(),
+          expires_at: expiresAt.toISOString()
+        }));
+    }
 
     if (error) {
       console.error('❌ [Twitter Cache] Error al guardar caché:', error);

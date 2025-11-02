@@ -188,20 +188,41 @@ export const setSupabaseCache = async (cacheKey, data, query) => {
 
     console.log(`💾 [Supabase Cache] Guardando: ${cacheKey.substring(0, 60)}... (expira en ${(CACHE_CONFIG.TTL_SECONDS / (60 * 60 * 24)).toFixed(1)} días)`);
 
-    // Upsert: inserta si no existe, actualiza si existe
-    const { error } = await supabase
+    // Primero intentar actualizar si existe
+    const { data: existing } = await supabase
       .from(CACHE_CONFIG.TABLE_NAME)
-      .upsert({
-        api_name: CACHE_CONFIG.API_NAME,
-        query_hash: cacheKey,
-        query: query.substring(0, 200), // Query original para referencia
-        result: data,
-        version: CACHE_CONFIG.VERSION,
-        expires_at: expiresAt.toISOString(),
-        updated_at: now.toISOString()
-      }, {
-        onConflict: 'api_name,query_hash,version'
-      });
+      .select('id')
+      .eq('api_name', CACHE_CONFIG.API_NAME)
+      .eq('query_hash', cacheKey)
+      .eq('version', CACHE_CONFIG.VERSION)
+      .single();
+
+    let error;
+    if (existing) {
+      // Actualizar registro existente
+      ({ error } = await supabase
+        .from(CACHE_CONFIG.TABLE_NAME)
+        .update({
+          query: query.substring(0, 200),
+          result: data,
+          expires_at: expiresAt.toISOString(),
+          updated_at: now.toISOString()
+        })
+        .eq('id', existing.id));
+    } else {
+      // Insertar nuevo registro
+      ({ error } = await supabase
+        .from(CACHE_CONFIG.TABLE_NAME)
+        .insert({
+          api_name: CACHE_CONFIG.API_NAME,
+          query_hash: cacheKey,
+          query: query.substring(0, 200),
+          result: data,
+          version: CACHE_CONFIG.VERSION,
+          expires_at: expiresAt.toISOString(),
+          updated_at: now.toISOString()
+        }));
+    }
 
     if (error) {
       console.error('❌ [Supabase Cache] Error guardando:', error);
