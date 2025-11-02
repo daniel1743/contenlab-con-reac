@@ -117,13 +117,42 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
     return <span ref={ref}>{rawValue}</span>;
   }
 
-  // Componente Typed Text
+  // Componente Typed Text con IntersectionObserver
   const TypedText = ({ texts, typingSpeed = 100, deletingSpeed = 50, pauseTime = 2000 }) => {
     const [displayText, setDisplayText] = useState('');
     const [textIndex, setTextIndex] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
+    const textRef = useRef(null);
 
+    // Observer para detectar visibilidad
     useEffect(() => {
+      const element = textRef.current;
+      if (!element) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsVisible(entry.isIntersecting);
+        },
+        {
+          threshold: 0.1,
+          rootMargin: '50px'
+        }
+      );
+
+      observer.observe(element);
+
+      return () => {
+        if (element) {
+          observer.unobserve(element);
+        }
+      };
+    }, []);
+
+    // Animación de texto - solo si es visible
+    useEffect(() => {
+      if (!isVisible) return; // Pausa la animación si no está visible
+
       const currentText = texts[textIndex];
 
       const timeout = setTimeout(() => {
@@ -144,14 +173,14 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
       }, isDeleting ? deletingSpeed : typingSpeed);
 
       return () => clearTimeout(timeout);
-    }, [displayText, isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime]);
+    }, [displayText, isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime, isVisible]);
 
     return (
-      <span>
+      <span ref={textRef}>
         {displayText}
         <motion.span
-          animate={{ opacity: [1, 0] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
+          animate={{ opacity: isVisible ? [1, 0] : 1 }}
+          transition={{ duration: 0.8, repeat: isVisible ? Infinity : 0 }}
           className="inline-block w-0.5 h-8 md:h-12 bg-purple-400 ml-1"
         />
       </span>
@@ -510,29 +539,30 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
 
 
       {/* Hero Section con narrativa emocional */}
-      <section className="relative min-h-screen flex items-center justify-center">
+      <section className="relative min-h-screen flex items-center justify-center pt-24 md:pt-32">
         <div className="relative z-10 text-center space-y-12 px-4 max-w-7xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.8 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
             className="space-y-8"
           >
             {/* Headline narrativo con Typed Text */}
-            <motion.h1
-              className="text-6xl md:text-8xl font-black leading-tight"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.2 }}
-            >
-              <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                <TypedText texts={['Impulsa tu voz', 'Amplifica tu alcance', 'Transforma tu contenido']} />
-              </span>
-              <br />
-              <span className="text-white font-light">
-                con propósito
-              </span>
-            </motion.h1>
+            <div className="min-h-[200px] md:min-h-[280px] flex items-center justify-center">
+              <motion.h1
+                className="text-6xl md:text-8xl font-black leading-tight"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, delay: 0.2 }}
+              >
+                <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent block">
+                  <TypedText texts={['Impulsa tu voz', 'Amplifica tu alcance', 'Transforma tu contenido']} />
+                </span>
+                <span className="text-white font-light block mt-4">
+                  con propósito
+                </span>
+              </motion.h1>
+            </div>
 
 
             <motion.p 

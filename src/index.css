@@ -238,3 +238,23 @@ body {
 .animate-scroll-infinite:hover {
   animation-play-state: paused;
 }
+
+/* === ESTABILIZACIÓN DE TEXTO ANIMADO === */
+.typed-text-stable {
+  display: inline-block;
+  vertical-align: top;
+}
+
+/* Responsive: permite wrap en móvil, nowrap en desktop */
+@media (max-width: 768px) {
+  .typed-text-stable {
+    white-space: normal;
+    word-wrap: break-word;
+  }
+}
+
+@media (min-width: 769px) {
+  .typed-text-stable {
+    white-space: nowrap;
+  }
+}
