@@ -723,13 +723,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
         getTrendingTopicsByKeyword(searchTopic)
       ]);
 
-      if (!trendingData.success) {
-        throw new Error('Error obteniendo datos del tema');
-      }
-
-      setTopicData(trendingData.data);
-
-      // 🆕 Guardar datos de las nuevas APIs
+      // 🆕 Guardar datos de las nuevas APIs SIEMPRE (aunque getAllTrending falle)
       setYoutubeData({
         weeklyTrends: youtubeWeekly,
         engagement: youtubeEngagement,
@@ -742,11 +736,76 @@ const DashboardDynamic = ({ onSectionChange }) => {
         viralScore: twitterViral
       });
 
-      // 📰 Guardar artículos de NewsAPI (asegurando mínimo 4 tarjetas)
+      // 📰 Guardar artículos de NewsAPI
       const preparedArticles = prepareNewsArticles(newsArticles || [], searchTopic);
       setNewsArticles(preparedArticles);
-      // Analizar y calcular métricas del nicho
-      const metrics = analyzeNicheMetrics(trendingData.data, searchTopic);
+
+      // 🎯 CAMBIO CRÍTICO: Usar directamente YouTube API si getAllTrending falla
+      let dataForAnalysis = trendingData.data || {};
+
+      // Si getAllTrending no retornó videos, buscarlos directamente
+      if (!dataForAnalysis.youtube?.videos || dataForAnalysis.youtube.videos.length === 0) {
+        console.log('🔍 getAllTrending no retornó videos, buscando directamente en YouTube...');
+
+        try {
+          // Importar función para buscar videos directamente
+          const { searchYouTubeVideos, getVideoStatistics } = await import('@/services/youtubeService');
+
+          // Buscar videos del tema
+          const searchResults = await searchYouTubeVideos(searchTopic, 50);
+
+          if (searchResults.items && searchResults.items.length > 0) {
+            // Obtener IDs de videos
+            const videoIds = searchResults.items.map(item => item.id.videoId);
+
+            // Obtener IDs únicos de canales
+            const uniqueChannelIds = [...new Set(searchResults.items.map(item => item.snippet.channelId))];
+
+            // Obtener estadísticas de videos Y canales en paralelo
+            const [statsResults, channelsData] = await Promise.all([
+              getVideoStatistics(videoIds),
+              // Obtener datos de canales (max 50 por llamada)
+              fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${uniqueChannelIds.slice(0, 50).join(',')}&key=${import.meta.env.VITE_YOUTUBE_API_KEY}`)
+                .then(res => res.json())
+                .catch(() => ({ items: [] }))
+            ]);
+
+            // Combinar snippet + statistics
+            const videosWithStats = searchResults.items.map((item, index) => ({
+              ...item,
+              statistics: statsResults.items[index]?.statistics || {},
+              channelId: item.snippet.channelId,
+              channelTitle: item.snippet.channelTitle
+            }));
+
+            // Procesar datos de canales
+            const channels = (channelsData.items || []).map(channel => ({
+              id: channel.id,
+              title: channel.snippet.title,
+              statistics: channel.statistics
+            }));
+
+            // Crear estructura de datos compatible
+            dataForAnalysis = {
+              youtube: {
+                videos: videosWithStats,
+                channels: channels
+              },
+              news: dataForAnalysis.news || {}
+            };
+
+            console.log(`✅ Encontrados ${videosWithStats.length} videos y ${channels.length} canales de YouTube API`);
+          }
+        } catch (ytError) {
+          console.error('Error buscando videos directamente:', ytError);
+        }
+      }
+
+      // Guardar topic data (puede estar vacío si getAllTrending falló, pero no importa)
+      setTopicData(dataForAnalysis);
+
+      // Analizar y calcular métricas del nicho CON DATOS REALES DE YOUTUBE
+      const metrics = analyzeNicheMetrics(dataForAnalysis, searchTopic);
       setNichemMetrics(metrics);
 
       // 🆕 Enriquecer insights con datos de todas las APIs
@@ -764,16 +823,72 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
     } catch (error) {
       console.error('Error buscando tema:', error);
-      toast({
-        title: 'Error al buscar tema',
-        description: error.message,
-        variant: 'destructive'
-      });
 
-      // Mostrar datos de ejemplo si falla
-      const fallbackMetrics = generateMockMetrics(searchTopic);
-      setNichemMetrics(fallbackMetrics);
-      await fetchExpertInsights(searchTopic, fallbackMetrics);
+      // 🎯 INTENTO FINAL: Buscar directamente en YouTube aunque todo falle
+      try {
+        console.log('⚠️ Error en búsqueda principal, intentando YouTube directo como fallback...');
+
+        const { searchYouTubeVideos, getVideoStatistics } = await import('@/services/youtubeService');
+
+        const searchResults = await searchYouTubeVideos(searchTopic, 50);
+
+        if (searchResults.items && searchResults.items.length > 0) {
+          const videoIds = searchResults.items.map(item => item.id.videoId);
+          const uniqueChannelIds = [...new Set(searchResults.items.map(item => item.snippet.channelId))];
+
+          const [statsResults, channelsData] = await Promise.all([
+            getVideoStatistics(videoIds),
+            fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${uniqueChannelIds.slice(0, 50).join(',')}&key=${import.meta.env.VITE_YOUTUBE_API_KEY}`)
+              .then(res => res.json())
+              .catch(() => ({ items: [] }))
+          ]);
+
+          const videosWithStats = searchResults.items.map((item, index) => ({
+            ...item,
+            statistics: statsResults.items[index]?.statistics || {},
+            channelId: item.snippet.channelId,
+            channelTitle: item.snippet.channelTitle
+          }));
+
+          const channels = (channelsData.items || []).map(channel => ({
+            id: channel.id,
+            title: channel.snippet.title,
+            statistics: channel.statistics
+          }));
+
+          const fallbackData = {
+            youtube: {
+              videos: videosWithStats,
+              channels: channels
+            },
+            news: {}
+          };
+
+          const metrics = analyzeNicheMetrics(fallbackData, searchTopic);
+          setNichemMetrics(metrics);
+          await fetchExpertInsights(searchTopic, metrics);
+
+          toast({
+            title: '⚠️ Análisis parcial completado',
+            description: `Encontrados ${videosWithStats.length} videos y ${channels.length} canales reales de YouTube.`,
+          });
+        } else {
+          throw new Error('No se encontraron videos');
+        }
+      } catch (finalError) {
+        console.error('Error en fallback de YouTube:', finalError);
+
+        // SOLO SI TODO FALLA, usar datos mock (pero avisar claramente al usuario)
+        toast({
+          title: '❌ No se pudo conectar con YouTube',
+          description: 'Mostrando datos de ejemplo. Verifica tu conexión e intenta de nuevo.',
+          variant: 'destructive'
+        });
+
+        const fallbackMetrics = generateMockMetrics(searchTopic);
+        setNichemMetrics(fallbackMetrics);
+        await fetchExpertInsights(searchTopic, fallbackMetrics);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -862,6 +977,24 @@ const DashboardDynamic = ({ onSectionChange }) => {
         })
         .filter(value => Number.isFinite(value));
 
+      // Calcular métricas de calidad de contenido
+      const avgViews = viewsArray.length > 0
+        ? viewsArray.reduce((sum, v) => sum + v, 0) / viewsArray.length
+        : 0;
+
+      const avgEngagement = engagementArray.length > 0
+        ? engagementArray.reduce((sum, e) => sum + e, 0) / engagementArray.length
+        : 0;
+
+      // Score de viralidad (videos buenos sin importar suscriptores)
+      // Prioriza: vistas altas + engagement alto + ratio vistas/suscriptores
+      const viralityScore = subscriberCount > 0
+        ? (avgViews / subscriberCount) * avgEngagement
+        : avgViews * avgEngagement;
+
+      // Score de calidad (balance entre engagement y vistas)
+      const qualityScore = (avgViews * 0.3) + (avgEngagement * 1000) + (viralityScore * 100);
+
       return {
         id: channelId,
         name: channelInfo?.title || channelVideos[0]?.channelTitle || 'Creador',
@@ -869,15 +1002,22 @@ const DashboardDynamic = ({ onSectionChange }) => {
         avgViews: formatRangeFromValues(viewsArray),
         engagement: formatRangeFromValues(engagementArray, { isPercentage: true }),
         platform: 'YouTube',
-        channelUrl: channelInfo?.customUrl ? `https://www.youtube.com/${channelInfo.customUrl}` : `https://www.youtube.com/channel/${channelId}`
+        channelUrl: channelInfo?.customUrl ? `https://www.youtube.com/${channelInfo.customUrl}` : `https://www.youtube.com/channel/${channelId}`,
+        // Datos internos para ordenamiento
+        _subscriberCount: subscriberCount,
+        _avgViews: avgViews,
+        _avgEngagement: avgEngagement,
+        _viralityScore: viralityScore,
+        _qualityScore: qualityScore
       };
     });
 
+    // Ordenar por CALIDAD DE CONTENIDO, no solo por suscriptores
+    // Esto permite encontrar canales pequeños con videos virales
     return creators
       .sort((a, b) => {
-        const subsA = Number(channelStats[a.id]?.statistics?.subscriberCount || 0);
-        const subsB = Number(channelStats[b.id]?.statistics?.subscriberCount || 0);
-        return subsB - subsA;
+        // Priorizar calidad de contenido sobre tamaño del canal
+        return b._qualityScore - a._qualityScore;
       })
       .slice(0, 5);
   };
@@ -2198,9 +2338,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
 // Diccionario de explicaciones CreoVision AI para cada métrica
 const METRIC_EXPLANATIONS = {
   "Creadores analizados": {
-    title: "¿Qué significa 'Creadores analizados'?",
-    explanation: "📊 Este número representa cuántos creadores de contenido están activos en este nicho según los datos de YouTube. Un rango alto (100+) indica saturación - será más difícil destacar. Un rango bajo (<30) puede significar una oportunidad emergente o un nicho demasiado específico.",
-    advice: "💡 Consejo CreoVision: Si ves 100+ creadores, no te desanimes. Busca un sub-nicho más específico donde puedas diferenciarte. Por ejemplo, en vez de 'cocina', prueba 'cocina keto para principiantes'."
+    title: "📊 ¿Qué significa 'Creadores analizados'?",
+    explanation: "Este número muestra cuántos creadores están activos en tu nicho, pero lo importante no es solo la cantidad: analizamos desde canales grandes hasta emergentes con contenido de calidad. Buscamos videos con buena retención y engagement, sin importar si el creador tiene 1M o 10K suscriptores.",
+    advice: "💡 Consejo CreoVision: No te frenes si ves muchos creadores. La IA prioriza canales pequeños con videos virales, demostrando que el tema tiene potencial sin necesitar ser famoso. Si ves creadores emergentes destacando, es tu señal de oportunidad."
   },
   "Rango de vistas por video": {
     title: "¿Cómo interpretar el rango de vistas?",
