@@ -309,7 +309,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [showCreatorModal, setShowCreatorModal] = useState(false);
 
-  // 🆕 ESTADOS PARA NEWSAPI Y ANÁLISIS SEO DE GEMINI
+  // 🆕 ESTADOS PARA NOTICIAS Y ANÁLISIS SEO CON IA
   const [newsArticles, setNewsArticles] = useState([]);
   const [seoAnalysis, setSeoAnalysis] = useState({});
   const [hoveredArticle, setHoveredArticle] = useState(null);
@@ -432,7 +432,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
     setLoadingSEOAnalysis(true);
 
     try {
-      console.log('🤖 Analizando artículo con Gemini SEO:', article.title);
+      console.log('🤖 CreoVision AI está analizando el artículo:', article.title);
       const { analyzeTrendingSEO } = await import('@/services/geminiSEOAnalysisService');
       const analysis = await analyzeTrendingSEO(article, nichemMetrics.topic);
 

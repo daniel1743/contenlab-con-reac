@@ -88,12 +88,12 @@ Ejemplo INCORRECTO (demasiado largo):
 export const generateWelcomeMessage = async (userContext) => {
   const { name, topic, seoData, stage = 'intro' } = userContext;
 
-  // Validar que DeepSeek esté configurado
+  // Validar que CreoVision AI esté configurado
   if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === 'tu_deepseek_key_aqui') {
-    console.warn('⚠️ [DeepSeek Assistant] API key no configurada, usando mensaje fallback');
+    console.warn('⚠️ [CreoVision AI] Sistema temporalmente no disponible, usando mensaje alternativo');
     return topic
-      ? `¡Hola ${name}! 👋 Veo que buscaste información de "${topic}". Cuéntame, ¿qué duda tienes para que yo te guíe en tu proceso de creación? Recuerda que en CreoVision queremos que seas el mejor. 🚀`
-      : `¡Hola ${name}! 👋 ¿En qué puedo ayudarte hoy? Estoy aquí para guiarte en tu camino hacia el contenido viral. 🚀`;
+      ? `¡Hola ${name}! 👋 Nuestro agente experto ha analizado "${topic}". Cuéntame, ¿qué aspecto quieres profundizar para que te guíe en tu proceso de creación? CreoVision trabaja para darte los mejores resultados. 🚀`
+      : `¡Hola ${name}! 👋 ¿En qué puedo ayudarte hoy? CreoVision IA está lista para guiarte hacia el contenido viral. 🚀`;
   }
 
   try {
@@ -130,23 +130,23 @@ export const generateWelcomeMessage = async (userContext) => {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(`❌ [DeepSeek API] ${response.status}: ${errorText}`);
-      throw new Error(`DeepSeek API error: ${response.status}`);
+      console.error(`❌ [CreoVision AI] ${response.status}: ${errorText}`);
+      throw new Error(`CreoVision AI error: ${response.status}`);
     }
 
     const data = await response.json();
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response format from DeepSeek API');
+      throw new Error('Formato de respuesta inválido');
     }
 
     const message = data.choices[0].message.content;
 
-    console.log('✅ [DeepSeek Assistant] Mensaje de bienvenida generado');
+    console.log('✅ [CreoVision AI] Mensaje de bienvenida generado');
     return message;
 
   } catch (error) {
-    console.error('❌ [DeepSeek Assistant] Error generando bienvenida:', error.message);
+    console.error('❌ [CreoVision AI] Error generando bienvenida:', error.message);
 
     // Fallback message - NO crashear la app
     return topic

@@ -400,20 +400,20 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
         const fallbackCards = getFallbackPremiumCards(contentTopic);
         const cards = [];
 
-        // ✅ TARJETA 1: Kit de Creación (Gemini) - DESBLOQUEADA - LLAMA API
+        // ✅ TARJETA 1: Kit de Creación (CreoVision AI GP-5) - DESBLOQUEADA - LLAMA API
         try {
-          const geminiResponse = await generateThemeSEOSuggestions({
+          const aiResponse = await generateThemeSEOSuggestions({
             themeValue: selectedTheme,
             themeLabel: themeLabel,
             topic: contentTopic
           });
 
-          console.log('🎁 Respuesta Gemini (GRATIS):', geminiResponse);
-          const geminiCards = JSON.parse(geminiResponse);
+          console.log('🎁 CreoVision AI GP-5 generó tu contenido:', aiResponse);
+          const aiCards = JSON.parse(aiResponse);
 
-          if (Array.isArray(geminiCards) && geminiCards.length > 0) {
+          if (Array.isArray(aiCards) && aiCards.length > 0) {
             cards.push({
-              ...geminiCards[0],
+              ...aiCards[0],
               isLocked: false,
               icon: '🎁'
             });
@@ -421,7 +421,7 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
             cards.push(fallbackCards[0]);
           }
         } catch (error) {
-          console.error('❌ Error cargando tarjeta gratis:', error);
+          console.error('❌ Error generando contenido:', error);
           cards.push(fallbackCards[0]);
         }
 
@@ -648,8 +648,8 @@ const handleCopy = useCallback(() => {
     });
 
     try {
-      // 🎯 LLAMADA REAL A GEMINI API CON PERSONALIDAD DEL CREADOR
-      console.log('🤖 Llamando a Gemini API para script principal...');
+      // 🎯 LLAMADA A CREOVISION AI GP-5 CON PERSONALIDAD DEL CREADOR
+      console.log('🤖 CreoVision AI GP-5 está trabajando para ti...');
       console.log('🎭 Personalidad del creador:', creatorPersonality.role ? 'Configurada' : 'No configurada');
 
       // 🆕 Construir perfil enriquecido con settings avanzados
@@ -748,7 +748,7 @@ const handleCopy = useCallback(() => {
       // Fallback al contenido mock
       const fallbackContent = `## Error - Contenido de ejemplo para: ${contentTopic}
 
-**Nota**: Error al conectar con Gemini AI.
+**Nota**: Nuestros agentes de IA están sobrecargados. Intenta nuevamente.
 
 ### 🎯 Hook Inicial:
 ¿Sabías que ${contentTopic} puede cambiar tu perspectiva?
@@ -1365,18 +1365,18 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           {/* Botones de acción */}
           <div className="flex gap-3">
             {/* ✅ GENERADOR: Libre para todos */}
-            <Button 
-              onClick={handleGenerateContent} 
-              disabled={isGenerating || !selectedTheme || !selectedStyle || !contentTopic} 
-              className="flex-1 gradient-primary hover:opacity-90 transition-opacity flex items-center justify-center"
+            <Button
+              onClick={handleGenerateContent}
+              disabled={isGenerating || !selectedTheme || !selectedStyle || !contentTopic}
+              className="flex-1 gradient-primary hover:opacity-90 transition-opacity flex items-center justify-center text-sm sm:text-base px-3"
             >
               {isGenerating ? (
-                <SparklesSolidIcon className="w-4 h-4 mr-2 animate-spin" />
+                <SparklesSolidIcon className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0 animate-spin" />
               ) : (
-                <BoltSolidIcon className="w-4 h-4 mr-2" />
+                <BoltSolidIcon className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
               )}
-              <span>
-                {isGenerating ? 'CreoVision está creando tu guión...' : 'Generar Contenido Premium'}
+              <span className="truncate">
+                {isGenerating ? 'Creando guión...' : 'Generar Contenido'}
               </span>
             </Button>
 
@@ -1400,10 +1400,16 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             <div className="space-y-6 pt-4">
               {/* Tabs para las 3 versiones - REORDENADAS */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" id="content-tabs">
-                <TabsList className="grid w-full grid-cols-3 glass-effect">
-                  <TabsTrigger value="limpio">📝 Guión Limpio (Text-to-Speech)</TabsTrigger>
-                  <TabsTrigger value="sugerencias">💡 Sugerencias Prácticas</TabsTrigger>
-                  <TabsTrigger value="analisis">📊 Análisis Estratégico</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 glass-effect h-auto p-2">
+                  <TabsTrigger value="limpio" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap">
+                    📝 <span className="hidden sm:inline">Guión Limpio (Text-to-Speech)</span><span className="sm:hidden">Guión Limpio</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="sugerencias" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap">
+                    💡 <span className="hidden sm:inline">Sugerencias Prácticas</span><span className="sm:hidden">Sugerencias</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="analisis" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap">
+                    📊 <span className="hidden sm:inline">Análisis Estratégico</span><span className="sm:hidden">Análisis</span>
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* PANEL 1: GUIÓN LIMPIO PARA TEXT-TO-SPEECH (AHORA PRIMERO) */}

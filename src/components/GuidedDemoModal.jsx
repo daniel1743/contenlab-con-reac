@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   PaperAirplaneIcon,
   SparklesIcon as SparklesOutline,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesSolid } from '@heroicons/react/24/solid';
 import {
@@ -126,6 +127,7 @@ const GuidedDemoModal = ({
   const [stage, setStage] = useState(STAGE_FLOW[0].id);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const messagesEndRef = useRef(null);
   const historyRef = useRef([]);
@@ -346,6 +348,9 @@ const GuidedDemoModal = ({
         return;
       }
 
+      // Minimizar el modal después de seleccionar una opción
+      setIsMinimized(true);
+
       handleSendMessage(suggestion.message, {
         nextStage: suggestion.nextStage,
         contextPatch: suggestion.context
@@ -389,11 +394,38 @@ const GuidedDemoModal = ({
     );
   };
 
+  // Si está minimizado, mostrar solo el botón flotante
+  if (open && isMinimized) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="fixed top-4 right-4 z-50 flex gap-2"
+      >
+        <Button
+          onClick={onComplete}
+          className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 hover:opacity-90 shadow-lg shadow-purple-600/40 text-white font-semibold"
+        >
+          <SparklesOutline className="w-5 h-5 mr-2" />
+          Abrir Centro Creativo
+        </Button>
+        <Button
+          onClick={() => setIsMinimized(false)}
+          variant="outline"
+          size="icon"
+          className="bg-slate-900/90 border-purple-500/40 text-white hover:bg-slate-800"
+        >
+          <ChevronDownIcon className="w-5 h-5" />
+        </Button>
+      </motion.div>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-full bg-slate-950/95 border border-purple-500/40 text-white p-0 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] min-h-[540px]">
-          <div className="relative bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-900 px-6 py-6 flex flex-col">
+      <DialogContent className="max-w-3xl w-[95vw] bg-slate-950/95 border border-purple-500/40 text-white p-0 overflow-hidden max-h-[95vh] sm:max-h-[90vh]">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[420px_1fr] h-full max-h-[90vh] overflow-hidden">
+          <div className="relative bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-900 px-4 sm:px-6 py-4 sm:py-6 flex flex-col overflow-y-auto">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/40">
@@ -408,14 +440,24 @@ const GuidedDemoModal = ({
                   </h3>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-slate-300 hover:text-white"
-                onClick={onClose}
-              >
-                Saltar
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-300 hover:text-white"
+                  onClick={() => setIsMinimized(true)}
+                >
+                  Minimizar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-300 hover:text-white"
+                  onClick={onClose}
+                >
+                  Saltar
+                </Button>
+              </div>
             </div>
 
             <div className="mt-6 space-y-3">
@@ -459,8 +501,8 @@ const GuidedDemoModal = ({
             </div>
           </div>
 
-          <div className="bg-slate-950/80 flex flex-col">
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+          <div className="bg-slate-950/80 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
               <AnimatePresence mode="popLayout">
                 {messages.map((message) => renderMessageBubble(message))}
               </AnimatePresence>
@@ -482,7 +524,7 @@ const GuidedDemoModal = ({
 
             <form
               onSubmit={handleSubmit}
-              className="border-t border-purple-500/20 px-6 py-4 bg-slate-950/90"
+              className="border-t border-purple-500/20 px-4 sm:px-6 py-3 sm:py-4 bg-slate-950/90 flex-shrink-0"
             >
               <div className="flex items-end gap-3 bg-slate-900/80 border border-purple-500/30 rounded-2xl px-4 py-3 focus-within:border-purple-400/60 transition-all duration-200">
                 <textarea

@@ -28,8 +28,8 @@ const TermsModal = ({ open, onAccept }) => {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden bg-gray-900 border border-purple-500/30 text-white [&_[data-radix-dialog-close]]:hidden">
-        <DialogHeader className="space-y-2">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-hidden bg-gray-900 border border-purple-500/30 text-white [&_[data-radix-dialog-close]]:hidden flex flex-col">
+        <DialogHeader className="space-y-2 flex-shrink-0 px-2 sm:px-0">
           <DialogTitle className="text-3xl font-semibold text-purple-200">
             Términos y Condiciones de Servicio – CreoVision
           </DialogTitle>
@@ -49,7 +49,7 @@ const TermsModal = ({ open, onAccept }) => {
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="overflow-y-auto pr-4 space-y-6 text-sm leading-relaxed text-gray-200 max-h-[50vh] scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-gray-800/50"
+          className="flex-1 overflow-y-auto pr-2 sm:pr-4 px-2 sm:px-0 space-y-4 sm:space-y-6 text-xs sm:text-sm leading-relaxed text-gray-200 scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-gray-800/50"
           style={{ scrollbarWidth: 'thin' }}
         >
           <section>
@@ -138,7 +138,7 @@ const TermsModal = ({ open, onAccept }) => {
 
           <section>
             <h3 className="text-lg font-semibold text-purple-200 mb-2">8. Integraciones de terceros</h3>
-            <p>CreoVision se integra con servicios de terceros como YouTube, X (Twitter), Google, Gemini, DeepSeek, etc. El usuario acepta:</p>
+            <p>CreoVision se integra con servicios de terceros como YouTube y X (Twitter) para análisis de tendencias. El usuario acepta:</p>
             <ul className="list-disc list-inside space-y-1 mt-2 text-gray-300">
               <li>Cumplir los términos de uso de dichas plataformas.</li>
               <li>Permitir a CreoVision acceder a los datos mínimos necesarios para las funciones.</li>
@@ -217,7 +217,7 @@ const TermsModal = ({ open, onAccept }) => {
           </section>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-4 border-t border-purple-500/20">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-purple-500/20 flex-shrink-0 px-2 sm:px-0">
           <p className="text-xs text-gray-400">
             Desplázate hasta el final para habilitar el botón de aceptación. La experiencia completa de CreoVision requiere aceptar estas condiciones.
           </p>

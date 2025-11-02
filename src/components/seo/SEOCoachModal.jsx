@@ -154,8 +154,8 @@ const SEOCoachModal = ({ open, onOpenChange, context }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl border border-purple-500/40 bg-gradient-to-b from-[#241149]/95 via-[#1b0d33]/95 to-[#120824]/95 p-0 text-gray-100 shadow-[0_0_60px_rgba(155,105,255,0.35)] !left-1/2 !top-1/2 !translate-x-[-50%] !translate-y-[-50%] !z-[120]">
-        <div className="flex items-start justify-between px-6 py-5 bg-gradient-to-r from-purple-600/50 via-indigo-600/40 to-fuchsia-500/40 border-b border-purple-500/40">
+      <DialogContent className="max-w-4xl w-[95vw] border border-purple-500/40 bg-gradient-to-b from-[#241149]/95 via-[#1b0d33]/95 to-[#120824]/95 p-0 text-gray-100 shadow-[0_0_60px_rgba(155,105,255,0.35)] !left-1/2 !top-1/2 !translate-x-[-50%] !translate-y-[-50%] !z-[120] max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+        <div className="flex items-start justify-between px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-purple-600/50 via-indigo-600/40 to-fuchsia-500/40 border-b border-purple-500/40 flex-shrink-0">
           <div className="flex items-center gap-4">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-black/40 ring-2 ring-purple-500/40">
               <img src="/mascota.png" alt="Agente Experto CreoVision" className="h-9 w-9 object-contain drop-shadow-lg" />
@@ -179,7 +179,7 @@ const SEOCoachModal = ({ open, onOpenChange, context }) => {
         </div>
 
         {context && (
-          <div className="border-b border-purple-500/20 bg-black/35 px-6 py-4">
+          <div className="border-b border-purple-500/20 bg-black/35 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 overflow-y-auto max-h-[30vh]">
             <div className="flex flex-wrap items-center gap-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-purple-300/70">{context.type || 'Tarjeta'}</p>
@@ -220,8 +220,8 @@ const SEOCoachModal = ({ open, onOpenChange, context }) => {
           </div>
         )}
 
-        <div className="flex h-[400px] flex-col">
-          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-[#281654]/40 via-[#1e0f3c]/40 to-transparent px-6 py-5">
+        <div className="flex flex-col flex-1 min-h-0">
+          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-[#281654]/40 via-[#1e0f3c]/40 to-transparent px-4 sm:px-6 py-4 sm:py-5">
             {isBootstrapping ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-purple-100/80">
                 <Loader2 className="h-6 w-6 animate-spin text-purple-300" />
@@ -244,7 +244,7 @@ const SEOCoachModal = ({ open, onOpenChange, context }) => {
             )}
           </div>
 
-          <div className="border-t border-purple-500/20 bg-black/40 px-6 py-4">
+          <div className="border-t border-purple-500/20 bg-black/40 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
             {error && (
               <div className="mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
                 {error}
@@ -290,7 +290,7 @@ const SEOCoachModal = ({ open, onOpenChange, context }) => {
           </div>
         </div>
         {sessionEnded && (
-          <div className="border-t border-purple-500/20 bg-gradient-to-r from-purple-700/40 via-fuchsia-600/35 to-rose-600/30 px-6 py-3 text-xs text-purple-50">
+          <div className="border-t border-purple-500/20 bg-gradient-to-r from-purple-700/40 via-fuchsia-600/35 to-rose-600/30 px-4 sm:px-6 py-3 text-xs text-purple-50 flex-shrink-0">
             El coach cerró la conversación para que integres las acciones. Te invitamos a explorar el Centro Creativo y seguir construyendo tu estrategia con Creovision.
           </div>
         )}

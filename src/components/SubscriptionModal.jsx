@@ -40,7 +40,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden rounded-2xl bg-gray-900 text-white border-purple-500/30">
+      <DialogContent className="max-w-2xl w-[95vw] p-0 overflow-hidden rounded-2xl bg-gray-900 text-white border-purple-500/30 max-h-[95vh] sm:max-h-[90vh]">
         <AnimatePresence mode="wait">
           {!showCheckout ? (
             <motion.div
@@ -49,7 +49,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="p-8 relative"
+              className="p-4 sm:p-8 relative overflow-y-auto max-h-[90vh]"
             >
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 blur-3xl opacity-50"></div>
               <motion.div
@@ -119,7 +119,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="p-8 relative"
+              className="p-4 sm:p-8 relative overflow-y-auto max-h-[90vh]"
             >
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 blur-3xl opacity-50"></div>
               <div className="relative z-10">

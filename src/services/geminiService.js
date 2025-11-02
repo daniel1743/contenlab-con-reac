@@ -6,16 +6,16 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 // Función base para generar contenido
 const generateContent = async (prompt) => {
   try {
-    console.log('🤖 Llamando a Gemini 2.0 Flash API...');
+    console.log('🤖 CreoVision AI GP-5 está procesando tu solicitud...');
     // Usar el modelo Gemini 2.0 Flash Experimental
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    console.log('✅ Respuesta recibida de Gemini 2.0');
+    console.log('✅ CreoVision AI GP-5 completó el análisis');
     return text;
   } catch (error) {
-    console.error('❌ Error calling Gemini API:', error);
+    console.error('❌ Error en CreoVision AI:', error);
     throw error;
   }
 };
@@ -420,7 +420,7 @@ Reglas:
     const parsed = JSON.parse(cleaned);
 
     if (!Array.isArray(parsed)) {
-      throw new Error('Formato inesperado en la respuesta de Gemini');
+      throw new Error('Formato inesperado en la respuesta de IA');
     }
 
     return parsed.map((card, index) => {
@@ -447,7 +447,7 @@ Reglas:
       };
     });
   } catch (error) {
-    console.error('Error generando insights con Gemini:', error);
+    console.error('Error generando insights:', error);
     throw error;
   }
 };
@@ -482,10 +482,10 @@ export const generatePlatformSuggestions = async (topic, platform) => {
   return prompts[platform] || prompts.youtube;
 };
 
-// 3.1 Generar recursos premium estratégicos (2 de Gemini)
+// 3.1 Generar recursos premium estratégicos (CreoVision AI GP-5)
 export const generateThemeSEOSuggestions = async ({ themeValue, themeLabel, topic }) => {
   const prompt = `
-Eres un CONSULTOR DE CONTENIDO PREMIUM que proporciona VALOR DE ALTO NIVEL a creadores profesionales.
+Eres el AGENTE ESPECIALIZADO EN SEO Y MARKETING de CreoVision que proporciona VALOR DE ALTO NIVEL a creadores profesionales.
 
 TEMA: "${topic}"
 CATEGORÍA: "${themeLabel || themeValue}"
