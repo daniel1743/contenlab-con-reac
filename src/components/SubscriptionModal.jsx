@@ -11,12 +11,48 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
 
-  const premiumFeatures = [
-    "Generaciones de contenido ilimitadas",
-    "Descarga y copia de todo el contenido",
-    "Acceso a todas las herramientas PRO",
-    "Editor de miniaturas avanzado",
-    "Soporte prioritario 24/7"
+  const plans = [
+    {
+      name: "FREE",
+      price: 0,
+      credits: 100,
+      features: [
+        "100 créditos mensuales",
+        "Acceso a herramientas básicas",
+        "Soporte por email"
+      ],
+      highlight: false
+    },
+    {
+      name: "PRO",
+      price: 15,
+      credits: 1000,
+      features: [
+        "1,000 créditos mensuales",
+        "Puede comprar créditos adicionales (20% OFF)",
+        "Créditos comprados NO expiran",
+        "Descarga sin marca de agua",
+        "Prioridad en generación",
+        "Soporte prioritario"
+      ],
+      highlight: false,
+      popular: true
+    },
+    {
+      name: "PREMIUM",
+      price: 25,
+      credits: 2500,
+      features: [
+        "2,500 créditos mensuales",
+        "Puede comprar créditos adicionales (30% OFF)",
+        "Créditos comprados NO expiran",
+        "Acceso al Asesor Premium IA",
+        "Analytics avanzado",
+        "API Access (próximamente)",
+        "Soporte 24/7"
+      ],
+      highlight: true
+    }
   ];
 
   const handleSubscribeClick = () => {
@@ -62,54 +98,93 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                   <Star className="w-10 h-10 text-yellow-300" />
                 </div>
                 <DialogHeader>
-                  <DialogTitle className="text-3xl font-bold text-gradient">Desbloquea Todo el Poder de CreoVision</DialogTitle>
+                  <DialogTitle className="text-3xl font-bold text-gradient">Elige tu Plan Ideal</DialogTitle>
                   <DialogDescription className="text-lg text-gray-300 mt-2">
-                    {user
-                      ? '¡Únete a Premium para continuar creando sin límites!'
-                      : 'Has agotado tu uso gratuito. ¡Únete a Premium para continuar creando sin límites!'}
+                    Sistema de créditos flexible - Usa lo que necesites
                   </DialogDescription>
                 </DialogHeader>
 
-                <ul className="text-left my-8 space-y-3 max-w-md mx-auto">
-                  {premiumFeatures.map((feature, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
-                      className="flex items-center"
+                {/* Grid de planes */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+                  {plans.map((plan, index) => (
+                    <motion.div
+                      key={plan.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                      className={`relative rounded-xl border-2 p-6 ${
+                        plan.highlight
+                          ? 'border-purple-500 bg-gradient-to-br from-purple-900/40 to-pink-900/40'
+                          : 'border-gray-700 bg-gray-800/50'
+                      }`}
                     >
-                      <CheckCircle className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-200">{feature}</span>
-                    </motion.li>
-                  ))}
-                </ul>
+                      {plan.popular && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 rounded-full text-xs font-bold">
+                          MÁS POPULAR
+                        </div>
+                      )}
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={handleSubscribeClick}
-                      className="w-full sm:w-auto px-8 py-6 text-lg font-semibold gradient-primary text-white rounded-xl shadow-glow"
-                    >
-                      <Crown className="w-5 h-5 mr-2" />
-                      {user ? 'Continuar al Pago' : 'Suscribirse Ahora'}
-                    </Button>
-                  </motion.div>
-                  {!user && (
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={onAuthClick}
-                        variant="outline"
-                        className="w-full sm:w-auto px-8 py-6 text-lg font-semibold bg-transparent border-purple-400/50 hover:bg-purple-500/10 text-white rounded-xl"
-                      >
-                        Ya tengo cuenta
-                      </Button>
+                      <div className="text-center mb-4">
+                        <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-bold text-gradient">${plan.price}</span>
+                          <span className="text-gray-400">/mes</span>
+                        </div>
+                        <div className="mt-2 text-purple-400 font-semibold">
+                          💎 {plan.credits.toLocaleString()} créditos/mes
+                        </div>
+                      </div>
+
+                      <ul className="space-y-3 mb-6">
+                        {plan.features.map((feature, i) => (
+                          <li key={i} className="flex items-start text-sm">
+                            <CheckCircle className="h-4 w-4 mr-2 text-green-400 flex-shrink-0 mt-0.5" />
+                            <span className="text-gray-200">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {plan.price > 0 && (
+                        <Button
+                          onClick={handleSubscribeClick}
+                          className={`w-full ${
+                            plan.highlight
+                              ? 'gradient-primary hover:opacity-90'
+                              : 'bg-gray-700 hover:bg-gray-600'
+                          }`}
+                        >
+                          {plan.highlight && <Crown className="w-4 h-4 mr-2" />}
+                          Seleccionar {plan.name}
+                        </Button>
+                      )}
+
+                      {plan.price === 0 && (
+                        <Button
+                          disabled
+                          variant="outline"
+                          className="w-full border-gray-600 text-gray-400"
+                        >
+                          Plan Actual
+                        </Button>
+                      )}
                     </motion.div>
+                  ))}
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 mb-4">
+                    💎 Créditos mensuales se resetean cada mes • Los créditos comprados NO expiran
+                  </p>
+                  {!user && (
+                    <Button
+                      onClick={onAuthClick}
+                      variant="outline"
+                      className="border-purple-400/50 hover:bg-purple-500/10 text-white"
+                    >
+                      Ya tengo cuenta
+                    </Button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-6">
-                  Únete a miles de creadores que ya están llevando su contenido al siguiente nivel.
-                </p>
               </motion.div>
             </motion.div>
           ) : (

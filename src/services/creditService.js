@@ -1,0 +1,641 @@
+/**
+ * 💎 Credit Service - Sistema completo de manejo de créditos
+ *
+ * Funciones principales:
+ * - getUserCredits() - Obtener balance actual
+ * - consumeCredits() - Gastar créditos en una feature
+ * - purchaseCredits() - Comprar paquete de créditos
+ * - grantBonus() - Dar créditos de bonificación
+ * - getAvailablePackages() - Obtener paquetes disponibles
+ * - getCreditHistory() - Historial de transacciones
+ */
+
+import { supabase } from '@/lib/customSupabaseClient';
+
+// ==========================================
+// 📊 CONSTANTES
+// ==========================================
+
+export const SUBSCRIPTION_PLANS = {
+  FREE: {
+    id: 'free',
+    name: 'Free',
+    monthlyCredits: 100,
+    price: 0,
+    canPurchaseCredits: false
+  },
+  PRO: {
+    id: 'pro',
+    name: 'PRO',
+    monthlyCredits: 1000,
+    price: 15,
+    canPurchaseCredits: true,
+    discount: 20 // 20% descuento en paquetes
+  },
+  PREMIUM: {
+    id: 'premium',
+    name: 'PREMIUM',
+    monthlyCredits: 2500,
+    price: 25,
+    canPurchaseCredits: true,
+    discount: 30 // 30% descuento en paquetes
+  }
+};
+
+// ==========================================
+// 🎯 FUNCIONES PRINCIPALES
+// ==========================================
+
+/**
+ * Obtener balance de créditos del usuario
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<Object>} Balance de créditos
+ */
+export async function getUserCredits(userId) {
+  try {
+    if (!userId) {
+      return {
+        success: false,
+        error: 'User ID is required',
+        credits: {
+          monthly: 0,
+          purchased: 0,
+          bonus: 0,
+          total: 0
+        },
+        plan: 'free'
+      };
+    }
+
+    // Obtener o crear registro de créditos
+    let { data: credits, error } = await supabase
+      .from('user_credits')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    // Si no existe, crear con créditos iniciales
+    if (error && error.code === 'PGRST116') {
+      const { data: newCredits, error: insertError } = await supabase
+        .from('user_credits')
+        .insert({
+          user_id: userId,
+          monthly_credits: 100, // Free plan default
+          monthly_credits_assigned: 100,
+          subscription_plan: 'free',
+          bonus_credits: 50 // Bonus de bienvenida
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating user credits:', insertError);
+        throw insertError;
+      }
+
+      credits = newCredits;
+
+      // Registrar transacción de bonus de bienvenida
+      await supabase.from('credit_transactions').insert({
+        user_id: userId,
+        type: 'bonus',
+        amount: 50,
+        description: '🎁 Bonus de bienvenida',
+        balance_after_monthly: credits.monthly_credits,
+        balance_after_purchased: credits.purchased_credits,
+        balance_after_bonus: credits.bonus_credits,
+        balance_after_total: credits.total_credits
+      });
+    } else if (error) {
+      throw error;
+    }
+
+    // Verificar si necesita reset mensual
+    const daysSinceReset = (Date.now() - new Date(credits.last_monthly_reset).getTime()) / (1000 * 60 * 60 * 24);
+
+    if (daysSinceReset >= 30) {
+      // Reset automático
+      const { data: resetData } = await supabase
+        .from('user_credits')
+        .update({
+          monthly_credits: credits.monthly_credits_assigned,
+          last_monthly_reset: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (resetData) {
+        credits = resetData;
+
+        // Registrar transacción de reset
+        await supabase.from('credit_transactions').insert({
+          user_id: userId,
+          type: 'monthly_reset',
+          amount: credits.monthly_credits_assigned,
+          description: '🔄 Reset mensual de créditos',
+          balance_after_monthly: credits.monthly_credits,
+          balance_after_purchased: credits.purchased_credits,
+          balance_after_bonus: credits.bonus_credits,
+          balance_after_total: credits.total_credits
+        });
+      }
+    }
+
+    return {
+      success: true,
+      credits: {
+        monthly: credits.monthly_credits,
+        purchased: credits.purchased_credits,
+        bonus: credits.bonus_credits,
+        total: credits.total_credits
+      },
+      plan: credits.subscription_plan,
+      daysSinceReset: Math.floor(daysSinceReset),
+      daysUntilReset: Math.max(0, 30 - Math.floor(daysSinceReset))
+    };
+  } catch (error) {
+    console.error('Error getting user credits:', error);
+    return {
+      success: false,
+      error: error.message,
+      credits: {
+        monthly: 0,
+        purchased: 0,
+        bonus: 0,
+        total: 0
+      }
+    };
+  }
+}
+
+/**
+ * Consumir créditos
+ * @param {string} userId - ID del usuario
+ * @param {number} amount - Cantidad de créditos a consumir
+ * @param {string} feature - Feature que consume los créditos
+ * @param {string} description - Descripción de la transacción
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export async function consumeCredits(userId, amount, feature, description = null) {
+  try {
+    if (!userId || amount <= 0) {
+      return {
+        success: false,
+        error: 'Invalid parameters'
+      };
+    }
+
+    // Llamar función SQL que maneja la lógica de consumo
+    const { data, error } = await supabase.rpc('consume_credits', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_feature: feature,
+      p_description: description || `Uso de ${feature}`
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
+      // Créditos insuficientes
+      return {
+        success: false,
+        error: 'INSUFFICIENT_CREDITS',
+        message: 'No tienes suficientes créditos para esta acción'
+      };
+    }
+
+    // Obtener nuevo balance
+    const newBalance = await getUserCredits(userId);
+
+    return {
+      success: true,
+      consumed: amount,
+      remaining: newBalance.credits.total,
+      breakdown: newBalance.credits
+    };
+  } catch (error) {
+    console.error('Error consuming credits:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Verificar si el usuario tiene suficientes créditos
+ * @param {string} userId - ID del usuario
+ * @param {number} amount - Cantidad de créditos requeridos
+ * @returns {Promise<Object>} Resultado de la verificación
+ */
+export async function checkSufficientCredits(userId, amount) {
+  const balance = await getUserCredits(userId);
+
+  return {
+    sufficient: balance.credits.total >= amount,
+    current: balance.credits.total,
+    required: amount,
+    missing: Math.max(0, amount - balance.credits.total),
+    breakdown: balance.credits
+  };
+}
+
+/**
+ * Obtener costo de una feature
+ * @param {string} featureSlug - Slug de la feature
+ * @returns {Promise<number>} Costo en créditos
+ */
+export async function getFeatureCost(featureSlug) {
+  try {
+    const { data, error } = await supabase
+      .from('feature_credit_costs')
+      .select('credit_cost, feature_name')
+      .eq('feature_slug', featureSlug)
+      .eq('active', true)
+      .single();
+
+    if (error || !data) {
+      console.warn(`Feature cost not found for: ${featureSlug}`);
+      return 1; // Default cost
+    }
+
+    return data.credit_cost;
+  } catch (error) {
+    console.error('Error getting feature cost:', error);
+    return 1; // Default cost en caso de error
+  }
+}
+
+/**
+ * Obtener costos de todas las features
+ * @returns {Promise<Array>} Lista de features con sus costos
+ */
+export async function getAllFeatureCosts() {
+  try {
+    const { data, error } = await supabase
+      .from('feature_credit_costs')
+      .select('*')
+      .eq('active', true)
+      .order('credit_cost', { ascending: false });
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting feature costs:', error);
+    return [];
+  }
+}
+
+/**
+ * Agregar créditos (compra, bonus, etc.)
+ * @param {string} userId - ID del usuario
+ * @param {string} type - Tipo de créditos ('monthly', 'purchased', 'bonus')
+ * @param {number} amount - Cantidad de créditos
+ * @param {string} transactionType - Tipo de transacción
+ * @param {string} description - Descripción
+ * @param {string} paymentId - ID de pago (opcional)
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export async function addCredits(userId, type, amount, transactionType, description = null, paymentId = null) {
+  try {
+    const { data, error } = await supabase.rpc('add_credits', {
+      p_user_id: userId,
+      p_type: type,
+      p_amount: amount,
+      p_transaction_type: transactionType,
+      p_description: description,
+      p_payment_id: paymentId
+    });
+
+    if (error) throw error;
+
+    const newBalance = await getUserCredits(userId);
+
+    return {
+      success: true,
+      added: amount,
+      newBalance: newBalance.credits.total,
+      breakdown: newBalance.credits
+    };
+  } catch (error) {
+    console.error('Error adding credits:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Otorgar bonus de créditos
+ * @param {string} userId - ID del usuario
+ * @param {number} amount - Cantidad de créditos
+ * @param {string} reason - Razón del bonus
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export async function grantBonus(userId, amount, reason) {
+  return addCredits(userId, 'bonus', amount, 'bonus', `🎁 ${reason}`);
+}
+
+/**
+ * Obtener paquetes de créditos disponibles para el usuario
+ * @param {string} subscriptionPlan - Plan actual del usuario ('free', 'pro', 'premium')
+ * @returns {Promise<Array>} Lista de paquetes disponibles
+ */
+export async function getAvailablePackages(subscriptionPlan = 'free') {
+  try {
+    // FREE no puede comprar paquetes
+    if (subscriptionPlan === 'free') {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('credit_packages')
+      .select('*')
+      .eq('active', true)
+      .contains('available_for_plans', [subscriptionPlan])
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting available packages:', error);
+    return [];
+  }
+}
+
+/**
+ * Comprar paquete de créditos
+ * @param {string} userId - ID del usuario
+ * @param {string} packageId - ID del paquete
+ * @param {string} paymentId - ID del pago de MercadoPago
+ * @returns {Promise<Object>} Resultado de la compra
+ */
+export async function purchaseCredits(userId, packageId, paymentId) {
+  try {
+    // Obtener detalles del paquete
+    const { data: pkg, error: pkgError } = await supabase
+      .from('credit_packages')
+      .select('*')
+      .eq('id', packageId)
+      .single();
+
+    if (pkgError || !pkg) {
+      throw new Error('Package not found');
+    }
+
+    // Verificar que el usuario puede comprar este paquete
+    const userBalance = await getUserCredits(userId);
+    if (!pkg.available_for_plans.includes(userBalance.plan)) {
+      throw new Error('Package not available for your plan');
+    }
+
+    // Registrar compra
+    const { data: purchase, error: purchaseError } = await supabase
+      .from('credit_purchases')
+      .insert({
+        user_id: userId,
+        package_id: packageId,
+        credits_purchased: pkg.credits,
+        bonus_credits_received: pkg.bonus_credits,
+        amount_paid_usd: pkg.price_usd,
+        payment_id: paymentId,
+        payment_method: 'mercadopago',
+        payment_status: 'completed',
+        completed_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (purchaseError) throw purchaseError;
+
+    // Agregar créditos comprados
+    await addCredits(
+      userId,
+      'purchased',
+      pkg.credits,
+      'purchase',
+      `Compra de paquete: ${pkg.name}`,
+      paymentId
+    );
+
+    // Agregar bonus si corresponde
+    if (pkg.bonus_credits > 0) {
+      await addCredits(
+        userId,
+        'bonus',
+        pkg.bonus_credits,
+        'bonus',
+        `Bonus del paquete: ${pkg.name}`,
+        paymentId
+      );
+    }
+
+    const newBalance = await getUserCredits(userId);
+
+    return {
+      success: true,
+      purchase: purchase,
+      creditsAdded: pkg.credits + pkg.bonus_credits,
+      newBalance: newBalance.credits.total
+    };
+  } catch (error) {
+    console.error('Error purchasing credits:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Upgrade de plan
+ * @param {string} userId - ID del usuario
+ * @param {string} newPlan - Nuevo plan ('pro', 'premium')
+ * @param {string} paymentId - ID del pago
+ * @returns {Promise<Object>} Resultado del upgrade
+ */
+export async function upgradePlan(userId, newPlan, paymentId) {
+  try {
+    const planConfig = SUBSCRIPTION_PLANS[newPlan.toUpperCase()];
+
+    if (!planConfig) {
+      throw new Error('Invalid plan');
+    }
+
+    // Actualizar plan y créditos mensuales
+    const { error: updateError } = await supabase
+      .from('user_credits')
+      .update({
+        subscription_plan: newPlan,
+        monthly_credits_assigned: planConfig.monthlyCredits,
+        subscription_started_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateError) throw updateError;
+
+    // Agregar créditos del nuevo plan inmediatamente
+    await addCredits(
+      userId,
+      'monthly',
+      planConfig.monthlyCredits,
+      'subscription_upgrade',
+      `Upgrade a ${planConfig.name} - ${planConfig.monthlyCredits} créditos mensuales`,
+      paymentId
+    );
+
+    const newBalance = await getUserCredits(userId);
+
+    return {
+      success: true,
+      newPlan: newPlan,
+      monthlyCredits: planConfig.monthlyCredits,
+      newBalance: newBalance.credits.total
+    };
+  } catch (error) {
+    console.error('Error upgrading plan:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Obtener historial de transacciones
+ * @param {string} userId - ID del usuario
+ * @param {number} limit - Límite de resultados
+ * @returns {Promise<Array>} Historial de transacciones
+ */
+export async function getCreditHistory(userId, limit = 50) {
+  try {
+    const { data, error } = await supabase
+      .from('credit_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting credit history:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener estadísticas de uso de créditos
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<Object>} Estadísticas de uso
+ */
+export async function getCreditStats(userId) {
+  try {
+    const history = await getCreditHistory(userId, 1000);
+
+    const totalSpent = history
+      .filter(t => t.type === 'spend')
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const totalPurchased = history
+      .filter(t => t.type === 'purchase')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalBonus = history
+      .filter(t => t.type === 'bonus')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    // Uso por feature
+    const byFeature = history
+      .filter(t => t.type === 'spend' && t.feature)
+      .reduce((acc, t) => {
+        if (!acc[t.feature]) {
+          acc[t.feature] = { count: 0, credits: 0 };
+        }
+        acc[t.feature].count++;
+        acc[t.feature].credits += Math.abs(t.amount);
+        return acc;
+      }, {});
+
+    return {
+      totalSpent,
+      totalPurchased,
+      totalBonus,
+      byFeature,
+      transactionCount: history.length
+    };
+  } catch (error) {
+    console.error('Error getting credit stats:', error);
+    return {
+      totalSpent: 0,
+      totalPurchased: 0,
+      totalBonus: 0,
+      byFeature: {},
+      transactionCount: 0
+    };
+  }
+}
+
+/**
+ * Verificar y mostrar advertencia si quedan pocos créditos
+ * @param {number} currentCredits - Créditos actuales
+ * @param {number} threshold - Umbral para mostrar warning (default: 100)
+ * @returns {Object} Estado del warning
+ */
+export function checkLowCreditWarning(currentCredits, threshold = 100) {
+  if (currentCredits <= 0) {
+    return {
+      show: true,
+      severity: 'critical',
+      message: '❌ Te quedaste sin créditos',
+      action: 'Compra más créditos o upgrade tu plan'
+    };
+  }
+
+  if (currentCredits <= threshold / 2) {
+    return {
+      show: true,
+      severity: 'high',
+      message: `⚠️ Solo te quedan ${currentCredits} créditos`,
+      action: 'Considera comprar más créditos'
+    };
+  }
+
+  if (currentCredits <= threshold) {
+    return {
+      show: true,
+      severity: 'medium',
+      message: `📊 Créditos bajos: ${currentCredits} restantes`,
+      action: 'Planifica tu uso o compra más'
+    };
+  }
+
+  return {
+    show: false,
+    severity: 'none'
+  };
+}
+
+export default {
+  getUserCredits,
+  consumeCredits,
+  checkSufficientCredits,
+  getFeatureCost,
+  getAllFeatureCosts,
+  addCredits,
+  grantBonus,
+  getAvailablePackages,
+  purchaseCredits,
+  upgradePlan,
+  getCreditHistory,
+  getCreditStats,
+  checkLowCreditWarning,
+  SUBSCRIPTION_PLANS
+};

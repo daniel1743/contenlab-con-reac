@@ -35,7 +35,7 @@ const Footer = () => {
     {
       title: 'Producto',
       links: [
-        { name: 'Características', content: 'CreoVision Premium ofrece un generador de contenido IA, un editor de miniaturas profesional, un calendario de publicaciones inteligente y análisis de rendimiento en tiempo real. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
+        { name: 'Características', content: 'CreoVision Premium ofrece un generador de contenido IA, sistema de créditos flexible, calendario de publicaciones inteligente, asesor premium con IA y análisis de rendimiento en tiempo real. Herramientas profesionales para creadores de contenido.' },
         { name: 'Precios', content: 'Ofrecemos planes flexibles adaptados a tus necesidades, desde opciones gratuitas hasta suscripciones Premium con acceso ilimitado a todas nuestras herramientas avanzadas. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
         { name: 'Blog', content: 'Visita nuestro blog para obtener las últimas noticias, tutoriales, consejos y trucos sobre creación de contenido, marketing digital y las tendencias más recientes en redes sociales. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' },
       ],

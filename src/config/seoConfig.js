@@ -67,8 +67,8 @@ export const SEO_CONFIG = {
         'Generador de contenido viral con IA',
         'Análisis de tendencias en tiempo real',
         'Generador de hashtags optimizado',
-        'Editor de miniaturas profesional',
-        'Asesor de contenido personalizado',
+        'Sistema de créditos flexible',
+        'Asesor de contenido personalizado con IA',
         'Optimización automática de SEO'
       ],
       screenshot: 'https://creovision.io/logo de marca.png',
@@ -139,19 +139,19 @@ export const SEO_CONFIG = {
     ogImage: 'https://creovision.io/images/hashtag-generator-og.png'
   },
 
-  // Editor de miniaturas
-  thumbnailEditor: {
-    title: 'Editor de Miniaturas Profesional Online | CreoVision',
-    description: 'Crea miniaturas impactantes para YouTube con plantillas profesionales. Editor online con efectos, textos y elementos virales.',
+  // Diseños visuales con IA
+  visualDesigns: {
+    title: 'Diseños Visuales con IA para Redes Sociales | CreoVision',
+    description: 'Crea diseños impactantes para tus redes sociales con IA. Optimizado para TikTok, YouTube, Instagram y más.',
     keywords: [
-      'editor de miniaturas YouTube',
-      'crear thumbnails profesionales',
-      'plantillas de miniaturas',
-      'diseño de thumbnails online',
-      'miniaturas con alto CTR'
+      'diseños con IA',
+      'gráficos para redes sociales',
+      'diseño automático IA',
+      'visual content creator',
+      'diseños virales'
     ],
-    canonical: 'https://creovision.io/thumbnail-editor',
-    ogImage: 'https://creovision.io/images/thumbnail-editor-og.png'
+    canonical: 'https://creovision.io/visual-designs',
+    ogImage: 'https://creovision.io/images/visual-designs-og.png'
   }
 };
 

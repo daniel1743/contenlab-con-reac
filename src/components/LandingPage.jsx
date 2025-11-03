@@ -1041,7 +1041,7 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
                     },
                     {
                       icon: Palette,
-                      text: "Editor de Miniaturas Pro",
+                      text: "Diseños Visuales con IA",
                       badge: "Studio"
                     },
                     {

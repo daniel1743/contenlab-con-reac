@@ -33,6 +33,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import CreditBalance from '@/components/CreditBalance';
 
 const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount, onSubscriptionClick, hasDemoAccess }) => {
   const { user, signOut } = useAuth();
@@ -206,6 +207,13 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
           </div>
           
           <div className="flex items-center space-x-4">
+            {isAuthenticated && user && (
+              <CreditBalance
+                onBuyCredits={() => onSectionChange('packages')}
+                onUpgradePlan={() => onSubscriptionClick?.()}
+              />
+            )}
+
             {isAuthenticated && user ? (
               <div className={`avatar-ring-wrapper ${getAvatarRingClass(userPlan)}`}>
                 <DropdownMenu>
