@@ -47,7 +47,13 @@ import {
   InformationCircleIcon,
   ChevronDownIcon,
   VideoCameraIcon,
-  PlayCircleIcon
+  PlayCircleIcon,
+  ChatBubbleBottomCenterTextIcon,
+  ChatBubbleBottomCenterTextIcon as MessageCircle,
+  PaperAirplaneIcon,
+  PaperAirplaneIcon as Send,
+  AcademicCapIcon,
+  AcademicCapIcon as GraduationCap
 } from '@heroicons/react/24/outline';
 
 import {
@@ -80,14 +86,19 @@ import {
   generateKeywords,
   generatePlatformSuggestions,
   generateTrends,
-  generateThemeSEOSuggestions
+  generateThemeSEOSuggestions,
+  analyzeTrendingTopic
 } from '@/services/geminiService';
 
 // 📊 IMPORT DE SERVICIOS YOUTUBE
 import {
   getEngagementData,
-  getWeeklyTrends
+  getWeeklyTrends,
+  getWeeklyViralTrends
 } from '@/services/youtubeService';
+
+// 🎓 IMPORT DE ASESOR DE CONTENIDO
+import { createContentAdvisor } from '@/services/contentAdvisorService';
 
 // 🐦 IMPORT DE SERVICIOS TWITTER/X
 import {
@@ -217,10 +228,15 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   // 🆕 ESTADOS PARA ANALIZADOR DE TENDENCIAS
   const [showTrendModal, setShowTrendModal] = useState(false);
-  const [trendNiche, setTrendNiche] = useState('');
-  const [trendPlatform, setTrendPlatform] = useState('');
   const [trendResults, setTrendResults] = useState(null);
   const [isAnalyzingTrends, setIsAnalyzingTrends] = useState(false);
+
+  // 🎓 ESTADOS PARA ASESOR DE CONTENIDO
+  const [activeAdvisor, setActiveAdvisor] = useState(null); // Índice del video activo
+  const [advisorInstance, setAdvisorInstance] = useState(null); // Instancia del asesor
+  const [advisorMessages, setAdvisorMessages] = useState([]); // Historial de mensajes
+  const [isAdvisorThinking, setIsAdvisorThinking] = useState(false);
+  const [userInput, setUserInput] = useState('');
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -850,50 +866,139 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     }
   }, [hashtagTopic, hashtagPlatform, toast]);
 
-  // 🆕 ANALIZADOR DE TENDENCIAS
+  // 🆕 ANALIZADOR DE TENDENCIAS - YouTube API + Gemini AI
   const handleAnalyzeTrends = useCallback(async () => {
-    if (!trendNiche.trim() || !trendPlatform) {
-      toast({
-        title: 'Campos incompletos',
-        description: 'Por favor completa el nicho y la plataforma.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setIsAnalyzingTrends(true);
     try {
-      // TODO: Conectar con API real
-      // const trends = await analyzeTrendsAPI(trendNiche, trendPlatform);
+      // 🎯 Obtener los 5 videos más virales de la última semana desde YouTube
+      const viralVideos = await getWeeklyViralTrends();
 
-      // Simulación temporal
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      const mockTrends = {
-        topTopics: [
-          { topic: `${trendNiche} Tutorial`, growth: '+245%', engagement: '8.2%' },
-          { topic: `${trendNiche} 2025`, growth: '+189%', engagement: '7.5%' },
-          { topic: `${trendNiche} Tips`, growth: '+156%', engagement: '6.8%' }
-        ],
-        bestTimes: ['8:00 PM - 9:00 PM', '12:00 PM - 1:00 PM', '6:00 PM - 7:00 PM'],
-        audienceInsight: `La audiencia de ${trendNiche} en ${trendPlatform} está más activa los fines de semana`,
-        competitorCount: Math.floor(Math.random() * 5000) + 1000
+      if (!viralVideos || viralVideos.length === 0) {
+        toast({
+          title: '⚠️ Sin tendencias',
+          description: 'No se encontraron tendencias virales esta semana.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // 🤖 Analizar cada video con Gemini AI en paralelo
+      const analysisPromises = viralVideos.map(video => analyzeTrendingTopic(video));
+      const analyses = await Promise.all(analysisPromises);
+
+      // 📊 Formatear resultados para el UI
+      const formattedTrends = {
+        videos: viralVideos.map((video, index) => ({
+          ...video,
+          aiAnalysis: analyses[index]
+        })),
+        summary: `Se encontraron ${viralVideos.length} tendencias virales de los últimos 7 días`,
+        totalViews: viralVideos.reduce((sum, v) => sum + (v.viewCount || 0), 0),
+        avgEngagement: (viralVideos.reduce((sum, v) => sum + (v.engagementRate || 0), 0) / viralVideos.length).toFixed(2)
       };
 
-      setTrendResults(mockTrends);
+      setTrendResults(formattedTrends);
       toast({
-        title: '📊 Análisis completado',
-        description: `Tendencias actualizadas para ${trendNiche}`
+        title: '🎯 Análisis completado',
+        description: `${viralVideos.length} tendencias virales analizadas con IA`
       });
     } catch (error) {
+      console.error('Error analyzing trends:', error);
       toast({
-        title: 'Error',
-        description: 'No se pudo analizar las tendencias',
+        title: '❌ Error',
+        description: error.message || 'No se pudo analizar las tendencias',
         variant: 'destructive'
       });
     } finally {
       setIsAnalyzingTrends(false);
     }
-  }, [trendNiche, trendPlatform, toast]);
+  }, [toast]);
+
+  // 🎓 FUNCIONES PARA EL ASESOR DE CONTENIDO
+  const handleOpenAdvisor = useCallback(async (videoIndex, video) => {
+    setActiveAdvisor(videoIndex);
+    setIsAdvisorThinking(true);
+    setAdvisorMessages([]);
+
+    try {
+      // Crear nueva instancia del asesor
+      const advisor = createContentAdvisor(video);
+      setAdvisorInstance(advisor);
+
+      // Obtener el primer mensaje del asesor
+      const response = await advisor.startConversation();
+
+      setAdvisorMessages([{
+        role: 'advisor',
+        content: response.message,
+        timestamp: new Date(),
+        progress: response.interactionCount
+      }]);
+
+    } catch (error) {
+      console.error('Error iniciando asesor:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo iniciar el asesor de contenido',
+        variant: 'destructive'
+      });
+      setActiveAdvisor(null);
+    } finally {
+      setIsAdvisorThinking(false);
+    }
+  }, [toast]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!userInput.trim() || !advisorInstance) return;
+
+    const messageText = userInput.trim();
+    setUserInput('');
+
+    // Agregar mensaje del usuario
+    setAdvisorMessages(prev => [...prev, {
+      role: 'user',
+      content: messageText,
+      timestamp: new Date()
+    }]);
+
+    setIsAdvisorThinking(true);
+
+    try {
+      const response = await advisorInstance.sendMessage(messageText);
+
+      setAdvisorMessages(prev => [...prev, {
+        role: 'advisor',
+        content: response.message,
+        timestamp: new Date(),
+        progress: response.interactionCount,
+        isComplete: response.isComplete
+      }]);
+
+      if (response.isComplete) {
+        toast({
+          title: '✅ Sesión completada',
+          description: 'Has recibido un plan de acción completo'
+        });
+      }
+
+    } catch (error) {
+      console.error('Error enviando mensaje:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo enviar el mensaje',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsAdvisorThinking(false);
+    }
+  }, [userInput, advisorInstance, toast]);
+
+  const handleCloseAdvisor = useCallback(() => {
+    setActiveAdvisor(null);
+    setAdvisorInstance(null);
+    setAdvisorMessages([]);
+    setUserInput('');
+  }, []);
 
   // 🆕 FUNCIÓN PARA GUARDAR PERSONALIDAD
   const handleSavePersonality = useCallback(() => {
@@ -1996,8 +2101,10 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                     <TrendingUp className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-2xl">Analizador de Tendencias</CardTitle>
-                    <CardDescription>Descubre qué contenido está funcionando en tu nicho</CardDescription>
+                    <CardTitle className="text-white text-2xl">Analizador de Tendencias Viral</CardTitle>
+                    <CardDescription className="text-gray-300 mt-2">
+                      Powered by CreoVision AI
+                    </CardDescription>
                   </div>
                 </div>
                 <Button
@@ -2011,115 +2118,302 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="trend-niche">Nicho o temática</Label>
-                  <Input
-                    id="trend-niche"
-                    placeholder="Ej: Tecnología, Cocina, Viajes..."
-                    value={trendNiche}
-                    onChange={(e) => setTrendNiche(e.target.value)}
-                    className="glass-effect border-orange-500/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="trend-platform">Plataforma</Label>
-                  <select
-                    id="trend-platform"
-                    value={trendPlatform}
-                    onChange={(e) => setTrendPlatform(e.target.value)}
-                    className="w-full p-3 bg-gray-800 border border-orange-500/20 rounded-lg text-white focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="">Selecciona plataforma...</option>
-                    <option value="YouTube">YouTube</option>
-                    <option value="TikTok">TikTok</option>
-                    <option value="Instagram">Instagram</option>
-                    <option value="Twitter">Twitter/X</option>
-                  </select>
+              {/* DESCRIPCIÓN MOTIVADORA */}
+              <div className="bg-gradient-to-r from-orange-500/10 via-red-500/10 to-pink-500/10 rounded-lg border border-orange-500/20 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-white font-semibold text-lg">
+                      Adelántate a las Tendencias del Momento
+                    </h3>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      Aquí aparecerán las <span className="text-orange-400 font-semibold">tendencias más recientes del boom</span>,
+                      analizadas en tiempo real por la <span className="text-purple-400 font-semibold">potente IA de CreoVision</span>.
+                    </p>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      Nuestra tecnología de vanguardia te dará las herramientas para <span className="text-green-400 font-semibold">desplegar
+                      y entender</span> estas nuevas tendencias, ayudándote a crear contenido que <span className="text-orange-400 font-semibold">destaque
+                      antes que la competencia</span>.
+                    </p>
+                    <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        <span className="text-xs text-green-400 font-medium">IA Avanzada</span>
+                      </div>
+                      <span className="text-gray-600">•</span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                        <span className="text-xs text-orange-400 font-medium">Análisis en Tiempo Real</span>
+                      </div>
+                      <span className="text-gray-600">•</span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+                        <span className="text-xs text-purple-400 font-medium">Asesoría Premium</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <Button
                 onClick={handleAnalyzeTrends}
                 disabled={isAnalyzingTrends}
-                className="w-full gradient-primary hover:opacity-90"
+                className="w-full gradient-primary hover:opacity-90 text-lg h-14"
               >
                 {isAnalyzingTrends ? (
                   <>
-                    <BarChart2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analizando tendencias...
+                    <BarChart2 className="w-5 h-5 mr-3 animate-spin" />
+                    Analizando tendencias con CreoVision AI...
                   </>
                 ) : (
                   <>
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Analizar Tendencias
+                    <TrendingUp className="w-5 h-5 mr-3" />
+                    Descubrir Tendencias Virales Ahora
                   </>
                 )}
               </Button>
 
-              {trendResults && (
-                <div className="space-y-6 pt-4">
-                  <div>
-                    <h3 className="text-white font-semibold text-lg mb-3 flex items-center">
-                      <Sparkles className="w-5 h-5 mr-2 text-orange-400" />
-                      Temas Más Populares
-                    </h3>
-                    <div className="space-y-2">
-                      {trendResults.topTopics.map((topic, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border border-orange-500/20"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center">
-                              <span className="text-orange-400 font-bold">{index + 1}</span>
-                            </div>
-                            <span className="text-white font-medium">{topic.topic}</span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <div className="text-xs text-gray-400">Crecimiento</div>
-                              <div className="text-sm font-semibold text-green-400">{topic.growth}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs text-gray-400">Engagement</div>
-                              <div className="text-sm font-semibold text-orange-400">{topic.engagement}</div>
-                            </div>
-                          </div>
+              {trendResults && trendResults.videos && (
+                <div className="space-y-6 pt-6">
+                  {/* 📊 RESUMEN GENERAL */}
+                  <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg border border-orange-500/20 p-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-orange-400" />
+                        <span className="text-white font-medium">{trendResults.summary}</span>
+                      </div>
+                      <div className="flex gap-6">
+                        <div className="text-right">
+                          <div className="text-xs text-gray-400">Vistas Totales</div>
+                          <div className="text-lg font-bold text-orange-400">{trendResults.totalViews.toLocaleString()}</div>
                         </div>
-                      ))}
+                        <div className="text-right">
+                          <div className="text-xs text-gray-400">Engagement Promedio</div>
+                          <div className="text-lg font-bold text-green-400">{trendResults.avgEngagement}%</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="glass-effect border-orange-500/10">
-                      <CardHeader>
-                        <CardTitle className="text-white text-sm">Mejores Horarios</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {trendResults.bestTimes.map((time, index) => (
-                            <div key={index} className="flex items-center gap-2 text-gray-300">
-                              <ChevronRight className="w-4 h-4 text-orange-400" />
-                              <span className="text-sm">{time}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {/* 🎯 TARJETAS DE VIDEOS VIRALES */}
+                  <div>
+                    <h3 className="text-white font-semibold text-lg mb-4 flex items-center">
+                      <Sparkles className="w-5 h-5 mr-2 text-orange-400" />
+                      Tendencias Virales Analizadas por IA
+                    </h3>
+                    <div className="space-y-4">
+                      {trendResults.videos.map((video, index) => (
+                        <Card key={video.videoId || index} className="glass-effect border-orange-500/10 overflow-hidden">
+                          <CardContent className="p-0">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+                              {/* THUMBNAIL + STATS */}
+                              <div className="lg:col-span-3 relative bg-black/40">
+                                <img
+                                  src={video.thumbnail}
+                                  alt={video.title}
+                                  className="w-full h-full object-cover min-h-[200px]"
+                                />
+                                <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded-md text-xs font-bold">
+                                  #{index + 1}
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3">
+                                  <div className="grid grid-cols-3 gap-2 text-xs">
+                                    <div>
+                                      <div className="text-gray-400">Vistas</div>
+                                      <div className="text-white font-semibold">{(video.viewCount || 0).toLocaleString()}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-gray-400">Engagement</div>
+                                      <div className="text-green-400 font-semibold">{video.engagementRate}%</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-gray-400">Virality</div>
+                                      <div className="text-orange-400 font-semibold">{video.viralityScore?.toFixed(1) || 'N/A'}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
 
-                    <Card className="glass-effect border-orange-500/10">
-                      <CardHeader>
-                        <CardTitle className="text-white text-sm">Insight de Audiencia</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-300 text-sm">{trendResults.audienceInsight}</p>
-                        <div className="mt-4 pt-4 border-t border-orange-500/10">
-                          <div className="text-xs text-gray-400">Competidores activos</div>
-                          <div className="text-2xl font-bold text-orange-400">{trendResults.competitorCount.toLocaleString()}</div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                              {/* VIDEO INFO + AI ANALYSIS */}
+                              <div className={`${activeAdvisor === index ? 'lg:col-span-5' : 'lg:col-span-9'} p-4 space-y-3 transition-all duration-300`}>
+                                <div>
+                                  <h4 className="text-white font-semibold text-base line-clamp-2 mb-2">{video.title}</h4>
+                                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <VideoCameraIcon className="w-4 h-4" />
+                                    <span>{video.channelTitle}</span>
+                                    <span className="text-gray-600">•</span>
+                                    <span>{new Date(video.publishedAt).toLocaleDateString('es-ES')}</span>
+                                  </div>
+                                </div>
+
+                                {/* AI ANALYSIS */}
+                                {video.aiAnalysis && (
+                                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-3 border border-purple-500/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Sparkles className="w-4 h-4 text-purple-400" />
+                                      <span className="text-purple-300 font-medium text-sm">Análisis IA</span>
+                                    </div>
+                                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                                      {video.aiAnalysis}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* ACTIONS */}
+                                <div className="flex gap-2 pt-2 flex-wrap">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs border-orange-500/20 hover:bg-orange-500/10"
+                                    onClick={() => window.open(`https://youtube.com/watch?v=${video.videoId}`, '_blank')}
+                                  >
+                                    <PlayCircleIcon className="w-4 h-4 mr-1" />
+                                    Ver Video
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs border-blue-500/20 hover:bg-blue-500/10"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(video.title);
+                                      toast({ title: '📋 Copiado', description: 'Título copiado al portapapeles' });
+                                    }}
+                                  >
+                                    <Clipboard className="w-4 h-4 mr-1" />
+                                    Copiar Título
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90"
+                                    onClick={() => handleOpenAdvisor(index, video)}
+                                    disabled={activeAdvisor === index}
+                                  >
+                                    <GraduationCap className="w-4 h-4 mr-1" />
+                                    {activeAdvisor === index ? 'Chat Activo' : 'Consejos del Asesor'}
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* 🎓 PANEL DE CHAT DEL ASESOR */}
+                              {activeAdvisor === index && (
+                                <div className="lg:col-span-4 border-l border-purple-500/20 bg-gradient-to-br from-purple-900/10 to-pink-900/10 p-4 flex flex-col max-h-[600px]">
+                                  {/* HEADER DEL CHAT */}
+                                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-purple-500/20">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                                        <GraduationCap className="w-5 h-5 text-white" />
+                                      </div>
+                                      <div>
+                                        <div className="text-white font-semibold text-sm">CreoVision Advisor</div>
+                                        <div className="text-xs text-gray-400">
+                                          {advisorInstance?.getProgress().remaining || 0} mensajes restantes
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="hover:bg-white/10"
+                                      onClick={handleCloseAdvisor}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+
+                                  {/* MENSAJES DEL CHAT */}
+                                  <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
+                                    {advisorMessages.map((msg, msgIndex) => (
+                                      <div
+                                        key={msgIndex}
+                                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                      >
+                                        <div
+                                          className={`max-w-[85%] rounded-lg p-3 ${
+                                            msg.role === 'user'
+                                              ? 'bg-blue-500/20 border border-blue-500/30'
+                                              : 'bg-purple-500/20 border border-purple-500/30'
+                                          }`}
+                                        >
+                                          <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
+                                            {msg.content}
+                                          </p>
+                                          {msg.progress && (
+                                            <div className="mt-2 pt-2 border-t border-purple-500/20">
+                                              <div className="flex items-center justify-between text-xs text-gray-400">
+                                                <span>Interacción {msg.progress}/6</span>
+                                                <div className="flex gap-1">
+                                                  {Array.from({ length: 6 }).map((_, i) => (
+                                                    <div
+                                                      key={i}
+                                                      className={`w-2 h-2 rounded-full ${
+                                                        i < msg.progress ? 'bg-purple-400' : 'bg-gray-600'
+                                                      }`}
+                                                    />
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+
+                                    {isAdvisorThinking && (
+                                      <div className="flex justify-start">
+                                        <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3">
+                                          <div className="flex items-center gap-2">
+                                            <div className="flex gap-1">
+                                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            </div>
+                                            <span className="text-gray-400 text-xs">El asesor está pensando...</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* INPUT DEL CHAT */}
+                                  <div className="border-t border-purple-500/20 pt-3">
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={userInput}
+                                        onChange={(e) => setUserInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSendMessage();
+                                          }
+                                        }}
+                                        placeholder="Escribe tu respuesta..."
+                                        className="flex-1 bg-black/30 border-purple-500/20 text-white placeholder:text-gray-500"
+                                        disabled={isAdvisorThinking || advisorMessages[advisorMessages.length - 1]?.isComplete}
+                                      />
+                                      <Button
+                                        size="icon"
+                                        onClick={handleSendMessage}
+                                        disabled={!userInput.trim() || isAdvisorThinking || advisorMessages[advisorMessages.length - 1]?.isComplete}
+                                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90"
+                                      >
+                                        <Send className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                    {advisorMessages[advisorMessages.length - 1]?.isComplete && (
+                                      <p className="text-xs text-gray-400 mt-2 text-center">
+                                        ✅ Sesión completada. Cierra el chat para iniciar una nueva consulta.
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
