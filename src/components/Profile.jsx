@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,15 +13,27 @@ import { useToast } from '@/components/ui/use-toast';
 const Profile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    fullName: user?.user_metadata?.full_name || '',
-    email: user?.email || '',
-    bio: 'Creador de contenido apasionado por la tecnología y el marketing digital. Ayudo a otros creadores a crecer en redes sociales.',
-    website: 'https://miportfolio.com',
-    youtube: '@micanal',
-    instagram: '@miusuario',
-    twitter: '@miusuario'
+  // Cargar datos desde localStorage al inicio
+  const [profileImage, setProfileImage] = useState(() => {
+    return localStorage.getItem('creovision_profile_image') || user?.user_metadata?.avatar_url || '';
+  });
+
+  const [formData, setFormData] = useState(() => {
+    const savedData = localStorage.getItem('creovision_profile_data');
+    if (savedData) {
+      return JSON.parse(savedData);
+    }
+    return {
+      fullName: user?.user_metadata?.full_name || '',
+      email: user?.email || '',
+      bio: 'Creador de contenido apasionado por la tecnología y el marketing digital. Ayudo a otros creadores a crecer en redes sociales.',
+      website: 'https://miportfolio.com',
+      youtube: '@micanal',
+      instagram: '@miusuario',
+      twitter: '@miusuario'
+    };
   });
 
   const handleChange = (e) => {
@@ -31,11 +43,76 @@ const Profile = () => {
     });
   };
 
+  // Manejar la carga de imagen
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'La imagen no puede superar los 2MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Solo se permiten archivos de imagen.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Convertir imagen a base64 y guardar en localStorage
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Image = reader.result;
+      setProfileImage(base64Image);
+      localStorage.setItem('creovision_profile_image', base64Image);
+      toast({
+        title: 'Imagen actualizada',
+        description: 'Tu foto de perfil se ha actualizado correctamente.',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = () => {
-    // Aquí iría la lógica para guardar en Supabase
+    // Guardar datos en localStorage
+    localStorage.setItem('creovision_profile_data', JSON.stringify(formData));
+
+    // Disparar evento personalizado para que Navbar se actualice
+    window.dispatchEvent(new CustomEvent('profileUpdated', {
+      detail: {
+        fullName: formData.fullName,
+        profileImage: profileImage
+      }
+    }));
+
     toast({
       title: 'Perfil actualizado',
       description: 'Tus cambios se han guardado correctamente.',
+    });
+  };
+
+  const handleCancel = () => {
+    // Recargar datos desde localStorage
+    const savedData = localStorage.getItem('creovision_profile_data');
+    if (savedData) {
+      setFormData(JSON.parse(savedData));
+    }
+    const savedImage = localStorage.getItem('creovision_profile_image');
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
+    toast({
+      title: 'Cambios descartados',
+      description: 'Se han restaurado los valores guardados.',
     });
   };
 
@@ -60,7 +137,7 @@ const Profile = () => {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <h1 className="text-4xl font-bold text-gradient">Cambiar Identidad</h1>
+        <h1 className="text-4xl font-bold text-gradient">Configurar Perfil</h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
           Personaliza tu perfil y configura tu identidad de creador
         </p>
@@ -80,13 +157,25 @@ const Profile = () => {
           <CardContent>
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24">
-                <AvatarImage alt={formData.fullName} src={user?.user_metadata?.avatar_url} />
+                <AvatarImage alt={formData.fullName} src={profileImage} />
                 <AvatarFallback className="bg-purple-600 text-2xl">
                   {getAvatarFallback(formData.fullName, formData.email)}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <Button variant="outline" className="border-purple-500/20 hover:bg-purple-500/10">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="border-purple-500/20 hover:bg-purple-500/10"
+                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                >
                   <Upload className="w-4 h-4 mr-2" />
                   Subir nueva foto
                 </Button>
@@ -263,10 +352,19 @@ const Profile = () => {
         transition={{ delay: 0.5 }}
         className="flex justify-end gap-4"
       >
-        <Button variant="outline" className="border-purple-500/20 hover:bg-purple-500/10">
+        <Button
+          variant="outline"
+          className="border-purple-500/20 hover:bg-purple-500/10"
+          onClick={handleCancel}
+          type="button"
+        >
           Cancelar
         </Button>
-        <Button onClick={handleSave} className="gradient-primary hover:opacity-90">
+        <Button
+          onClick={handleSave}
+          className="gradient-primary hover:opacity-90"
+          type="button"
+        >
           <Save className="w-4 h-4 mr-2" />
           Guardar Cambios
         </Button>

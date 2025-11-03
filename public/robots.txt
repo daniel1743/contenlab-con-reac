@@ -1,5 +1,5 @@
-# robots.txt para CreoVision
-# Ultima actualizacion: 2025-10-30
+# robots.txt para CreoVision - Estrategia SEO 2025
+# Ultima actualizacion: 2025-11-03
 
 # ========================================
 # REGLAS PARA TODOS LOS BOTS

@@ -1,11 +1,20 @@
 // ============================================
-// 🤖 CHATGPT SERVICE - ANÁLISIS PREMIUM DE CONTENIDO VIRAL
+// 🤖 AI PREMIUM SERVICE - ANÁLISIS PREMIUM DE CONTENIDO VIRAL
 // ============================================
 // Experto en: Estrategia Viral + SEO Profundo + Análisis de Alto Valor
 // Uso: Tarjetas Premium con información estratégica avanzada
+// Proveedor: QWEN AI (Alibaba) - 1,000,000 tokens disponibles
+// Fallback: DeepSeek AI (si QWEN falla)
 
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+import { trackAPIUsage } from './apiMonitoringService';
+import { captureError, captureException } from '@/lib/errorTracking';
+
+const QWEN_API_KEY = import.meta.env.VITE_QWEN_API_KEY;
+const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+
+// Fallback
+const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
 /**
  * 🎯 ANÁLISIS PREMIUM DE CONTENIDO VIRAL
@@ -21,8 +30,8 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
  * @returns {Promise<string>} Análisis estratégico premium
  */
 export const analyzePremiumContent = async (contentData) => {
-  if (!OPENAI_API_KEY) {
-    throw new Error('API key de OpenAI no configurada');
+  if (!QWEN_API_KEY && !DEEPSEEK_API_KEY) {
+    throw new Error('No hay API keys de análisis premium configuradas');
   }
 
   const {
@@ -137,51 +146,131 @@ Con base en el análisis:
 **COMIENZA TU ANÁLISIS AHORA (300-400 palabras):**
 `;
 
-  try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o', // Usa el modelo más avanzado de OpenAI
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres un experto consultor de contenido viral con 10+ años de experiencia. Has analizado miles de videos virales y conoces los algoritmos de YouTube, TikTok y todas las plataformas. Tu análisis es directo, basado en datos, y proporciona insights que otros expertos no ven. Nunca das consejos genéricos.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 1500,
-        top_p: 0.95,
-        frequency_penalty: 0.3,
-        presence_penalty: 0.3
-      })
-    });
+  // Intentar con QWEN primero (1M tokens disponibles)
+  if (QWEN_API_KEY) {
+    try {
+      console.log('🚀 [QWEN AI] Generando análisis premium...');
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Error al llamar a OpenAI API');
+      const response = await fetch(QWEN_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${QWEN_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'qwen-max', // Modelo más potente de QWEN
+          messages: [
+            {
+              role: 'system',
+              content: 'Eres un experto consultor de contenido viral con 10+ años de experiencia. Has analizado miles de videos virales y conoces los algoritmos de YouTube, TikTok y todas las plataformas. Tu análisis es directo, basado en datos, y proporciona insights que otros expertos no ven. Nunca das consejos genéricos.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 1500,
+          top_p: 0.95,
+          frequency_penalty: 0.3,
+          presence_penalty: 0.3
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const analysis = data.choices[0]?.message?.content?.trim();
+
+        if (analysis) {
+          // Rastrear uso de tokens
+          const tokensUsed = data.usage?.prompt_tokens || 0;
+          const tokensResponse = data.usage?.completion_tokens || 0;
+          trackAPIUsage('qwen', tokensUsed, tokensResponse);
+
+          console.log('✅ [QWEN AI] Análisis premium generado exitosamente');
+          return analysis;
+        }
+      }
+
+      // Si QWEN no responde correctamente, intentar fallback
+      console.warn('⚠️ [QWEN AI] Respuesta inválida, intentando fallback...');
+      throw new Error('QWEN response invalid');
+
+    } catch (error) {
+      console.error('❌ [QWEN AI] Error:', error.message);
+      console.log('🔄 Intentando con DeepSeek como fallback...');
+      captureException(error, 'QWEN AI failed in analyzePremiumContent', {
+        service: 'chatgptService',
+        function: 'analyzePremiumContent',
+        apiUsed: 'qwen'
+      });
     }
-
-    const data = await response.json();
-    const analysis = data.choices[0]?.message?.content?.trim();
-
-    if (!analysis) {
-      throw new Error('No se recibió análisis de ChatGPT');
-    }
-
-    return analysis;
-
-  } catch (error) {
-    console.error('Error en analyzePremiumContent:', error);
-    throw new Error(error.message || 'Error al generar análisis premium');
   }
+
+  // Fallback a DeepSeek si QWEN falla o no está configurado
+  if (DEEPSEEK_API_KEY) {
+    try {
+      console.log('🧠 [DeepSeek AI] Generando análisis premium (fallback)...');
+
+      const response = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'Eres un experto consultor de contenido viral con 10+ años de experiencia. Has analizado miles de videos virales y conoces los algoritmos de YouTube, TikTok y todas las plataformas. Tu análisis es directo, basado en datos, y proporciona insights que otros expertos no ven. Nunca das consejos genéricos.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 1500,
+          top_p: 0.95,
+          frequency_penalty: 0.3,
+          presence_penalty: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Error en DeepSeek API');
+      }
+
+      const data = await response.json();
+      const analysis = data.choices[0]?.message?.content?.trim();
+
+      if (!analysis) {
+        throw new Error('No se recibió análisis del AI Premium');
+      }
+
+      // Rastrear uso de tokens
+      const tokensUsed = data.usage?.prompt_tokens || 0;
+      const tokensResponse = data.usage?.completion_tokens || 0;
+      trackAPIUsage('deepseek', tokensUsed, tokensResponse);
+
+      console.log('✅ [DeepSeek AI] Análisis premium generado exitosamente (fallback)');
+      return analysis;
+
+    } catch (error) {
+      console.error('❌ [DeepSeek AI] Error:', error);
+      captureException(error, 'DeepSeek AI failed in analyzePremiumContent (fallback)', {
+        service: 'chatgptService',
+        function: 'analyzePremiumContent',
+        apiUsed: 'deepseek',
+        isFallback: true
+      });
+      throw new Error(error.message || 'Error al generar análisis premium');
+    }
+  }
+
+  throw new Error('No hay servicios de IA disponibles para análisis premium');
 };
 
 /**
@@ -189,8 +278,8 @@ Con base en el análisis:
  * Genera análisis específicos para diferentes aspectos del contenido
  */
 export const generatePremiumInsight = async (insightType, contentData) => {
-  if (!OPENAI_API_KEY) {
-    throw new Error('API key de OpenAI no configurada');
+  if (!QWEN_API_KEY && !DEEPSEEK_API_KEY) {
+    throw new Error('No hay API keys de análisis premium configuradas');
   }
 
   const prompts = {
@@ -201,47 +290,110 @@ export const generatePremiumInsight = async (insightType, contentData) => {
 
   const { title = '', topic = '', platform = '' } = contentData;
 
-  try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres un experto estratega de contenido viral. Proporciona análisis concisos pero profundos (150-200 palabras).'
-          },
-          {
-            role: 'user',
-            content: `${prompts[insightType] || prompts['viral-strategy']}
+  const userPrompt = `${prompts[insightType] || prompts['viral-strategy']}
 
 Título: "${title}"
 Tema: "${topic}"
 Plataforma: "${platform}"
 
-Análisis (150-200 palabras):`
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 800
-      })
-    });
+Análisis (150-200 palabras):`;
 
-    if (!response.ok) {
-      throw new Error('Error al generar insight premium');
+  // Intentar con QWEN primero
+  if (QWEN_API_KEY) {
+    try {
+      console.log('🚀 [QWEN AI] Generando insight premium...');
+
+      const response = await fetch(QWEN_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${QWEN_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'qwen-turbo', // Modelo rápido para insights cortos
+          messages: [
+            {
+              role: 'system',
+              content: 'Eres un experto estratega de contenido viral. Proporciona análisis concisos pero profundos (150-200 palabras).'
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 800
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const insight = data.choices[0]?.message?.content?.trim();
+
+        if (insight) {
+          // Rastrear uso
+          trackAPIUsage('qwen', data.usage?.prompt_tokens || 0, data.usage?.completion_tokens || 0);
+          console.log('✅ [QWEN AI] Insight premium generado');
+          return insight;
+        }
+      }
+
+      throw new Error('QWEN response invalid');
+
+    } catch (error) {
+      console.error('❌ [QWEN AI] Error:', error.message);
+      console.log('🔄 Intentando con DeepSeek...');
     }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content?.trim() || '';
-
-  } catch (error) {
-    console.error('Error en generatePremiumInsight:', error);
-    throw error;
   }
+
+  // Fallback a DeepSeek
+  if (DEEPSEEK_API_KEY) {
+    try {
+      console.log('🧠 [DeepSeek AI] Generando insight premium (fallback)...');
+
+      const response = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'Eres un experto estratega de contenido viral. Proporciona análisis concisos pero profundos (150-200 palabras).'
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 800
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al generar insight premium');
+      }
+
+      const data = await response.json();
+      const insight = data.choices[0]?.message?.content?.trim() || '';
+
+      // Rastrear uso
+      trackAPIUsage('deepseek', data.usage?.prompt_tokens || 0, data.usage?.completion_tokens || 0);
+
+      console.log('✅ [DeepSeek AI] Insight premium generado (fallback)');
+      return insight;
+
+    } catch (error) {
+      console.error('❌ [DeepSeek AI] Error:', error);
+      throw error;
+    }
+  }
+
+  throw new Error('No hay servicios de IA disponibles para insights premium');
 };
 
 export default {

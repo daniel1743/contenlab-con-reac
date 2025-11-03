@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -27,7 +27,7 @@ const FacebookIcon = () => (
 const AuthModal = ({ isOpen, onClose }) => {
   const { signUp, signIn } = useAuth();
   const { toast } = useToast();
-  
+
   const [activeTab, setActiveTab] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +35,8 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleEmailAuth = async (type) => {
     setIsLoading(true);
@@ -85,6 +87,38 @@ const AuthModal = ({ isOpen, onClose }) => {
     setIsLoading(false);
   };
 
+  const handleForgotPassword = async () => {
+    if (!resetEmail || !resetEmail.includes('@')) {
+      toast({
+        variant: "destructive",
+        title: "Email inválido",
+        description: "Por favor ingresa un email válido."
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "No se pudo enviar el email de recuperación."
+      });
+    } else {
+      toast({
+        title: "Email enviado",
+        description: "Revisa tu correo para restablecer tu contraseña. Si no lo ves, revisa spam."
+      });
+      setShowForgotPassword(false);
+      setResetEmail('');
+    }
+    setIsLoading(false);
+  };
+
   const handleTabChange = (value) => {
     setActiveTab(value);
     setEmail('');
@@ -92,6 +126,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     setConfirmPassword('');
     setName('');
     setShowPassword(false);
+    setShowForgotPassword(false);
   };
 
   return (
@@ -160,27 +195,81 @@ const AuthModal = ({ isOpen, onClose }) => {
                 <AnimatePresence>
                   <TabsContent key="login" value="login" asChild>
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2, ease: "easeInOut" }} className="space-y-4">
-                      {/* Formulario de Iniciar Sesión */}
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-gray-700">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-purple-500" />
-                          <Input id="email" type="email" placeholder="tu@email.com" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password" className="text-gray-700">Contraseña</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-purple-500" />
-                          <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={password} onChange={(e) => setPassword(e.target.value)} />
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </button>
-                        </div>
-                      </div>
-                      <Button onClick={() => handleEmailAuth('login')} disabled={isLoading} className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">
-                        {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-                      </Button>
+                      {!showForgotPassword ? (
+                        <>
+                          {/* Formulario de Iniciar Sesión */}
+                          <div className="space-y-2">
+                            <Label htmlFor="email" className="text-gray-700">Email</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-3 h-4 w-4 text-purple-500" />
+                              <Input id="email" type="email" placeholder="tu@email.com" className="pl-10 bg-gray-50 border-gray-300 text-gray-900" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="password" className="text-gray-700">Contraseña</Label>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-3 h-4 w-4 text-purple-500" />
+                              <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 bg-gray-50 border-gray-300 text-gray-900" value={password} onChange={(e) => setPassword(e.target.value)} />
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setShowForgotPassword(true)}
+                              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                            >
+                              ¿Olvidaste tu contraseña?
+                            </button>
+                          </div>
+                          <Button onClick={() => handleEmailAuth('login')} disabled={isLoading} className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">
+                            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          {/* Formulario de Recuperación de Contraseña */}
+                          <div className="space-y-4">
+                            <button
+                              type="button"
+                              onClick={() => setShowForgotPassword(false)}
+                              className="flex items-center text-sm text-gray-600 hover:text-gray-800"
+                            >
+                              <ArrowLeft className="h-4 w-4 mr-1" />
+                              Volver al inicio de sesión
+                            </button>
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-2">Recuperar contraseña</h3>
+                              <p className="text-sm text-gray-600 mb-4">
+                                Ingresa tu email y te enviaremos un link para restablecer tu contraseña.
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="reset-email" className="text-gray-700">Email</Label>
+                              <div className="relative">
+                                <Mail className="absolute left-3 top-3 h-4 w-4 text-purple-500" />
+                                <Input
+                                  id="reset-email"
+                                  type="email"
+                                  placeholder="tu@email.com"
+                                  className="pl-10 bg-gray-50 border-gray-300 text-gray-900"
+                                  value={resetEmail}
+                                  onChange={(e) => setResetEmail(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              onClick={handleForgotPassword}
+                              disabled={isLoading}
+                              className="w-full gradient-primary text-white hover:opacity-90 transition-opacity"
+                            >
+                              {isLoading ? 'Enviando...' : 'Enviar link de recuperación'}
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </motion.div>
                   </TabsContent>
                   

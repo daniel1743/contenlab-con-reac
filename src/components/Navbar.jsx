@@ -41,6 +41,49 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
 
+  // Estado para foto y nombre de perfil desde localStorage
+  const [profileData, setProfileData] = useState({
+    fullName: '',
+    profileImage: ''
+  });
+
+  // Cargar datos de perfil desde localStorage
+  React.useEffect(() => {
+    const loadProfileData = () => {
+      const savedData = localStorage.getItem('creovision_profile_data');
+      const savedImage = localStorage.getItem('creovision_profile_image');
+
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        setProfileData({
+          fullName: data.fullName || user?.user_metadata?.full_name || '',
+          profileImage: savedImage || user?.user_metadata?.avatar_url || ''
+        });
+      } else {
+        setProfileData({
+          fullName: user?.user_metadata?.full_name || '',
+          profileImage: savedImage || user?.user_metadata?.avatar_url || ''
+        });
+      }
+    };
+
+    loadProfileData();
+
+    // Escuchar evento de actualización de perfil
+    const handleProfileUpdate = (event) => {
+      setProfileData({
+        fullName: event.detail.fullName,
+        profileImage: event.detail.profileImage
+      });
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, [user]);
+
   const userPlan = 'free'; // Cambia a 'standard', 'premium' o 'free' para probar
   const userCredits = userPlan === 'free' ? 5 : userPlan === 'premium' ? 200 : 100;
   const userBadges = 3; // De 10 desbloqueables por niveles de uso
@@ -169,15 +212,15 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 rounded-full cursor-pointer hover:opacity-80 transition-opacity" type="button">
                       <Avatar className="h-8 w-8 cursor-pointer">
-                        <AvatarImage alt={user.user_metadata?.full_name || 'Avatar de usuario'} src={user.user_metadata?.avatar_url} />
-                        <AvatarFallback className="bg-purple-600">{getAvatarFallback(user.user_metadata?.full_name, user.email)}</AvatarFallback>
+                        <AvatarImage alt={profileData.fullName || user.user_metadata?.full_name || 'Avatar de usuario'} src={profileData.profileImage || user.user_metadata?.avatar_url} />
+                        <AvatarFallback className="bg-purple-600">{getAvatarFallback(profileData.fullName || user.user_metadata?.full_name, user.email)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-64 glass-effect border-purple-500/20" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-2">
-                        <p className="text-sm font-medium leading-none">{user.user_metadata?.full_name || 'Usuario'}</p>
+                        <p className="text-sm font-medium leading-none">{profileData.fullName || user.user_metadata?.full_name || 'Usuario'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>
@@ -244,22 +287,22 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
 
                     <DropdownMenuSeparator />
 
-                    {/* Mis Forjados (Historial) */}
+                    {/* Mis Investigaciones (Historial) */}
                     <DropdownMenuItem onClick={() => onSectionChange('history')} className="cursor-pointer">
                       <ClockIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs">Mis Forjados</span>
+                      <span className="text-xs">Mis Investigaciones</span>
                     </DropdownMenuItem>
 
-                    {/* Cambiar Identidad (Perfil) */}
+                    {/* Configurar Perfil */}
                     <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer">
                       <UserCircleIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs">Cambiar Identidad</span>
+                      <span className="text-xs">Configurar Perfil</span>
                     </DropdownMenuItem>
 
-                    {/* Notificaciones */}
+                    {/* Mis Notificaciones */}
                     <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="cursor-pointer">
                       <BellIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs">Notificaciones</span>
+                      <span className="text-xs">Mis Notificaciones</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />

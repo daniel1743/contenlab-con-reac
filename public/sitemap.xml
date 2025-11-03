@@ -4,112 +4,150 @@
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 
   <!-- ========================================
-       PAGINA PRINCIPAL
+       PÁGINA PRINCIPAL
        ======================================== -->
   <url>
     <loc>https://creovision.io/</loc>
-    <lastmod>2025-10-30</lastmod>
+    <lastmod>2025-11-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- ========================================
-       LANDING PAGE
+       HERRAMIENTAS (Públicas - Permiten Demo)
        ======================================== -->
   <url>
-    <loc>https://creovision.io/#landing</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- ========================================
-       HERRAMIENTAS (Publicas)
-       ======================================== -->
-  <url>
-    <loc>https://creovision.io/#tools</loc>
-    <lastmod>2025-10-30</lastmod>
+    <loc>https://creovision.io/tools</loc>
+    <lastmod>2025-11-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <url>
-    <loc>https://creovision.io/#thumbnail-editor</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
   <!-- ========================================
-       SECCIONES INFORMATIVAS
+       PÁGINAS PROTEGIDAS (Solo Usuarios Registrados)
+       Nota: Incluidas para que Google las conozca, pero no podrá indexar contenido privado
        ======================================== -->
   <url>
-    <loc>https://creovision.io/#pricing</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://creovision.io/#features</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://creovision.io/dashboard</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://creovision.io/#testimonials</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://creovision.io/calendar</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- ========================================
-       PAGINAS DE AUTENTICACION (indexables)
-       ======================================== -->
   <url>
-    <loc>https://creovision.io/#login</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>yearly</changefreq>
+    <loc>https://creovision.io/library</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://creovision.io/settings</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
+    <loc>https://creovision.io/profile</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://creovision.io/#signup</loc>
-    <lastmod>2025-10-30</lastmod>
-    <changefreq>yearly</changefreq>
+    <loc>https://creovision.io/badges</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://creovision.io/history</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://creovision.io/notifications</loc>
+    <lastmod>2025-11-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.4</priority>
   </url>
 
 </urlset>
 
 <!--
   ========================================
-  INSTRUCCIONES DE CONFIGURACION
+  📋 NOTAS IMPORTANTES - ACTUALIZADO 2025-11-03
   ========================================
 
-  1. Si cambias de dominio, actualiza todas las URLs (dominio actual: https://creovision.io).
+  ✅ CAMBIOS REALIZADOS:
+  - Eliminadas URLs con hash (#) que Google no puede indexar
+  - Actualizadas a URLs reales sin hash (React Router)
+  - Removidas secciones que ya no existen (#thumbnail-editor, #pricing, #features, #testimonials)
+  - Estas secciones están dentro del landing page, no son rutas separadas
 
-  2. Actualiza <lastmod> con la fecha de ultima modificacion (YYYY-MM-DD).
+  🎯 ESTRATEGIA ACTUAL:
 
-  3. PRIORITY (0.0 a 1.0):
-     - 1.0: Pagina principal (mas importante)
-     - 0.9: Paginas muy importantes (landing, tools)
-     - 0.8: Paginas importantes (pricing, editor)
-     - 0.7: Paginas secundarias (features)
-     - 0.5: Paginas de utilidad (login, signup)
+  1. PÁGINAS PÚBLICAS INDEXABLES:
+     ✅ / (landing) - Prioridad 1.0 (máxima)
+     ✅ /tools - Prioridad 0.9 (permite demo, muy importante para conversión)
 
-  4. CHANGEFREQ (frecuencia de cambio):
-     - daily: contenido que cambia diariamente (tools, generador)
-     - weekly: contenido semanal (landing)
-     - monthly: contenido estable (pricing, testimonials)
-     - yearly: contenido casi estatico (auth pages)
+  2. PÁGINAS PROTEGIDAS (Incluidas pero con contenido limitado para Google):
+     - /dashboard, /calendar, /library, /settings, /profile, /badges, /history, /notifications
+     - Google verá la página de login/redirect, no el contenido privado
+     - Útil para que Google conozca la estructura de la app
 
-  5. VERIFICACION POST-DEPLOY:
-     - Accede a: https://creovision.io/sitemap.xml
-     - Envia el sitemap a Google Search Console y Bing Webmaster Tools.
+  3. PÁGINAS NO INCLUIDAS (Por robots.txt):
+     - /api/* - Backend endpoints
+     - /admin/* - Área administrativa
+     - /*.json$ - Archivos de configuración
 
-  6. AUTOMATIZACION (opcional):
-     - Crear script Node.js que genere el XML desde las rutas.
-     - Ejecutar en pre-build: "prebuild": "node generate-sitemap.js".
+  ========================================
+  📊 PRIORIDADES EXPLICADAS
+  ========================================
+
+  1.0 = Landing page (entrada principal)
+  0.9 = Tools (página de conversión principal)
+  0.7 = Dashboard (hub central para usuarios)
+  0.6 = Calendar, Library (funcionalidades importantes)
+  0.5 = Profile, Badges, History (funcionalidades secundarias)
+  0.4 = Settings, Notifications (utilidades)
+
+  ========================================
+  🔄 MANTENIMIENTO
+  ========================================
+
+  1. Actualizar <lastmod> cada vez que se modifique contenido
+  2. Si agregas nuevas rutas públicas, añádelas aquí
+  3. Después de deploy, verificar: https://creovision.io/sitemap.xml
+  4. Enviar sitemap a Google Search Console
+  5. Monitorear indexación en Search Console
+
+  ========================================
+  🚀 PRÓXIMOS PASOS RECOMENDADOS
+  ========================================
+
+  1. Crear landing pages específicas (si existen como rutas separadas):
+     - /pricing (página de precios dedicada)
+     - /features (página de características)
+     - /about (sobre nosotros)
+     - /contact (contacto)
+
+  2. Agregar blog si se implementa:
+     - /blog
+     - /blog/[slug]
+
+  3. Automatizar generación de sitemap:
+     - Crear script que lea rutas de App.jsx
+     - Generar XML automáticamente en pre-build
 -->

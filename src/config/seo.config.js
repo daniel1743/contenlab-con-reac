@@ -1,9 +1,9 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
- * ║  🔍 CONFIGURACIÓN SEO CENTRALIZADA - CreoVision Premium          ║
+ * ║  🔍 CONFIGURACIÓN SEO CENTRALIZADA - Estrategia 2025            ║
  * ╠══════════════════════════════════════════════════════════════════╣
  * ║  Todas las configuraciones de SEO, meta tags, Open Graph         ║
- * ║  y Structured Data en un solo lugar                              ║
+ * ║  y Structured Data optimizados según análisis de mercado         ║
  * ╚══════════════════════════════════════════════════════════════════╝
  */
 
@@ -12,8 +12,8 @@ export const siteConfig = {
   // Dominio oficial
   url: 'https://creovision.io',
   name: 'CreoVision',
-  title: 'CreoVision - Plataforma de Creación de Contenido con IA',
-  description: 'Creovision es la plataforma de IA que impulsa a creadores e influencers a crecer en Instagram, TikTok y YouTube. Supera el estancamiento, genera contenido viral y optimiza tu estrategia digital con analisis de tendencias y planificacion estrategica.',
+  title: 'Suite Automatizada para Crear Videos Virales con IA | TikTok, YouTube y Reels',
+  description: '✨ Suite completa para crear videos virales con IA. Automatiza contenido para TikTok, YouTube y Reels en minutos. Ideal para influencers y creadores. Prueba gratis.',
   locale: 'es_ES',
   language: 'es',
 
@@ -52,17 +52,26 @@ export const siteConfig = {
 // ===== META TAGS POR PÁGINA =====
 export const pageMetadata = {
   landing: {
-    title: 'CreoVision - Crea Contenido Viral con IA',
-    description: 'Creovision, plataforma de IA, ayuda a creadores e influencers a superar el estancamiento y crecer en Instagram, TikTok y YouTube. Ofrece planificacion estrategica y analisis de tendencias para generar ideas de contenido viral y optimizar tu estrategia digital.',
+    title: 'Suite Automatizada para Crear Videos Virales con IA | TikTok, YouTube y Reels',
+    description: '✨ Suite completa para crear videos virales con IA. Automatiza contenido para TikTok, YouTube y Reels en minutos. Ideal para influencers y creadores. Prueba gratis.',
     keywords: [
-      'como crecer en instagram',
-      'como crecer en tiktok',
-      'como crecer en youtube',
-      'como encontrar ideas de contenido',
-      'como hacer contenido viral',
-      'como volverse viral',
-      'como mejorar su estrategia digital',
-      'como crecer en redes sociales'
+      'suite ia contenido viral',
+      'generador videos tiktok ia',
+      'crear videos con inteligencia artificial',
+      'herramientas para influencers',
+      'plataforma creadores',
+      'guiones automáticos ia',
+      'crear contenido viral con IA',
+      'generador de videos IA',
+      'herramientas IA para influencers',
+      'suite creador contenido IA',
+      'automatizar videos TikTok YouTube',
+      'generador automático de videos para creadores',
+      'suite IA para YouTubers',
+      'plataforma todo-en-uno para contenido viral',
+      'cómo crear videos virales con inteligencia artificial paso a paso',
+      'mejor herramienta para influencers 2025',
+      'suite IA sin experiencia para redes sociales'
     ],
     canonical: '/'
   },
@@ -212,15 +221,17 @@ export const structuredData = {
     }
   },
 
-  // WebApplication Schema (SaaS)
+  // SoftwareApplication Schema (Actualizado 2025)
   webApplication: {
     '@context': 'https://schema.org',
-    '@type': 'WebApplication',
+    '@type': 'SoftwareApplication',
     name: siteConfig.name,
     url: siteConfig.url,
-    description: siteConfig.description,
+    description: 'Suite completa de inteligencia artificial para crear videos virales. Automatiza contenido para TikTok, YouTube y Reels. Herramienta todo-en-uno para influencers y creadores digitales.',
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Web Browser',
+    softwareVersion: '1.0',
+    inLanguage: 'es',
     browserRequirements: 'Requires JavaScript. Chrome, Firefox, Safari, Edge',
     offers: {
       '@type': 'Offer',
@@ -230,30 +241,39 @@ export const structuredData = {
       priceValidUntil: '2026-12-31'
     },
     featureList: [
-      'Generación de contenido viral con IA',
-      // COMENTADO TEMPORALMENTE: 'Editor de miniaturas profesional',
-      'Análisis de SEO y keywords',
-      'Calendario editorial',
-      'Dashboard de analíticas',
-      'Biblioteca de contenido',
-      // COMENTADO TEMPORALMENTE: 'Chat con IA',
+      'Generador de contenido viral con IA',
+      'Análisis de tendencias en tiempo real',
+      'Generador de hashtags optimizado',
+      'Editor de miniaturas profesional',
+      'Asesor de contenido personalizado',
+      'Optimización automática de SEO',
       'Múltiples proveedores de IA (Gemini, Claude, GPT-4)'
     ]
   },
 
-  // SoftwareApplication Schema
+  // SoftwareApplication Schema con ratings (Actualizado 2025)
   softwareApplication: {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: siteConfig.name,
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
+    url: siteConfig.url,
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Web Browser',
+    softwareVersion: '1.0',
+    inLanguage: 'es',
+    description: 'Suite completa de inteligencia artificial para crear videos virales. Automatiza contenido para TikTok, YouTube y Reels.',
+    screenshot: `${siteConfig.url}/logo de marca.png`,
+    author: {
+      '@type': 'Organization',
+      name: siteConfig.company.name
+    },
     offers: {
       '@type': 'AggregateOffer',
       lowPrice: '0',
       highPrice: '99',
       priceCurrency: 'USD',
-      offerCount: '3'
+      offerCount: '3',
+      availability: 'https://schema.org/InStock'
     },
     aggregateRating: {
       '@type': 'AggregateRating',

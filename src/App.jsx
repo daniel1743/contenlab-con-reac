@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -24,9 +25,12 @@ const Notifications = lazy(() => import('@/components/Notifications'));
 const Onboarding = lazy(() => import('@/components/Onboarding'));
 const TermsModal = lazy(() => import('@/components/legal/TermsModal'));
 const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'));
+const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 
 function App() {
   const { session, loading, user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -35,6 +39,9 @@ function App() {
   const [hasDemoAccess, setHasDemoAccess] = useState(false);
   const isAuthenticated = !!session;
   const termsStorageKey = user ? `creovision_terms_accept_v1_${user.id}` : null;
+
+  // Obtener la sección actual desde la URL
+  const activeSection = location.pathname === '/' ? 'landing' : location.pathname.slice(1);
 
   // 🆕 Verificar si el usuario ya completó el onboarding
   useEffect(() => {
@@ -71,25 +78,18 @@ function App() {
     }
   }, [user, loading, termsStorageKey, cookiesAccepted]);
   
-  // El estado inicial de la sección activa siempre será 'landing'.
-  const [activeSection, setActiveSection] = useState('landing');
-  // padding
-
   // Secciones que requieren autenticación obligatoria
   const protectedSections = useMemo(() =>
-    ['dashboard', 'tools', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications'], // chat comentado temporalmente
+    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications'], // chat comentado temporalmente
     []
   );
 
-  // Redirigir a 'landing' solo si el usuario cierra sesión en una sección protegida
+  // Redirigir a '/' solo si el usuario cierra sesión en una sección protegida
   useEffect(() => {
     if (!isAuthenticated && protectedSections.includes(activeSection)) {
-      if (activeSection === 'tools' && hasDemoAccess) {
-        return;
-      }
-      setActiveSection('landing');
+      navigate('/');
     }
-  }, [isAuthenticated, activeSection, protectedSections, hasDemoAccess]);
+  }, [isAuthenticated, activeSection, protectedSections, navigate]);
 
   useEffect(() => {
     if (isAuthenticated && hasDemoAccess) {
@@ -99,11 +99,15 @@ function App() {
 
   const startDemoExperience = () => {
     setHasDemoAccess(true);
-    setActiveSection('tools');
+    navigate('/tools');
   };
 
   const handleSectionChange = (section) => {
-    setActiveSection(section);
+    if (section === 'landing') {
+      navigate('/');
+    } else {
+      navigate(`/${section}`);
+    }
   };
 
   const handleGenerateContent = () => {
@@ -126,68 +130,18 @@ function App() {
     return true;
   };
 
-  const renderLanding = () => (
-    <LandingPage
-      onAuthClick={() => setShowAuthModal(true)}
-      onSectionChange={handleSectionChange}
-      onStartDemo={startDemoExperience}
-    />
-  );
+  // Componente para proteger rutas que requieren autenticación
+  const ProtectedRoute = ({ children }) => {
+    if (loading) return <PWALoadingScreen />;
+    if (!isAuthenticated) return <Navigate to="/" replace />;
+    return children;
+  };
 
-  const renderContent = () => {
-    if (loading) {
-      return <PWALoadingScreen />;
-    }
-
-    // Aseguramos que las secciones protegidas solo se muestren si el usuario está autenticado.
-    switch (activeSection) {
-      case 'landing':
-        return renderLanding();
-      case 'dashboard':
-        return isAuthenticated
-          ? <Dashboard onSectionChange={handleSectionChange} />
-          : renderLanding();
-      // COMENTADO TEMPORALMENTE - Inbox sin sistema de mensajería backend
-      // case 'inbox':
-      //   return isAuthenticated ? <Inbox /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
-      case 'calendar':
-        return isAuthenticated ? <Calendar /> : renderLanding();
-      case 'library':
-        return isAuthenticated
-          ? <ContentLibrary onSubscriptionClick={() => setShowSubscriptionModal(true)} />
-          : renderLanding();
-      case 'tools':
-        return (isAuthenticated || hasDemoAccess)
-          ? (
-            <Tools
-              onSectionChange={handleSectionChange}
-              onGenerate={handleGenerateContent}
-              onCopyDownload={handleCopyDownload}
-              onAuthClick={() => setShowAuthModal(true)}
-              onSubscriptionClick={() => setShowSubscriptionModal(true)}
-              isDemoUser={!isAuthenticated}
-            />
-          )
-          : renderLanding();
-      // COMENTADO TEMPORALMENTE - Chat sin backend funcional (mensajes hardcoded, no hay persistencia)
-      // case 'chat':
-      //   return isAuthenticated ? <Chat /> : <LandingPage onAuthClick={() => setShowAuthModal(true)} onSectionChange={handleSectionChange} />;
-      case 'settings':
-        return isAuthenticated ? <Settings /> : renderLanding();
-      case 'badges':
-        return isAuthenticated ? <Badges /> : renderLanding();
-      case 'history':
-        return isAuthenticated ? <History /> : renderLanding();
-      case 'profile':
-        return isAuthenticated ? <Profile /> : renderLanding();
-      case 'notifications':
-        return isAuthenticated ? <Notifications /> : renderLanding();
-      // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado vs Canva (no usable en producción)
-      // case 'thumbnail-editor':
-      //   return <ThumbnailEditor onBack={() => setActiveSection('tools')} onCopyDownload={handleCopyDownload} onAuthClick={() => setShowAuthModal(true)} />;
-      default:
-        return renderLanding();
-    }
+  // Componente para rutas que permiten demo mode
+  const ToolsRoute = ({ children }) => {
+    if (loading) return <PWALoadingScreen />;
+    if (!isAuthenticated && !hasDemoAccess) return <Navigate to="/" replace />;
+    return children;
   };
 
   // Determinar qué schemas de structured data incluir según la sección
@@ -228,7 +182,7 @@ function App() {
         <main className={`flex-grow ${activeSection !== 'landing' /* && activeSection !== 'thumbnail-editor' */ ? 'pt-20' : 'pt-0'}`}>
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeSection}
+              key={location.pathname}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -236,7 +190,120 @@ function App() {
               className={activeSection !== 'landing' /* && activeSection !== 'thumbnail-editor' */ ? 'container mx-auto px-4 py-8' : ''}
             >
               <Suspense fallback={<PWALoadingScreen />}>
-                {renderContent()}
+                <Routes>
+                  {/* Ruta principal - Landing Page */}
+                  <Route
+                    path="/"
+                    element={
+                      <LandingPage
+                        onAuthClick={() => setShowAuthModal(true)}
+                        onSectionChange={handleSectionChange}
+                        onStartDemo={startDemoExperience}
+                      />
+                    }
+                  />
+
+                  {/* Rutas protegidas - Requieren autenticación */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard onSectionChange={handleSectionChange} />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/calendar"
+                    element={
+                      <ProtectedRoute>
+                        <Calendar />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/library"
+                    element={
+                      <ProtectedRoute>
+                        <ContentLibrary onSubscriptionClick={() => setShowSubscriptionModal(true)} />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/badges"
+                    element={
+                      <ProtectedRoute>
+                        <Badges />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/history"
+                    element={
+                      <ProtectedRoute>
+                        <History />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/notifications"
+                    element={
+                      <ProtectedRoute>
+                        <Notifications />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Tools - Permite demo mode o autenticación */}
+                  <Route
+                    path="/tools"
+                    element={
+                      <ToolsRoute>
+                        <Tools
+                          onSectionChange={handleSectionChange}
+                          onGenerate={handleGenerateContent}
+                          onCopyDownload={handleCopyDownload}
+                          onAuthClick={() => setShowAuthModal(true)}
+                          onSubscriptionClick={() => setShowSubscriptionModal(true)}
+                          isDemoUser={!isAuthenticated}
+                        />
+                      </ToolsRoute>
+                    }
+                  />
+
+                  {/* Ruta pública de reset password */}
+                  <Route path="/reset-password" element={<ResetPassword />} />
+
+                  {/* Rutas comentadas/eliminadas - Redirect a home para evitar 404 */}
+                  <Route path="/chat" element={<Navigate to="/" replace />} />
+                  <Route path="/inbox" element={<Navigate to="/" replace />} />
+                  <Route path="/thumbnail-editor" element={<Navigate to="/" replace />} />
+
+                  {/* Ruta 404 - Redirigir a home */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
               </Suspense>
             </motion.div>
           </AnimatePresence>
@@ -271,7 +338,7 @@ function App() {
                 localStorage.setItem('onboardingCompleted', 'true');
                 setShowOnboarding(false);
                 // Redirigir a Tools para comenzar a usar el generador
-                setActiveSection('tools');
+                navigate('/tools');
               }}
               onSkip={() => {
                 localStorage.setItem('onboardingCompleted', 'true');
