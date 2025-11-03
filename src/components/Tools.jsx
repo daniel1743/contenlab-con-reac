@@ -79,7 +79,7 @@ import {
 // ✅ REGISTRO COMPLETO
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
-// 🚀 IMPORT DE SERVICIOS GEMINI
+// 🚀 IMPORT DE SERVICIOS CREOVISION AI GP-5
 import {
   generateViralScript,
   generateSEOTitles,
@@ -866,7 +866,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     }
   }, [hashtagTopic, hashtagPlatform, toast]);
 
-  // 🆕 ANALIZADOR DE TENDENCIAS - YouTube API + Gemini AI
+  // 🆕 ANALIZADOR DE TENDENCIAS - Powered by CreoVision AI GP-5
   const handleAnalyzeTrends = useCallback(async () => {
     setIsAnalyzingTrends(true);
     try {
@@ -882,7 +882,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
         return;
       }
 
-      // 🤖 Analizar cada video con Gemini AI en paralelo
+      // 🤖 Analizar cada video con CreoVision AI GP-5 en paralelo
       const analysisPromises = viralVideos.map(video => analyzeTrendingTopic(video));
       const analyses = await Promise.all(analysisPromises);
 
@@ -900,7 +900,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       setTrendResults(formattedTrends);
       toast({
         title: '🎯 Análisis completado',
-        description: `${viralVideos.length} tendencias virales analizadas con IA`
+        description: `${viralVideos.length} tendencias analizadas con CreoVision AI GP-5`
       });
     } catch (error) {
       console.error('Error analyzing trends:', error);

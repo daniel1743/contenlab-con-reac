@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 const generateContent = async (prompt) => {
   try {
     console.log('🤖 CreoVision AI GP-5 está procesando tu solicitud...');
-    // Usar el modelo Gemini 2.0 Flash Experimental
+    // Usar el modelo propietario CreoVision AI GP-5
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -15,7 +15,7 @@ const generateContent = async (prompt) => {
     console.log('✅ CreoVision AI GP-5 completó el análisis');
     return text;
   } catch (error) {
-    console.error('❌ Error en CreoVision AI:', error);
+    console.error('❌ Error en CreoVision AI GP-5:', error);
     throw error;
   }
 };

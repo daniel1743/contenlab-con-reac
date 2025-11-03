@@ -2,7 +2,7 @@
  * ╔══════════════════════════════════════════════════════════════════╗
  * ║  🎓 SERVICIO DE ASESOR PROFESIONAL DE CONTENIDO VIRAL            ║
  * ╠══════════════════════════════════════════════════════════════════╣
- * ║  Powered by Gemini AI - Coach experto en contenido viral         ║
+ * ║  Powered by CreoVision AI GP-5 - Coach experto de élite         ║
  * ║  ✅ Consejos profesionales basados en SEO real y tendencias      ║
  * ║  ✅ Conversación guiada con máximo 5-6 interacciones             ║
  * ║  ✅ Análisis contextual profundo de cada tendencia               ║
@@ -217,7 +217,7 @@ Usa emojis estratégicamente para énfasis.
 
       this.interactionCount++;
 
-      // Crear el contexto completo para Gemini
+      // Crear el contexto completo para CreoVision AI GP-5
       const contextPrompt = `
 RECUERDA TU MISIÓN COMO CREOVISION ADVISOR PREMIUM:
 Eres el asesor más avanzado del mercado. Estás en la interacción ${this.interactionCount} de máximo ${this.maxInteractions}.

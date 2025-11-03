@@ -896,86 +896,193 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Inbox Feature */}
+            {/* Tendencias, Análisis & Conversaciones - POWERED BY CREOVISION AI GP-5 */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
-              className="group cursor-not-allowed opacity-80"
+              onClick={() => onSectionChange('tools')}
+              className="group cursor-pointer"
             >
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden transition-all duration-300">
-                <span className="absolute top-4 right-4 text-[10px] font-semibold px-3 py-1 rounded-full bg-blue-500/20 text-blue-100 tracking-widest uppercase">
-                  Proximamente
+              <Card className="bg-gradient-to-br from-orange-950/40 via-purple-950/40 to-pink-950/40 backdrop-blur-sm border-orange-500/30 rounded-3xl p-8 h-full relative overflow-hidden hover:border-orange-400/60 hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500">
+                {/* Badge Premium con animación */}
+                <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white tracking-widest uppercase shadow-lg animate-pulse">
+                  🔥 IA GP-5
                 </span>
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Inbox className="w-8 h-8 text-white" />
+
+                {/* Efecto de brillo */}
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+                <div className="flex items-start gap-4 mb-6 relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-orange-500/50">
+                    <TrendingUp className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Bandeja Unificada</h3>
-                    <p className="text-sm text-blue-300">Ahorra 5+ horas semanales</p>
+                    <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-orange-300 transition-colors">
+                      Tendencias & Análisis IA
+                    </h3>
+                    <p className="text-sm font-medium bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
+                      Powered by CreoVision AI GP-5
+                    </p>
                   </div>
                 </div>
+
+                <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+                  La IA más avanzada del mercado analiza tendencias virales en tiempo real y te asesora como un coach premium.
+                </p>
+
                 <ul className="space-y-3 mb-6">
                   {[
-                    { icon: MessageSquare, text: "Mensajes de todas las plataformas" },
-                    { icon: Bell, text: "Notificaciones en tiempo real" },
-                    { icon: Send, text: "Respuestas rapidas con IA" },
-                    { icon: Eye, text: "Filtros inteligentes" }
+                    {
+                      icon: TrendingUp,
+                      text: "Tendencias virales analizadas al instante",
+                      badge: "Real-time"
+                    },
+                    {
+                      icon: Sparkles,
+                      text: "Análisis profundo con IA GP-5",
+                      badge: "Premium"
+                    },
+                    {
+                      icon: MessageSquare,
+                      text: "Asesor conversacional experto",
+                      badge: "Coach A1"
+                    },
+                    {
+                      icon: Lightbulb,
+                      text: "Títulos, hooks y keywords SEO",
+                      badge: "Pro"
+                    }
                   ].map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-3 text-gray-300">
-                      <item.icon className="w-4 h-4 text-blue-400" />
-                      <span className="text-sm">{item.text}</span>
+                    <li key={idx} className="flex items-center justify-between text-gray-300 group/item">
+                      <div className="flex items-center gap-3">
+                        <item.icon className="w-4 h-4 text-orange-400 group-hover/item:scale-110 transition-transform" />
+                        <span className="text-sm group-hover/item:text-white transition-colors">{item.text}</span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                        {item.badge}
+                      </span>
                     </li>
                   ))}
                 </ul>
-                <div className="flex items-center gap-2 text-blue-200 uppercase tracking-widest">
-                  <span className="text-sm font-medium">Disponible pronto</span>
-                  <span aria-hidden="true">&rarr;</span>
+
+                <div className="flex items-center gap-2 text-orange-400 group-hover:gap-4 transition-all font-semibold">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  <span className="text-sm">Descubrir Tendencias</span>
+                  <span aria-hidden="true" className="text-lg">→</span>
+                </div>
+
+                {/* Contador de potencia */}
+                <div className="mt-4 pt-4 border-t border-orange-500/20">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">Potencia IA:</span>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className={`w-1.5 h-3 rounded-full ${i < 5 ? 'bg-gradient-to-t from-orange-500 to-yellow-400' : 'bg-gray-700'} group-hover:animate-pulse`} style={{ animationDelay: `${i * 100}ms` }} />
+                      ))}
+                      <span className="ml-2 font-bold text-orange-400">GP-5</span>
+                    </div>
+                  </div>
                 </div>
               </Card>
             </motion.div>
-            {/* Content Library Feature */}
+            {/* Suite Profesional de Herramientas IA - CREOVISION ECOSYSTEM */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
-              onClick={() => onSectionChange('library')}
+              onClick={() => onSectionChange('tools')}
               className="group cursor-pointer"
             >
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-emerald-500/30 transition-all duration-300">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <FolderOpen className="w-8 h-8 text-white" />
+              <Card className="bg-gradient-to-br from-purple-950/40 via-blue-950/40 to-cyan-950/40 backdrop-blur-sm border-purple-500/30 rounded-3xl p-8 h-full relative overflow-hidden hover:border-purple-400/60 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500">
+                {/* Badge Premium con animación */}
+                <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white tracking-widest uppercase shadow-lg">
+                  ✨ SUITE PRO
+                </span>
+
+                {/* Efecto de brillo */}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+                {/* Partículas flotantes */}
+                <div className="absolute top-20 right-10 w-2 h-2 bg-purple-400 rounded-full animate-ping opacity-30" />
+                <div className="absolute bottom-20 left-10 w-2 h-2 bg-cyan-400 rounded-full animate-ping opacity-30" style={{ animationDelay: '1s' }} />
+
+                <div className="flex items-start gap-4 mb-6 relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-[-3deg] transition-all duration-300 shadow-lg shadow-purple-500/50">
+                    <Wand2 className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Biblioteca de Contenido</h3>
-                    <p className="text-sm text-emerald-300">Organización profesional</p>
+                    <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">
+                      Suite Profesional IA
+                    </h3>
+                    <p className="text-sm font-medium bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                      Ecosistema CreoVision Completo
+                    </p>
                   </div>
                 </div>
 
+                <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+                  Todas las herramientas que necesitas, potenciadas por la IA más avanzada del mercado. Tu estudio profesional en la nube.
+                </p>
+
                 <ul className="space-y-3 mb-6">
                   {[
-                    { icon: FolderOpen, text: 'Carpetas inteligentes' },
-                    { icon: Search, text: 'Búsqueda instantánea' },
-                    { icon: Heart, text: 'Sistema de favoritos' },
-                    { icon: Download, text: 'Exportación masiva' }
-                  ].map((item, idx) => {
-                    const ItemIcon = item.icon;
-                    return (
-                      <li key={idx} className="flex items-center gap-3 text-gray-300">
-                        <ItemIcon className="w-4 h-4 text-emerald-400" />
-                        <span className="text-sm">{item.text}</span>
-                      </li>
-                    );
-                  })}
+                    {
+                      icon: Wand2,
+                      text: "Generador de Contenido Viral IA",
+                      badge: "GP-5"
+                    },
+                    {
+                      icon: Zap,
+                      text: "Generador de Hashtags Inteligente",
+                      badge: "Auto"
+                    },
+                    {
+                      icon: Palette,
+                      text: "Editor de Miniaturas Pro",
+                      badge: "Studio"
+                    },
+                    {
+                      icon: Brain,
+                      text: "Biblioteca de Assets Organizados",
+                      badge: "Smart"
+                    }
+                  ].map((item, idx) => (
+                    <li key={idx} className="flex items-center justify-between text-gray-300 group/item">
+                      <div className="flex items-center gap-3">
+                        <item.icon className="w-4 h-4 text-purple-400 group-hover/item:scale-110 transition-transform" />
+                        <span className="text-sm group-hover/item:text-white transition-colors">{item.text}</span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        {item.badge}
+                      </span>
+                    </li>
+                  ))}
                 </ul>
 
-                <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-3 transition-all">
-                  <span className="text-sm font-medium">Explorar Biblioteca</span>
-                  <span aria-hidden="true">&rarr;</span>
+                <div className="flex items-center gap-2 text-purple-400 group-hover:gap-4 transition-all font-semibold">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  <span className="text-sm">Explorar Herramientas</span>
+                  <span aria-hidden="true" className="text-lg">→</span>
+                </div>
+
+                {/* Indicador de herramientas */}
+                <div className="mt-4 pt-4 border-t border-purple-500/20">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">Herramientas activas:</span>
+                    <div className="flex items-center gap-1">
+                      <div className="flex -space-x-2">
+                        {[Wand2, Zap, Palette, Brain].map((Icon, i) => (
+                          <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center border-2 border-gray-900">
+                            <Icon className="w-3 h-3 text-white" />
+                          </div>
+                        ))}
+                      </div>
+                      <span className="ml-2 font-bold text-purple-400">4+</span>
+                    </div>
+                  </div>
                 </div>
               </Card>
             </motion.div>
@@ -1037,12 +1144,22 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
             viewport={{ once: true }} 
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-6">
+            <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
               De la Idea al Impacto
             </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Tu viaje creativo, reimaginado en tres pasos fluidos.
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-4">
+              Potenciado por <span className="font-bold bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">CreoVision AI GP-5</span>, la inteligencia artificial más avanzada del mercado.
             </p>
+            <div className="flex items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span className="text-purple-300 font-medium">Miles de creadores lo confirman</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/30">
+                <Zap className="w-4 h-4 text-orange-400" />
+                <span className="text-orange-300 font-medium">IA de nivel profesional</span>
+              </div>
+            </div>
           </motion.div>
 
 
