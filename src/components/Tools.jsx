@@ -2248,12 +2248,17 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                                   </div>
                                 </div>
 
-                                {/* AI ANALYSIS */}
+                                {/* AI ANALYSIS BY CREOVISION */}
                                 {video.aiAnalysis && (
                                   <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg p-3 border border-purple-500/20">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Sparkles className="w-4 h-4 text-purple-400" />
-                                      <span className="text-purple-300 font-medium text-sm">Análisis IA</span>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <Sparkles className="w-4 h-4 text-purple-400" />
+                                        <span className="text-purple-300 font-medium text-sm">Análisis CreoVision AI</span>
+                                      </div>
+                                      <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full">
+                                        IA Avanzada
+                                      </span>
                                     </div>
                                     <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
                                       {video.aiAnalysis}
@@ -2307,8 +2312,8 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
                                       </div>
                                       <div>
                                         <div className="text-white font-semibold text-sm">CreoVision Advisor</div>
-                                        <div className="text-xs text-gray-400">
-                                          {advisorInstance?.getProgress().remaining || 0} mensajes restantes
+                                        <div className="text-xs text-purple-400">
+                                          IA Premium • {advisorInstance?.getProgress().remaining || 0} mensajes restantes
                                         </div>
                                       </div>
                                     </div>
