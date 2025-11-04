@@ -6,98 +6,109 @@ import { useToast } from '@/components/ui/use-toast';
 const PricingSection = ({ onAuthClick }) => {
     const { toast } = useToast();
 
-    const [selectedPlan, setSelectedPlan] = useState('Premium'); // Plan seleccionado inicialmente
+    const [selectedPlan, setSelectedPlan] = useState('PRO'); // Plan seleccionado inicialmente
     const [hoveredPlan, setHoveredPlan] = useState(null); // Plan con hover activo
 
     const plans = [
         {
-            id: 'Gratis',
-            name: 'Gratis',
+            id: 'FREE',
+            name: 'FREE',
             price: '$0',
             period: '/mes',
             description: 'Para empezar a crear y explorar.',
+            credits: '100 créditos/mes',
             features: [
-                'Incluye: 5 proyectos',
-                '25 créditos',
-                '10 exportaciones',
-                'Historial de los últimos 5 contenidos',
+                '💎 100 créditos mensuales',
+                'Acceso a herramientas básicas',
+                'Generador de contenido IA',
                 'Análisis de tendencias básicas',
-                'Acceso anticipado a próximas tendencias',
-                '5 conversaciones con el agente SEO',
+                'Generador de hashtags',
                 'Soporte por email'
             ],
             cta: 'Comenzar Gratis',
             isFeatured: false,
         },
         {
-            id: 'Estándar',
-            name: 'Estándar',
-            price: '$5',
+            id: 'PRO',
+            name: 'PRO',
+            price: '$15',
             period: '/mes',
             description: 'Para creadores en crecimiento.',
+            credits: '1,000 créditos/mes',
             features: [
-                'Incluye: 10 proyectos',
-                '50 créditos',
-                '30 exportaciones',
-                '5 análisis de tendencias premium / 30 básicas',
-                'Historial de hasta 15 contenidos',
-                '20 conversaciones con el agente SEO',
-                'Soporte por email'
-            ],
-            cta: 'Elegir Estándar',
-            isFeatured: false,
-        },
-        {
-            id: 'Premium',
-            name: 'Premium',
-            price: '$9',
-            period: '/mes',
-            description: 'Para dominar las redes sociales.',
-            features: [
-                'Incluye: 30 proyectos',
-                '150 créditos',
-                '100 exportaciones',
-                'Generación de contenido con IA avanzada',
-                'Análisis de tendencias completo',
-                'Calendario de publicaciones',
-                'Integración con YouTube',
+                '💎 1,000 créditos mensuales',
+                'Puede comprar créditos adicionales (20% OFF)',
+                'Créditos comprados NO expiran',
+                'Descarga sin marca de agua',
+                'Prioridad en generación',
+                'Análisis de tendencias avanzado',
                 'Soporte prioritario'
             ],
-            cta: 'Elegir Premium',
+            cta: 'Elegir PRO',
             isFeatured: true,
         },
         {
-            id: 'Enterprise',
-            name: 'Enterprise',
-            price: 'Próximamente',
-            period: '',
-            description: 'Soluciones a medida para equipos.',
+            id: 'PREMIUM',
+            name: 'PREMIUM',
+            price: '$25',
+            period: '/mes',
+            description: 'Para dominar las redes sociales.',
+            credits: '2,500 créditos/mes',
             features: [
-                'Todo lo de Premium',
-                'Gestión de equipos',
-                'API de acceso',
-                'Manager de cuenta dedicado',
-                'Integraciones personalizadas'
+                '💎 2,500 créditos mensuales',
+                'Puede comprar créditos adicionales (30% OFF)',
+                'Créditos comprados NO expiran',
+                'Acceso al Asesor Premium IA',
+                'Analytics avanzado',
+                'Calendario de publicaciones',
+                'API Access (próximamente)',
+                'Soporte 24/7'
             ],
-            cta: 'Próximamente',
+            cta: 'Elegir PREMIUM',
             isFeatured: false,
-            isDisabled: true,
+        },
+        {
+            id: 'ENTERPRISE',
+            name: 'ENTERPRISE',
+            price: 'Personalizado',
+            period: '',
+            description: 'Soluciones a medida para equipos y agencias.',
+            credits: 'Créditos ilimitados',
+            features: [
+                '🚀 Todo lo de PREMIUM',
+                '💼 Gestión de equipos',
+                '🔌 API de acceso completo',
+                '👨‍💼 Manager de cuenta dedicado',
+                '⚙️ Integraciones personalizadas',
+                '📊 Reportes avanzados',
+                '🎯 Soporte prioritario 24/7'
+            ],
+            cta: 'Conversemos',
+            isFeatured: false,
+            isDisabled: false,
+            isEnterprise: true,
         }
     ];
 
     const handlePlanClick = (plan) => {
         if (plan.isDisabled) {
             toast({
-                title: '🚀 ¡El plan Enterprise llegará pronto!',
-                description: 'Estamos trabajando en ello. Contacta con nosotros para acceso anticipado.',
+                title: '🚀 ¡Próximamente disponible!',
+                description: 'Estamos trabajando en ello. Mantente atento a las novedades.',
             });
             return;
         }
 
         setSelectedPlan(plan.id);
 
-        if (plan.name === 'Gratis') {
+        if (plan.id === 'FREE') {
             onAuthClick();
+        } else if (plan.isEnterprise) {
+            toast({
+                title: '💼 Plan Enterprise',
+                description: '¿Necesitas una solución personalizada? Escríbenos a contacto@creovision.io y conversemos sobre tus necesidades.',
+                duration: 6000,
+            });
         } else {
             toast({
                 title: '🚧 Pasarela de pago en construcción',
@@ -195,12 +206,17 @@ const PricingSection = ({ onAuthClick }) => {
                                 <div className="flex-grow">
                                     <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
                                     <p className="text-gray-400 mb-6">{plan.description}</p>
-                                    <div className="mb-8">
-                                        <span className={`text-4xl font-bold ${shouldHighlight ? 'text-gradient' : 'text-white'} ${plan.price === 'Próximamente' ? 'text-3xl' : ''}`}>
+                                    <div className="mb-4">
+                                        <span className={`font-bold ${shouldHighlight ? 'text-gradient' : 'text-white'} ${plan.price === 'Personalizado' ? 'text-2xl' : plan.price === 'Próximamente' ? 'text-3xl' : 'text-4xl'}`}>
                                             {plan.price}
                                         </span>
                                         {plan.period && <span className="text-gray-400">{plan.period}</span>}
                                     </div>
+                                    {plan.credits && (
+                                        <div className="mb-8 px-4 py-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                                            <p className="text-purple-300 font-semibold text-center">{plan.credits}</p>
+                                        </div>
+                                    )}
                                     <ul className="space-y-4">
                                         {plan.features.map((feature) => (
                                             <li key={feature} className="flex items-center">
