@@ -26,6 +26,7 @@ const Onboarding = lazy(() => import('@/components/Onboarding'));
 const TermsModal = lazy(() => import('@/components/legal/TermsModal'));
 const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
+const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'));
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -295,6 +296,9 @@ function App() {
 
                   {/* Ruta pública de reset password */}
                   <Route path="/reset-password" element={<ResetPassword />} />
+
+                  {/* Ruta de análisis de canal de YouTube */}
+                  <Route path="/channel-analysis" element={<ChannelAnalysisPage />} />
 
                   {/* Rutas comentadas/eliminadas - Redirect a home para evitar 404 */}
                   <Route path="/chat" element={<Navigate to="/" replace />} />

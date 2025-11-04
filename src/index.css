@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === ESTILOS DEL DASHBOARD === */
+@import './styles/dashboard.css';
+
 /* === CONFIGURACIÓN GLOBAL Y RESETEO MODERNO === */
 *, *::before, *::after {
   box-sizing: border-box;

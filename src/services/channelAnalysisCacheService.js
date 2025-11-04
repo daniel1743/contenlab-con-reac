@@ -140,39 +140,60 @@ export const deleteAnalysis = async (analysisId) => {
 };
 
 /**
- * Verifica si un usuario puede analizar otro canal (límite Free: 1 análisis)
+ * Verifica si un usuario puede analizar otro canal
+ * Límites mensuales:
+ * - FREE: 1 análisis/mes (5 videos)
+ * - PRO: 2 análisis/mes (50 videos últimos)
+ * - PREMIUM: 4 análisis/mes (100 videos últimos)
+ *
  * @param {string} userId - ID del usuario
  * @param {string} userPlan - Plan del usuario (FREE, PRO, PREMIUM)
- * @returns {Promise<Object>} - { canAnalyze, remaining, limit }
+ * @returns {Promise<Object>} - { canAnalyze, remaining, limit, current, videosAllowed }
  */
 export const checkAnalysisLimit = async (userId, userPlan = 'FREE') => {
   try {
+    // Obtener primer día del mes actual
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
     const { data, error } = await supabase
       .from('channel_analyses')
-      .select('id')
+      .select('id, analyzed_at')
       .eq('user_id', userId)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .gte('analyzed_at', firstDayOfMonth);
 
     if (error) throw error;
 
     const count = data?.length || 0;
 
-    // Límites por plan
-    const limits = {
-      FREE: 1,
-      PRO: 5,
-      PREMIUM: 999999
+    // Límites mensuales por plan
+    const planLimits = {
+      FREE: {
+        monthlyAnalyses: 1,
+        videosPerAnalysis: 5
+      },
+      PRO: {
+        monthlyAnalyses: 2,
+        videosPerAnalysis: 50
+      },
+      PREMIUM: {
+        monthlyAnalyses: 4,
+        videosPerAnalysis: 100
+      }
     };
 
-    const limit = limits[userPlan] || 1;
-    const canAnalyze = count < limit;
-    const remaining = Math.max(0, limit - count);
+    const limits = planLimits[userPlan] || planLimits.FREE;
+    const canAnalyze = count < limits.monthlyAnalyses;
+    const remaining = Math.max(0, limits.monthlyAnalyses - count);
 
     return {
       canAnalyze,
       remaining,
-      limit,
-      current: count
+      limit: limits.monthlyAnalyses,
+      current: count,
+      videosAllowed: limits.videosPerAnalysis,
+      resetsAt: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
     };
 
   } catch (error) {
@@ -181,7 +202,9 @@ export const checkAnalysisLimit = async (userId, userPlan = 'FREE') => {
       canAnalyze: false,
       remaining: 0,
       limit: 1,
-      current: 0
+      current: 0,
+      videosAllowed: 5,
+      resetsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     };
   }
 };

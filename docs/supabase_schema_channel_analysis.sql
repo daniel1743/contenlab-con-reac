@@ -68,8 +68,12 @@ BEGIN
 END;
 $$;
 
+-- Índice adicional para búsquedas mensuales
+CREATE INDEX idx_channel_analyses_user_month ON public.channel_analyses(user_id, analyzed_at);
+
 -- Comentarios
-COMMENT ON TABLE public.channel_analyses IS 'Almacena análisis de canales de YouTube para evitar re-análisis frecuentes';
+COMMENT ON TABLE public.channel_analyses IS 'Almacena análisis de canales de YouTube con límites mensuales por plan';
 COMMENT ON COLUMN public.channel_analyses.analysis_data IS 'Datos completos del análisis (videos, métricas, etc.)';
 COMMENT ON COLUMN public.channel_analyses.ai_insights IS 'Insights generados por IA (Gemini)';
 COMMENT ON COLUMN public.channel_analyses.expires_at IS 'Fecha de expiración del análisis (por defecto 30 días)';
+COMMENT ON COLUMN public.channel_analyses.total_analyzed_videos IS 'Total de videos analizados (5 FREE, 50 PRO, 100 PREMIUM)';

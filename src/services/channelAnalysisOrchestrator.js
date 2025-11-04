@@ -8,6 +8,7 @@
  * 5. Retorna análisis completo
  */
 
+import { useState } from 'react';
 import { analyzeChannel } from './youtubeChannelAnalyzerService';
 import { generateChannelInsights } from './channelInsightsAIService';
 import {
@@ -31,10 +32,11 @@ export const analyzeChannelWithCache = async (userId, channelUrl, userPlan = 'FR
     const limitCheck = await checkAnalysisLimit(userId, userPlan);
 
     if (!limitCheck.canAnalyze) {
-      throw new Error(`Límite alcanzado. Tu plan ${userPlan} permite ${limitCheck.limit} análisis. Tienes ${limitCheck.current} análisis activos.`);
+      const resetsDate = new Date(limitCheck.resetsAt).toLocaleDateString('es-ES');
+      throw new Error(`Límite mensual alcanzado. Tu plan ${userPlan} permite ${limitCheck.limit} análisis/mes. Se restablece el ${resetsDate}.`);
     }
 
-    console.log(`✅ Límite OK - Puedes analizar. Restantes: ${limitCheck.remaining}`);
+    console.log(`✅ Límite OK - Análisis ${limitCheck.current + 1}/${limitCheck.limit}. Videos permitidos: ${limitCheck.videosAllowed}`);
 
     // 2. Extraer ID del canal (necesitamos el ID real para el cache)
     const { extractChannelId } = await import('./youtubeChannelAnalyzerService');
@@ -55,9 +57,9 @@ export const analyzeChannelWithCache = async (userId, channelUrl, userPlan = 'FR
       };
     }
 
-    // 4. No está en cache - analizar canal
+    // 4. No está en cache - analizar canal con cantidad de videos según plan
     console.log('📊 No hay cache - analizando canal...');
-    const channelAnalysis = await analyzeChannel(channelUrl);
+    const channelAnalysis = await analyzeChannel(channelUrl, limitCheck.videosAllowed);
 
     // 5. Generar insights con IA
     console.log('🤖 Generando insights con Gemini AI...');

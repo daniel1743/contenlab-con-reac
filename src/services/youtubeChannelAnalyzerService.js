@@ -74,11 +74,12 @@ export const getChannelInfo = async (channelId) => {
 };
 
 /**
- * Obtiene los primeros 5 videos del canal
+ * Obtiene los últimos videos del canal
  * @param {string} channelId - ID del canal
- * @returns {Promise<Array>} - Lista de 5 videos con métricas
+ * @param {number} maxResults - Cantidad de videos a obtener (5, 50, 100)
+ * @returns {Promise<Array>} - Lista de videos con métricas
  */
-export const getChannelFirst5Videos = async (channelId) => {
+export const getChannelVideos = async (channelId, maxResults = 5) => {
   try {
     // 1. Obtener el playlist de uploads del canal
     const channelResponse = await fetch(
@@ -93,9 +94,9 @@ export const getChannelFirst5Videos = async (channelId) => {
 
     const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
 
-    // 2. Obtener los primeros 5 videos del playlist de uploads
+    // 2. Obtener los últimos N videos del playlist de uploads
     const playlistResponse = await fetch(
-      `${YOUTUBE_API_BASE}/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=5&key=${YOUTUBE_API_KEY}`
+      `${YOUTUBE_API_BASE}/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`
     );
 
     const playlistData = await playlistResponse.json();
@@ -201,10 +202,11 @@ export const getVideoComments = async (videoId) => {
 /**
  * Análisis completo del canal - FUNCIÓN PRINCIPAL
  * @param {string} channelIdOrUrl - ID o URL del canal
+ * @param {number} maxVideos - Cantidad de videos a analizar (5, 50, 100)
  * @returns {Promise<Object>} - Análisis completo del canal
  */
-export const analyzeChannel = async (channelIdOrUrl) => {
-  console.log('🎯 Iniciando análisis de canal:', channelIdOrUrl);
+export const analyzeChannel = async (channelIdOrUrl, maxVideos = 5) => {
+  console.log('🎯 Iniciando análisis de canal:', channelIdOrUrl, `(${maxVideos} videos)`);
 
   try {
     // 1. Extraer ID del canal
@@ -220,18 +222,19 @@ export const analyzeChannel = async (channelIdOrUrl) => {
     console.log('📊 Obteniendo información del canal...');
     const channelInfo = await getChannelInfo(channelId);
 
-    // 3. Obtener primeros 5 videos
-    console.log('🎬 Obteniendo primeros 5 videos...');
-    const videos = await getChannelFirst5Videos(channelId);
+    // 3. Obtener últimos N videos
+    console.log(`🎬 Obteniendo últimos ${maxVideos} videos...`);
+    const videos = await getChannelVideos(channelId, maxVideos);
 
     if (videos.length === 0) {
       throw new Error('El canal no tiene videos públicos');
     }
 
-    // 4. Obtener comentarios de cada video (opcional, solo primeros 20 por video)
+    // 4. Obtener comentarios de cada video (opcional, solo primeros 3 videos)
     console.log('💬 Obteniendo comentarios de videos...');
+    const videosToAnalyzeComments = Math.min(3, videos.length);
     const videosWithComments = await Promise.all(
-      videos.slice(0, 3).map(async (video) => {
+      videos.slice(0, videosToAnalyzeComments).map(async (video) => {
         const comments = await getVideoComments(video.id);
         return {
           ...video,
