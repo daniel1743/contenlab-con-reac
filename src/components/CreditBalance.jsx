@@ -75,93 +75,81 @@ export function CreditBalance({ onBuyCredits, onUpgradePlan }) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
-              warning.severity === 'critical'
-                ? 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100'
-                : warning.severity === 'high'
-                ? 'border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                : 'border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100'
-            }`}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-all"
           >
-            <Gem className={`h-5 w-5 ${warning.severity === 'critical' ? 'text-red-600' : warning.severity === 'high' ? 'text-amber-600' : 'text-purple-600'}`} />
-            <div className="flex flex-col items-start text-left">
-              <span className="text-sm font-bold leading-none">
-                {totalCredits.toLocaleString()}
-              </span>
-              <span className="text-[10px] opacity-70 leading-none">
-                créditos
-              </span>
-            </div>
-            <ChevronDown className="h-3 w-3 opacity-50" />
+            <Gem className="h-4 w-4 text-purple-400" />
+            <span className="text-sm font-semibold text-gray-300">
+              {totalCredits.toLocaleString()}
+            </span>
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-72 p-4">
+        <DropdownMenuContent align="end" className="w-72 p-4 glass-effect border-purple-500/20">
           <div className="space-y-3">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Mis Créditos</h3>
-              <div className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+              <h3 className="font-semibold text-white">Mis Créditos</h3>
+              <div className="flex items-center gap-1 text-xs text-purple-300 bg-purple-500/20 px-2 py-1 rounded border border-purple-500/30">
                 <Zap className="h-3 w-3" />
                 {planConfig.name}
               </div>
             </div>
 
             {/* Total */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+            <div className="bg-gradient-to-br from-violet-900/40 via-purple-900/40 to-pink-900/40 rounded-lg p-4 border border-purple-500/30">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-purple-700">Total Disponible</span>
+                <span className="text-sm text-purple-300">Total Disponible</span>
                 {warning.severity === 'critical' && (
-                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <AlertCircle className="h-4 w-4 text-pink-400" />
                 )}
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-purple-900">
+                <span className="text-3xl font-bold text-white">
                   {totalCredits.toLocaleString()}
                 </span>
-                <span className="text-sm text-purple-600">créditos</span>
+                <span className="text-sm text-purple-300">créditos</span>
               </div>
             </div>
 
             {/* Desglose */}
             <div className="space-y-2 pt-2">
-              <div className="text-xs font-medium text-gray-500 uppercase">Desglose</div>
+              <div className="text-xs font-medium text-purple-400 uppercase">Desglose</div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Del plan mensual:</span>
-                <span className="font-medium text-gray-900">{credits.credits.monthly}</span>
+                <span className="text-gray-400">Del plan mensual:</span>
+                <span className="font-medium text-white">{credits.credits.monthly}</span>
               </div>
 
               {credits.credits.purchased > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Comprados:</span>
-                  <span className="font-medium text-gray-900">{credits.credits.purchased}</span>
+                  <span className="text-gray-400">Comprados:</span>
+                  <span className="font-medium text-white">{credits.credits.purchased}</span>
                 </div>
               )}
 
               {credits.credits.bonus > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">🎁 Bonos:</span>
-                  <span className="font-medium text-green-600">{credits.credits.bonus}</span>
+                  <span className="text-gray-400">🎁 Bonos:</span>
+                  <span className="font-medium text-green-400">{credits.credits.bonus}</span>
                 </div>
               )}
             </div>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-purple-500/20" />
 
             {/* Próximo Reset */}
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-400">
               📅 Resetea en {credits.daysUntilReset} días
             </div>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-purple-500/20" />
 
             {/* Actions */}
             <div className="space-y-2">
               {credits.plan === 'free' ? (
                 <Button
                   onClick={onUpgradePlan}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                  className="w-full bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 text-white hover:from-violet-700 hover:via-purple-700 hover:to-pink-700"
                 >
                   <Crown className="h-4 w-4 mr-2" />
                   Upgrade para más créditos
@@ -170,7 +158,7 @@ export function CreditBalance({ onBuyCredits, onUpgradePlan }) {
                 <Button
                   onClick={onBuyCredits}
                   variant="outline"
-                  className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+                  className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Comprar más créditos
@@ -182,7 +170,7 @@ export function CreditBalance({ onBuyCredits, onUpgradePlan }) {
                   onClick={onUpgradePlan}
                   variant="ghost"
                   size="sm"
-                  className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                  className="w-full text-purple-300 hover:text-purple-200 hover:bg-purple-500/10"
                 >
                   Ver planes superiores
                 </Button>
@@ -191,55 +179,6 @@ export function CreditBalance({ onBuyCredits, onUpgradePlan }) {
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Warning Toast/Alert (inline cuando quedan pocos créditos) */}
-      <AnimatePresence>
-        {warning.show && warning.severity !== 'none' && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-4 z-50 w-80"
-          >
-            <Alert
-              className={`border-2 ${
-                warning.severity === 'critical'
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-amber-500 bg-amber-50'
-              }`}
-            >
-              <AlertCircle className={`h-4 w-4 ${warning.severity === 'critical' ? 'text-red-600' : 'text-amber-600'}`} />
-              <AlertDescription className="text-sm">
-                <p className={`font-semibold ${warning.severity === 'critical' ? 'text-red-900' : 'text-amber-900'}`}>
-                  {warning.message}
-                </p>
-                <p className={`text-xs mt-1 ${warning.severity === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
-                  {warning.action}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  {credits.plan === 'free' ? (
-                    <Button
-                      size="sm"
-                      onClick={onUpgradePlan}
-                      className="bg-purple-600 text-white hover:bg-purple-700"
-                    >
-                      Ver Planes
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={onBuyCredits}
-                      className="bg-purple-600 text-white hover:bg-purple-700"
-                    >
-                      Comprar Créditos
-                    </Button>
-                  )}
-                </div>
-              </AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

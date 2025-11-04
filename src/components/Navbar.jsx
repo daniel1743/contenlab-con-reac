@@ -33,7 +33,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import CreditBalance from '@/components/CreditBalance';
+import CreditBalance, { useCreditBalance } from '@/components/CreditBalance';
 
 const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount, onSubscriptionClick, hasDemoAccess }) => {
   const { user, signOut } = useAuth();
@@ -41,6 +41,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const { toast } = useToast();
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
+
+  // Hook de créditos real
+  const { credits: userCreditsData, plan: userPlanData } = useCreditBalance();
 
   // Estado para foto y nombre de perfil desde localStorage
   const [profileData, setProfileData] = useState({
@@ -85,8 +88,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     };
   }, [user]);
 
-  const userPlan = 'free'; // Cambia a 'standard', 'premium' o 'free' para probar
-  const userCredits = userPlan === 'free' ? 5 : userPlan === 'premium' ? 200 : 100;
+  // Usar datos reales si están disponibles, sino fallback hardcodeado
+  const userPlan = userPlanData || 'free';
+  const userCredits = userCreditsData?.total || 0;
   const userBadges = 3; // De 10 desbloqueables por niveles de uso
 
   const getAvatarRingClass = (plan) => {
@@ -258,11 +262,11 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
-                          <BanknotesIcon className="mr-2 h-4 w-4 text-green-400 stroke-[2]" />
+                          <BanknotesIcon className="mr-2 h-4 w-4 text-purple-400 stroke-[2]" />
                           <span className="text-xs font-semibold">Créditos</span>
                         </div>
-                        <span className="text-xs font-bold text-green-400">
-                          {userCredits}
+                        <span className="text-xs font-bold text-purple-400">
+                          {userCredits.toLocaleString()}
                         </span>
                       </div>
                     </DropdownMenuItem>
