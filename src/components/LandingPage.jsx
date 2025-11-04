@@ -578,19 +578,82 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
             </motion.p>
 
 
-            <motion.div 
-              className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+            {/* 🔥 CTA PRINCIPAL: Análisis de Canal GRATIS */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="mt-16 max-w-3xl mx-auto"
             >
-              <RippleButton
-                onClick={handleFreeTrial}
-                className="group px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl text-white font-semibold text-lg"
-              >
-                <Wand2 className="w-5 h-5 inline mr-2" />
-                Probar Gratis
-              </RippleButton>
+              <div className="relative">
+                {/* Badge flotante */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 1 }}
+                  className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20"
+                >
+                  <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 px-4 py-1.5 rounded-full text-white text-sm font-bold shadow-lg flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    PRUEBA GRATIS - Tu primer análisis sin registro
+                  </div>
+                </motion.div>
+
+                {/* Card principal */}
+                <div className="bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-pink-900/40 backdrop-blur-xl border border-purple-500/30 rounded-3xl p-8 shadow-2xl">
+                  <div className="text-center mb-6">
+                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                      Analiza cualquier canal de YouTube
+                    </h3>
+                    <p className="text-gray-300 text-lg">
+                      Descubre insights con IA en segundos. No necesitas crear cuenta.
+                    </p>
+                  </div>
+
+                  {/* Input + Botón */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      id="channel-url-input"
+                      type="text"
+                      placeholder="https://youtube.com/@nombredelcanal"
+                      className="flex-1 px-6 py-4 bg-black/40 border border-purple-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          window.location.href = `/channel-analysis?url=${encodeURIComponent(e.target.value.trim())}`;
+                        }
+                      }}
+                    />
+                    <RippleButton
+                      onClick={(e) => {
+                        const input = document.getElementById('channel-url-input');
+                        if (input && input.value && input.value.trim()) {
+                          window.location.href = `/channel-analysis?url=${encodeURIComponent(input.value.trim())}`;
+                        }
+                      }}
+                      className="px-8 py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 hover:from-violet-700 hover:via-purple-700 hover:to-pink-700 rounded-xl text-white font-bold text-lg shadow-lg whitespace-nowrap"
+                    >
+                      <BarChart3 className="w-5 h-5 inline mr-2" />
+                      Analizar Gratis
+                    </RippleButton>
+                  </div>
+
+                  {/* Features rápidas */}
+                  <div className="grid grid-cols-3 gap-4 mt-6 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <Brain className="w-6 h-6 text-purple-400" />
+                      <span className="text-sm text-gray-300">Análisis con IA</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <Zap className="w-6 h-6 text-yellow-400" />
+                      <span className="text-sm text-gray-300">Resultados instantáneos</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <Shield className="w-6 h-6 text-pink-400" />
+                      <span className="text-sm text-gray-300">Sin registro</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
 

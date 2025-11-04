@@ -4,32 +4,71 @@
  * Integra orchestrator y muestra Dashboard con resultados
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2, Sparkles, TrendingUp, Youtube } from 'lucide-react';
+import { Search, Loader2, Sparkles, TrendingUp, Youtube, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import DashboardAnalysis from './Dashboard/DashboardAnalysis';
 import { integrateWithDashboard } from '@/services/channelAnalysisOrchestrator';
+import { canPerformAnalysis, markFreeAnalysisAsUsed } from '@/services/firstVisitTracker';
+import { consumePromoAnalysis, getPromoAnalysesRemaining, redeemPromoCode } from '@/services/promoCodeService';
 
 const ChannelAnalysisPage = () => {
   const [channelUrl, setChannelUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [error, setError] = useState(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoMessage, setPromoMessage] = useState('');
+  const [promoAnalysesLeft, setPromoAnalysesLeft] = useState(getPromoAnalysesRemaining());
   const { toast } = useToast();
 
   // Simular usuario autenticado (en producción usar real auth)
   const userId = 'demo-user-123';
   const userPlan = 'FREE'; // FREE, PRO, PREMIUM
 
-  const handleAnalyze = async () => {
-    if (!channelUrl.trim()) {
+  // Detectar URL desde query params (cuando viene del landing)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlParam = params.get('url');
+
+    if (urlParam) {
+      setChannelUrl(decodeURIComponent(urlParam));
+      setIsGuest(true);
+      // Auto-analizar si viene del landing
+      setTimeout(() => {
+        handleAnalyze(decodeURIComponent(urlParam));
+      }, 500);
+    }
+  }, []);
+
+  const handleAnalyze = async (urlOverride = null) => {
+    // Ensure urlOverride is null or string, not an event object
+    const urlParam = (typeof urlOverride === 'string') ? urlOverride : null;
+    const urlToAnalyze = urlParam || channelUrl;
+
+    // Add safety check for string type
+    if (!urlToAnalyze || typeof urlToAnalyze !== 'string' || !urlToAnalyze.trim()) {
       toast({
         title: "⚠️ URL requerida",
         description: "Por favor ingresa una URL o ID de canal de YouTube",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar si puede realizar el análisis
+    const analysisCheck = canPerformAnalysis(false, 0, 200); // isAuthenticated=false, credits=0
+
+    if (!analysisCheck.canAnalyze) {
+      setError(analysisCheck.message);
+      toast({
+        title: "❌ Análisis no disponible",
+        description: analysisCheck.message,
         variant: "destructive"
       });
       return;
@@ -39,8 +78,20 @@ const ChannelAnalysisPage = () => {
     setError(null);
 
     try {
+      // Si es primera vez (free_trial) o tiene códigos promo, saltar verificación de límites en Supabase
+      const skipLimitCheck = analysisCheck.reason === 'free_trial' || analysisCheck.reason === 'promo_code';
+
       // Llamar al orchestrator para análisis completo
-      const data = await integrateWithDashboard(userId, channelUrl, userPlan);
+      const data = await integrateWithDashboard(userId, urlToAnalyze, userPlan, skipLimitCheck);
+
+      // Si el análisis fue exitoso, marcar según el tipo
+      if (analysisCheck.reason === 'free_trial') {
+        markFreeAnalysisAsUsed();
+        console.log('🎉 Usuario usó su análisis gratuito de prueba');
+      } else if (analysisCheck.reason === 'promo_code') {
+        consumePromoAnalysis();
+        console.log('🎁 Usuario consumió 1 análisis promocional');
+      }
 
       setDashboardData(data);
 
@@ -70,11 +121,46 @@ const ChannelAnalysisPage = () => {
     setDashboardData(null);
     setChannelUrl('');
     setError(null);
+    setPromoAnalysesLeft(getPromoAnalysesRemaining());
+  };
+
+  const handleRedeemPromoCode = () => {
+    if (!promoCode.trim()) {
+      toast({
+        title: "⚠️ Código requerido",
+        description: "Ingresa un código promocional válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const result = redeemPromoCode(promoCode);
+
+    if (result.success) {
+      setPromoMessage(result.message);
+      setPromoAnalysesLeft(result.totalRemaining);
+      setPromoCode('');
+      setError(null);
+
+      toast({
+        title: "🎉 ¡Código canjeado!",
+        description: result.message,
+        className: "bg-green-900/20 border-green-500/30"
+      });
+    } else {
+      setPromoMessage(result.message);
+
+      toast({
+        title: "❌ Error",
+        description: result.message,
+        variant: "destructive"
+      });
+    }
   };
 
   // Si hay datos del dashboard, mostrar el dashboard
   if (dashboardData) {
-    return <DashboardAnalysis analysisData={dashboardData} onReset={handleReset} />;
+    return <DashboardAnalysis analysisData={dashboardData} onReset={handleReset} isGuest={isGuest} />;
   }
 
   // Vista de entrada/búsqueda
@@ -205,6 +291,65 @@ const ChannelAnalysisPage = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Código Promocional Card */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-8"
+          >
+            <Card className="bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-pink-900/40 border-purple-500/30">
+              <CardContent className="p-6">
+                <h3 className="text-[#F5F5F7] font-bold mb-3 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  ¿Tienes un código promocional?
+                </h3>
+                <p className="text-gray-300 text-sm mb-4">
+                  Canjea tu código para obtener análisis adicionales gratis
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Input
+                    type="text"
+                    placeholder="Ej: CREOVISION10"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    className="flex-1 bg-black/40 border-purple-500/30 text-white placeholder-gray-400"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRedeemPromoCode();
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={handleRedeemPromoCode}
+                    className="bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 hover:from-violet-700 hover:via-purple-700 hover:to-pink-700"
+                  >
+                    Canjear Código
+                  </Button>
+                </div>
+
+                {promoAnalysesLeft > 0 && (
+                  <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                    <p className="text-purple-300 text-sm font-semibold">
+                      🎁 Tienes {promoAnalysesLeft} análisis promocionales disponibles
+                    </p>
+                  </div>
+                )}
+
+                {promoMessage && (
+                  <p className="mt-3 text-sm text-gray-400">{promoMessage}</p>
+                )}
+
+                <div className="mt-4 text-xs text-gray-500">
+                  <p>Códigos válidos: CREOVISION10, LAUNCH2025, WELCOME10</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Info Card */}
         <motion.div

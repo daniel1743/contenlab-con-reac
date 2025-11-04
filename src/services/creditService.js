@@ -74,6 +74,22 @@ export async function getUserCredits(userId) {
       .eq('user_id', userId)
       .single();
 
+    // Si la tabla no existe, retornar valores por defecto silenciosamente
+    if (error && error.code === 'PGRST205') {
+      return {
+        success: true,
+        credits: {
+          monthly: 100,
+          purchased: 0,
+          bonus: 0,
+          total: 100
+        },
+        plan: 'free',
+        daysSinceReset: 0,
+        daysUntilReset: 30
+      };
+    }
+
     // Si no existe, crear con créditos iniciales
     if (error && error.code === 'PGRST116') {
       const { data: newCredits, error: insertError } = await supabase

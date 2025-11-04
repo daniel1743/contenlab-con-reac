@@ -24,19 +24,30 @@ import {
  * @param {string} userPlan - Plan del usuario (FREE, PRO, PREMIUM)
  * @returns {Promise<Object>} - Análisis completo con insights de IA
  */
-export const analyzeChannelWithCache = async (userId, channelUrl, userPlan = 'FREE') => {
+export const analyzeChannelWithCache = async (userId, channelUrl, userPlan = 'FREE', skipLimitCheck = false) => {
   console.log('🚀 Iniciando análisis de canal con cache...');
 
   try {
-    // 1. Verificar límites del plan
-    const limitCheck = await checkAnalysisLimit(userId, userPlan);
+    let limitCheck = {
+      canAnalyze: true,
+      videosAllowed: 5,
+      current: 0,
+      limit: 1
+    };
 
-    if (!limitCheck.canAnalyze) {
-      const resetsDate = new Date(limitCheck.resetsAt).toLocaleDateString('es-ES');
-      throw new Error(`Límite mensual alcanzado. Tu plan ${userPlan} permite ${limitCheck.limit} análisis/mes. Se restablece el ${resetsDate}.`);
+    // 1. Verificar límites del plan (solo si no es invitado)
+    if (!skipLimitCheck) {
+      limitCheck = await checkAnalysisLimit(userId, userPlan);
+
+      if (!limitCheck.canAnalyze) {
+        const resetsDate = new Date(limitCheck.resetsAt).toLocaleDateString('es-ES');
+        throw new Error(`Límite mensual alcanzado. Tu plan ${userPlan} permite ${limitCheck.limit} análisis/mes. Se restablece el ${resetsDate}.`);
+      }
+
+      console.log(`✅ Límite OK - Análisis ${limitCheck.current + 1}/${limitCheck.limit}. Videos permitidos: ${limitCheck.videosAllowed}`);
+    } else {
+      console.log('⚡ Modo invitado - saltando verificación de límites');
     }
-
-    console.log(`✅ Límite OK - Análisis ${limitCheck.current + 1}/${limitCheck.limit}. Videos permitidos: ${limitCheck.videosAllowed}`);
 
     // 2. Extraer ID del canal (necesitamos el ID real para el cache)
     const { extractChannelId } = await import('./youtubeChannelAnalyzerService');
@@ -126,10 +137,10 @@ export const useChannelAnalysis = () => {
  * Función de ejemplo para integración con el Dashboard
  * USAR CUANDO LLEGUE DashboardAnalysis.jsx del laboratorio
  */
-export const integrateWithDashboard = async (userId, channelUrl, userPlan) => {
+export const integrateWithDashboard = async (userId, channelUrl, userPlan, skipLimitCheck = false) => {
   try {
     // 1. Ejecutar análisis completo
-    const result = await analyzeChannelWithCache(userId, channelUrl, userPlan);
+    const result = await analyzeChannelWithCache(userId, channelUrl, userPlan, skipLimitCheck);
 
     // 2. Preparar datos para el Dashboard
     const dashboardData = {
