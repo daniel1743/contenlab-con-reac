@@ -100,6 +100,9 @@ import {
 // 🎓 IMPORT DE ASESOR DE CONTENIDO
 import { createContentAdvisor } from '@/services/contentAdvisorService';
 
+// 🎯 IMPORT DE PROMPT WIZARD
+import PromptWizardModal from '@/components/PromptWizardModal';
+
 // 🐦 IMPORT DE SERVICIOS TWITTER/X
 import {
   getTrendingHashtags
@@ -237,6 +240,10 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [advisorMessages, setAdvisorMessages] = useState([]); // Historial de mensajes
   const [isAdvisorThinking, setIsAdvisorThinking] = useState(false);
   const [userInput, setUserInput] = useState('');
+
+  // 🎯 ESTADOS PARA PROMPT WIZARD
+  const [showPromptWizard, setShowPromptWizard] = useState(false);
+  const [wizardGeneratedPrompt, setWizardGeneratedPrompt] = useState(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -866,6 +873,45 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     }
   }, [hashtagTopic, hashtagPlatform, toast]);
 
+  // 🎯 PROMPT WIZARD COMPLETION HANDLER
+  const handleWizardComplete = useCallback((generatedPrompt, wizardData) => {
+    console.log('🎯 Wizard completado:', { generatedPrompt, wizardData });
+
+    // Auto-llenar campos basados en los datos del wizard
+    if (wizardData.contentType) {
+      // Mapear tipo de contenido a duración
+      const durationMap = {
+        'video-corto': '15-60s',
+        'video-largo': '3-5min',
+        'post': 'Post',
+        'historia': 'Historia',
+        'blog': 'Blog'
+      };
+      const mappedDuration = durationMap[wizardData.contentType];
+      if (mappedDuration) {
+        const durationOption = contentDurations.find(d => d.value === mappedDuration);
+        if (durationOption && (!isFreePlan || !durationOption.requiresPro)) {
+          setSelectedDuration(mappedDuration);
+        }
+      }
+    }
+
+    // Establecer tema basado en audiencia/tono
+    if (!selectedTheme) {
+      setSelectedTheme('viral'); // Default
+    }
+
+    // Auto-llenar el topic con el prompt generado
+    setContentTopic(wizardData.topic || generatedPrompt);
+    setWizardGeneratedPrompt(generatedPrompt);
+
+    toast({
+      title: '✨ Prompt generado exitosamente',
+      description: 'Los campos han sido auto-completados. ¡Revisa y genera tu contenido!',
+      duration: 5000
+    });
+  }, [selectedTheme, isFreePlan, contentDurations, toast]);
+
   // 🆕 ANALIZADOR DE TENDENCIAS - Powered by CreoVision AI GP-5
   const handleAnalyzeTrends = useCallback(async () => {
     setIsAnalyzingTrends(true);
@@ -1205,13 +1251,27 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       {/* Generador de contenido principal */}
       <Card className="glass-effect border-purple-500/20">
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
-            <Sparkles className="w-6 h-6 mr-3 text-purple-400" />
-            Generador de Contenido IA
-          </CardTitle>
-          <CardDescription>
-            Define la temática y el estilo para crear contenido optimizado para viralidad.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-white flex items-center">
+                <Sparkles className="w-6 h-6 mr-3 text-purple-400" />
+                Generador de Contenido IA
+              </CardTitle>
+              <CardDescription>
+                Define la temática y el estilo para crear contenido optimizado para viralidad.
+              </CardDescription>
+            </div>
+            {/* 🎯 BOTÓN PROMPT WIZARD */}
+            <Button
+              onClick={() => setShowPromptWizard(true)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600
+                       text-white font-semibold shadow-lg hover:shadow-glow transition-all"
+              size="lg"
+            >
+              <Wand2 className="w-5 h-5 mr-2" />
+              Asistente de Prompt
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Formulario con selects nativos */}
@@ -2782,6 +2842,21 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           </Card>
         </div>
       )}
+
+      {/* 🎯 PROMPT WIZARD MODAL */}
+      <PromptWizardModal
+        isOpen={showPromptWizard}
+        onClose={() => setShowPromptWizard(false)}
+        onComplete={handleWizardComplete}
+        initialData={{
+          contentType: selectedDuration,
+          platform: '',
+          audience: creatorPersonality.audience || '',
+          tone: creatorPersonality.style || '',
+          goal: creatorPersonality.goals || '',
+          topic: contentTopic
+        }}
+      />
 
     </div>
   );

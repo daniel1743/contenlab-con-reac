@@ -905,24 +905,24 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
               onClick={() => onSectionChange('tools')}
               className="group cursor-pointer"
             >
-              <Card className="bg-gradient-to-br from-orange-950/40 via-purple-950/40 to-pink-950/40 backdrop-blur-sm border-orange-500/30 rounded-3xl p-8 h-full relative overflow-hidden hover:border-orange-400/60 hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500">
+              <Card className="bg-gradient-to-br from-violet-950/40 via-purple-950/40 to-fuchsia-950/40 backdrop-blur-sm border-violet-500/30 rounded-3xl p-8 h-full relative overflow-hidden hover:border-violet-400/60 hover:shadow-2xl hover:shadow-violet-500/20 transition-all duration-500">
                 {/* Badge Premium con animación */}
-                <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white tracking-widest uppercase shadow-lg animate-pulse">
+                <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white tracking-widest uppercase shadow-lg animate-pulse">
                   🔥 IA GP-5
                 </span>
 
                 {/* Efecto de brillo */}
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-violet-500/10 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
                 <div className="flex items-start gap-4 mb-6 relative z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-orange-500/50">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-violet-500/50">
                     <TrendingUp className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-orange-300 transition-colors">
+                    <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-violet-300 transition-colors">
                       Tendencias & Análisis IA
                     </h3>
-                    <p className="text-sm font-medium bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
+                    <p className="text-sm font-medium bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                       Powered by CreoVision AI GP-5
                     </p>
                   </div>
@@ -957,31 +957,31 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-center justify-between text-gray-300 group/item">
                       <div className="flex items-center gap-3">
-                        <item.icon className="w-4 h-4 text-orange-400 group-hover/item:scale-110 transition-transform" />
+                        <item.icon className="w-4 h-4 text-violet-400 group-hover/item:scale-110 transition-transform" />
                         <span className="text-sm group-hover/item:text-white transition-colors">{item.text}</span>
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-200 border border-violet-500/30">
                         {item.badge}
                       </span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="flex items-center gap-2 text-orange-400 group-hover:gap-4 transition-all font-semibold">
+                <div className="flex items-center gap-2 text-violet-300 group-hover:gap-4 transition-all font-semibold">
                   <Sparkles className="w-4 h-4 animate-pulse" />
                   <span className="text-sm">Descubrir Tendencias</span>
                   <span aria-hidden="true" className="text-lg">→</span>
                 </div>
 
                 {/* Contador de potencia */}
-                <div className="mt-4 pt-4 border-t border-orange-500/20">
+                <div className="mt-4 pt-4 border-t border-violet-500/20">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-400">Potencia IA:</span>
                     <div className="flex items-center gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <div key={i} className={`w-1.5 h-3 rounded-full ${i < 5 ? 'bg-gradient-to-t from-orange-500 to-yellow-400' : 'bg-gray-700'} group-hover:animate-pulse`} style={{ animationDelay: `${i * 100}ms` }} />
+                        <div key={i} className={`w-1.5 h-3 rounded-full ${i < 5 ? 'bg-gradient-to-t from-violet-500 to-fuchsia-400' : 'bg-gray-700'} group-hover:animate-pulse`} style={{ animationDelay: `${i * 100}ms` }} />
                       ))}
-                      <span className="ml-2 font-bold text-orange-400">GP-5</span>
+                      <span className="ml-2 font-bold text-violet-300">GP-5</span>
                     </div>
                   </div>
                 </div>
@@ -1096,7 +1096,10 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
               onClick={() => onSectionChange('settings')}
               className="group cursor-pointer"
             >
-              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-purple-500/30 transition-all duration-300">
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10 rounded-3xl p-8 h-full relative overflow-hidden hover:border-pink-400/60 hover:shadow-2xl hover:shadow-pink-500/20 transition-all duration-500">
+                {/* Efecto de brillo */}
+                <div className="absolute inset-0 z-0 bg-gradient-to-r from-pink-500/0 via-pink-500/10 to-pink-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="relative z-10">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                     <Settings className="w-8 h-8 text-white" />
@@ -1128,6 +1131,7 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
                   <span className="text-sm font-medium">Explorar Configuración</span>
                   <span aria-hidden="true">&rarr;</span>
                 </div>
+                </div>
               </Card>
             </motion.div>
           </div>
@@ -1148,16 +1152,16 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
               De la Idea al Impacto
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-4">
-              Potenciado por <span className="font-bold bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">CreoVision AI GP-5</span>, la inteligencia artificial más avanzada del mercado.
+              Potenciado por <span className="font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">CreoVision AI GP-5</span>, la inteligencia artificial más avanzada del mercado.
             </p>
             <div className="flex items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30">
                 <Sparkles className="w-4 h-4 text-purple-400" />
                 <span className="text-purple-300 font-medium">Miles de creadores lo confirman</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/30">
-                <Zap className="w-4 h-4 text-orange-400" />
-                <span className="text-orange-300 font-medium">IA de nivel profesional</span>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/30">
+                <Zap className="w-4 h-4 text-violet-400" />
+                <span className="text-violet-200 font-medium">IA de nivel profesional</span>
               </div>
             </div>
           </motion.div>
