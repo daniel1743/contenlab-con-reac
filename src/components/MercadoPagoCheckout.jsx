@@ -10,7 +10,8 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const plan = PLANS[planId];
+  const normalizedPlanId = planId?.toUpperCase?.() ?? 'PREMIUM';
+  const plan = PLANS[normalizedPlanId] ?? PLANS.PREMIUM;
 
   const handlePayment = async () => {
     if (!user) {
@@ -33,7 +34,7 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
         idNumber: '' // Opcional
       };
 
-      const result = await processPayment(planId, userData);
+      const result = await processPayment(normalizedPlanId, userData);
 
       if (result.success) {
         toast({
@@ -82,7 +83,7 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
           <div className="text-right">
-            <div className="text-3xl font-bold text-gradient">${plan.price}</div>
+            <div className="text-3xl font-bold text-gradient">${plan.price.toFixed(2)}</div>
             <div className="text-sm text-gray-400">USD/mes</div>
           </div>
         </div>

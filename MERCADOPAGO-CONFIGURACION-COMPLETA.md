@@ -19,8 +19,8 @@
 
 3. ✅ **Planes definidos:**
    - Free: $0/mes
-   - Pro: $30/mes
-   - Premium: $90/mes
+   - Pro: $15/mes
+   - Premium: $25/mes
 
 ---
 
@@ -121,7 +121,7 @@ MercadoPago usa el concepto de "Planes de Suscripción".
 
 ---
 
-#### **2.2: Crear Plan PRO ($30/mes)**
+#### **2.2: Crear Plan PRO ($15/mes)**
 
 1. Click en **Crear plan**
 2. Llena el formulario:
@@ -131,8 +131,8 @@ MercadoPago usa el concepto de "Planes de Suscripción".
 - **Descripción:** `Plan profesional para creadores de contenido`
 
 **Precio:**
-- **Monto:** `30`
-- **Moneda:** `ARS` (o `USD` si prefieres)
+- **Monto:** `15`
+- **Moneda:** `USD` (usa `CLP` si facturas en pesos chilenos)
 - **Frecuencia:** `Mensual`
 
 **Prueba Gratis:**
@@ -154,13 +154,13 @@ plan_id: 2c93808a-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ---
 
-#### **2.3: Crear Plan PREMIUM ($90/mes)**
+#### **2.3: Crear Plan PREMIUM ($25/mes)**
 
 Repite el mismo proceso pero con:
 
 - **Nombre:** `CreoVision Premium`
 - **Descripción:** `Plan premium con todas las funcionalidades`
-- **Monto:** `90`
+- **Monto:** `25`
 - **Prueba gratis:** `14 días`
 
 **Copia el ID del plan:**

@@ -103,10 +103,20 @@ import { createContentAdvisor } from '@/services/contentAdvisorService';
 // 🎯 IMPORT DE PROMPT WIZARD
 import PromptWizardModal from '@/components/PromptWizardModal';
 
+// 🔒 IMPORT DE MODAL DE REGISTRO
+import SubscriptionRequiredModal from '@/components/SubscriptionRequiredModal';
+
 // 🐦 IMPORT DE SERVICIOS TWITTER/X
 import {
   getTrendingHashtags
 } from '@/services/twitterService';
+
+// 💎 IMPORT DE SERVICIO DE CRÉDITOS
+import {
+  consumeCredits,
+  checkSufficientCredits,
+  getFeatureCost
+} from '@/services/creditService';
 
 // 💎 IMPORT DE SERVICIOS PREMIUM
 import {
@@ -245,6 +255,9 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [showPromptWizard, setShowPromptWizard] = useState(false);
   const [wizardGeneratedPrompt, setWizardGeneratedPrompt] = useState(null);
 
+  // 🔒 ESTADO PARA MODAL DE REGISTRO
+  const [showAuthRequiredModal, setShowAuthRequiredModal] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
   const isFreePlan = isDemoUser;
@@ -257,15 +270,16 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
     const now = Date.now();
     if (now - guardCooldownRef.current > 1500) {
       toast({
-        title: 'Función disponible en planes Pro',
-        description: 'Suscríbete para copiar, descargar o exportar tus recursos ilimitados.',
+        title: '🔒 Función disponible para usuarios registrados',
+        description: 'Crea tu cuenta gratis para desbloquear todas las herramientas de CreoVision.',
         variant: 'destructive'
       });
       guardCooldownRef.current = now;
     }
-    onSubscriptionClick?.();
+    // Mostrar modal de registro en lugar del modal de suscripción
+    setShowAuthRequiredModal(true);
     return true;
-  }, [user, onSubscriptionClick, toast]);
+  }, [user, toast]);
 
   useEffect(() => {
     if (!isDemoUser || user) {
@@ -648,14 +662,39 @@ const handleCopy = useCallback(() => {
   toast({ title: '¡Descargado!', description: 'Contenido descargado correctamente.' });
 }, [generatedContent, toast, guardProtectedAction]);
 
-  // ✅ FUNCIÓN LIBRE - Sin restricciones de usuario
+  // 🔒 FUNCIÓN PROTEGIDA - Requiere autenticación
   const handleGenerateContent = useCallback(async () => {
+    // ✅ VERIFICAR AUTENTICACIÓN PRIMERO
+    if (!user || isDemoUser) {
+      toast({
+        title: '🔒 Regístrate para usar esta herramienta',
+        description: 'Necesitas crear una cuenta gratuita para acceder al generador de contenido con IA.',
+        variant: 'destructive',
+      });
+      setShowAuthRequiredModal(true);
+      return;
+    }
+
     if (!contentTopic.trim() || !selectedTheme || !selectedStyle || !selectedDuration) {
       toast({
         title: 'Error',
         description: 'Por favor completa todos los campos para generar contenido.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    // 💎 VERIFICAR CRÉDITOS SUFICIENTES (15 créditos por guión)
+    const COST = 15;
+    const creditCheck = await checkSufficientCredits(user.id, COST);
+
+    if (!creditCheck.sufficient) {
+      toast({
+        title: '💎 Créditos insuficientes',
+        description: `Necesitas ${COST} créditos para generar contenido. Te faltan ${creditCheck.missing} créditos.`,
+        variant: 'destructive',
+      });
+      onSubscriptionClick?.();
       return;
     }
     
@@ -709,11 +748,16 @@ const handleCopy = useCallback(() => {
       // Mantener el contenido completo para compatibilidad
       setGeneratedContent(generatedScript);
 
+      // 💎 CONSUMIR CRÉDITOS DESPUÉS DE GENERACIÓN EXITOSA
+      const creditResult = await consumeCredits(user.id, COST, 'viral_script', 'Generación de guion viral');
+
+      if (creditResult.success) {
+        console.log(`💎 ${COST} créditos consumidos. Restantes: ${creditResult.remaining}`);
+      }
+
       toast({
-        title: '✨ CreoVision está creando tu guión profesional',
-        description: creatorPersonality.role
-          ? 'Adaptando el contenido a tu estilo único y audiencia. En breve recibirás un análisis estratégico completo...'
-          : 'Nuestro motor de IA está diseñando tu contenido premium. Prepárate para recibir algo grandioso...',
+        title: '✨ Guión generado exitosamente',
+        description: `Se consumieron ${COST} créditos. Restantes: ${creditResult.remaining || 'N/A'} créditos.`,
         duration: 5000,
       });
 
@@ -788,7 +832,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       setIsGenerating(false);
       console.log('🏁 Generación de contenido finalizada');
     }
-  }, [contentTopic, selectedTheme, selectedStyle, selectedDuration, creatorPersonality, advancedSettings, toast, user]);
+  }, [contentTopic, selectedTheme, selectedStyle, selectedDuration, creatorPersonality, advancedSettings, toast, user, isDemoUser]);
 
   // Reproducir (libre para todos)
   const handleReplayScript = useCallback(() => {
@@ -814,14 +858,39 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     }
   }, [generatedContent, toast]);
 
-  // 🆕 GENERADOR DE HASHTAGS CON TWITTER/X API
+  // 🆕 GENERADOR DE HASHTAGS CON TWITTER/X API - PROTEGIDO
   const handleGenerateHashtags = useCallback(async () => {
+    // ✅ VERIFICAR AUTENTICACIÓN PRIMERO
+    if (!user || isDemoUser) {
+      toast({
+        title: '🔒 Regístrate para generar hashtags',
+        description: 'Necesitas crear una cuenta gratuita para usar el generador de hashtags.',
+        variant: 'destructive',
+      });
+      setShowAuthRequiredModal(true);
+      return;
+    }
+
     if (!hashtagTopic.trim() || !hashtagPlatform) {
       toast({
         title: 'Campos incompletos',
         description: 'Por favor completa el tema y la plataforma.',
         variant: 'destructive'
       });
+      return;
+    }
+
+    // 💎 VERIFICAR CRÉDITOS SUFICIENTES (2 créditos por hashtags)
+    const COST = 2;
+    const creditCheck = await checkSufficientCredits(user.id, COST);
+
+    if (!creditCheck.sufficient) {
+      toast({
+        title: '💎 Créditos insuficientes',
+        description: `Necesitas ${COST} créditos para generar hashtags. Te faltan ${creditCheck.missing} créditos.`,
+        variant: 'destructive',
+      });
+      onSubscriptionClick?.();
       return;
     }
 
@@ -845,9 +914,17 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       }));
 
       setGeneratedHashtags(formattedHashtags);
+
+      // 💎 CONSUMIR CRÉDITOS DESPUÉS DE GENERACIÓN EXITOSA
+      const creditResult = await consumeCredits(user.id, COST, 'hashtag_generator', 'Generación de hashtags');
+
+      if (creditResult.success) {
+        console.log(`💎 ${COST} créditos consumidos. Restantes: ${creditResult.remaining}`);
+      }
+
       toast({
-        title: '✅ Hashtags obtenidos de Twitter/X',
-        description: `${formattedHashtags.length} hashtags optimizados para ${hashtagPlatform}`
+        title: '✅ Hashtags generados',
+        description: `${formattedHashtags.length} hashtags optimizados. ${COST} créditos consumidos.`,
       });
 
       console.log('🐦 Hashtags generados:', formattedHashtags);
@@ -871,7 +948,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
     } finally {
       setIsGeneratingHashtags(false);
     }
-  }, [hashtagTopic, hashtagPlatform, toast]);
+  }, [hashtagTopic, hashtagPlatform, toast, user, isDemoUser]);
 
   // 🎯 PROMPT WIZARD COMPLETION HANDLER
   const handleWizardComplete = useCallback((generatedPrompt, wizardData) => {
@@ -2856,6 +2933,21 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           goal: creatorPersonality.goals || '',
           topic: contentTopic
         }}
+      />
+
+      {/* 🔒 MODAL DE REGISTRO REQUERIDO */}
+      <SubscriptionRequiredModal
+        isOpen={showAuthRequiredModal}
+        onClose={() => setShowAuthRequiredModal(false)}
+        onLogin={() => {
+          setShowAuthRequiredModal(false);
+          onAuthClick?.();
+        }}
+        onViewPlans={() => {
+          setShowAuthRequiredModal(false);
+          onSubscriptionClick?.();
+        }}
+        featureName="las herramientas de generación de contenido"
       />
 
     </div>

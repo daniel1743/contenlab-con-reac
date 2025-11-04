@@ -128,7 +128,7 @@
 
 ### 5.2 Ventaja Competitiva (según `COMPARATIVA-COMPETIDORES.md` & `PLAN-DEFENSA-COMPETITIVA.md`)
 - Cobertura integral (generación + analítica + SEO).
-- Coste inferior (USD 29–49/mes) frente a suites de $49–249 (Jasper, Copy.ai) o especializadas (VidIQ, Flick).
+- Coste inferior (USD 15-25/mes) frente a suites de $49-249 (Jasper, Copy.ai) o especializadas (VidIQ, Flick).
 - Multi-IA con fallback => uptime cercano a 99.9% sin depender de un proveedor.
 - Nicho claro (creadores de video) con roadmap para fidelidad (thumbnail editor, mensajería integrada, chat IA).
 
@@ -208,4 +208,3 @@ ContentLab/CreoVision es un proyecto listo para presentar a inversores o partner
 - Documentos: `RESUMEN_IMPLEMENTACION.md`, `GESTION_APIS.md`, `CHANNEL_ANALYSIS_READY.md`, `COMPARATIVA-COMPETIDORES.md`, `AREAS-COMENTADAS-PENDIENTES.md`, `INFORME-CAMBIOS-LIMITES-Y-AUTH.md`, `MERCADOPAGO-CONFIGURACION-COMPLETA.md`
 
 **Siguiente paso sugerido:** Compartir este informe junto con una demo guiada del dashboard y el flujo de análisis de canal para cuantificar el valor frente a clientes beta o inversionistas.
-

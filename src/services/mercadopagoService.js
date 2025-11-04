@@ -20,33 +20,33 @@ export const PLANS = {
       'Soporte por email'
     ]
   },
-  STANDARD: {
-    id: 'standard',
-    name: 'Standard',
-    price: 10.00,
+  PRO: {
+    id: 'pro',
+    name: 'Pro',
+    price: 15.00,
     currency: 'USD',
     features: [
       '50 generaciones de contenido/mes',
-      'Dashboard completo',
-      'Todas las plantillas',
-      'Análisis de tendencias',
-      'Soporte prioritario'
+      'Dashboard completo y métricas en tiempo real',
+      'Todas las plantillas y prompts premium',
+      'Análisis de tendencias multicanal',
+      'Soporte prioritario en 24 h'
     ]
   },
   PREMIUM: {
     id: 'premium',
     name: 'Premium',
-    price: 10.00, // ~~$20.00~~ → $10.00
+    price: 25.00,
     currency: 'USD',
     features: [
       'Generador de contenido viral (20 peticiones/día)',
-      'Personalización de narración/guion',
-      'Auditoría de contenido',
-      'Dashboard interactivo (20 consultas/día)',
+      'Personalización de narración/guion avanzada',
+      'Auditoría integral de contenido y SEO',
+      'Dashboard interactivo ilimitado',
       'Inteligencia competitiva (análisis de top videos)',
       'Optimizador SEO (títulos + hashtags)',
-      'Estrategia Pro (monetización)',
-      'Calendario de publicación',
+      'Estrategia Pro (monetización + embudos)',
+      'Calendario de publicación colaborativo',
       'Biblioteca de contenido ilimitada',
       'Soporte 24/7 prioritario'
     ]
@@ -93,7 +93,8 @@ export const createPaymentPreference = async (planId, userData) => {
   // ⚠️ IMPORTANTE: Esta función debe llamar a tu backend
   // NO pongas el Access Token en el frontend
 
-  const plan = PLANS[planId.toUpperCase()];
+  const planKey = planId?.toUpperCase();
+  const plan = PLANS[planKey];
 
   if (!plan || plan.price === 0) {
     throw new Error('Plan inválido o gratuito');
@@ -156,11 +157,24 @@ export const createPaymentPreference = async (planId, userData) => {
 
 /**
  * Redirige al usuario al checkout de Mercado Pago
- * @param {string} preferenceId - ID de la preferencia creada
+ * @param {object} preference - Preferencia devuelta por tu backend (debe incluir init_point)
  */
-export const redirectToCheckout = (preferenceId) => {
-  // URL del checkout de Mercado Pago
-  const checkoutUrl = `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${preferenceId}`;
+export const redirectToCheckout = (preference) => {
+  if (!preference) {
+    throw new Error('No se recibió la preferencia de pago');
+  }
+
+  const checkoutUrl =
+    preference.init_point ||
+    preference.sandbox_init_point ||
+    (preference.id
+      ? `https://www.mercadopago.com/checkout/v1/redirect?pref_id=${preference.id}`
+      : null);
+
+  if (!checkoutUrl) {
+    throw new Error('No se recibió una URL de checkout válida');
+  }
+
   window.location.href = checkoutUrl;
 };
 
@@ -174,8 +188,8 @@ export const processPayment = async (planId, userData) => {
     // 1. Crear preferencia de pago (llama a tu backend)
     const preference = await createPaymentPreference(planId, userData);
 
-    // 2. Redirigir al checkout
-    redirectToCheckout(preference.id);
+    // 2. Redirigir al checkout (usa init_point del backend)
+    redirectToCheckout(preference);
 
     return {
       success: true,

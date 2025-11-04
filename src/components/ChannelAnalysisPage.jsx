@@ -95,6 +95,28 @@ const ChannelAnalysisPage = () => {
 
       setDashboardData(data);
 
+      if (typeof window !== 'undefined') {
+        const conciergePayload = {
+          timestamp: Date.now(),
+          channelInfo: {
+            title: data?.channelInfo?.title || '',
+            subscribers: data?.channelInfo?.subscribers || 0,
+            totalViews: data?.channelInfo?.totalViews || 0,
+            totalVideos: data?.channelInfo?.totalVideos || 0,
+            bestVideo: data?.metrics?.bestVideo || ''
+          },
+          insights: {
+            summary: data?.aiInsights?.summary || '',
+            strengths: Array.isArray(data?.aiInsights?.strengths) ? data.aiInsights.strengths.slice(0, 3) : [],
+            improvements: Array.isArray(data?.aiInsights?.improvements) ? data.aiInsights.improvements.slice(0, 3) : [],
+            nextSteps: Array.isArray(data?.aiInsights?.nextSteps) ? data.aiInsights.nextSteps.slice(0, 3) : [],
+            recommendations: Array.isArray(data?.aiInsights?.recommendations) ? data.aiInsights.recommendations.slice(0, 3) : []
+          }
+        };
+
+        window.localStorage.setItem('creovision_last_channel_analysis', JSON.stringify(conciergePayload));
+      }
+
       toast({
         title: "✅ Análisis completado",
         description: data.meta.fromCache
