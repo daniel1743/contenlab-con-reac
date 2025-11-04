@@ -1,4 +1,4 @@
-# 📘 Informe Integral de Contenido y Valor — ContentLab / CreoVision
+# 📘 Informe Integral de Contenido y Valor — ContentLab / CreoVision por chatgpt
 
 **Fecha:** 2025-11-05  
 **Autor:** Auditoría interna generada por IA (Codex)  

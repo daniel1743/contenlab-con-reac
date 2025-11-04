@@ -18,7 +18,7 @@ export const generateChannelInsights = async (channelAnalysis) => {
   console.log('🤖 Generando insights con IA...');
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = buildAnalysisPrompt(channelAnalysis);
 
@@ -273,7 +273,7 @@ export const analyzeSentiment = async (comments) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const commentsText = comments.slice(0, 50).map(c => c.text).join('\n---\n');
 

@@ -15,32 +15,45 @@ const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 export const extractChannelId = (input) => {
   if (!input) return null;
 
+  // Limpiar parámetros de query (?si=xxx, ?feature=xxx, etc.)
+  const cleanInput = input.split('?')[0].split('#')[0].trim();
+
   // Si ya es un ID (formato: UC...)
-  if (input.startsWith('UC') && input.length === 24) {
-    return input;
+  if (cleanInput.startsWith('UC') && cleanInput.length === 24) {
+    return cleanInput;
   }
 
   // Extraer de URL: youtube.com/channel/UCxxxx
-  const channelMatch = input.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
+  const channelMatch = cleanInput.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
   if (channelMatch) return channelMatch[1];
 
   // Extraer de URL: youtube.com/c/NombreCanal o youtube.com/@NombreCanal
-  const customMatch = input.match(/youtube\.com\/(?:c\/|@)([a-zA-Z0-9_-]+)/);
+  const customMatch = cleanInput.match(/youtube\.com\/(?:c\/|@)([a-zA-Z0-9_-]+)/);
   if (customMatch) return customMatch[1]; // Necesitará resolución adicional
 
-  return input;
+  return cleanInput;
 };
 
 /**
  * Obtiene información básica del canal
- * @param {string} channelId - ID del canal de YouTube
+ * @param {string} channelIdOrHandle - ID del canal (UC...) o handle (@username)
  * @returns {Promise<Object>} - Datos del canal
  */
-export const getChannelInfo = async (channelId) => {
+export const getChannelInfo = async (channelIdOrHandle) => {
   try {
-    const response = await fetch(
-      `${YOUTUBE_API_BASE}/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${YOUTUBE_API_KEY}`
-    );
+    // Determinar si es un ID (UC...) o un handle (@username / custom name)
+    const isChannelId = channelIdOrHandle.startsWith('UC') && channelIdOrHandle.length === 24;
+
+    let url;
+    if (isChannelId) {
+      // Usar id= para IDs reales
+      url = `${YOUTUBE_API_BASE}/channels?part=snippet,statistics,brandingSettings&id=${channelIdOrHandle}&key=${YOUTUBE_API_KEY}`;
+    } else {
+      // Usar forHandle= para @usernames y custom URLs
+      url = `${YOUTUBE_API_BASE}/channels?part=snippet,statistics,brandingSettings&forHandle=${channelIdOrHandle}&key=${YOUTUBE_API_KEY}`;
+    }
+
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`Error fetching channel: ${response.statusText}`);
@@ -218,13 +231,13 @@ export const analyzeChannel = async (channelIdOrUrl, maxVideos = 5) => {
 
     console.log('📡 ID del canal:', channelId);
 
-    // 2. Obtener información del canal
+    // 2. Obtener información del canal (esto nos da el ID real del canal)
     console.log('📊 Obteniendo información del canal...');
     const channelInfo = await getChannelInfo(channelId);
 
-    // 3. Obtener últimos N videos
+    // 3. Obtener últimos N videos usando el ID real del canal
     console.log(`🎬 Obteniendo últimos ${maxVideos} videos...`);
-    const videos = await getChannelVideos(channelId, maxVideos);
+    const videos = await getChannelVideos(channelInfo.id, maxVideos);
 
     if (videos.length === 0) {
       throw new Error('El canal no tiene videos públicos');
