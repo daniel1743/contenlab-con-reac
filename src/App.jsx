@@ -27,6 +27,7 @@ const TermsModal = lazy(() => import('@/components/legal/TermsModal'));
 const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'));
+const WeeklyTrends = lazy(() => import('@/components/WeeklyTrends'));
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -299,6 +300,9 @@ function App() {
 
                   {/* Ruta de análisis de canal de YouTube */}
                   <Route path="/channel-analysis" element={<ChannelAnalysisPage />} />
+
+                  {/* Ruta de Tendencias de la Semana */}
+                  <Route path="/tendencias" element={<WeeklyTrends />} />
 
                   {/* Rutas comentadas/eliminadas - Redirect a home para evitar 404 */}
                   <Route path="/chat" element={<Navigate to="/" replace />} />

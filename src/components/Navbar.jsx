@@ -24,7 +24,8 @@ import {
   UserCircleIcon,
   BellIcon,
   ArrowRightStartOnRectangleIcon,
-  BoltIcon
+  BoltIcon,
+  FireIcon
 } from '@heroicons/react/24/outline';
 
 import {
@@ -118,6 +119,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     { id: 'landing', label: 'Inicio', icon: HomeIcon },
     { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
     { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
+    { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false }, // 🆕 TENDENCIAS
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
     // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
     { id: 'calendar', label: 'Calendario', icon: CalendarIcon, authRequired: true },

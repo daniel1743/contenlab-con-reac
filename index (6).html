@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreoVision - Perfil de Creador</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #0f1419 0%, #1a1f3a 50%, #1a1f3a 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #root {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .banner {
+      height: 600px;
+      background: linear-gradient(135deg, #8B5CF6 0%, #ec4899 50%, #22d3ee 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><circle cx="100" cy="100" r="80" fill="rgba(255,255,255,0.05)"/><circle cx="800" cy="400" r="120" fill="rgba(255,255,255,0.05)"/><circle cx="1000" cy="150" r="60" fill="rgba(255,255,255,0.05)"/></svg>');
+      opacity: 0.3;
+    }
+
+    .profile-section {
+      max-width: 1200px;
+      margin: -80px auto 0;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .profile-header {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .profile-photo-container {
+      position: relative;
+    }
+
+    .profile-photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid #1a1f3a;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899);
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .profile-photo:hover {
+      transform: rotate(5deg) scale(1.05);
+      box-shadow: 0 12px 40px rgba(139, 92, 246, 0.6);
+    }
+
+    .profile-info {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .profile-name {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .profile-username {
+      font-size: 18px;
+      color: #a78bfa;
+      margin-bottom: 16px;
+    }
+
+    .edit-btn {
+      background: linear-gradient(135deg, #8B5CF6, #ec4899);
+      color: white;
+      border: none;
+      padding: 8px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 16px;
+    }
+
+    .edit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+    }
+
+    .input-field, .textarea-field {
+      width: 100%;
+      background: rgba(15, 20, 25, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #f8fafc;
+      font-size: 14px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus, .textarea-field:focus {
+      outline: none;
+      border-color: #8B5CF6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .textarea-field {
+      min-height: 80px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .social-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 20px;
+    }
+
+    .social-icon:hover {
+      transform: translateY(-4px) scale(1.1);
+    }
+
+    .social-twitter {
+      background: rgba(34, 211, 238, 0.2);
+      color: #22d3ee;
+    }
+
+    .social-instagram {
+      background: rgba(236, 72, 153, 0.2);
+      color: #ec4899;
+    }
+
+    .social-youtube {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .social-tiktok {
+      background: rgba(167, 139, 250, 0.2);
+      color: #a78bfa;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin: 48px 0;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: rgba(15, 20, 25, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 16px;
+      padding: 24px 32px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: #8B5CF6;
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #a78bfa;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 64px 0 32px;
+      text-align: center;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .threads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 64px;
+      padding: 0 24px;
+    }
+
+    .thread-card {
+      background: rgba(15, 20, 25, 0.8);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .thread-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: #8B5CF6;
+      box-shadow: 0 12px 32px rgba(139, 92, 246, 0.3);
+    }
+
+    .thread-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .thread-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .thread-author {
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .thread-timestamp {
+      font-size: 12px;
+      color: #a78bfa;
+      margin-left: auto;
+    }
+
+    .thread-content {
+      color: #f8fafc;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .thread-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: #a78bfa;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .action-btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      transform: scale(1.05);
+    }
+
+    .action-btn.liked {
+      color: #ec4899;
+    }
+
+    .action-icon {
+      font-size: 18px;
+      transition: all 0.3s ease;
+    }
+
+    .action-btn:hover .action-icon {
+      transform: scale(1.2);
+    }
+
+    .action-btn.liked .action-icon {
+      animation: heartBeat 0.5s ease;
+    }
+
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.3); }
+      50% { transform: scale(1.1); }
+    }
+
+    .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 64px;
+      padding: 0 24px;
+    }
+
+    .video-card {
+      background: rgba(15, 20, 25, 0.8);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .video-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: #8B5CF6;
+      box-shadow: 0 12px 32px rgba(139, 92, 246, 0.3);
+    }
+
+    .video-thumbnail {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .play-button {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .play-button:hover {
+      transform: scale(1.1);
+      background: white;
+    }
+
+    .video-info {
+      padding: 16px;
+    }
+
+    .video-input {
+      width: 100%;
+      background: rgba(15, 20, 25, 0.6);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #f8fafc;
+      font-size: 13px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .video-input:focus {
+      outline: none;
+      border-color: #8B5CF6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .video-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f8fafc;
+      margin-bottom: 8px;
+    }
+
+    .video-stats {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .banner {
+        height: 400px;
+      }
+
+      .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .profile-photo {
+        margin: 0 auto;
+      }
+
+      .social-links {
+        justify-content: center;
+      }
+
+      .threads-grid, .videos-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .add-video-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #8B5CF6, #ec4899);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .add-video-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+    }
+
+    .empty-video {
+      aspect-ratio: 16/9;
+      background: rgba(15, 20, 25, 0.6);
+      border: 2px dashed rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a78bfa;
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { motion } = window.Motion;
+
+    // Icons as SVG components
+    const HeartIcon = ({ filled }) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    );
+
+    const EyeIcon = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    );
+
+    const ShareIcon = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+      </svg>
+    );
+
+    const PlayIcon = () => (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="#8B5CF6">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+    );
+
+    const TwitterIcon = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"></path>
+      </svg>
+    );
+
+    const InstagramIcon = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+      </svg>
+    );
+
+    const YouTubeIcon = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+        <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="#fff"></polygon>
+      </svg>
+    );
+
+    const TikTokIcon = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"></path>
+      </svg>
+    );
+
+    const PlusIcon = () => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    );
+
+    function App() {
+      const [isEditing, setIsEditing] = useState(false);
+      const [profileData, setProfileData] = useState({
+        name: "Tu Nombre",
+        username: "@tuusuario",
+        mission: "Crear contenido viral de calidad que inspire y conecte con la audiencia",
+        vision: "Ser la plataforma número 1 para creadores de contenido en toda Latinoamérica",
+        followers: 15000,
+        engagement: "7.8%",
+        totalViews: "2.5M"
+      });
+
+      const [threads, setThreads] = useState([
+        { id: 1, author: "Usuario", timestamp: "2h ago", content: "Mi primer hilo en CreoVision 🚀 Compartiendo mi experiencia como creador de contenido", likes: 234, views: 1200, shares: 45, liked: false },
+        { id: 2, author: "Usuario", timestamp: "4h ago", content: "Contenido viral para creadores 📈 Tips y estrategias que funcionan", likes: 567, views: 3400, shares: 120, liked: false },
+        { id: 3, author: "Usuario", timestamp: "1d ago", content: "Consejos de SEO para mejorar tu visibilidad 🔍 Algoritmos y tendencias", likes: 890, views: 5600, shares: 234, liked: false },
+        { id: 4, author: "Usuario", timestamp: "2d ago", content: "Análisis de algoritmos 🧠 Cómo funcionan las redes sociales", likes: 445, views: 2100, shares: 89, liked: false },
+        { id: 5, author: "Usuario", timestamp: "3d ago", content: "Estrategia de contenido efectiva 💡 Planificación y ejecución", likes: 678, views: 4200, shares: 156, liked: false },
+        { id: 6, author: "Usuario", timestamp: "4d ago", content: "Herramientas para creadores 🛠️ Las mejores apps y recursos", likes: 234, views: 1800, shares: 67, liked: false },
+        { id: 7, author: "Usuario", timestamp: "5d ago", content: "Monetización de canales 💰 Diferentes formas de generar ingresos", likes: 567, views: 3100, shares: 145, liked: false },
+        { id: 8, author: "Usuario", timestamp: "6d ago", content: "Tendencias en redes sociales 📱 Lo que viene en 2025", likes: 123, views: 890, shares: 34, liked: false },
+        { id: 9, author: "Usuario", timestamp: "1w ago", content: "Cómo crecer en YouTube 🎥 Estrategias probadas y efectivas", likes: 456, views: 2700, shares: 98, liked: false },
+        { id: 10, author: "Usuario", timestamp: "1w ago", content: "Tips para TikTok viral ⚡ El algoritmo explicado paso a paso", likes: 789, views: 5100, shares: 267, liked: false }
+      ]);
+
+      const [youtubeVideos, setYoutubeVideos] = useState([
+        { id: 1, url: "", title: "Video de YouTube", views: "1.2K", likes: 89, liked: false },
+        { id: 2, url: "", title: "Tutorial Completo", views: "3.5K", likes: 234, liked: false },
+        { id: 3, url: "", title: "Contenido Viral", views: "8.9K", likes: 567, liked: false }
+      ]);
+
+      const [tiktokVideos, setTiktokVideos] = useState([
+        { id: 1, url: "", title: "TikTok Viral", views: "45.2K", likes: 1234, liked: false },
+        { id: 2, url: "", title: "Tendencia 2025", views: "23.8K", likes: 890, liked: false },
+        { id: 3, url: "", title: "Challenge", views: "67.5K", likes: 2345, liked: false }
+      ]);
+
+      const [instagramPosts, setInstagramPosts] = useState([
+        { id: 1, url: "", title: "Post Instagram", likes: 456, comments: 23, liked: false },
+        { id: 2, url: "", title: "Carousel", likes: 789, comments: 45, liked: false },
+        { id: 3, url: "", title: "Reel", likes: 1234, comments: 89, liked: false }
+      ]);
+
+      const handleProfileChange = (field, value) => {
+        setProfileData(prev => ({ ...prev, [field]: value }));
+      };
+
+      const toggleThreadLike = (id) => {
+        setThreads(prev => prev.map(thread => 
+          thread.id === id 
+            ? { ...thread, liked: !thread.liked, likes: thread.liked ? thread.likes - 1 : thread.likes + 1 }
+            : thread
+        ));
+      };
+
+      const toggleVideoLike = (id, type) => {
+        if (type === 'youtube') {
+          setYoutubeVideos(prev => prev.map(video => 
+            video.id === id 
+              ? { ...video, liked: !video.liked, likes: video.liked ? video.likes - 1 : video.likes + 1 }
+              : video
+          ));
+        } else if (type === 'tiktok') {
+          setTiktokVideos(prev => prev.map(video => 
+            video.id === id 
+              ? { ...video, liked: !video.liked, likes: video.liked ? video.likes - 1 : video.likes + 1 }
+              : video
+          ));
+        } else if (type === 'instagram') {
+          setInstagramPosts(prev => prev.map(post => 
+            post.id === id 
+              ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 }
+              : post
+          ));
+        }
+      };
+
+      const handleVideoUrlChange = (id, url, type) => {
+        if (type === 'youtube') {
+          setYoutubeVideos(prev => prev.map(video => 
+            video.id === id ? { ...video, url } : video
+          ));
+        } else if (type === 'tiktok') {
+          setTiktokVideos(prev => prev.map(video => 
+            video.id === id ? { ...video, url } : video
+          ));
+        } else if (type === 'instagram') {
+          setInstagramPosts(prev => prev.map(post => 
+            post.id === id ? { ...post, url } : post
+          ));
+        }
+      };
+
+      return (
+        <div>
+          {/* Banner */}
+          <motion.div 
+            className="banner"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          />
+
+          {/* Profile Section */}
+          <div className="profile-section">
+            <motion.div 
+              className="profile-header"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="profile-photo-container">
+                <motion.div 
+                  className="profile-photo"
+                  initial={{ rotate: -10, scale: 0.8 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  {profileData.name.charAt(0).toUpperCase()}
+                </motion.div>
+              </div>
+
+              <div className="profile-info">
+                <button 
+                  className="edit-btn" 
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? "Guardar" : "Editar Perfil"}
+                </button>
+
+                {isEditing ? (
+                  <>
+                    <input
+                      className="input-field"
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) => handleProfileChange('name', e.target.value)}
+                      placeholder="Nombre"
+                    />
+                    <input
+                      className="input-field"
+                      type="text"
+                      value={profileData.username}
+                      onChange={(e) => handleProfileChange('username', e.target.value)}
+                      placeholder="@usuario"
+                    />
+                    <textarea
+                      className="textarea-field"
+                      value={profileData.mission}
+                      onChange={(e) => handleProfileChange('mission', e.target.value)}
+                      placeholder="Misión"
+                    />
+                    <textarea
+                      className="textarea-field"
+                      value={profileData.vision}
+                      onChange={(e) => handleProfileChange('vision', e.target.value)}
+                      placeholder="Visión"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <h1 className="profile-name">{profileData.name}</h1>
+                    <p className="profile-username">{profileData.username}</p>
+                    <p style={{ color: '#f8fafc', marginBottom: '12px' }}>
+                      <strong>Misión:</strong> {profileData.mission}
+                    </p>
+                    <p style={{ color: '#f8fafc', marginBottom: '12px' }}>
+                      <strong>Visión:</strong> {profileData.vision}
+                    </p>
+                  </>
+                )}
+
+                <div className="social-links">
+                  <motion.div 
+                    className="social-icon social-twitter"
+                    whileHover={{ y: -4, scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <TwitterIcon />
+                  </motion.div>
+                  <motion.div 
+                    className="social-icon social-instagram"
+                    whileHover={{ y: -4, scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <InstagramIcon />
+                  </motion.div>
+                  <motion.div 
+                    className="social-icon social-youtube"
+                    whileHover={{ y: -4, scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <YouTubeIcon />
+                  </motion.div>
+                  <motion.div 
+                    className="social-icon social-tiktok"
+                    whileHover={{ y: -4, scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <TikTokIcon />
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Stats Row */}
+            <motion.div 
+              className="stats-row"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <motion.div 
+                className="stat-card"
+                whileHover={{ y: -4, scale: 1.05 }}
+              >
+                <div className="stat-value">{profileData.followers.toLocaleString()}</div>
+                <div className="stat-label">Seguidores</div>
+              </motion.div>
+              <motion.div 
+                className="stat-card"
+                whileHover={{ y: -4, scale: 1.05 }}
+              >
+                <div className="stat-value">{profileData.engagement}</div>
+                <div className="stat-label">Engagement</div>
+              </motion.div>
+              <motion.div 
+                className="stat-card"
+                whileHover={{ y: -4, scale: 1.05 }}
+              >
+                <div className="stat-value">{profileData.totalViews}</div>
+                <div className="stat-label">Visualizaciones</div>
+              </motion.div>
+            </motion.div>
+
+            {/* Threads Section */}
+            <motion.h2 
+              className="section-title"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              📝 Hilos
+            </motion.h2>
+            <div className="threads-grid">
+              {threads.map((thread, index) => (
+                <motion.div
+                  key={thread.id}
+                  className="thread-card"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                >
+                  <div className="thread-header">
+                    <div className="thread-avatar">{thread.author.charAt(0)}</div>
+                    <div className="thread-author">{thread.author}</div>
+                    <div className="thread-timestamp">{thread.timestamp}</div>
+                  </div>
+                  <div className="thread-content">{thread.content}</div>
+                  <div className="thread-actions">
+                    <button 
+                      className={`action-btn ${thread.liked ? 'liked' : ''}`}
+                      onClick={() => toggleThreadLike(thread.id)}
+                    >
+                      <span className="action-icon"><HeartIcon filled={thread.liked} /></span>
+                      {thread.likes}
+                    </button>
+                    <button className="action-btn">
+                      <span className="action-icon"><EyeIcon /></span>
+                      {thread.views}
+                    </button>
+                    <button className="action-btn">
+                      <span className="action-icon"><ShareIcon /></span>
+                      {thread.shares}
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* YouTube Section */}
+            <motion.h2 
+              className="section-title"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              🎥 Videos de YouTube
+            </motion.h2>
+            <div className="videos-grid">
+              {youtubeVideos.map((video, index) => (
+                <motion.div
+                  key={video.id}
+                  className="video-card"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                >
+                  {video.url ? (
+                    <div className="video-thumbnail">
+                      <div className="play-button">
+                        <PlayIcon />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-video">
+                      <PlusIcon />
+                    </div>
+                  )}
+                  <div className="video-info">
+                    <input
+                      className="video-input"
+                      type="text"
+                      placeholder="Pegar URL de YouTube"
+                      value={video.url}
+                      onChange={(e) => handleVideoUrlChange(video.id, e.target.value, 'youtube')}
+                    />
+                    <div className="video-title">{video.title}</div>
+                    <div className="video-stats">
+                      <button 
+                        className={`action-btn ${video.liked ? 'liked' : ''}`}
+                        onClick={() => toggleVideoLike(video.id, 'youtube')}
+                      >
+                        <span className="action-icon"><HeartIcon filled={video.liked} /></span>
+                        {video.likes}
+                      </button>
+                      <button className="action-btn">
+                        <span className="action-icon"><EyeIcon /></span>
+                        {video.views}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* TikTok Section */}
+            <motion.h2 
+              className="section-title"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              ⚡ Videos de TikTok
+            </motion.h2>
+            <div className="videos-grid">
+              {tiktokVideos.map((video, index) => (
+                <motion.div
+                  key={video.id}
+                  className="video-card"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                >
+                  {video.url ? (
+                    <div className="video-thumbnail">
+                      <div className="play-button">
+                        <PlayIcon />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-video">
+                      <PlusIcon />
+                    </div>
+                  )}
+                  <div className="video-info">
+                    <input
+                      className="video-input"
+                      type="text"
+                      placeholder="Pegar URL de TikTok"
+                      value={video.url}
+                      onChange={(e) => handleVideoUrlChange(video.id, e.target.value, 'tiktok')}
+                    />
+                    <div className="video-title">{video.title}</div>
+                    <div className="video-stats">
+                      <button 
+                        className={`action-btn ${video.liked ? 'liked' : ''}`}
+                        onClick={() => toggleVideoLike(video.id, 'tiktok')}
+                      >
+                        <span className="action-icon"><HeartIcon filled={video.liked} /></span>
+                        {video.likes}
+                      </button>
+                      <button className="action-btn">
+                        <span className="action-icon"><EyeIcon /></span>
+                        {video.views}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Instagram Section */}
+            <motion.h2 
+              className="section-title"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              📸 Posts de Instagram
+            </motion.h2>
+            <div className="videos-grid" style={{ marginBottom: '64px' }}>
+              {instagramPosts.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  className="video-card"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                >
+                  {post.url ? (
+                    <div className="video-thumbnail">
+                      <div className="play-button">
+                        <InstagramIcon />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-video">
+                      <PlusIcon />
+                    </div>
+                  )}
+                  <div className="video-info">
+                    <input
+                      className="video-input"
+                      type="text"
+                      placeholder="Pegar URL de Instagram"
+                      value={post.url}
+                      onChange={(e) => handleVideoUrlChange(post.id, e.target.value, 'instagram')}
+                    />
+                    <div className="video-title">{post.title}</div>
+                    <div className="video-stats">
+                      <button 
+                        className={`action-btn ${post.liked ? 'liked' : ''}`}
+                        onClick={() => toggleVideoLike(post.id, 'instagram')}
+                      >
+                        <span className="action-icon"><HeartIcon filled={post.liked} /></span>
+                        {post.likes}
+                      </button>
+                      <span style={{ color: '#a78bfa', fontSize: '14px' }}>
+                        💬 {post.comments}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

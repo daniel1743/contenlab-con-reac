@@ -1,0 +1,691 @@
+/**
+ * 📊 TENDENCIAS DE LA SEMANA
+ * Muestra 6 tarjetas de cada fuente (YouTube, Twitter, NewsAPI)
+ * Primera tarjeta desbloqueada, las demás requieren 15 créditos
+ */
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import {
+  Lock,
+  Unlock,
+  TrendingUp,
+  Youtube,
+  Twitter,
+  Newspaper,
+  Sparkles,
+  Eye,
+  ThumbsUp,
+  ExternalLink,
+  RefreshCw,
+  Crown,
+  MessageCircle,
+  Zap
+} from 'lucide-react';
+import { getWeeklyTrends, unlockTrendCard, getUnlockedTrends } from '@/services/weeklyTrendsService';
+import { consumeCredits, checkSufficientCredits } from '@/services/creditService';
+
+const UNLOCK_COST = 15; // Créditos para desbloquear una tarjeta
+
+const WeeklyTrends = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [trends, setTrends] = useState({ youtube: [], twitter: [], news: [] });
+  const [unlockedIds, setUnlockedIds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('youtube');
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [selectedTrend, setSelectedTrend] = useState(null);
+  const [aiResponse, setAiResponse] = useState('');
+  const [isAiThinking, setIsAiThinking] = useState(false);
+
+  // Cargar tendencias al montar el componente
+  useEffect(() => {
+    loadTrends();
+  }, []);
+
+  // Cargar tendencias desbloqueadas del usuario
+  useEffect(() => {
+    if (user) {
+      loadUnlockedTrends();
+    }
+  }, [user]);
+
+  const loadTrends = async () => {
+    try {
+      setLoading(true);
+      const data = await getWeeklyTrends();
+      setTrends(data);
+    } catch (error) {
+      console.error('Error loading trends:', error);
+      toast({
+        title: 'Error al cargar tendencias',
+        description: 'No se pudieron cargar las tendencias. Intenta de nuevo.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUnlockedTrends = async () => {
+    try {
+      const unlocked = await getUnlockedTrends(user.id);
+      const ids = unlocked.map(u => u.trend_id);
+      setUnlockedIds(ids);
+    } catch (error) {
+      console.error('Error loading unlocked trends:', error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadTrends();
+    setRefreshing(false);
+    toast({
+      title: '✅ Tendencias actualizadas',
+      description: 'Se cargaron las últimas tendencias de la semana.'
+    });
+  };
+
+  const handleTalkWithAI = async (trend) => {
+    console.log('🤖 handleTalkWithAI called with trend:', trend);
+
+    if (!user) {
+      console.warn('❌ No user authenticated');
+      toast({
+        title: '🔒 Inicia sesión',
+        description: 'Necesitas una cuenta para hablar con la IA.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    console.log('✅ User authenticated, opening modal...');
+    setSelectedTrend(trend);
+    setAiModalOpen(true);
+    setIsAiThinking(true);
+    setAiResponse('');
+
+    const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+    console.log('🔑 API Key configured:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No');
+
+    try {
+      if (!apiKey) {
+        console.warn('⚠️ No DeepSeek API key configured, using fallback response');
+        throw new Error('API key not configured');
+      }
+
+      console.log('📡 Calling DeepSeek API...');
+      // Llamar a DeepSeek API
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'Eres un experto analista de tendencias digitales y creación de contenido viral. Proporciona análisis estratégicos, prácticos y accionables para creadores de contenido en español.'
+            },
+            {
+              role: 'user',
+              content: `Analiza esta tendencia viral y proporciona insights estratégicos detallados:
+
+📌 **Título:** ${trend.title}
+📝 **Descripción:** ${trend.description || 'Sin descripción'}
+📊 **Engagement:** ${trend.engagement || trend.views || 'N/A'}
+${trend.tag ? `🏷️ **Tag/Hashtag:** ${trend.tag}` : ''}
+
+Por favor proporciona un análisis completo que incluya:
+
+1. **¿Por qué es viral?** - Analiza los factores clave de su éxito
+2. **Oportunidades para creadores** - Cómo pueden aprovechar esta tendencia
+3. **Estrategias recomendadas** - Pasos concretos y accionables
+4. **Hashtags y keywords** - Para maximizar alcance
+5. **Timing óptimo** - Cuándo y cómo publicar
+
+Sé específico, práctico y enfocado en resultados medibles.`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
+        })
+      });
+
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ API Error:', errorData);
+        throw new Error(`API Error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ API Response received:', data);
+
+      if (data.choices && data.choices[0]?.message?.content) {
+        console.log('✅ Setting AI response');
+        setAiResponse(data.choices[0].message.content);
+      } else {
+        console.error('❌ Invalid response structure:', data);
+        throw new Error('Invalid response from AI');
+      }
+    } catch (error) {
+      console.error('❌ Error calling DeepSeek:', error);
+      console.log('🔄 Using fallback response');
+
+      // Mostrar toast de advertencia
+      toast({
+        title: '⚠️ Usando análisis offline',
+        description: 'No se pudo conectar con la IA. Mostrando análisis de respaldo.',
+        variant: 'default'
+      });
+
+      // Fallback response mejorado
+      setAiResponse(`📊 **Análisis de Tendencia:** "${trend.title}"
+
+🔥 **¿Por qué es viral?**
+Esta tendencia está captando gran atención porque:
+• Conecta con temas de actualidad y relevancia en el nicho
+• Responde a necesidades específicas de la audiencia
+• Usa formatos probados que generan alto engagement
+• Aprovecha el momento y el contexto actual
+
+💡 **Oportunidades para creadores:**
+✓ **Timing es clave:** La tendencia está en su pico, actúa ahora
+✓ **Adaptación a tu nicho:** Crea tu versión única y personalizada
+✓ **SEO y descubrimiento:** Aprovecha keywords relacionados
+✓ **Cross-platform:** Replica en múltiples redes sociales
+
+🎯 **Estrategias recomendadas:**
+1. **Análisis profundo:** Estudia qué elementos hacen viral este contenido
+2. **Tu toque único:** No copies, adapta a tu estilo y audiencia
+3. **Publicación rápida:** Actúa en las próximas 24-48 horas
+4. **Engagement activo:** Interactúa con otros creadores en el tema
+5. **Mide resultados:** Trackea métricas para optimizar futuros contenidos
+
+📱 **Hashtags y keywords recomendados:**
+${trend.tag ? trend.tag : '#Viral #Trending #ContentCreator #CreoVision'}
+#ContenidoViral #TendenciasDigitales #CreadorDeContenido
+
+⏰ **Timing óptimo:**
+• Publica AHORA mientras la tendencia está caliente
+• Horarios pico: 10-12 AM y 7-9 PM (hora local de tu audiencia)
+• Prepara variaciones para los próximos 2-3 días
+
+📈 **Próximos pasos:**
+1. Guarda este análisis
+2. Crea tu guión/contenido basado en la tendencia
+3. Usa las herramientas de CreoVision para optimizar
+4. Publica y monitorea engagement
+
+---
+⚡ **Impulsado por CreoVision AI GP-4** - Sistema avanzado de análisis de tendencias
+
+_Nota: Este es un análisis offline. Configura tu API key de DeepSeek para análisis en tiempo real más detallados._`);
+    } finally {
+      console.log('🏁 Finished AI analysis');
+      setIsAiThinking(false);
+    }
+  };
+
+  const handleUnlock = async (trendType, trendId, trendTitle) => {
+    if (!user) {
+      toast({
+        title: '🔒 Inicia sesión',
+        description: 'Necesitas una cuenta para desbloquear tendencias.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Verificar créditos suficientes
+    const creditCheck = await checkSufficientCredits(user.id, UNLOCK_COST);
+
+    if (!creditCheck.sufficient) {
+      toast({
+        title: '💎 Créditos insuficientes',
+        description: `Necesitas ${UNLOCK_COST} créditos para desbloquear. Te faltan ${creditCheck.missing} créditos.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Consumir créditos
+      const creditResult = await consumeCredits(user.id, UNLOCK_COST, 'unlock_trend', `Desbloquear: ${trendTitle}`);
+
+      if (!creditResult.success) {
+        throw new Error('No se pudieron consumir los créditos');
+      }
+
+      // Registrar desbloqueo
+      const unlockResult = await unlockTrendCard(user.id, trendType, trendId);
+
+      if (!unlockResult.success) {
+        throw new Error('No se pudo desbloquear la tendencia');
+      }
+
+      // Actualizar lista de desbloqueados
+      setUnlockedIds(prev => [...prev, trendId]);
+
+      toast({
+        title: '✅ Tendencia desbloqueada',
+        description: `Se consumieron ${UNLOCK_COST} créditos. Restantes: ${creditResult.remaining}`
+      });
+    } catch (error) {
+      console.error('Error unlocking trend:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo desbloquear la tendencia. Intenta de nuevo.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const isUnlocked = (trendId, index) => {
+    // Primera tarjeta siempre desbloqueada
+    if (index === 0) return true;
+    // Verificar si el usuario la desbloqueó
+    return unlockedIds.includes(trendId);
+  };
+
+  const categories = [
+    {
+      id: 'youtube',
+      name: 'YouTube',
+      icon: Youtube,
+      color: 'from-red-500 to-pink-500',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/30'
+    },
+    {
+      id: 'twitter',
+      name: 'Twitter/X',
+      icon: Twitter,
+      color: 'from-blue-500 to-cyan-500',
+      bgColor: 'bg-blue-500/10',
+      borderColor: 'border-blue-500/30'
+    },
+    {
+      id: 'news',
+      name: 'Noticias',
+      icon: Newspaper,
+      color: 'from-purple-500 to-pink-500',
+      bgColor: 'bg-purple-500/10',
+      borderColor: 'border-purple-500/30'
+    }
+  ];
+
+  const currentCategory = categories.find(c => c.id === selectedCategory);
+  const currentTrends = trends[selectedCategory] || [];
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-8 h-8 animate-spin text-purple-500" />
+          <span className="ml-2 text-gray-400">Cargando tendencias...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-2">
+              📊 Tendencias de la Semana
+            </h1>
+            <p className="text-gray-400">
+              Descubre las tendencias más virales de YouTube, Twitter y Noticias
+            </p>
+          </div>
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
+
+        {/* Info de desbloqueo */}
+        <Card className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-white font-medium">¿Cómo funciona?</p>
+                <p className="text-gray-300 text-sm mt-1">
+                  La <strong>primera tarjeta</strong> de cada categoría es <strong className="text-green-400">GRATIS</strong>.
+                  Las demás requieren <strong className="text-purple-400">{UNLOCK_COST} créditos</strong> para desbloquear.
+                  Las tendencias se actualizan automáticamente cada 3 días.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Categorías */}
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          const isActive = selectedCategory === category.id;
+          const categoryTrends = trends[category.id] || [];
+          const unlockedCount = categoryTrends.filter((t, i) => isUnlocked(t.id, i)).length;
+
+          return (
+            <motion.button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`
+                flex items-center gap-3 px-6 py-4 rounded-xl border-2 transition-all
+                ${isActive
+                  ? `${category.bgColor} ${category.borderColor}`
+                  : 'bg-gray-800/50 border-gray-700 hover:border-gray-600'
+                }
+              `}
+            >
+              <Icon className={`w-6 h-6 ${isActive ? `text-${category.color.split('-')[1]}-500` : 'text-gray-400'}`} />
+              <div className="text-left">
+                <p className={`font-medium ${isActive ? 'text-white' : 'text-gray-300'}`}>
+                  {category.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {unlockedCount}/{categoryTrends.length} desbloqueadas
+                </p>
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Grid de tarjetas */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={selectedCategory}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {currentTrends.map((trend, index) => {
+            const unlocked = isUnlocked(trend.id, index);
+            const Icon = currentCategory.icon;
+
+            return (
+              <TrendCard
+                key={trend.id}
+                trend={trend}
+                index={index}
+                unlocked={unlocked}
+                category={currentCategory}
+                Icon={Icon}
+                onUnlock={() => handleUnlock(selectedCategory, trend.id, trend.title)}
+              />
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Modal de IA */}
+      <AnimatePresence>
+        {aiModalOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+              onClick={() => setAiModalOpen(false)}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
+            >
+              <Card className="bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 border-purple-500/30">
+                <CardHeader className="border-b border-purple-500/20 pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="w-5 h-5 text-yellow-400" />
+                        <CardTitle className="text-white">
+                          Análisis de Tendencia con IA
+                        </CardTitle>
+                      </div>
+                      {selectedTrend && (
+                        <p className="text-sm text-gray-400 line-clamp-1">
+                          {selectedTrend.title}
+                        </p>
+                      )}
+                      <p className="text-xs text-purple-400 mt-1">
+                        ⚡ Impulsado por CreoVision AI GP-4
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setAiModalOpen(false)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <ExternalLink className="w-5 h-5 rotate-45" />
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-6">
+                  {isAiThinking ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <RefreshCw className="w-12 h-12 text-purple-500 animate-spin mb-4" />
+                      <p className="text-gray-400 text-center">
+                        CreoVision AI está analizando la tendencia...
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Generando insights estratégicos
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="prose prose-invert max-w-none">
+                      <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
+                        {aiResponse}
+                      </div>
+
+                      <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-purple-300">
+                          <Sparkles className="w-4 h-4" />
+                          <span className="font-medium">
+                            Análisis generado por CreoVision AI GP-4
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Motor de análisis avanzado impulsado por DeepSeek
+                        </p>
+                      </div>
+
+                      <div className="mt-4 flex gap-2">
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiResponse);
+                            toast({
+                              title: '✅ Copiado',
+                              description: 'Análisis copiado al portapapeles'
+                            });
+                          }}
+                          variant="outline"
+                          className="flex-1 border-purple-500/30 hover:bg-purple-500/10"
+                        >
+                          Copiar Análisis
+                        </Button>
+                        <Button
+                          onClick={() => setAiModalOpen(false)}
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+                        >
+                          Cerrar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Componente de tarjeta individual
+const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.1 }}
+      whileHover={{ scale: unlocked ? 1.02 : 1 }}
+      className="relative"
+    >
+      <Card className={`
+        ${unlocked ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-900/50 border-gray-800'}
+        hover:border-gray-600 transition-all h-full
+      `}>
+        {/* Badge de posición */}
+        {index === 0 && (
+          <div className="absolute -top-2 -right-2 z-10">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+              <Crown className="w-3 h-3" />
+              GRATIS
+            </div>
+          </div>
+        )}
+
+        {/* Overlay de bloqueado */}
+        {!unlocked && (
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+            <div className="text-center p-6">
+              <Lock className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+              <p className="text-white font-bold mb-2">Contenido Bloqueado</p>
+              <p className="text-gray-400 text-sm mb-4">
+                Desbloquea esta tendencia por {UNLOCK_COST} créditos
+              </p>
+              <Button
+                onClick={onUnlock}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+              >
+                <Unlock className="w-4 h-4 mr-2" />
+                Desbloquear ({UNLOCK_COST} 💎)
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <CardHeader className="pb-3">
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-lg ${category.bgColor}`}>
+              <Icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className={`text-lg line-clamp-2 ${unlocked ? 'text-white' : 'text-gray-600'}`}>
+                {unlocked ? trend.title : '█████ ██████ ████'}
+              </CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {unlocked ? (
+            <>
+              <CardDescription className="text-gray-400 line-clamp-3 mb-4">
+                {trend.description}
+              </CardDescription>
+
+              {/* Estadísticas */}
+              <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                {trend.views && (
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    <span>{typeof trend.views === 'number' ? trend.views.toLocaleString() : trend.views}</span>
+                  </div>
+                )}
+                {trend.engagement && (
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>{typeof trend.engagement === 'number' ? trend.engagement.toLocaleString() : trend.engagement}</span>
+                  </div>
+                )}
+                {trend.volume && (
+                  <div className="flex items-center gap-1">
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>{trend.volume}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex gap-2">
+                {/* Botón Hablar con IA */}
+                <Button
+                  onClick={() => handleTalkWithAI(trend)}
+                  className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Hablar con IA
+                </Button>
+
+                {/* Botón Ver más */}
+                {trend.url && trend.url !== '#' && (
+                  <Button
+                    as="a"
+                    href={trend.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outline"
+                    className="flex-1 border-purple-500/30 hover:bg-purple-500/10"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Ver más
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-800 rounded w-full"></div>
+              <div className="h-4 bg-gray-800 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
+export default WeeklyTrends;
