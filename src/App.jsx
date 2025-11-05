@@ -28,6 +28,7 @@ const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'));
 const WeeklyTrends = lazy(() => import('@/components/WeeklyTrends'));
+const CreatorProfile = lazy(() => import('@/components/CreatorProfile'));
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -66,8 +67,13 @@ function App() {
         }, 1000);
         return () => clearTimeout(timer);
       }
+
+      // 🚀 REDIRECT AUTOMÁTICO: Si ya completó onboarding y está en landing, ir a perfil
+      if (hasCompletedOnboarding && location.pathname === '/') {
+        navigate('/mi-perfil');
+      }
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, location.pathname, navigate]);
   
   useEffect(() => {
     if (!loading && user && cookiesAccepted && typeof window !== 'undefined' && termsStorageKey) {
@@ -304,6 +310,16 @@ function App() {
                   {/* Ruta de Tendencias de la Semana */}
                   <Route path="/tendencias" element={<WeeklyTrends />} />
 
+                  {/* Ruta de Perfil de Creador */}
+                  <Route
+                    path="/mi-perfil"
+                    element={
+                      <ProtectedRoute>
+                        <CreatorProfile />
+                      </ProtectedRoute>
+                    }
+                  />
+
                   {/* Rutas comentadas/eliminadas - Redirect a home para evitar 404 */}
                   <Route path="/chat" element={<Navigate to="/" replace />} />
                   <Route path="/inbox" element={<Navigate to="/" replace />} />
@@ -345,8 +361,8 @@ function App() {
                 console.log('✅ Perfil de creador guardado:', profile);
                 localStorage.setItem('onboardingCompleted', 'true');
                 setShowOnboarding(false);
-                // Redirigir a Tools para comenzar a usar el generador
-                navigate('/tools');
+                // 🎯 CAMBIO: Redirigir a perfil en lugar de tools
+                navigate('/mi-perfil');
               }}
               onSkip={() => {
                 localStorage.setItem('onboardingCompleted', 'true');

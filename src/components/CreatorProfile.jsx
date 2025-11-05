@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,6 +55,9 @@ export default function CreatorProfile() {
   const [youtubeVideos, setYoutubeVideos] = useState([]);
   const [tiktokVideos, setTiktokVideos] = useState([]);
   const [instagramPosts, setInstagramPosts] = useState([]);
+
+  const [newThreadContent, setNewThreadContent] = useState('');
+  const [showNewThreadInput, setShowNewThreadInput] = useState(false);
 
   // Cargar datos al montar
   useEffect(() => {
@@ -268,6 +271,39 @@ export default function CreatorProfile() {
       }
     } catch (error) {
       console.error('Error updating video URL:', error);
+    }
+  };
+
+  const handleCreateThread = async () => {
+    if (!newThreadContent.trim()) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('creator_threads')
+        .insert({
+          user_id: user.id,
+          content: newThreadContent
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setThreads([data, ...threads]);
+      setNewThreadContent('');
+      setShowNewThreadInput(false);
+
+      toast({
+        title: '✅ Hilo creado',
+        description: 'Tu hilo se publicó correctamente'
+      });
+    } catch (error) {
+      console.error('Error creating thread:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo crear el hilo',
+        variant: 'destructive'
+      });
     }
   };
 
