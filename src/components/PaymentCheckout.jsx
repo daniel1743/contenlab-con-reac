@@ -30,7 +30,7 @@ const PaymentCheckout = ({
   onClose,
   preferredProvider = null // 'mercadopago' o 'paypal', null = auto-detect
 }) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(preferredProvider);
@@ -156,7 +156,10 @@ const PaymentCheckout = ({
         idNumber: ''
       };
 
-      const result = await processMercadoPago(normalizedPlanId, userData);
+      // Obtener token de autenticación
+      const authToken = session?.access_token || null;
+
+      const result = await processMercadoPago(normalizedPlanId, userData, authToken);
 
       if (result.success) {
         toast({

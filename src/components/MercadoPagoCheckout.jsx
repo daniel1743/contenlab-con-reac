@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
 const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -34,7 +34,10 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
         idNumber: '' // Opcional
       };
 
-      const result = await processPayment(normalizedPlanId, userData);
+      // Obtener token de autenticación
+      const authToken = session?.access_token || null;
+
+      const result = await processPayment(normalizedPlanId, userData, authToken);
 
       if (result.success) {
         toast({

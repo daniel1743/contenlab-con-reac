@@ -340,29 +340,55 @@ Completo:  $100,000 - $150,000 USD (+$50,000 USD)
 
 ---
 
-## 📚 DOCUMENTOS A LEER
-
-### **Para entender lo que falta:**
-1. 📄 `ANALISIS-GAPS-FUNCIONALES.md` (559 líneas)
-   - Lee primero: Sección "NIVEL 1: CRÍTICO"
-   - Matriz de priorización al final
-
-### **Para saber qué hacer:**
-2. 📋 `TAREAS-MANUALES-COMPLETAR.md` (458 líneas)
-   - Lee primero: Sección "NIVEL 1: CRÍTICO Y URGENTE"
-   - Tabla resumen de prioridades
-
-### **Para entender lo implementado:**
-3. 📝 `RESUMEN-IMPLEMENTACIONES-2025-11-03.md` (389 líneas)
-   - Resumen ejecutivo de toda la sesión
-   - Análisis de valor antes/después
-
-### **Para ejecutar SQL:**
-4. 🗄️ `SUPABASE-SCHEMA-COMPLETO.sql` (536 líneas)
-   - Lee los comentarios al inicio
-   - Ejecuta TODO el archivo de una vez
-
----
+## ?? PENDIENTES DETALLADOS Y PLAN DE ACCIÓN
+
+### **1. Gaps críticos antes de lanzar (integrado)**
+- **Pagos y monetización:** completar credenciales reales de MercadoPago, habilitar suscripciones recurrentes, webhooks de confirmación y facturación automática; actualizar permisos según plan (`docs/ANALISIS-GAPS-FUNCIONALES.md:20-63`).
+- **Cuotas y límites por usuario:** implementar rate limiting por usuario/plan, contadores diarios en Supabase y UI con cuotas restantes y modales de upgrade (`docs/ANALISIS-GAPS-FUNCIONALES.md:65-94`).
+- **Backend seguro para IA y pagos:** mover claves a serverless/backend, validar JWT Supabase en cada request, exponer endpoints `/api/*` protegidos y registrar logs (`docs/ANALISIS-GAPS-FUNCIONALES.md:96-136`).
+- **Esquema Supabase completo:** desplegar tablas `user_subscriptions`, `usage_quotas`, `generated_content`, `payments`, `api_usage_logs`, índices y RLS asociados (`docs/ANALISIS-GAPS-FUNCIONALES.md:138-200`).
+- **Legal y compliance:** adaptar Terms/Privacy/Cookies al servicio, registrar consentimientos y versionado (continuación del mismo documento).
+
+### **2. Tareas manuales inmediatas (≤ 1 hora)**
+- Configurar plantillas de email y URLs de redirección en Supabase Auth (`TAREAS-MANUALES-COMPLETAR.md:44-63`).
+- Ejecutar `SUPABASE-SCHEMA-COMPLETO.sql` en producción para crear tablas, funciones y triggers (`TAREAS-MANUALES-COMPLETAR.md:65-76`).
+- Cargar credenciales reales de MercadoPago, definir webhooks y actualizar `.env` (`TAREAS-MANUALES-COMPLETAR.md:84-119`).
+- (Opcional inmediato) Activar Sentry aprovechando `src/lib/errorTracking.js`.
+
+### **3. Entregables completados en esta iteración**
+- Recuperación de contraseña end-to-end con nueva ruta `/reset-password` (`RESUMEN-IMPLEMENTACIONES-2025-11-03.md:21-86`).
+- Inicialización de `errorTracking.js`, captura de excepciones y compatibilidad con Sentry (`RESUMEN-IMPLEMENTACIONES-2025-11-03.md:118-160`).
+- Script `SUPABASE-SCHEMA-COMPLETO.sql` (7 tablas, RLS, funciones de consumo/reset mensual) (`RESUMEN-IMPLEMENTACIONES-2025-11-03.md:162-220`).
+- Documentación integral: análisis de gaps, checklist manual, plan de ejecución y resumen de sesión (`RESUMEN-IMPLEMENTACIONES-2025-11-03.md:286-343`).
+
+### **4. Prioridades de desarrollo (estimación 3–5 K USD)**
+1. **Backend API seguro + despliegue serverless** (`ESTADO-FINAL-IMPLEMENTACIONES.md:337`, `VERCEL-SETUP-GUIDE.md:94-352`).
+2. **Rate limiting por usuario y métricas persistentes** (`ESTADO-FINAL-IMPLEMENTACIONES.md:338`, `SETUP_API_RATE_LIMITING.md:19-236`).
+3. **Webhooks y reconciliación de pagos MercadoPago/PayPal** (`ESTADO-FINAL-IMPLEMENTACIONES.md:426`, `INTEGRACION-PAYPAL-COMPLETA.md:34-721`).
+4. **Legal/compliance + emails transaccionales** (enfoque LATAM e internacional).
+
+### **5. Matriz de priorización resumida**
+| Prioridad | Tarea | Urgencia | Tiempo estimado | Costo externo | Estado |
+|-----------|-------|----------|-----------------|---------------|--------|
+| 1 | Configurar emails Supabase | ? Crítico | 15 min | $0 | Pendiente |
+| 2 | Ejecutar schema SQL | ? Crítico | 5 min | $0 | Pendiente |
+| 3 | Configurar MercadoPago | ? Crítico | 30 min | $0 | Pendiente |
+| 4 | Migrar claves a backend seguro | ? Crítico | 5–7 días | $3–5 K | Pendiente |
+| 5 | Rate limiting por usuario | ? Crítico | 2–3 días | $1.2–2 K | Pendiente |
+| 6 | Webhooks MercadoPago/PayPal | ? Crítico | 3–5 días | $2–4 K | Pendiente |
+| 7 | Legal/compliance (Términos/Privacidad) | ? Crítico | 1–2 días | $0.4–0.8 K | Pendiente |
+| 8 | Emails transaccionales completos | ? Alto | 1 h | $0 | Pendiente |
+
+### **6. Ejecución SQL y gobernanza de datos**
+- `SUPABASE-SCHEMA-COMPLETO.sql` cubre suscripciones, cuotas, historial y logs; ejecutarlo íntegro antes de monetizar.
+- `execute_all_migrations.sql` consolida migraciones 003–006 (límites, créditos, tendencias, perfil) para sincronizar ambientes desde cero.
+- Confirmar que RLS queda habilitado tras correr ambos scripts (`supabase/migrations/003_create_usage_limits_tables.sql:46-47`, `004_create_credit_system.sql:184-188`, `005_weekly_trends_system.sql:42-43`, `006_creator_profile_system.sql:146-150`).
+
+### **7. Guías complementarias relevantes**
+- Rendimiento y métricas de build (`OPTIMIZACIONES_RENDIMIENTO.md:26-137`).
+- QA de análisis de canal y criterios de aceptación (`GUIA_DE_PRUEBA.md:1-259`).
+- Setup de Vercel y manejo seguro de API keys (`VERCEL-SETUP-GUIDE.md:94-352`).
+- Integraciones de pago dual y pasos para producción (`MERCADOPAGO-CONFIGURACION-COMPLETA.md`, `INTEGRACION-PAYPAL-COMPLETA.md:34-721`).
 
 ## 🎯 DECISIÓN FINAL
 
@@ -474,3 +500,4 @@ Después, decide: ¿Vender ahora a $60-90K o invertir 3 semanas más para vender
 ---
 
 ¡Éxito con CreoVision! 🚀
+

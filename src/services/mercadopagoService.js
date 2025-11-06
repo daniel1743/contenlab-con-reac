@@ -87,9 +87,10 @@ export const initMercadoPago = async () => {
  *
  * @param {string} planId - ID del plan (standard o premium)
  * @param {object} userData - Datos del usuario
+ * @param {string} authToken - Token de autenticación de Supabase (opcional)
  * @returns {Promise<object>} Preferencia de pago
  */
-export const createPaymentPreference = async (planId, userData) => {
+export const createPaymentPreference = async (planId, userData, authToken = null) => {
   // ⚠️ IMPORTANTE: Esta función debe llamar a tu backend
   // NO pongas el Access Token en el frontend
 
@@ -101,6 +102,7 @@ export const createPaymentPreference = async (planId, userData) => {
   }
 
   const preferenceData = {
+    planId: planKey.toLowerCase(),
     items: [
       {
         title: `Plan ${plan.name} - CreoVision`,
@@ -125,25 +127,37 @@ export const createPaymentPreference = async (planId, userData) => {
     },
     auto_return: 'approved',
     notification_url: `${window.location.origin}/api/webhooks/mercadopago`, // Tu webhook
-    statement_descriptor: 'VIRALCRAFT',
+    statement_descriptor: 'CREOVISION',
     external_reference: `${userData.userId}_${planId}_${Date.now()}`,
+    metadata: {
+      user_id: userData.userId,
+      plan_id: planKey.toLowerCase()
+    },
     expires: true,
     expiration_date_from: new Date().toISOString(),
     expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 horas
   };
 
   try {
-    // 🔴 LLAMADA A TU BACKEND (debes implementar este endpoint)
+    // Llamada al backend
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Agregar token de autenticación si está disponible
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const response = await fetch('/api/mercadopago/create-preference', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(preferenceData)
     });
 
     if (!response.ok) {
-      throw new Error('Error al crear preferencia de pago');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error al crear preferencia de pago');
     }
 
     const preference = await response.json();
@@ -182,11 +196,12 @@ export const redirectToCheckout = (preference) => {
  * Procesa el pago con tarjeta usando Mercado Pago Checkout Pro
  * @param {string} planId - ID del plan
  * @param {object} userData - Datos del usuario
+ * @param {string} authToken - Token de autenticación de Supabase (opcional)
  */
-export const processPayment = async (planId, userData) => {
+export const processPayment = async (planId, userData, authToken = null) => {
   try {
     // 1. Crear preferencia de pago (llama a tu backend)
-    const preference = await createPaymentPreference(planId, userData);
+    const preference = await createPaymentPreference(planId, userData, authToken);
 
     // 2. Redirigir al checkout (usa init_point del backend)
     redirectToCheckout(preference);
