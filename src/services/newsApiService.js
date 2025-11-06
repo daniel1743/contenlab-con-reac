@@ -41,7 +41,7 @@ export const getTrendingTopicsByKeyword = async (topic) => {
     }
 
     // Mapear resultados al formato que necesitamos
-    const formattedArticles = data.articles.map((article, index) => ({
+    let formattedArticles = data.articles.map((article, index) => ({
       id: `news-${Date.now()}-${index}`,
       title: article.title || 'Sin t�tulo',
       description: article.description || article.content?.substring(0, 150) || 'Sin descripci�n disponible',

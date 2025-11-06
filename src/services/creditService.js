@@ -72,22 +72,30 @@ export async function getUserCredits(userId) {
       .from('user_credits')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle(); // Usar maybeSingle para evitar error si no existe
 
-    // Si la tabla no existe, retornar valores por defecto silenciosamente
-    if (error && error.code === 'PGRST205') {
-      return {
-        success: true,
-        credits: {
-          monthly: 100,
-          purchased: 0,
-          bonus: 0,
-          total: 100
-        },
-        plan: 'free',
-        daysSinceReset: 0,
-        daysUntilReset: 30
-      };
+    // Si hay error de conexión o tabla no existe, retornar valores por defecto
+    if (error || !credits) {
+      // Si es error de conexión o tabla no existe, retornar valores por defecto
+      if (error && (error.code === 'PGRST205' || error.message?.includes('Failed to fetch') || error.message?.includes('CONNECTION_CLOSED'))) {
+        console.warn('Error obteniendo créditos, usando valores por defecto:', error.message);
+        return {
+          success: true,
+          credits: {
+            monthly: 100,
+            purchased: 0,
+            bonus: 0,
+            total: 100
+          },
+          plan: 'free',
+          daysSinceReset: 0,
+          daysUntilReset: 30
+        };
+      }
+      // Si es otro error, lanzarlo
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
     }
 
     // Si no existe, crear con créditos iniciales

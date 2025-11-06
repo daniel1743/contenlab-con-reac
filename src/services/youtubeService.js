@@ -28,12 +28,29 @@ export const searchYouTubeVideos = async (query, maxResults = 10) => {
   try {
     const url = `${YOUTUBE_BASE_URL}/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`;
 
+    // ⚡ OPTIMIZACIÓN: Cache reducido para tiempo real (2 minutos para búsquedas de tendencias)
+    const apiCache = (await import('@/utils/apiCache')).default;
+    const cacheKey = `youtube:search:${query}:${maxResults}`;
+    const cached = apiCache.get(cacheKey);
+    
+    if (cached) {
+      console.log(`[Cache] YouTube search hit: ${query}`);
+      return cached;
+    }
+
     const response = await fetch(url);
+    
     if (!response.ok) {
       throw new Error(`YouTube API error: ${response.status}`);
     }
 
     const data = await response.json();
+    
+    // Guardar en cache (2 minutos TTL para tiempo real mejorado)
+    if (data.items) {
+      apiCache.set(cacheKey, data, 2 * 60 * 1000); // Reducido de 10 a 2 minutos
+    }
+    
     return data;
   } catch (error) {
     console.error('Error fetching YouTube videos:', error);
@@ -55,12 +72,28 @@ export const getVideoStatistics = async (videoIds) => {
     const ids = videoIds.join(',');
     const url = `${YOUTUBE_BASE_URL}/videos?part=statistics&id=${ids}&key=${YOUTUBE_API_KEY}`;
 
+    // ⚡ OPTIMIZACIÓN: Cache reducido para tiempo real (1 minuto para estadísticas)
+    const apiCache = (await import('@/utils/apiCache')).default;
+    const cacheKey = `youtube:stats:${ids}`;
+    const cached = apiCache.get(cacheKey);
+    
+    if (cached) {
+      console.log(`[Cache] YouTube stats hit: ${ids.substring(0, 20)}...`);
+      return cached;
+    }
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`YouTube API error: ${response.status}`);
     }
 
     const data = await response.json();
+    
+    // Guardar en cache (1 minuto TTL para tiempo real)
+    if (data.items) {
+      apiCache.set(cacheKey, data, 1 * 60 * 1000); // Reducido de 5 a 1 minuto
+    }
+    
     return data;
   } catch (error) {
     console.error('Error fetching video statistics:', error);

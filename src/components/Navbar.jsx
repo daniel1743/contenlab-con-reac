@@ -144,6 +144,20 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     }
   };
 
+  // ⚡ OPTIMIZACIÓN: Preload de rutas al hacer hover
+  const handleNavHover = (item) => {
+    if (item.id === 'dashboard') {
+      import('@/components/DashboardDynamic');
+    } else if (item.id === 'tools') {
+      import('@/components/Tools');
+    } else if (item.id === 'calendar') {
+      import('@/components/Calendar');
+    } else if (item.id === 'library') {
+      import('@/components/ContentLibrary');
+    }
+    // Preload de otros componentes según necesidad
+  };
+
   const handleLogout = async () => {
     await signOut();
     toast({
@@ -183,9 +197,10 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             <img src="/mascota.png" alt="CreoVision" className="w-10 h-10 rounded-full object-cover" />
             <div className="relative">
               <span className="text-xl font-bold text-gradient">CreoVision</span>
-              <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
+              {/* BETA badge comentado temporalmente */}
+              {/* <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
                 BETA
-              </span>
+              </span> */}
             </div>
           </motion.div>
 
@@ -197,6 +212,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                   key={item.id}
                   type="button" // ✅ evita reload inesperado
                   onClick={() => handleNavClick(item)} // Pasa el ítem completo
+                  onMouseEnter={() => handleNavHover(item)} // ⚡ Preload al hover
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
                     activeSection === item.id 
                       ? 'bg-purple-600/20 text-purple-300' 

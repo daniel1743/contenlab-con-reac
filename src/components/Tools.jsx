@@ -98,6 +98,8 @@ import {
 } from '@/services/youtubeService';
 
 // 🎓 IMPORT DE ASESOR DE CONTENIDO
+// 🚀 IMPORT DE PREDICTOR DE VIRALIDAD
+import ViralityPredictor from '@/components/ViralityPredictor';
 import { createContentAdvisor } from '@/services/contentAdvisorService';
 
 // 🎯 IMPORT DE PROMPT WIZARD
@@ -1913,6 +1915,11 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
 
         </div>
       )}
+
+      {/* 🚀 PREDICTOR DE VIRALIDAD - NUEVA FUNCIONALIDAD FASE 1 */}
+      <div className="mt-8">
+        <ViralityPredictor />
+      </div>
 
       {/* 🆕 BOTÓN CONTINUAR AL PANEL CREOVISION */}
       {generatedContent && (

@@ -66,9 +66,10 @@ const Footer = () => {
               <img src="/logo de marca.png" alt="CreoVision Logo" className="w-10 h-10 object-contain" />
               <div className="relative">
                 <span className="text-xl font-bold text-gradient">CreoVision</span>
-                <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
+                {/* BETA badge comentado temporalmente */}
+                {/* <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
                   BETA
-                </span>
+                </span> */}
               </div>
             </div>
             <p className="text-gray-400 text-sm">

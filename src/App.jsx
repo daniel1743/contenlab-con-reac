@@ -140,14 +140,34 @@ function App() {
 
   // Componente para proteger rutas que requieren autenticación
   const ProtectedRoute = ({ children }) => {
-    if (loading) return <PWALoadingScreen />;
+    // ⚡ OPTIMIZACIÓN: Mostrar contenido parcial mientras carga (mejor UX)
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Cargando...</p>
+          </div>
+        </div>
+      );
+    }
     if (!isAuthenticated) return <Navigate to="/" replace />;
     return children;
   };
 
   // Componente para rutas que permiten demo mode
   const ToolsRoute = ({ children }) => {
-    if (loading) return <PWALoadingScreen />;
+    // ⚡ OPTIMIZACIÓN: Mostrar contenido parcial mientras carga
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Cargando...</p>
+          </div>
+        </div>
+      );
+    }
     if (!isAuthenticated && !hasDemoAccess) return <Navigate to="/" replace />;
     return children;
   };

@@ -74,7 +74,7 @@ export default function CreatorProfile() {
     try {
       setLoading(true);
 
-      // Cargar perfil
+      // ⚡ OPTIMIZACIÓN: Cargar perfil primero (necesario para crear si no existe)
       const { data: profile, error: profileError } = await supabase
         .from('creator_profiles')
         .select('*')
@@ -92,69 +92,101 @@ export default function CreatorProfile() {
         await createInitialProfile();
       }
 
-      // Cargar threads (máximo 10)
-      const { data: threadsData, error: threadsError } = await supabase
-        .from('creator_threads')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // ⚡ OPTIMIZACIÓN: Cargar todo en paralelo con Promise.all
+      const [
+        threadsResult,
+        contentResult
+      ] = await Promise.all([
+        // Cargar threads
+        supabase
+          .from('creator_threads')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        
+        // Cargar contenido por plataforma
+        supabase
+          .from('creator_content')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('display_order', { ascending: true })
+      ]);
 
-      if (threadsError) throw threadsError;
-      const threadsList = threadsData || [];
+      // Procesar threads
+      if (threadsResult.error) throw threadsResult.error;
+      const threadsList = threadsResult.data || [];
       setThreads(threadsList);
 
-      // Cargar likes del usuario para cada thread
+      // Procesar contenido
+      if (contentResult.error) throw contentResult.error;
+      if (contentResult.data) {
+        setYoutubeVideos(contentResult.data.filter(c => c.platform === 'youtube'));
+        setTiktokVideos(contentResult.data.filter(c => c.platform === 'tiktok'));
+        setInstagramPosts(contentResult.data.filter(c => c.platform === 'instagram'));
+      }
+
+      // ⚡ OPTIMIZACIÓN: Cargar likes y replies en paralelo (solo si hay threads)
       const threadIds = threadsList.map(t => t.id);
       if (threadIds.length > 0) {
-        const { data: likesData } = await supabase
+        // Cargar likes
+        const likesPromise = supabase
           .from('thread_likes')
           .select('thread_id')
           .eq('user_id', user.id)
           .in('thread_id', threadIds);
+        
+        // Cargar respuestas (con manejo de error silencioso)
+        const repliesPromise = supabase
+          .from('thread_replies')
+          .select('*')
+          .in('thread_id', threadIds)
+          .order('created_at', { ascending: true })
+          .then(result => {
+            // Si hay error de tabla no encontrada, retornar vacío silenciosamente
+            if (result.error && result.error.code === 'PGRST205') {
+              return { data: null, error: null };
+            }
+            return result;
+          })
+          .catch((error) => {
+            // Manejar errores silenciosamente (tabla no existe o error de conexión)
+            if (error.code === 'PGRST205' || error.message?.includes('Failed to fetch')) {
+              return { data: null, error: null };
+            }
+            // Para otros errores, loguear pero no fallar
+            console.warn('Error cargando replies (no crítico):', error.message);
+            return { data: null, error: null };
+          });
+        
+        const [
+          likesResult,
+          repliesResult
+        ] = await Promise.all([
+          likesPromise,
+          repliesPromise
+        ]);
 
+        // Procesar likes
         const likesMap = {};
-        likesData?.forEach(like => {
+        likesResult.data?.forEach(like => {
           likesMap[like.thread_id] = true;
         });
         setThreadLikes(likesMap);
 
-        // Cargar respuestas para cada thread (si la tabla existe)
-        try {
-          const { data: repliesData } = await supabase
-            .from('thread_replies')
-            .select('*')
-            .in('thread_id', threadIds)
-            .order('created_at', { ascending: true });
-
+        // Procesar replies
+        if (repliesResult.data) {
           const repliesMap = {};
-          repliesData?.forEach(reply => {
+          repliesResult.data.forEach(reply => {
             if (!repliesMap[reply.thread_id]) {
               repliesMap[reply.thread_id] = [];
             }
             repliesMap[reply.thread_id].push(reply);
           });
           setThreadReplies(repliesMap);
-        } catch (repliesError) {
-          // Si la tabla no existe aún, continuar sin respuestas
-          console.warn('Tabla thread_replies no encontrada. Ejecuta el SQL de migración:', repliesError);
+        } else {
           setThreadReplies({});
         }
-      }
-
-      // Cargar contenido por plataforma
-      const { data: contentData, error: contentError } = await supabase
-        .from('creator_content')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('display_order', { ascending: true });
-
-      if (contentError) throw contentError;
-
-      if (contentData) {
-        setYoutubeVideos(contentData.filter(c => c.platform === 'youtube'));
-        setTiktokVideos(contentData.filter(c => c.platform === 'tiktok'));
-        setInstagramPosts(contentData.filter(c => c.platform === 'instagram'));
       }
 
     } catch (error) {

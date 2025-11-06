@@ -22,7 +22,7 @@
           "value": "creovision.io"
         }
       ],
-      "destination": "https://creovision.io/:1",
+      "destination": "https://creovision.io/$1",
       "permanent": true
     }
   ],
