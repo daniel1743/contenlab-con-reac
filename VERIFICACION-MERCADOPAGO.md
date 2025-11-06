@@ -231,3 +231,37 @@ curl -X POST http://localhost:3000/api/webhooks/mercadopago \
 
 **Estado final:** ✅ Integración funcional y lista para producción (requiere configuración de credenciales)
 
+---
+
+## 🧪 ENDPOINT DE PRUEBA
+
+### **Nuevo endpoint para verificar conexión:**
+
+**`/api/test-mercadopago`** ✅
+
+Este endpoint permite probar la conexión con MercadoPago sin necesidad de autenticación (solo para testing).
+
+**Uso:**
+```bash
+POST https://TU_PROYECTO.vercel.app/api/test-mercadopago
+Content-Type: application/json
+
+{
+  "amount": 10,
+  "description": "Suscripción premium - Test",
+  "email": "test_user@example.com"
+}
+```
+
+**Ver documentación completa:** `TEST-MERCADOPAGO.md`
+
+---
+
+## 📝 NOTAS FINALES
+
+- ✅ La integración está completa y lista para usar
+- ✅ Los webhooks están configurados y funcionando
+- ✅ El frontend está integrado con el backend
+- ✅ Los pagos se registran en Supabase automáticamente
+- ✅ Endpoint de prueba disponible para verificar conexión
+

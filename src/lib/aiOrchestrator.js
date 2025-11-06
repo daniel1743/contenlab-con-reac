@@ -241,74 +241,69 @@ const generateWithProvider = async ({
 };
 
 /**
- * 📞 Llamar a Gemini API
+ * Obtener token de autenticación
  */
-const callGemini = async (provider, prompt, temperature) => {
-  const response = await fetch(
-    `${provider.endpoint}?key=${provider.keyEnv}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }],
-        }],
-        generationConfig: {
-          temperature,
-          maxOutputTokens: provider.maxTokens,
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `Gemini API error: ${response.status}`);
+const getAuthToken = async () => {
+  try {
+    const { supabase } = await import('./customSupabaseClient');
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (error) {
+    console.warn('[aiOrchestrator] Could not get auth token:', error);
+    return null;
   }
-
-  const data = await response.json();
-
-  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-    throw new Error('Invalid response format from Gemini');
-  }
-
-  return data.candidates[0].content.parts[0].text;
 };
 
 /**
- * 📞 Llamar a APIs compatibles con OpenAI (QWEN, DeepSeek)
+ * 📞 Llamar a API a través del backend (seguro)
  */
-const callOpenAICompatible = async (provider, prompt, temperature) => {
-  const response = await fetch(provider.endpoint, {
+const callBackendAPI = async (provider, prompt, temperature) => {
+  const authToken = await getAuthToken();
+  
+  const response = await fetch('/api/ai/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${provider.keyEnv}`,
+      ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
     },
     body: JSON.stringify({
+      provider: provider.name,
       model: provider.model,
       messages: [
         { role: 'user', content: prompt },
       ],
       temperature,
-      max_tokens: provider.maxTokens,
+      maxTokens: provider.maxTokens,
+      useFallback: false, // El orchestrator maneja el fallback
     }),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `${provider.name} API error: ${response.status}`);
+    throw new Error(errorData.error || `${provider.name} API error: ${response.status}`);
   }
 
   const data = await response.json();
 
-  if (!data.choices?.[0]?.message?.content) {
+  if (!data.content) {
     throw new Error(`Invalid response format from ${provider.name}`);
   }
 
-  return data.choices[0].message.content;
+  return data.content;
+};
+
+/**
+ * 📞 Llamar a Gemini API (a través del backend)
+ */
+const callGemini = async (provider, prompt, temperature) => {
+  return await callBackendAPI(provider, prompt, temperature);
+};
+
+/**
+ * 📞 Llamar a APIs compatibles con OpenAI (QWEN, DeepSeek) (a través del backend)
+ */
+const callOpenAICompatible = async (provider, prompt, temperature) => {
+  return await callBackendAPI(provider, prompt, temperature);
 };
 
 /**

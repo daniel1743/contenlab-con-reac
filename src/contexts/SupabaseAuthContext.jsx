@@ -15,13 +15,13 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = useCallback(async (userId) => {
     if (!userId) return null;
     try {
-      const { data, error, status } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select(`*`)
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Usar maybeSingle en lugar de single para permitir 0 filas
 
-      if (error && status !== 406) {
+      if (error) {
         throw error;
       }
 
@@ -50,19 +50,37 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      await handleSession(currentSession);
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('[SupabaseAuthContext] Error getting session:', error);
+          return;
+        }
+        await handleSession(currentSession);
+      } catch (error) {
+        console.error('[SupabaseAuthContext] Failed to fetch session:', error);
+        // Continuar sin sesión si hay error de conexión
+        await handleSession(null);
+      }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        await handleSession(newSession);
+        try {
+          await handleSession(newSession);
+        } catch (error) {
+          console.error('[SupabaseAuthContext] Error in auth state change:', error);
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, [handleSession]);
 
   const signUp = useCallback(async (email, password, options) => {

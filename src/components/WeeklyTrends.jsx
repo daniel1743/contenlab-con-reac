@@ -32,7 +32,7 @@ import { consumeCredits, checkSufficientCredits } from '@/services/creditService
 const UNLOCK_COST = 15; // Créditos para desbloquear una tarjeta
 
 const WeeklyTrends = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
 
   const [trends, setTrends] = useState({ youtube: [], twitter: [], news: [] });
@@ -113,30 +113,24 @@ const WeeklyTrends = () => {
     setIsAiThinking(true);
     setAiResponse('');
 
-    const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-    console.log('🔑 API Key configured:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No');
-
     try {
-      if (!apiKey) {
-        console.warn('⚠️ No DeepSeek API key configured, using fallback response');
-        throw new Error('API key not configured');
-      }
+      console.log('📡 Calling AI API via backend...');
+      
+      // Obtener token de autenticación si está disponible
+      const authToken = session?.access_token || null;
 
-      console.log('📡 Calling DeepSeek API...');
-      // Llamar a DeepSeek API
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      // Llamar a nuestro backend (que maneja la clave de forma segura)
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
         },
         body: JSON.stringify({
+          provider: 'deepseek',
           model: 'deepseek-chat',
+          systemPrompt: 'Eres un experto analista de tendencias digitales y creación de contenido viral. Proporciona análisis estratégicos, prácticos y accionables para creadores de contenido en español.',
           messages: [
-            {
-              role: 'system',
-              content: 'Eres un experto analista de tendencias digitales y creación de contenido viral. Proporciona análisis estratégicos, prácticos y accionables para creadores de contenido en español.'
-            },
             {
               role: 'user',
               content: `Analiza esta tendencia viral y proporciona insights estratégicos detallados:
@@ -158,24 +152,24 @@ Sé específico, práctico y enfocado en resultados medibles.`
             }
           ],
           temperature: 0.7,
-          max_tokens: 1500
+          maxTokens: 1500
         })
       });
 
       console.log('📡 Response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('❌ API Error:', errorData);
-        throw new Error(`API Error: ${errorData.error?.message || response.statusText}`);
+        throw new Error(errorData.error || `API Error: ${response.statusText}`);
       }
 
       const data = await response.json();
       console.log('✅ API Response received:', data);
 
-      if (data.choices && data.choices[0]?.message?.content) {
+      if (data.content) {
         console.log('✅ Setting AI response');
-        setAiResponse(data.choices[0].message.content);
+        setAiResponse(data.content);
       } else {
         console.error('❌ Invalid response structure:', data);
         throw new Error('Invalid response from AI');

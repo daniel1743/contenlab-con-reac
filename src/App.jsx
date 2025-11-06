@@ -371,7 +371,10 @@ function App() {
             />
           )}
 
-          {/* activeSection !== 'thumbnail-editor' && */ <FakeNotifications />}
+          {/* FakeNotifications - Solo mostrar si no hay errores de carga */}
+          <Suspense fallback={null}>
+            <FakeNotifications />
+          </Suspense>
           {!cookiesAccepted && !showTermsModal && (
             <CookieConsentBanner onAccept={() => setCookiesAccepted(true)} />
           )}

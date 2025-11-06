@@ -9,12 +9,10 @@
 import { trackAPIUsage } from './apiMonitoringService';
 import { captureError, captureException } from '@/lib/errorTracking';
 
-const QWEN_API_KEY = import.meta.env.VITE_QWEN_API_KEY;
-const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-
-// Fallback
-const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+// Las claves ahora están en el backend, pero mantenemos las variables para verificar disponibilidad
+// (aunque no se usarán directamente)
+const QWEN_AVAILABLE = true; // Siempre disponible si el backend está configurado
+const DEEPSEEK_AVAILABLE = true; // Siempre disponible si el backend está configurado
 
 /**
  * 🎯 ANÁLISIS PREMIUM DE CONTENIDO VIRAL
@@ -27,10 +25,11 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
  * @param {string} contentData.platform - Plataforma (YouTube, TikTok, YouTube Shorts)
  * @param {Object} contentData.personality - Personalidad del creador
  * @param {string} contentData.keywords - Keywords generadas (opcional)
+ * @param {string} authToken - Token de autenticación de Supabase (opcional)
  * @returns {Promise<string>} Análisis estratégico premium
  */
-export const analyzePremiumContent = async (contentData) => {
-  if (!QWEN_API_KEY && !DEEPSEEK_API_KEY) {
+export const analyzePremiumContent = async (contentData, authToken = null) => {
+  if (!QWEN_AVAILABLE && !DEEPSEEK_AVAILABLE) {
     throw new Error('No hay API keys de análisis premium configuradas');
   }
 
@@ -146,40 +145,37 @@ Con base en el análisis:
 **COMIENZA TU ANÁLISIS AHORA (300-400 palabras):**
 `;
 
+  const systemPrompt = 'Eres un experto consultor de contenido viral con 10+ años de experiencia. Has analizado miles de videos virales y conoces los algoritmos de YouTube, TikTok y todas las plataformas. Tu análisis es directo, basado en datos, y proporciona insights que otros expertos no ven. Nunca das consejos genéricos.';
+
   // Intentar con QWEN primero (1M tokens disponibles)
-  if (QWEN_API_KEY) {
+  if (QWEN_AVAILABLE) {
     try {
       console.log('🚀 [QWEN AI] Generando análisis premium...');
 
-      const response = await fetch(QWEN_API_URL, {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${QWEN_API_KEY}`
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
         },
         body: JSON.stringify({
-          model: 'qwen-max', // Modelo más potente de QWEN
+          provider: 'qwen',
+          model: 'qwen-max',
+          systemPrompt,
           messages: [
-            {
-              role: 'system',
-              content: 'Eres un experto consultor de contenido viral con 10+ años de experiencia. Has analizado miles de videos virales y conoces los algoritmos de YouTube, TikTok y todas las plataformas. Tu análisis es directo, basado en datos, y proporciona insights que otros expertos no ven. Nunca das consejos genéricos.'
-            },
             {
               role: 'user',
               content: prompt
             }
           ],
           temperature: 0.8,
-          max_tokens: 1500,
-          top_p: 0.95,
-          frequency_penalty: 0.3,
-          presence_penalty: 0.3
+          maxTokens: 1500
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        const analysis = data.choices[0]?.message?.content?.trim();
+        const analysis = data.content?.trim();
 
         if (analysis) {
           // Rastrear uso de tokens
@@ -208,43 +204,38 @@ Con base en el análisis:
   }
 
   // Fallback a DeepSeek si QWEN falla o no está configurado
-  if (DEEPSEEK_API_KEY) {
+  if (DEEPSEEK_AVAILABLE) {
     try {
       console.log('🧠 [DeepSeek AI] Generando análisis premium (fallback)...');
 
-      const response = await fetch(DEEPSEEK_API_URL, {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
         },
         body: JSON.stringify({
+          provider: 'deepseek',
           model: 'deepseek-chat',
+          systemPrompt,
           messages: [
-            {
-              role: 'system',
-              content: 'Eres un experto consultor de contenido viral con 10+ años de experiencia. Has analizado miles de videos virales y conoces los algoritmos de YouTube, TikTok y todas las plataformas. Tu análisis es directo, basado en datos, y proporciona insights que otros expertos no ven. Nunca das consejos genéricos.'
-            },
             {
               role: 'user',
               content: prompt
             }
           ],
           temperature: 0.8,
-          max_tokens: 1500,
-          top_p: 0.95,
-          frequency_penalty: 0.3,
-          presence_penalty: 0.3
+          maxTokens: 1500
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Error en DeepSeek API');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Error en DeepSeek API');
       }
 
       const data = await response.json();
-      const analysis = data.choices[0]?.message?.content?.trim();
+      const analysis = data.content?.trim();
 
       if (!analysis) {
         throw new Error('No se recibió análisis del AI Premium');

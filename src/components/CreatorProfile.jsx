@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import ThreadComposer from '@/components/ThreadComposer';
+import ThreadCard from '@/components/ThreadCard';
+import VideoCarousel from '@/components/VideoCarousel';
 import {
   Heart,
   Eye,
@@ -52,12 +55,13 @@ export default function CreatorProfile() {
   });
 
   const [threads, setThreads] = useState([]);
+  const [threadLikes, setThreadLikes] = useState({}); // { threadId: boolean }
+  const [threadReplies, setThreadReplies] = useState({}); // { threadId: [replies] }
   const [youtubeVideos, setYoutubeVideos] = useState([]);
   const [tiktokVideos, setTiktokVideos] = useState([]);
   const [instagramPosts, setInstagramPosts] = useState([]);
 
-  const [newThreadContent, setNewThreadContent] = useState('');
-  const [showNewThreadInput, setShowNewThreadInput] = useState(false);
+  const [showThreadComposer, setShowThreadComposer] = useState(false);
 
   // Cargar datos al montar
   useEffect(() => {
@@ -88,7 +92,7 @@ export default function CreatorProfile() {
         await createInitialProfile();
       }
 
-      // Cargar threads
+      // Cargar threads (máximo 10)
       const { data: threadsData, error: threadsError } = await supabase
         .from('creator_threads')
         .select('*')
@@ -97,7 +101,46 @@ export default function CreatorProfile() {
         .limit(10);
 
       if (threadsError) throw threadsError;
-      setThreads(threadsData || []);
+      const threadsList = threadsData || [];
+      setThreads(threadsList);
+
+      // Cargar likes del usuario para cada thread
+      const threadIds = threadsList.map(t => t.id);
+      if (threadIds.length > 0) {
+        const { data: likesData } = await supabase
+          .from('thread_likes')
+          .select('thread_id')
+          .eq('user_id', user.id)
+          .in('thread_id', threadIds);
+
+        const likesMap = {};
+        likesData?.forEach(like => {
+          likesMap[like.thread_id] = true;
+        });
+        setThreadLikes(likesMap);
+
+        // Cargar respuestas para cada thread (si la tabla existe)
+        try {
+          const { data: repliesData } = await supabase
+            .from('thread_replies')
+            .select('*')
+            .in('thread_id', threadIds)
+            .order('created_at', { ascending: true });
+
+          const repliesMap = {};
+          repliesData?.forEach(reply => {
+            if (!repliesMap[reply.thread_id]) {
+              repliesMap[reply.thread_id] = [];
+            }
+            repliesMap[reply.thread_id].push(reply);
+          });
+          setThreadReplies(repliesMap);
+        } catch (repliesError) {
+          // Si la tabla no existe aún, continuar sin respuestas
+          console.warn('Tabla thread_replies no encontrada. Ejecuta el SQL de migración:', repliesError);
+          setThreadReplies({});
+        }
+      }
 
       // Cargar contenido por plataforma
       const { data: contentData, error: contentError } = await supabase
@@ -185,21 +228,22 @@ export default function CreatorProfile() {
 
   const toggleThreadLike = async (threadId) => {
     try {
-      const thread = threads.find(t => t.id === threadId);
-      const { data: existingLike } = await supabase
-        .from('thread_likes')
-        .select('*')
-        .eq('thread_id', threadId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingLike) {
+      const isLiked = threadLikes[threadId];
+      
+      if (isLiked) {
         // Unlike
         await supabase
           .from('thread_likes')
           .delete()
           .eq('thread_id', threadId)
           .eq('user_id', user.id);
+        
+        // Actualizar contador
+        const thread = threads.find(t => t.id === threadId);
+        await supabase
+          .from('creator_threads')
+          .update({ likes: Math.max(0, (thread.likes || 0) - 1) })
+          .eq('id', threadId);
       } else {
         // Like
         await supabase
@@ -208,12 +252,110 @@ export default function CreatorProfile() {
             thread_id: threadId,
             user_id: user.id
           });
+        
+        // Actualizar contador
+        const thread = threads.find(t => t.id === threadId);
+        await supabase
+          .from('creator_threads')
+          .update({ likes: (thread.likes || 0) + 1 })
+          .eq('id', threadId);
       }
 
-      // Recargar threads
-      loadProfileData();
+      // Actualizar estado local
+      setThreadLikes(prev => ({
+        ...prev,
+        [threadId]: !isLiked
+      }));
+
+      // Actualizar contador en threads
+      setThreads(prev => prev.map(t => 
+        t.id === threadId 
+          ? { ...t, likes: isLiked ? Math.max(0, (t.likes || 0) - 1) : (t.likes || 0) + 1 }
+          : t
+      ));
     } catch (error) {
       console.error('Error toggling like:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo actualizar el like',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleThreadReply = async (threadId, content) => {
+    try {
+      // Verificar si la tabla existe antes de insertar
+      const { data, error } = await supabase
+        .from('thread_replies')
+        .insert({
+          thread_id: threadId,
+          user_id: user.id,
+          content: content,
+          user_name: profileData.display_name || user.email?.split('@')[0] || 'Usuario'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // Si la tabla no existe, mostrar mensaje informativo
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          toast({
+            title: '⚠️ Tabla no encontrada',
+            description: 'Por favor ejecuta el SQL de migración: supabase/thread_replies_table.sql',
+            variant: 'destructive',
+            duration: 6000
+          });
+          return;
+        }
+        throw error;
+      }
+
+      // Actualizar estado local
+      setThreadReplies(prev => ({
+        ...prev,
+        [threadId]: [...(prev[threadId] || []), data]
+      }));
+
+      toast({
+        title: '✅ Respuesta enviada',
+        description: 'Tu respuesta se publicó correctamente'
+      });
+    } catch (error) {
+      console.error('Error replying to thread:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo enviar la respuesta',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  };
+
+  const handleThreadShare = async (threadId) => {
+    try {
+      const thread = threads.find(t => t.id === threadId);
+      await supabase
+        .from('creator_threads')
+        .update({ shares: (thread.shares || 0) + 1 })
+        .eq('id', threadId);
+
+      setThreads(prev => prev.map(t => 
+        t.id === threadId 
+          ? { ...t, shares: (t.shares || 0) + 1 }
+          : t
+      ));
+
+      // Copiar URL al portapapeles
+      const url = `${window.location.origin}/mi-perfil?thread=${threadId}`;
+      await navigator.clipboard.writeText(url);
+      
+      toast({
+        title: '✅ Enlace copiado',
+        description: 'El enlace del hilo se copió al portapapeles'
+      });
+    } catch (error) {
+      console.error('Error sharing thread:', error);
     }
   };
 
@@ -274,24 +416,57 @@ export default function CreatorProfile() {
     }
   };
 
-  const handleCreateThread = async () => {
-    if (!newThreadContent.trim()) return;
+  const handleCreateThread = async ({ content, gif }) => {
+    if (!content.trim() && !gif) return;
 
     try {
+      // Preparar datos del hilo
+      const threadData = {
+        user_id: user.id,
+        content: content || ''
+      };
+
+      // Agregar GIF solo si existe y la columna está disponible
+      if (gif) {
+        threadData.gif = gif;
+      }
+
       const { data, error } = await supabase
         .from('creator_threads')
-        .insert({
-          user_id: user.id,
-          content: newThreadContent
-        })
+        .insert(threadData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Si el error es porque la columna gif no existe, intentar sin ella
+        if (error.code === 'PGRST204' && error.message?.includes('gif')) {
+          console.warn('[CreatorProfile] Columna gif no encontrada, intentando sin GIF');
+          const { data: retryData, error: retryError } = await supabase
+            .from('creator_threads')
+            .insert({
+              user_id: user.id,
+              content: content || ''
+            })
+            .select()
+            .single();
+          
+          if (retryError) throw retryError;
+          
+          toast({
+            title: '⚠️ Hilo creado sin GIF',
+            description: 'Ejecuta el SQL: supabase/add_gif_column_to_threads.sql para habilitar GIFs',
+            duration: 5000
+          });
+          
+          setThreads([retryData, ...threads.slice(0, 9)]);
+          setShowThreadComposer(false);
+          return;
+        }
+        throw error;
+      }
 
-      setThreads([data, ...threads]);
-      setNewThreadContent('');
-      setShowNewThreadInput(false);
+      setThreads([data, ...threads.slice(0, 9)]); // Mantener máximo 10
+      setShowThreadComposer(false);
 
       toast({
         title: '✅ Hilo creado',
@@ -304,6 +479,7 @@ export default function CreatorProfile() {
         description: 'No se pudo crear el hilo',
         variant: 'destructive'
       });
+      throw error;
     }
   };
 
@@ -484,259 +660,107 @@ export default function CreatorProfile() {
         <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
           📝 Hilos
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+        {/* Thread Composer */}
+        <AnimatePresence>
+          {showThreadComposer && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8"
+            >
+              <ThreadComposer
+                onPost={handleCreateThread}
+                onClose={() => setShowThreadComposer(false)}
+                isOpen={showThreadComposer}
+                placeholder="¿Qué está pasando?"
+                maxLength={280}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Threads List - Máximo 10 */}
+        <div className="space-y-4 mb-8">
           {threads.length > 0 ? (
-            threads.map((thread, index) => (
-              <motion.div
+            threads.slice(0, 10).map((thread, index) => (
+              <ThreadCard
                 key={thread.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-              >
-                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 hover:-translate-y-1 transition-all">
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-sm font-bold">
-                        {profileData.display_name?.charAt(0)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-white">{profileData.display_name}</div>
-                        <div className="text-xs text-purple-300">
-                          {new Date(thread.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-300 mb-4 line-clamp-3">{thread.content}</p>
-                    <div className="flex gap-4 text-sm">
-                      <button
-                        onClick={() => toggleThreadLike(thread.id)}
-                        className="flex items-center gap-1 text-purple-400 hover:text-pink-400 transition-colors"
-                      >
-                        <Heart className="w-4 h-4" />
-                        {thread.likes}
-                      </button>
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Eye className="w-4 h-4" />
-                        {thread.views}
-                      </div>
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Share2 className="w-4 h-4" />
-                        {thread.shares}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                thread={thread}
+                user={profileData}
+                onLike={toggleThreadLike}
+                onReply={handleThreadReply}
+                onShare={handleThreadShare}
+                isLiked={threadLikes[thread.id] || false}
+                likeCount={thread.likes || 0}
+                viewCount={thread.views || 0}
+                shareCount={thread.shares || 0}
+                replies={threadReplies[thread.id] || []}
+              />
             ))
           ) : (
-            <div className="col-span-full text-center py-8">
+            <div className="text-center py-12 bg-gray-800/40 rounded-xl border border-purple-500/20">
               <p className="text-gray-400 mb-4">Aún no has creado hilos. ¡Comparte tu primera idea!</p>
+              <Button
+                onClick={() => setShowThreadComposer(true)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Primer Hilo
+              </Button>
             </div>
           )}
         </div>
-        <div className="flex justify-center mb-16">
-          <Button
-            onClick={() => setShowNewThreadInput(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Crear Nuevo Hilo
-          </Button>
-        </div>
+
+        {/* Create Thread Button */}
+        {!showThreadComposer && (
+          <div className="flex justify-center mb-16">
+            <Button
+              onClick={() => setShowThreadComposer(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Crear Nuevo Hilo
+            </Button>
+          </div>
+        )}
 
         {/* YouTube Section */}
         <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
           🎥 Videos de YouTube
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {youtubeVideos.length > 0 ? (
-            youtubeVideos.map((video, index) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-              >
-                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 transition-all overflow-hidden">
-                  {video.content_url ? (
-                    <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center relative cursor-pointer">
-                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
-                        <Play className="w-8 h-8 text-purple-600" fill="currentColor" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-gray-900/60 border-2 border-dashed border-purple-500/30 flex items-center justify-center">
-                      <Plus className="w-12 h-12 text-purple-500" />
-                    </div>
-                  )}
-                  <CardContent className="p-4 space-y-3">
-                    <Input
-                      type="text"
-                      placeholder="Pegar URL de YouTube"
-                      value={video.content_url || ''}
-                      onChange={(e) => handleUpdateVideoUrl(video.id, e.target.value, 'youtube')}
-                      className="bg-gray-900/60 border-purple-500/30 text-sm"
-                    />
-                    <div className="font-semibold text-white">{video.title}</div>
-                    <div className="flex gap-4 text-sm">
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Heart className="w-4 h-4" />
-                        {video.likes || 0}
-                      </div>
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Eye className="w-4 h-4" />
-                        {video.views || 0}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-400 mb-4">Aún no has agregado videos de YouTube. ¡Muestra tu contenido!</p>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-center mb-16">
-          <Button
-            onClick={() => handleAddVideo('youtube')}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Video de YouTube
-          </Button>
-        </div>
+        <VideoCarousel
+          videos={youtubeVideos}
+          platform="youtube"
+          onAddVideo={handleAddVideo}
+          onUpdateVideoUrl={handleUpdateVideoUrl}
+          maxVideos={5}
+        />
 
         {/* TikTok Section */}
-        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8 mt-16">
           ⚡ Videos de TikTok
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {tiktokVideos.length > 0 ? (
-            tiktokVideos.map((video, index) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-              >
-                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 transition-all overflow-hidden">
-                  {video.content_url ? (
-                    <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center relative cursor-pointer">
-                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
-                        <Play className="w-8 h-8 text-purple-600" fill="currentColor" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-gray-900/60 border-2 border-dashed border-purple-500/30 flex items-center justify-center">
-                      <Plus className="w-12 h-12 text-purple-500" />
-                    </div>
-                  )}
-                  <CardContent className="p-4 space-y-3">
-                    <Input
-                      type="text"
-                      placeholder="Pegar URL de TikTok"
-                      value={video.content_url || ''}
-                      onChange={(e) => handleUpdateVideoUrl(video.id, e.target.value, 'tiktok')}
-                      className="bg-gray-900/60 border-purple-500/30 text-sm"
-                    />
-                    <div className="font-semibold text-white">{video.title}</div>
-                    <div className="flex gap-4 text-sm">
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Heart className="w-4 h-4" />
-                        {video.likes || 0}
-                      </div>
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Eye className="w-4 h-4" />
-                        {video.views || 0}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-400 mb-4">Aún no has agregado videos de TikTok. ¡Muestra tu contenido viral!</p>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-center mb-16">
-          <Button
-            onClick={() => handleAddVideo('tiktok')}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Video de TikTok
-          </Button>
-        </div>
+        <VideoCarousel
+          videos={tiktokVideos}
+          platform="tiktok"
+          onAddVideo={handleAddVideo}
+          onUpdateVideoUrl={handleUpdateVideoUrl}
+          maxVideos={5}
+        />
 
         {/* Instagram Section */}
-        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8 mt-16">
           📸 Posts de Instagram
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {instagramPosts.length > 0 ? (
-            instagramPosts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-              >
-                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 transition-all overflow-hidden">
-                  {post.content_url ? (
-                    <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center relative cursor-pointer">
-                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
-                        <Instagram className="w-8 h-8 text-purple-600" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-gray-900/60 border-2 border-dashed border-purple-500/30 flex items-center justify-center">
-                      <Plus className="w-12 h-12 text-purple-500" />
-                    </div>
-                  )}
-                  <CardContent className="p-4 space-y-3">
-                    <Input
-                      type="text"
-                      placeholder="Pegar URL de Instagram"
-                      value={post.content_url || ''}
-                      onChange={(e) => handleUpdateVideoUrl(post.id, e.target.value, 'instagram')}
-                      className="bg-gray-900/60 border-purple-500/30 text-sm"
-                    />
-                    <div className="font-semibold text-white">{post.title}</div>
-                    <div className="flex gap-4 text-sm">
-                      <div className="flex items-center gap-1 text-purple-300">
-                        <Heart className="w-4 h-4" />
-                        {post.likes || 0}
-                      </div>
-                      <div className="flex items-center gap-1 text-purple-300">
-                        💬 {post.comments || 0}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-400 mb-4">Aún no has agregado posts de Instagram. ¡Comparte tu contenido visual!</p>
-            </div>
-          )}
-        </div>
-        <div className="flex justify-center mb-16">
-          <Button
-            onClick={() => handleAddVideo('instagram')}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Post de Instagram
-          </Button>
-        </div>
+        <VideoCarousel
+          videos={instagramPosts}
+          platform="instagram"
+          onAddVideo={handleAddVideo}
+          onUpdateVideoUrl={handleUpdateVideoUrl}
+          maxVideos={5}
+        />
 
       </div>
     </div>

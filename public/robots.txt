@@ -6,6 +6,7 @@
 # ========================================
 User-agent: *
 Allow: /
+Allow: /tools
 
 # ========================================
 # RUTAS BLOQUEADAS (Privadas)
@@ -22,9 +23,16 @@ Disallow: /profile/
 Disallow: /calendar/
 Disallow: /inbox/
 Disallow: /library/
+Disallow: /mi-perfil/
 Disallow: /*.json$
 Disallow: /dist/
 Disallow: /src/
+
+# ========================================
+# BLOQUEAR URLs CON HASH (Fragmentos)
+# ========================================
+# Google no debe indexar URLs con hash como páginas separadas
+Disallow: /*#*
 
 # ========================================
 # REGLAS ESPECIFICAS PARA GOOGLEBOT
