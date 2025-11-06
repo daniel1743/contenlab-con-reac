@@ -587,16 +587,16 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
               className="mt-16 max-w-3xl mx-auto"
             >
               <div className="relative">
-                {/* Badge flotante */}
+                {/* Badge flotante - Versión sutil */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 1 }}
-                  className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20"
+                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20"
                 >
-                  <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 px-4 py-1.5 rounded-full text-white text-sm font-bold shadow-lg flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    PRUEBA GRATIS - Tu primer análisis sin registro
+                  <div className="bg-gradient-to-r from-violet-500/40 via-purple-500/40 to-pink-500/40 backdrop-blur-sm border border-purple-400/30 px-3 py-1 rounded-full text-gray-200 text-xs font-medium shadow-sm flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-purple-300" />
+                    <span className="text-[11px]">Prueba gratis - Sin registro</span>
                   </div>
                 </motion.div>
 

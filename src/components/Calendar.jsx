@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,8 @@ import {
   Zap,
   Target,
   TrendingUp,
-  Share2
+  Share2,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -33,8 +34,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/lib/customSupabaseClient';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const Calendar = () => {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,6 +46,7 @@ const Calendar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlatform, setFilterPlatform] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   // Estado del formulario
@@ -213,89 +218,69 @@ const Calendar = () => {
     });
   };
 
-  // Eventos de ejemplo (ahora con estado)
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      date: new Date(2025, 0, 15),
-      title: 'Video YouTube: Tutorial IA',
-      description: 'Tutorial completo sobre cómo usar IA para crear contenido viral',
-      platforms: ['youtube', 'instagram'],
-      time: '10:00',
-      status: 'scheduled',
-      category: 'content',
-      campaign: 'IA Launch Sprint',
-      primaryGoal: 'awareness',
-      contentType: 'video',
-      aiScore: 88,
-      hashtags: ['#IA', '#Productividad', '#CreoVision'],
-      optimalTime: 'Jueves 16:00'
-    },
-    {
-      id: 2,
-      date: new Date(2025, 0, 18),
-      title: 'Post Instagram: Tips Productividad',
-      description: '10 tips para aumentar tu productividad como creador',
-      platforms: ['instagram', 'tiktok'],
-      time: '14:30',
-      status: 'scheduled',
-      category: 'content',
-      campaign: 'Rutinas Productivas',
-      primaryGoal: 'engagement',
-      contentType: 'reel',
-      aiScore: 92,
-      hashtags: ['#Productividad', '#Creador', '#Rutina'],
-      optimalTime: 'Domingo 19:00'
-    },
-    {
-      id: 3,
-      date: new Date(2025, 0, 22),
-      title: 'Thread Twitter: Tendencias',
-      description: 'Análisis de las tendencias más importantes del mes',
-      platforms: ['twitter', 'linkedin'],
-      time: '09:15',
-      status: 'draft',
-      category: 'engagement',
-      campaign: 'Radar Tendencias',
-      primaryGoal: 'thought_leadership',
-      contentType: 'thread',
-      aiScore: 76,
-      hashtags: ['#Tendencias', '#IA', '#CreoVision'],
-      optimalTime: 'Martes 09:00'
-    },
-    {
-      id: 4,
-      date: new Date(2025, 0, 25),
-      title: 'Live Instagram: Q&A',
-      description: 'Sesión de preguntas y respuestas con la comunidad',
-      platforms: ['instagram', 'facebook'],
-      time: '19:00',
-      status: 'scheduled',
-      category: 'engagement',
-      campaign: 'Community Love',
-      primaryGoal: 'community',
-      contentType: 'live',
-      aiScore: 81,
-      hashtags: ['#Live', '#Preguntas', '#Comunidad'],
-      optimalTime: 'Miércoles 19:00'
-    },
-    {
-      id: 5,
-      date: new Date(2025, 0, 20),
-      title: 'Promoción Producto Nuevo',
-      description: 'Lanzamiento oficial del nuevo curso',
-      platforms: ['facebook', 'youtube', 'linkedin'],
-      time: '12:00',
-      status: 'scheduled',
-      category: 'promotion',
-      campaign: 'Lanzamiento Elite',
-      primaryGoal: 'conversion',
-      contentType: 'promo',
-      aiScore: 90,
-      hashtags: ['#Lanzamiento', '#Marketing', '#Conversiones'],
-      optimalTime: 'Martes 08:30'
-    },
-  ]);
+  // Eventos cargados desde Supabase
+  const [events, setEvents] = useState([]);
+
+  // Cargar eventos desde Supabase
+  const loadEvents = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('scheduled_posts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('scheduled_datetime', { ascending: true });
+
+      if (error) throw error;
+
+      // Convertir datos de Supabase al formato del componente
+      const formattedEvents = (data || []).map(post => ({
+        id: post.id,
+        date: new Date(post.scheduled_date),
+        title: post.title,
+        description: post.description || '',
+        platforms: post.platforms || [],
+        time: post.scheduled_time,
+        status: post.status || 'draft',
+        category: post.category || 'content',
+        campaign: post.campaign || '',
+        primaryGoal: post.primary_goal || 'awareness',
+        contentType: post.content_type || 'video',
+        aiScore: post.ai_score || 0,
+        hashtags: post.hashtags || [],
+        optimalTime: post.optimal_time || null,
+        scheduled_datetime: post.scheduled_datetime,
+        media_files: post.media_files || [],
+        content_data: post.content_data || {},
+        published_urls: post.published_urls || {},
+        is_recurring: post.is_recurring || false,
+        recurrence_pattern: post.recurrence_pattern || null
+      }));
+
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudieron cargar los eventos. Usando datos locales.',
+        variant: 'destructive'
+      });
+      // Fallback: usar eventos de ejemplo si hay error
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
+
+  // Cargar eventos al montar o cuando cambie el usuario
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   // Filtrar eventos
   const filteredEvents = events.filter(event => {
@@ -316,7 +301,16 @@ const Calendar = () => {
   });
 
   // Funciones CRUD
-  const handleCreateEvent = useCallback(() => {
+  const handleCreateEvent = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: '🔒 Autenticación requerida',
+        description: 'Debes iniciar sesión para crear eventos',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!formData.title || !formData.date || !formData.time) {
       toast({
         title: '⚠️ Campos requeridos',
@@ -335,38 +329,77 @@ const Calendar = () => {
       return;
     }
 
-    const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
-    const hashtags = generateHashtags(formData.title, formData.description);
-    const optimalTime = getOptimalTimeForPlatforms(formData.platforms) || formData.time;
+    try {
+      const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
+      const hashtags = generateHashtags(formData.title, formData.description);
+      const optimalTime = getOptimalTimeForPlatforms(formData.platforms) || formData.time;
 
-    const newEvent = {
-      id: Date.now(),
-      title: formData.title,
-      description: formData.description,
-      date: new Date(formData.date),
-      time: formData.time,
-      platforms: [...formData.platforms],
-      status: formData.status,
-      category: formData.category,
-      campaign: formData.campaign?.trim() || 'Campaña sin nombre',
-      primaryGoal: formData.primaryGoal,
-      contentType: formData.contentType,
-      aiScore,
-      hashtags: hashtags.length ? hashtags : ['#CreoVision'],
-      optimalTime
-    };
+      // Crear scheduled_datetime combinando fecha y hora
+      const scheduledDateTime = new Date(`${formData.date}T${formData.time}`);
 
-    setEvents(prev => [...prev, newEvent]);
-    setIsModalOpen(false);
-    resetForm();
-    toast({
-      title: '🚀 Evento creado',
-      description: `${newEvent.title} programado en ${newEvent.platforms.length} plataformas.`,
-    });
-  }, [computeAiScore, formData, generateHashtags, getOptimalTimeForPlatforms, toast]);
+      // Insertar en Supabase
+      const { data, error } = await supabase
+        .from('scheduled_posts')
+        .insert({
+          user_id: user.id,
+          title: formData.title,
+          description: formData.description || null,
+          scheduled_date: formData.date,
+          scheduled_time: formData.time,
+          scheduled_datetime: scheduledDateTime.toISOString(),
+          platforms: formData.platforms,
+          status: formData.status,
+          category: formData.category,
+          content_type: formData.contentType,
+          campaign: formData.campaign?.trim() || null,
+          primary_goal: formData.primaryGoal,
+          ai_score: aiScore,
+          hashtags: hashtags.length ? hashtags : ['#CreoVision'],
+          optimal_time: optimalTime
+        })
+        .select()
+        .single();
 
-  const handleUpdateEvent = useCallback(() => {
-    if (!editingEvent) return;
+      if (error) throw error;
+
+      // Convertir a formato del componente y agregar al estado
+      const newEvent = {
+        id: data.id,
+        date: new Date(data.scheduled_date),
+        title: data.title,
+        description: data.description || '',
+        platforms: data.platforms || [],
+        time: data.scheduled_time,
+        status: data.status,
+        category: data.category,
+        campaign: data.campaign || '',
+        primaryGoal: data.primary_goal,
+        contentType: data.content_type,
+        aiScore: data.ai_score,
+        hashtags: data.hashtags || [],
+        optimalTime: data.optimal_time,
+        scheduled_datetime: data.scheduled_datetime
+      };
+
+      setEvents(prev => [...prev, newEvent]);
+      setIsModalOpen(false);
+      resetForm();
+      toast({
+        title: '🚀 Evento creado',
+        description: `${newEvent.title} programado en ${newEvent.platforms.length} plataformas.`,
+      });
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo crear el evento. Intenta nuevamente.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, formData, computeAiScore, generateHashtags, getOptimalTimeForPlatforms, toast]);
+
+  const handleUpdateEvent = useCallback(async () => {
+    if (!editingEvent || !user) return;
 
     if (!formData.platforms.length) {
       toast({
@@ -377,63 +410,189 @@ const Calendar = () => {
       return;
     }
 
-    const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
-    const hashtags = generateHashtags(formData.title, formData.description);
-    const optimalTime = getOptimalTimeForPlatforms(formData.platforms) || formData.time;
+    try {
+      const aiScore = computeAiScore(formData.title, formData.description, formData.platforms);
+      const hashtags = generateHashtags(formData.title, formData.description);
+      const optimalTime = getOptimalTimeForPlatforms(formData.platforms) || formData.time;
 
-    setEvents(prev => prev.map(event =>
-      event.id === editingEvent.id
-        ? {
-            ...event,
-            title: formData.title,
-            description: formData.description,
-            date: new Date(formData.date),
-            time: formData.time,
-            platforms: [...formData.platforms],
-            status: formData.status,
-            category: formData.category,
-            campaign: formData.campaign?.trim() || 'Campaña sin nombre',
-            primaryGoal: formData.primaryGoal,
-            contentType: formData.contentType,
-            aiScore,
-            hashtags: hashtags.length ? hashtags : event.hashtags,
-            optimalTime
-          }
-        : event
-    ));
-    setIsModalOpen(false);
-    setEditingEvent(null);
-    resetForm();
-    toast({
-      title: '✅ Evento actualizado',
-      description: 'Los cambios se han guardado correctamente',
-    });
-  }, [computeAiScore, editingEvent, formData, generateHashtags, getOptimalTimeForPlatforms, toast]);
+      // Crear scheduled_datetime combinando fecha y hora
+      const scheduledDateTime = new Date(`${formData.date}T${formData.time}`);
 
-  const handleDeleteEvent = useCallback((eventId) => {
-    setEvents(prev => prev.filter(event => event.id !== eventId));
-    toast({
-      title: '🗑️ Evento eliminado',
-      description: 'El evento ha sido eliminado del calendario',
-    });
-  }, [toast]);
+      // Actualizar en Supabase
+      const { data, error } = await supabase
+        .from('scheduled_posts')
+        .update({
+          title: formData.title,
+          description: formData.description || null,
+          scheduled_date: formData.date,
+          scheduled_time: formData.time,
+          scheduled_datetime: scheduledDateTime.toISOString(),
+          platforms: formData.platforms,
+          status: formData.status,
+          category: formData.category,
+          content_type: formData.contentType,
+          campaign: formData.campaign?.trim() || null,
+          primary_goal: formData.primaryGoal,
+          ai_score: aiScore,
+          hashtags: hashtags.length ? hashtags : editingEvent.hashtags,
+          optimal_time: optimalTime
+        })
+        .eq('id', editingEvent.id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
-  const handleDuplicateEvent = useCallback((event) => {
-    const duplicated = {
-      ...event,
-      id: Date.now(),
-      title: `${event.title} (Copia)`,
-      status: 'draft',
-      date: new Date(event.date),
-      platforms: [...(event.platforms || [])],
-      hashtags: [...(event.hashtags || [])]
-    };
-    setEvents(prev => [...prev, duplicated]);
-    toast({
-      title: '📋 Evento duplicado',
-      description: 'El evento ha sido duplicado como borrador',
-    });
-  }, [toast]);
+      if (error) throw error;
+
+      // Actualizar estado local
+      setEvents(prev => prev.map(event =>
+        event.id === editingEvent.id
+          ? {
+              ...event,
+              title: data.title,
+              description: data.description || '',
+              date: new Date(data.scheduled_date),
+              time: data.scheduled_time,
+              platforms: data.platforms || [],
+              status: data.status,
+              category: data.category,
+              campaign: data.campaign || '',
+              primaryGoal: data.primary_goal,
+              contentType: data.content_type,
+              aiScore: data.ai_score,
+              hashtags: data.hashtags || [],
+              optimalTime: data.optimal_time,
+              scheduled_datetime: data.scheduled_datetime
+            }
+          : event
+      ));
+      setIsModalOpen(false);
+      setEditingEvent(null);
+      resetForm();
+      toast({
+        title: '✅ Evento actualizado',
+        description: 'Los cambios se han guardado correctamente',
+      });
+    } catch (error) {
+      console.error('Error updating event:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo actualizar el evento. Intenta nuevamente.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, editingEvent, formData, computeAiScore, generateHashtags, getOptimalTimeForPlatforms, toast]);
+
+  const handleDeleteEvent = useCallback(async (eventId) => {
+    if (!user) {
+      toast({
+        title: '🔒 Autenticación requerida',
+        description: 'Debes iniciar sesión para eliminar eventos',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Eliminar de Supabase
+      const { error } = await supabase
+        .from('scheduled_posts')
+        .delete()
+        .eq('id', eventId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Actualizar estado local
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+      toast({
+        title: '🗑️ Evento eliminado',
+        description: 'El evento ha sido eliminado del calendario',
+      });
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo eliminar el evento. Intenta nuevamente.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, toast]);
+
+  const handleDuplicateEvent = useCallback(async (event) => {
+    if (!user) {
+      toast({
+        title: '🔒 Autenticación requerida',
+        description: 'Debes iniciar sesión para duplicar eventos',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Crear scheduled_datetime (usar la fecha/hora del evento original o actual)
+      const scheduledDateTime = event.scheduled_datetime 
+        ? new Date(event.scheduled_datetime)
+        : new Date(`${event.date.toISOString().split('T')[0]}T${event.time}`);
+
+      // Insertar en Supabase
+      const { data, error } = await supabase
+        .from('scheduled_posts')
+        .insert({
+          user_id: user.id,
+          title: `${event.title} (Copia)`,
+          description: event.description || null,
+          scheduled_date: event.date.toISOString().split('T')[0],
+          scheduled_time: event.time,
+          scheduled_datetime: scheduledDateTime.toISOString(),
+          platforms: event.platforms || [],
+          status: 'draft',
+          category: event.category || 'content',
+          content_type: event.contentType || 'video',
+          campaign: event.campaign || null,
+          primary_goal: event.primaryGoal || 'awareness',
+          ai_score: event.aiScore || null,
+          hashtags: event.hashtags || [],
+          optimal_time: event.optimalTime || null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Convertir y agregar al estado
+      const duplicated = {
+        id: data.id,
+        date: new Date(data.scheduled_date),
+        title: data.title,
+        description: data.description || '',
+        platforms: data.platforms || [],
+        time: data.scheduled_time,
+        status: data.status,
+        category: data.category,
+        campaign: data.campaign || '',
+        primaryGoal: data.primary_goal,
+        contentType: data.content_type,
+        aiScore: data.ai_score,
+        hashtags: data.hashtags || [],
+        optimalTime: data.optimal_time,
+        scheduled_datetime: data.scheduled_datetime
+      };
+
+      setEvents(prev => [...prev, duplicated]);
+      toast({
+        title: '📋 Evento duplicado',
+        description: 'El evento ha sido duplicado como borrador',
+      });
+    } catch (error) {
+      console.error('Error duplicating event:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo duplicar el evento. Intenta nuevamente.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, toast]);
 
   const resetForm = () => {
     setFormData({
@@ -594,6 +753,18 @@ const Calendar = () => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
 
+  // Mostrar loading mientras se cargan los eventos
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></Loader2>
+          <p className="text-gray-400">Cargando calendario...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -606,6 +777,11 @@ const Calendar = () => {
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
           Planifica y programa tu contenido en todas las plataformas sociales
         </p>
+        {!user && (
+          <p className="text-sm text-yellow-400">
+            ⚠️ Inicia sesión para guardar tus eventos permanentemente
+          </p>
+        )}
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

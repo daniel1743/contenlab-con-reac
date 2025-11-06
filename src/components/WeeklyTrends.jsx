@@ -141,7 +141,7 @@ Por favor proporciona un análisis completo que incluya:
 Sé específico, práctico y enfocado en resultados medibles.`;
 
       // Llamar a nuestro backend con sistema de aprendizaje integrado
-      const response = await fetch('/api/ai/chat-with-learning', {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
