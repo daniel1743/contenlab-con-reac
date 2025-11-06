@@ -307,6 +307,12 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                       <span className="text-xs">Mis Investigaciones</span>
                     </DropdownMenuItem>
 
+                    {/* Mi Perfil de Creador */}
+                    <DropdownMenuItem onClick={() => onSectionChange('mi-perfil')} className="cursor-pointer">
+                      <SparklesSolidIcon className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Mi Perfil de Creador</span>
+                    </DropdownMenuItem>
+
                     {/* Configurar Perfil */}
                     <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer">
                       <UserCircleIcon className="mr-2 h-4 w-4 stroke-[2]" />

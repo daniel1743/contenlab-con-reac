@@ -481,60 +481,262 @@ export default function CreatorProfile() {
         </motion.div>
 
         {/* Threads Section */}
-        {threads.length > 0 && (
-          <>
-            <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
-              📝 Hilos
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-              {threads.map((thread, index) => (
-                <motion.div
-                  key={thread.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 hover:-translate-y-1 transition-all">
-                    <CardContent className="p-5">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-sm font-bold">
-                          {profileData.display_name?.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-white">{profileData.display_name}</div>
-                          <div className="text-xs text-purple-300">
-                            {new Date(thread.created_at).toLocaleDateString()}
-                          </div>
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+          📝 Hilos
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {threads.length > 0 ? (
+            threads.map((thread, index) => (
+              <motion.div
+                key={thread.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+              >
+                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 hover:-translate-y-1 transition-all">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-sm font-bold">
+                        {profileData.display_name?.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-white">{profileData.display_name}</div>
+                        <div className="text-xs text-purple-300">
+                          {new Date(thread.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <p className="text-gray-300 mb-4 line-clamp-3">{thread.content}</p>
-                      <div className="flex gap-4 text-sm">
-                        <button
-                          onClick={() => toggleThreadLike(thread.id)}
-                          className="flex items-center gap-1 text-purple-400 hover:text-pink-400 transition-colors"
-                        >
-                          <Heart className="w-4 h-4" />
-                          {thread.likes}
-                        </button>
-                        <div className="flex items-center gap-1 text-purple-300">
-                          <Eye className="w-4 h-4" />
-                          {thread.views}
-                        </div>
-                        <div className="flex items-center gap-1 text-purple-300">
-                          <Share2 className="w-4 h-4" />
-                          {thread.shares}
-                        </div>
+                    </div>
+                    <p className="text-gray-300 mb-4 line-clamp-3">{thread.content}</p>
+                    <div className="flex gap-4 text-sm">
+                      <button
+                        onClick={() => toggleThreadLike(thread.id)}
+                        className="flex items-center gap-1 text-purple-400 hover:text-pink-400 transition-colors"
+                      >
+                        <Heart className="w-4 h-4" />
+                        {thread.likes}
+                      </button>
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Eye className="w-4 h-4" />
+                        {thread.views}
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Share2 className="w-4 h-4" />
+                        {thread.shares}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8">
+              <p className="text-gray-400 mb-4">Aún no has creado hilos. ¡Comparte tu primera idea!</p>
             </div>
-          </>
-        )}
+          )}
+        </div>
+        <div className="flex justify-center mb-16">
+          <Button
+            onClick={() => setShowNewThreadInput(true)}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Crear Nuevo Hilo
+          </Button>
+        </div>
 
-        {/* Videos sections similar structure... */}
-        {/* YouTube, TikTok, Instagram sections would follow similar pattern */}
+        {/* YouTube Section */}
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+          🎥 Videos de YouTube
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {youtubeVideos.length > 0 ? (
+            youtubeVideos.map((video, index) => (
+              <motion.div
+                key={video.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+              >
+                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 transition-all overflow-hidden">
+                  {video.content_url ? (
+                    <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center relative cursor-pointer">
+                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
+                        <Play className="w-8 h-8 text-purple-600" fill="currentColor" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gray-900/60 border-2 border-dashed border-purple-500/30 flex items-center justify-center">
+                      <Plus className="w-12 h-12 text-purple-500" />
+                    </div>
+                  )}
+                  <CardContent className="p-4 space-y-3">
+                    <Input
+                      type="text"
+                      placeholder="Pegar URL de YouTube"
+                      value={video.content_url || ''}
+                      onChange={(e) => handleUpdateVideoUrl(video.id, e.target.value, 'youtube')}
+                      className="bg-gray-900/60 border-purple-500/30 text-sm"
+                    />
+                    <div className="font-semibold text-white">{video.title}</div>
+                    <div className="flex gap-4 text-sm">
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Heart className="w-4 h-4" />
+                        {video.likes || 0}
+                      </div>
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Eye className="w-4 h-4" />
+                        {video.views || 0}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8">
+              <p className="text-gray-400 mb-4">Aún no has agregado videos de YouTube. ¡Muestra tu contenido!</p>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-center mb-16">
+          <Button
+            onClick={() => handleAddVideo('youtube')}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Video de YouTube
+          </Button>
+        </div>
+
+        {/* TikTok Section */}
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+          ⚡ Videos de TikTok
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {tiktokVideos.length > 0 ? (
+            tiktokVideos.map((video, index) => (
+              <motion.div
+                key={video.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+              >
+                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 transition-all overflow-hidden">
+                  {video.content_url ? (
+                    <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center relative cursor-pointer">
+                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
+                        <Play className="w-8 h-8 text-purple-600" fill="currentColor" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gray-900/60 border-2 border-dashed border-purple-500/30 flex items-center justify-center">
+                      <Plus className="w-12 h-12 text-purple-500" />
+                    </div>
+                  )}
+                  <CardContent className="p-4 space-y-3">
+                    <Input
+                      type="text"
+                      placeholder="Pegar URL de TikTok"
+                      value={video.content_url || ''}
+                      onChange={(e) => handleUpdateVideoUrl(video.id, e.target.value, 'tiktok')}
+                      className="bg-gray-900/60 border-purple-500/30 text-sm"
+                    />
+                    <div className="font-semibold text-white">{video.title}</div>
+                    <div className="flex gap-4 text-sm">
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Heart className="w-4 h-4" />
+                        {video.likes || 0}
+                      </div>
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Eye className="w-4 h-4" />
+                        {video.views || 0}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8">
+              <p className="text-gray-400 mb-4">Aún no has agregado videos de TikTok. ¡Muestra tu contenido viral!</p>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-center mb-16">
+          <Button
+            onClick={() => handleAddVideo('tiktok')}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Video de TikTok
+          </Button>
+        </div>
+
+        {/* Instagram Section */}
+        <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+          📸 Posts de Instagram
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {instagramPosts.length > 0 ? (
+            instagramPosts.map((post, index) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+              >
+                <Card className="bg-gray-800/80 border-purple-500/30 hover:border-purple-500 transition-all overflow-hidden">
+                  {post.content_url ? (
+                    <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center relative cursor-pointer">
+                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
+                        <Instagram className="w-8 h-8 text-purple-600" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gray-900/60 border-2 border-dashed border-purple-500/30 flex items-center justify-center">
+                      <Plus className="w-12 h-12 text-purple-500" />
+                    </div>
+                  )}
+                  <CardContent className="p-4 space-y-3">
+                    <Input
+                      type="text"
+                      placeholder="Pegar URL de Instagram"
+                      value={post.content_url || ''}
+                      onChange={(e) => handleUpdateVideoUrl(post.id, e.target.value, 'instagram')}
+                      className="bg-gray-900/60 border-purple-500/30 text-sm"
+                    />
+                    <div className="font-semibold text-white">{post.title}</div>
+                    <div className="flex gap-4 text-sm">
+                      <div className="flex items-center gap-1 text-purple-300">
+                        <Heart className="w-4 h-4" />
+                        {post.likes || 0}
+                      </div>
+                      <div className="flex items-center gap-1 text-purple-300">
+                        💬 {post.comments || 0}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8">
+              <p className="text-gray-400 mb-4">Aún no has agregado posts de Instagram. ¡Comparte tu contenido visual!</p>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-center mb-16">
+          <Button
+            onClick={() => handleAddVideo('instagram')}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Post de Instagram
+          </Button>
+        </div>
 
       </div>
     </div>
