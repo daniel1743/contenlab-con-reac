@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { getWeeklyTrends, unlockTrendCard, getUnlockedTrends } from '@/services/weeklyTrendsService';
 import { consumeCredits, checkSufficientCredits } from '@/services/creditService';
+import AIFeedbackWidget from '@/components/AIFeedbackWidget';
 
 const UNLOCK_COST = 15; // Créditos para desbloquear una tarjeta
 
@@ -44,6 +45,8 @@ const WeeklyTrends = () => {
   const [selectedTrend, setSelectedTrend] = useState(null);
   const [aiResponse, setAiResponse] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [interactionId, setInteractionId] = useState(null);
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
   // Cargar tendencias al montar el componente
   useEffect(() => {
@@ -119,21 +122,8 @@ const WeeklyTrends = () => {
       // Obtener token de autenticación si está disponible
       const authToken = session?.access_token || null;
 
-      // Llamar a nuestro backend (que maneja la clave de forma segura)
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        },
-        body: JSON.stringify({
-          provider: 'deepseek',
-          model: 'deepseek-chat',
-          systemPrompt: 'Eres un experto analista de tendencias digitales y creación de contenido viral. Proporciona análisis estratégicos, prácticos y accionables para creadores de contenido en español.',
-          messages: [
-            {
-              role: 'user',
-              content: `Analiza esta tendencia viral y proporciona insights estratégicos detallados:
+      // Construir prompt
+      const userPrompt = `Analiza esta tendencia viral y proporciona insights estratégicos detallados:
 
 📌 **Título:** ${trend.title}
 📝 **Descripción:** ${trend.description || 'Sin descripción'}
@@ -148,11 +138,30 @@ Por favor proporciona un análisis completo que incluya:
 4. **Hashtags y keywords** - Para maximizar alcance
 5. **Timing óptimo** - Cuándo y cómo publicar
 
-Sé específico, práctico y enfocado en resultados medibles.`
+Sé específico, práctico y enfocado en resultados medibles.`;
+
+      // Llamar a nuestro backend con sistema de aprendizaje integrado
+      const response = await fetch('/api/ai/chat-with-learning', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
+        body: JSON.stringify({
+          provider: 'deepseek',
+          model: 'deepseek-chat',
+          systemPrompt: 'Eres un experto analista de tendencias digitales y creación de contenido viral. Proporciona análisis estratégicos, prácticos y accionables para creadores de contenido en español.',
+          messages: [
+            {
+              role: 'user',
+              content: userPrompt
             }
           ],
           temperature: 0.7,
-          maxTokens: 1500
+          maxTokens: 1500,
+          feature_slug: 'weekly_trends_analysis',
+          session_id: sessionId,
+          capture_interaction: true
         })
       });
 
@@ -170,6 +179,13 @@ Sé específico, práctico y enfocado en resultados medibles.`
       if (data.content) {
         console.log('✅ Setting AI response');
         setAiResponse(data.content);
+        
+        // Guardar interaction_id si está disponible (para feedback)
+        // Nota: El endpoint actual no devuelve interaction_id, pero podemos obtenerlo
+        // de otra forma o actualizar el endpoint para que lo devuelva
+        if (data.interaction_id) {
+          setInteractionId(data.interaction_id);
+        }
       } else {
         console.error('❌ Invalid response structure:', data);
         throw new Error('Invalid response from AI');
@@ -544,6 +560,21 @@ _Nota: Este es un análisis offline. Configura tu API key de DeepSeek para anál
                           Cerrar
                         </Button>
                       </div>
+
+                      {/* Widget de Feedback para el sistema de aprendizaje */}
+                      {aiResponse && (
+                        <AIFeedbackWidget
+                          interactionId={interactionId}
+                          sessionId={sessionId}
+                          onFeedbackSubmitted={(interaction) => {
+                            console.log('✅ Feedback recibido:', interaction);
+                            toast({
+                              title: 'Gracias por tu feedback',
+                              description: 'Tu opinión nos ayuda a mejorar',
+                            });
+                          }}
+                        />
+                      )}
                     </div>
                   )}
                 </CardContent>
