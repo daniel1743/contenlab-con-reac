@@ -203,64 +203,6 @@ Con base en el análisis:
     }
   }
 
-  // Fallback a DeepSeek si QWEN falla o no está configurado
-  if (DEEPSEEK_AVAILABLE) {
-    try {
-      console.log('🧠 [DeepSeek AI] Generando análisis premium (fallback)...');
-
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        },
-        body: JSON.stringify({
-          provider: 'deepseek',
-          model: 'deepseek-chat',
-          systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.8,
-          maxTokens: 1500
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Error en DeepSeek API');
-      }
-
-      const data = await response.json();
-      const analysis = data.content?.trim();
-
-      if (!analysis) {
-        throw new Error('No se recibió análisis del AI Premium');
-      }
-
-      // Rastrear uso de tokens
-      const tokensUsed = data.usage?.prompt_tokens || 0;
-      const tokensResponse = data.usage?.completion_tokens || 0;
-      trackAPIUsage('deepseek', tokensUsed, tokensResponse);
-
-      console.log('✅ [DeepSeek AI] Análisis premium generado exitosamente (fallback)');
-      return analysis;
-
-    } catch (error) {
-      console.error('❌ [DeepSeek AI] Error:', error);
-      captureException(error, 'DeepSeek AI failed in analyzePremiumContent (fallback)', {
-        service: 'chatgptService',
-        function: 'analyzePremiumContent',
-        apiUsed: 'deepseek',
-        isFallback: true
-      });
-      throw new Error(error.message || 'Error al generar análisis premium');
-    }
-  }
-
   throw new Error('No hay servicios de IA disponibles para análisis premium');
 };
 

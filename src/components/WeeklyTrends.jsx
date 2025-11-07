@@ -165,9 +165,9 @@ Sé empático, práctico y enfocado en resultados medibles.`;
           ...(authToken && { 'Authorization': `Bearer ${authToken}` })
         },
         body: JSON.stringify({
-          provider: 'deepseek',
-          model: 'deepseek-chat',
-          systemPrompt: 'Eres "Creo", coach estratégico para creadores hispanohablantes. Validas el esfuerzo del usuario, ofreces empatía y das tácticas concretas para crear contenido que destaque.',
+          provider: 'qwen',
+          model: 'qwen-plus',
+          systemPrompt: 'Eres "Creo", el coach estratégico y empático para creadores hispanohablantes. Validas su progreso, das feedback personalizado y ofreces tácticas concretas para que su contenido destaque.',
           messages: [
             {
               role: 'user',

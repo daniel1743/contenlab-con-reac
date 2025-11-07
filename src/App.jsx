@@ -8,6 +8,7 @@ import PWALoadingScreen from '@/components/PWALoadingScreen';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
+import AIConciergeBubble from '@/components/AIConciergeBubble';
 
 // Lazy load de componentes pesados
 const AuthModal = lazy(() => import('@/components/AuthModal'));
@@ -410,6 +411,8 @@ function App() {
             />
           )}
         </Suspense>
+
+        <AIConciergeBubble />
       </div>
     </>
   );

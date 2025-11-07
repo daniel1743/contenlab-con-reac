@@ -5,7 +5,6 @@ import PricingSection from '@/components/PricingSection';
 import TestimonialsCarousel from '@/components/TestimonialsCarousel';
 import BrandsCarousel from '@/components/BrandsCarousel';
 import GuidedDemoModal from '@/components/GuidedDemoModal';
-import AIConciergeBubble from '@/components/AIConciergeBubble';
 
 
 // Importar iconos animados modernos
@@ -1433,7 +1432,6 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
         onClose={handleCloseDemo}
         onComplete={handleCompleteDemo}
       />
-      <AIConciergeBubble />
     </div>
   );
 };

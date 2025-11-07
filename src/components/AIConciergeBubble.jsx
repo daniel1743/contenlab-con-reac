@@ -1,142 +1,376 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Loader2 } from 'lucide-react';
-import { generateLandingConciergeMessage } from '@/services/qwenConciergeService';
+import { SendHorizontal, Loader2, X, MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-const STORAGE_KEY = 'creovision_last_channel_analysis';
+const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
+const PROFILE_STORAGE_KEY = 'creatorProfile';
 
-const parseStoredContext = () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
+const loadStoredProfile = () => {
+  if (typeof window === 'undefined') return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-    return JSON.parse(raw);
+    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch (error) {
-    console.warn('Failed to parse concierge context', error);
+    console.warn('Failed to load creator profile', error);
     return null;
   }
 };
 
-const AIConciergeBubble = () => {
-  const [context, setContext] = useState(() => parseStoredContext());
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+const loadHistory = (key) => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Failed to load Creo chat history', error);
+    return [];
+  }
+};
 
-  const shouldTrigger = useMemo(() => {
-    if (!context) {
-      return false;
-    }
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    return Date.now() - (context.timestamp || 0) < ONE_DAY;
-  }, [context]);
+const AIConciergeBubble = () => {
+  const { user, session } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [error, setError] = useState('');
+  const chatContainerRef = useRef(null);
+  const sessionIdRef = useRef(`creochat_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+
+  const profileData = useMemo(() => loadStoredProfile(), []);
+
+  const displayName = useMemo(() => {
+    const fullName = user?.user_metadata?.full_name?.trim();
+    if (fullName) return fullName.split(' ')[0];
+    if (user?.email) return user.email.split('@')[0];
+    return 'creador';
+  }, [user]);
+
+  const storageKey = useMemo(() => {
+    const suffix = user?.id ? `_${user.id}` : '';
+    return `${CHAT_STORAGE_KEY}${suffix}`;
+  }, [user?.id]);
+
+  const [messages, setMessages] = useState(() => loadHistory(storageKey));
 
   useEffect(() => {
-    if (!shouldTrigger) {
-      return;
-    }
+    setMessages(loadHistory(storageKey));
+  }, [storageKey]);
 
-    const fetchMessage = async () => {
-      setIsOpen(true);
-      setLoading(true);
+  const apiBaseUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    if (import.meta.env.VITE_API_BASE_URL) {
+      return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+    }
+    const origin = window.location.origin;
+    if (origin.includes('localhost')) {
+      return 'http://localhost:3000';
+    }
+    return '';
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, JSON.stringify(messages.slice(-30)));
+    }
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, storageKey]);
+
+  useEffect(() => {
+    if (!messages.length) {
+      const warmIntro = `¡Hola ${displayName}! Soy Creo 🤖✨. Estoy aquí para ayudarte con ideas, estrategia y feedback creativo. ¿En qué quieres que nos enfoquemos hoy?`;
+      setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+    }
+  }, [messages.length, displayName]);
+
+  const personaPrompt = useMemo(() => {
+    const profileLines = [];
+    if (profileData?.name) profileLines.push(`Nombre de creador: ${profileData.name}`);
+    if (profileData?.role) profileLines.push(`Rol creativo: ${profileData.role}`);
+    if (profileData?.toneStyle) profileLines.push(`Tono preferido: ${profileData.toneStyle}`);
+    if (profileData?.uniqueSlogan) profileLines.push(`Eslogan característico: "${profileData.uniqueSlogan}"`);
+    if (profileData?.targetAudience) profileLines.push(`Audiencia principal: ${profileData.targetAudience}`);
+    if (profileData?.primaryGoal) profileLines.push(`Meta principal: ${profileData.primaryGoal}`);
+
+    return `Eres "Creo", el coach creativo conversacional de CreoVision. Siempre hablas en español, con tono cercano y empático, celebrando los avances del usuario y proponiendo siguientes pasos concretos. Tienes memoria conversacional y puedes referenciar mensajes previos.
+
+Información del usuario:
+- Nombre preferido: ${displayName}
+${profileLines.length ? `- Detalles del creador:\n  ${profileLines.join('\n  ')}` : ''}
+
+Objetivo: acompañarlo como un mentor creativo personalizado, ofreciendo ideas accionables, reforzando su estilo y motivándolo a ejecutar.`;
+  }, [displayName, profileData]);
+
+  const handleSend = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || isThinking) return;
+
+    const optimisticMessages = [
+      ...messages,
+      { role: 'user', content: trimmed, timestamp: Date.now() }
+    ];
+    setMessages(optimisticMessages);
+    setInput('');
+    setIsThinking(true);
+    setError('');
+
+    const authToken = session?.access_token;
+
+    const providersChain = [
+      { provider: 'deepseek', model: 'deepseek-chat', label: 'DeepSeek' },
+      { provider: 'qwen', model: 'qwen-plus', label: 'Qwen' },
+      { provider: 'gemini', model: 'gemini-pro', label: 'Gemini' }
+    ];
+
+    let assistantReply = null;
+    let interactionId = null;
+
+    try {
+      const recentMessages = optimisticMessages.slice(-12).map(({ role, content }) => ({
+        role,
+        content
+      }));
+
+      for (const engine of providersChain) {
+        try {
+          const response = await fetch(
+            apiBaseUrl ? `${apiBaseUrl}/api/ai/chat` : '/api/ai/chat',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(authToken && { Authorization: `Bearer ${authToken}` })
+              },
+              body: JSON.stringify({
+                provider: engine.provider,
+                model: engine.model,
+                systemPrompt: personaPrompt,
+                messages: recentMessages,
+                temperature: 0.65,
+                maxTokens: 900,
+                feature_slug: 'creovision_landing_conversational_chat',
+                session_id: sessionIdRef.current,
+                capture_interaction: true
+              })
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData?.error || response.statusText);
+          }
+
+          const data = await response.json();
+          const content = data?.content?.trim();
+
+          if (!content) {
+            throw new Error('Respuesta vacía del asistente');
+          }
+
+          assistantReply = content;
+          interactionId = data?.interaction_id || null;
+          break;
+        } catch (engineError) {
+          console.warn(`[Creo Chat] ${engine.label} falló:`, engineError.message);
+        }
+      }
+
+      if (!assistantReply) {
+        throw new Error('Todos los motores externos fallaron');
+      }
+
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: assistantReply,
+          timestamp: Date.now(),
+          interactionId
+        }
+      ]);
+    } catch (err) {
+      console.error('Creo chat error:', err);
       setError('');
 
-      try {
-        const conciergeMessage = await generateLandingConciergeMessage(context);
-        setMessage(conciergeMessage);
-      } catch (err) {
-        console.error('AI concierge failed:', err);
-        setError('Hola, estoy trabajando en tu resumen pero hubo un pequeño tropiezo. Mientras tanto, explora la landing y vuelve en un momento ❤️');
-      } finally {
-        setLoading(false);
-      }
-    };
+      const reassuranceMessage = [
+        'Estoy tomando nota de lo que necesitas, aunque mis motores creativos están en mantenimiento.',
+        'Mientras retomo conexión con los servidores, aquí van dos ideas accionables que puedo darte offline:',
+        '1. Anota exactamente qué quieres lograr hoy y define un micro-paso para avanzar.',
+        '2. Revisa tu mejor publicación reciente e identifica qué elemento conectó más; repliquémoslo en la siguiente pieza.',
+        'Vuelve a intentarlo en unos segundos y seguiré afinando la estrategia contigo. 💜'
+      ].join('\n');
 
-    fetchMessage();
-  }, [context, shouldTrigger]);
-
-  const handleDismiss = () => {
-    setIsOpen(false);
-    setTimeout(() => {
-      setContext(null);
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem(STORAGE_KEY);
-      }
-    }, 300);
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: reassuranceMessage,
+          timestamp: Date.now()
+        }
+      ]);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
-  if (!context || !shouldTrigger) {
-    return null;
-  }
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleClear = () => {
+    setMessages([]);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(storageKey);
+    }
+  };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 30 }}
-          transition={{ duration: 0.3 }}
-          className="fixed bottom-6 right-6 z-[70] w-full max-w-xs sm:max-w-sm"
-        >
-          <div className="relative rounded-3xl border border-purple-400/30 bg-gradient-to-br from-[#191433] via-[#221a3d] to-[#130f27] shadow-2xl shadow-purple-900/40 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-blue-500/5 blur-3xl" />
-            <div className="relative p-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 rounded-full bg-purple-500/20 p-2 text-purple-200">
-                  <Sparkles className="h-5 w-5 animate-pulse" />
+    <>
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            key="creo-chat-trigger"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[80] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 via-fuchsia-500 to-blue-500 shadow-lg shadow-purple-900/40 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            aria-label="Abrir chat con Creo"
+          >
+            <img
+              src="/robot.png"
+              alt="CreoVision AI"
+              className="h-9 w-9 object-contain drop-shadow-md"
+            />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="creo-chat-panel"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[85] w-auto max-w-full sm:max-w-sm overflow-hidden rounded-3xl border border-purple-500/30 bg-[#0f0a1f]/95 shadow-2xl shadow-purple-900/40 backdrop-blur-md"
+          >
+            <div className="flex items-center justify-between border-b border-purple-500/20 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full bg-purple-500/10">
+                  <img src="/robot.png" alt="Creo" className="h-full w-full object-cover" />
+                  <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-emerald-400 shadow shadow-emerald-500/60" />
                 </div>
-                <div className="flex-1 text-sm text-slate-200 leading-relaxed">
-                  <p className="text-xs uppercase tracking-widest text-purple-300/80 mb-1">
-                    Aurora · Tu anfitriona IA
+                <div>
+                  <p className="text-sm font-semibold text-white">Creo · Tu coach creativo</p>
+                  <p className="text-xs text-purple-200/80">
+                    Hola {displayName}, construyamos algo inolvidable
                   </p>
-                  {loading && (
-                    <div className="flex items-center gap-2 text-purple-200">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Preparando ideas frescas a partir de tu análisis...
-                    </div>
-                  )}
-                  {!loading && (
-                    <div className="space-y-2">
-                      {(error || message)
-                        .split('\n')
-                        .filter(Boolean)
-                        .map((line, idx) => (
-                          <p key={idx}>{line.trim()}</p>
-                        ))}
-                    </div>
-                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleDismiss}
-                  className="rounded-full p-1 text-purple-200/70 transition hover:bg-purple-500/20 hover:text-purple-50"
-                  aria-label="Cerrar mensaje de Aurora"
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClear}
+                  className="text-purple-200/70 hover:bg-purple-500/10 hover:text-purple-50"
+                  aria-label="Limpiar conversación"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(false)}
+                  className="text-purple-200/70 hover:bg-purple-500/10 hover:text-purple-50"
+                  aria-label="Cerrar chat"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex h-[360px] flex-col bg-gradient-to-br from-[#120d28] via-[#160f33] to-[#0b081a]">
+              <div
+                ref={chatContainerRef}
+                className="flex-1 space-y-3 overflow-y-auto px-5 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-purple-700/40"
+              >
+                {messages.map((msg, idx) => (
+                  <div
+                    key={`${msg.timestamp}-${idx}`}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
+                  >
+                    <div
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-lg shadow-black/20 ${
+                        msg.role === 'user'
+                          ? 'max-w-[80%] bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white'
+                          : 'max-w-[85%] bg-white/5 text-slate-100 backdrop-blur'
+                      }`}
+                    >
+                      {msg.content.split('\n').map((line, lineIdx) => (
+                        <p key={lineIdx} className="whitespace-pre-wrap">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {isThinking && (
+                  <div className="flex items-center gap-2 text-xs text-purple-200">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creo está pensando...
+                  </div>
+                )}
+                {error && (
+                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+                    {error}
+                  </div>
+                )}
               </div>
 
-              {!loading && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleDismiss}
-                  className="w-full rounded-2xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-700/40 transition hover:shadow-purple-500/60"
-                >
-                  Seguir explorando la landing
-                </motion.button>
-              )}
+              <div className="border-t border-purple-500/20 bg-[#0f0a1f]/80 px-5 py-4">
+                <div className="flex items-end gap-2">
+                  <Textarea
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Escríbeme qué idea quieres trabajar, qué reto tienes o qué te gustaría lograr..."
+                    className="min-h-[60px] flex-1 resize-none rounded-2xl border-purple-500/20 bg-white/5 text-sm text-slate-100 placeholder:text-purple-200/50 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40"
+                  />
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isThinking}
+                    className="h-11 w-11 rounded-full bg-gradient-to-br from-purple-600 via-fuchsia-500 to-blue-500 p-0 text-white hover:opacity-90 disabled:opacity-50"
+                    aria-label="Enviar mensaje a Creo"
+                  >
+                    {isThinking ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <SendHorizontal className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="mt-2 text-[10px] text-purple-200/50">
+                  Creo memoriza esta conversación localmente para continuar donde lo dejaste. Puedes reiniciar el chat cuando quieras.
+                </p>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
