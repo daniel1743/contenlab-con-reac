@@ -49,22 +49,40 @@ export const AuthProvider = ({ children }) => {
   }, [fetchProfile]);
 
   useEffect(() => {
-    const getSession = async () => {
+    const processAuth = async () => {
       try {
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          const hasAuthParams = url.searchParams.get('code') || url.searchParams.get('access_token');
+
+          if (hasAuthParams) {
+            const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+
+            if (error) {
+              console.error('[SupabaseAuthContext] Error processing OAuth callback:', error);
+            } else {
+              await handleSession(data.session);
+            }
+
+            const cleanUrl = `${url.origin}${url.pathname}${url.hash || ''}`;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        }
+
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('[SupabaseAuthContext] Error getting session:', error);
+          await handleSession(null);
           return;
         }
         await handleSession(currentSession);
       } catch (error) {
         console.error('[SupabaseAuthContext] Failed to fetch session:', error);
-        // Continuar sin sesión si hay error de conexión
         await handleSession(null);
       }
     };
 
-    getSession();
+    processAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {

@@ -159,7 +159,28 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   };
 
   const handleLogout = async () => {
-    await signOut();
+    const { error } = await signOut();
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo cerrar sesión',
+        description: error.message || 'Intenta nuevamente en unos segundos.',
+      });
+      return;
+    }
+
+    setIsMobileMenuOpen(false);
+
+    try {
+      localStorage.removeItem('creatorProfile');
+      localStorage.removeItem('onboardingCompleted');
+    } catch (_) {
+      // ignore storage errors
+    }
+
+    onSectionChange('landing');
+
     toast({
       title: 'Sesión cerrada',
       description: 'Has cerrado sesión correctamente.',

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ import { getChannelInfo } from '@/services/youtubeService';
 const Onboarding = ({ onComplete, onSkip }) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const modalScrollRef = useRef(null);
 
   // 📊 FASE 1: PERSONALIDAD DEL CREADOR
   const [creatorProfile, setCreatorProfile] = useState({
@@ -162,8 +163,27 @@ const Onboarding = ({ onComplete, onSkip }) => {
     }
   }, [currentStep, creatorProfile]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (modalScrollRef.current) {
+      modalScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (modalScrollRef.current) {
+      modalScrollRef.current.scrollTo({ top: 0 });
+    }
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg overflow-y-auto">
+    <div
+      ref={modalScrollRef}
+      className="fixed inset-0 z-50 flex justify-center items-start p-4 bg-black/90 backdrop-blur-lg overflow-y-auto"
+    >
       <div className="w-full max-w-4xl my-8">
         <Card className="glass-effect border-purple-500/30 shadow-2xl">
           {/* 🎯 HEADER CON PROGRESO */}
