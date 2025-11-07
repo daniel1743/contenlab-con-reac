@@ -127,6 +127,11 @@ const WeeklyTrends = () => {
     setIsAiThinking(true);
     setAiResponse('');
 
+    const apiBaseUrl =
+      (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')) ||
+      (import.meta.env.DEV ? 'http://localhost:3000' : '');
+    const endpoint = `${apiBaseUrl}/api/ai/chat`;
+
     try {
       console.log('📡 Calling AI API via backend...');
       
@@ -153,7 +158,7 @@ Quiero un análisis que cubra:
 Sé empático, práctico y enfocado en resultados medibles.`;
 
       // Llamar a nuestro backend con sistema de aprendizaje integrado
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -450,6 +455,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                 category={currentCategory}
                 Icon={Icon}
                 onUnlock={() => handleUnlock(selectedCategory, trend.id, trend.title)}
+                onTalk={handleTalkWithAI}
               />
             );
           })}
@@ -474,9 +480,9 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto"
+              className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
             >
-              <Card className="bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 border-purple-500/30">
+              <Card className="bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 border-purple-500/30 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
                 <CardHeader className="border-b border-purple-500/20 pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -584,7 +590,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
 };
 
 // Componente de tarjeta individual
-const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock }) => {
+const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock, onTalk }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -673,7 +679,7 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock }) => {
               <div className="flex gap-2">
                 {/* Botón Hablar con Creo */}
                 <Button
-                  onClick={() => handleTalkWithAI(trend)}
+                  onClick={() => onTalk?.(trend)}
                   className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
