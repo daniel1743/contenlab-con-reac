@@ -13,17 +13,6 @@
       ],
       "destination": "https://creovision.io/:path*",
       "permanent": true
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "creovision.io"
-        }
-      ],
-      "destination": "https://creovision.io/$1",
-      "permanent": true
     }
   ],
   "headers": [
@@ -65,9 +54,6 @@
         }
       ]
     }
-  ],
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
   ],
   "functions": {
     "api/**/*.js": {
