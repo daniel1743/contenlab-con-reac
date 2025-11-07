@@ -4,7 +4,7 @@
  * Primera tarjeta desbloqueada, las demás requieren 15 créditos
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,17 @@ const WeeklyTrends = () => {
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [interactionId, setInteractionId] = useState(null);
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+
+  const displayName = useMemo(() => {
+    const fullName = user?.user_metadata?.full_name?.trim();
+    if (fullName) {
+      return fullName.split(' ')[0];
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'creador';
+  }, [user]);
 
   // Cargar tendencias al montar el componente
   useEffect(() => {
@@ -104,7 +115,7 @@ const WeeklyTrends = () => {
       console.warn('❌ No user authenticated');
       toast({
         title: '🔒 Inicia sesión',
-        description: 'Necesitas una cuenta para hablar con la IA.',
+        description: 'Necesitas una cuenta para hablar con Creo.',
         variant: 'destructive'
       });
       return;
@@ -123,22 +134,23 @@ const WeeklyTrends = () => {
       const authToken = session?.access_token || null;
 
       // Construir prompt
-      const userPrompt = `Analiza esta tendencia viral y proporciona insights estratégicos detallados:
+      const userPrompt = `Te habla ${displayName}. Necesito que actúes como "Creo", mi analista creativo personal.
+Analiza esta tendencia y dame recomendaciones accionables ajustadas a mi voz:
 
 📌 **Título:** ${trend.title}
 📝 **Descripción:** ${trend.description || 'Sin descripción'}
 📊 **Engagement:** ${trend.engagement || trend.views || 'N/A'}
 ${trend.tag ? `🏷️ **Tag/Hashtag:** ${trend.tag}` : ''}
 
-Por favor proporciona un análisis completo que incluya:
+Quiero un análisis que cubra:
+1. **¿Por qué está funcionando ahora?** Factores clave y señales de saturación.
+2. **Oportunidad específica para ${displayName}.** Ángulo narrativo y diferenciadores.
+3. **Plan en 3 pasos** (hook, estructura, CTA) para producir contenido competitivo.
+4. **Hashtags y keywords** priorizadas (máx. 6) que puedan posicionarme.
+5. **Timing óptimo** (día, hora, formato) para publicar.
+6. **Consejo motivacional Creo** que me recuerde mi progreso y próximo paso.
 
-1. **¿Por qué es viral?** - Analiza los factores clave de su éxito
-2. **Oportunidades para creadores** - Cómo pueden aprovechar esta tendencia
-3. **Estrategias recomendadas** - Pasos concretos y accionables
-4. **Hashtags y keywords** - Para maximizar alcance
-5. **Timing óptimo** - Cuándo y cómo publicar
-
-Sé específico, práctico y enfocado en resultados medibles.`;
+Sé empático, práctico y enfocado en resultados medibles.`;
 
       // Llamar a nuestro backend con sistema de aprendizaje integrado
       const response = await fetch('/api/ai/chat', {
@@ -150,7 +162,7 @@ Sé específico, práctico y enfocado en resultados medibles.`;
         body: JSON.stringify({
           provider: 'deepseek',
           model: 'deepseek-chat',
-          systemPrompt: 'Eres un experto analista de tendencias digitales y creación de contenido viral. Proporciona análisis estratégicos, prácticos y accionables para creadores de contenido en español.',
+          systemPrompt: 'Eres "Creo", coach estratégico para creadores hispanohablantes. Validas el esfuerzo del usuario, ofreces empatía y das tácticas concretas para crear contenido que destaque.',
           messages: [
             {
               role: 'user',
@@ -197,52 +209,36 @@ Sé específico, práctico y enfocado en resultados medibles.`;
       // Mostrar toast de advertencia
       toast({
         title: '⚠️ Usando análisis offline',
-        description: 'No se pudo conectar con la IA. Mostrando análisis de respaldo.',
+        description: 'No se pudo conectar con Creo. Mostrando análisis de respaldo.',
         variant: 'default'
       });
 
       // Fallback response mejorado
-      setAiResponse(`📊 **Análisis de Tendencia:** "${trend.title}"
+      setAiResponse(`### 📊 Análisis rápido para "${trend.title}"
 
-🔥 **¿Por qué es viral?**
-Esta tendencia está captando gran atención porque:
-• Conecta con temas de actualidad y relevancia en el nicho
-• Responde a necesidades específicas de la audiencia
-• Usa formatos probados que generan alto engagement
-• Aprovecha el momento y el contexto actual
+🔥 **¿Por qué destaca?**
+• Tema altamente comentado esta semana.
+• Contenido emocional y fácil de compartir.
+• Formato adaptable a short + long form.
+• Aprovecha referencias culturales recientes.
 
-💡 **Oportunidades para creadores:**
-✓ **Timing es clave:** La tendencia está en su pico, actúa ahora
-✓ **Adaptación a tu nicho:** Crea tu versión única y personalizada
-✓ **SEO y descubrimiento:** Aprovecha keywords relacionados
-✓ **Cross-platform:** Replica en múltiples redes sociales
+🎯 **Tu oportunidad, ${displayName}:**
+1. Refuerza tu ángulo experto (datos, storytelling o humor inteligente).
+2. Explica la tendencia en tus palabras y conecta con la experiencia de tu audiencia.
+3. Cierra con un CTA que invite a comentar o compartir.
 
-🎯 **Estrategias recomendadas:**
-1. **Análisis profundo:** Estudia qué elementos hacen viral este contenido
-2. **Tu toque único:** No copies, adapta a tu estilo y audiencia
-3. **Publicación rápida:** Actúa en las próximas 24-48 horas
-4. **Engagement activo:** Interactúa con otros creadores en el tema
-5. **Mide resultados:** Trackea métricas para optimizar futuros contenidos
+🛠️ **Plan express (3 pasos)**
+1. **Hook**: abre con una pregunta disruptiva o cifra inesperada.
+2. **Desarrollo**: resume en 3 bullets qué implica la tendencia y cómo aprovecharla.
+3. **Cierre**: comparte tu postura personal y da una acción concreta al espectador.
 
-📱 **Hashtags y keywords recomendados:**
-${trend.tag ? trend.tag : '#Viral #Trending #ContentCreator #CreoVision'}
-#ContenidoViral #TendenciasDigitales #CreadorDeContenido
+🏷️ **Hashtags sugeridos:**
+${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
+#TendenciasDigitales #IdeaDelDía #SoyCreo
 
-⏰ **Timing óptimo:**
-• Publica AHORA mientras la tendencia está caliente
-• Horarios pico: 10-12 AM y 7-9 PM (hora local de tu audiencia)
-• Prepara variaciones para los próximos 2-3 días
+⏰ **Timing recomendado:** publica antes de 48h, ideal 11:00 AM o 8:00 PM (hora de tu audiencia). Prepara 2 variaciones para los próximos días.
 
-📈 **Próximos pasos:**
-1. Guarda este análisis
-2. Crea tu guión/contenido basado en la tendencia
-3. Usa las herramientas de CreoVision para optimizar
-4. Publica y monitorea engagement
-
----
-⚡ **Impulsado por CreoVision AI GP-4** - Sistema avanzado de análisis de tendencias
-
-_Nota: Este es un análisis offline. Configura tu API key de DeepSeek para análisis en tiempo real más detallados._`);
+💬 **Mensaje de Creo:** Sigamos iterando, ${displayName}. Cada versión te acerca a tu tono ideal. Observa métricas, aprende y vuelve a intentarlo.`);
     } finally {
       console.log('🏁 Finished AI analysis');
       setIsAiThinking(false);
@@ -675,13 +671,13 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock }) => {
 
               {/* Botones de acción */}
               <div className="flex gap-2">
-                {/* Botón Hablar con IA */}
+                {/* Botón Hablar con Creo */}
                 <Button
                   onClick={() => handleTalkWithAI(trend)}
                   className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Hablar con IA
+                  Hablar con Creo
                 </Button>
 
                 {/* Botón Ver más */}

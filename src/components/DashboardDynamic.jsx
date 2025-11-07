@@ -216,6 +216,20 @@ function formatRangeFromValues(values, { isPercentage = false } = {}) {
   return `${formatValue(min)} - ${formatValue(max)}`;
 }
 
+function formatCompactNumber(value) {
+  if (!Number.isFinite(value)) return '0';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toFixed(0);
+}
+
+function formatPercentage(value, { decimals = 1 } = {}) {
+  if (!Number.isFinite(value)) return '0%';
+  return `${value.toFixed(decimals)}%`;
+}
+
 function calculateTrendScore(videos, avgViews, avgEngagement, newsCount) {
   if (!videos.length) return 55;
 
@@ -282,6 +296,38 @@ function formatSignedPercentage(value) {
   return `${prefix}${rounded}%`;
 }
 
+function createDonutLabelPlugin(topPlatform) {
+  if (!topPlatform) return null;
+
+  return {
+    id: 'creovisionDonutLabel',
+    afterDraw: (chart) => {
+      const {
+        ctx,
+        chartArea: { left, right, top, bottom }
+      } = chart;
+
+      const centerX = (left + right) / 2;
+      const centerY = (top + bottom) / 2;
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '600 16px "Inter", sans-serif';
+      ctx.fillText(`${topPlatform.percentage}%`, centerX, centerY - 6);
+
+      ctx.fillStyle = '#a855f7';
+      ctx.font = '500 12px "Inter", sans-serif';
+      const label = topPlatform.platform.replace('YouTube ', 'YT ');
+      ctx.fillText(label, centerX, centerY + 12);
+
+      ctx.restore();
+    }
+  };
+}
+
 const DashboardDynamic = ({ onSectionChange }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -313,6 +359,38 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [newsArticles, setNewsArticles] = useState([]);
   const [seoAnalysis, setSeoAnalysis] = useState({});
   const [hoveredArticle, setHoveredArticle] = useState(null);
+
+  const displayName = React.useMemo(() => {
+    const fullName = user?.user_metadata?.full_name?.trim();
+    if (fullName) {
+      const [name] = fullName.split(' ');
+      return name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'creador';
+  }, [user]);
+
+  const statContext = React.useMemo(() => {
+    if (!nichemMetrics) return null;
+    return {
+      topic: nichemMetrics.topic,
+      creatorsInNiche: nichemMetrics.creatorsInNiche,
+      avgViews: nichemMetrics.avgViewsPerVideo,
+      avgEngagement: nichemMetrics.avgEngagement,
+      trendScore: nichemMetrics.trendScore,
+      weeklyGrowth: nichemMetrics.weeklyGrowth
+    };
+  }, [nichemMetrics]);
+
+  const topPlatform = React.useMemo(() => {
+    if (!nichemMetrics?.platformDistribution?.length) return null;
+    return nichemMetrics.platformDistribution.reduce((best, current) => {
+      if (!best) return current;
+      return current.percentage > best.percentage ? current : best;
+    }, null);
+  }, [nichemMetrics]);
   const [loadingSEOAnalysis, setLoadingSEOAnalysis] = useState(false);
   const [showSEOModal, setShowSEOModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -1058,9 +1136,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const generatePlatformData = (videos) => {
     if (!videos.length) {
       return [
-        { platform: 'YouTube', percentage: 100 },
-        { platform: 'YouTube Shorts', percentage: 0 },
-        { platform: 'YouTube Live', percentage: 0 }
+        { platform: 'YouTube Long-form', percentage: 100, count: 0 },
+        { platform: 'YouTube Shorts', percentage: 0, count: 0 },
+        { platform: 'YouTube Live', percentage: 0, count: 0 }
       ];
     }
 
@@ -1088,9 +1166,21 @@ const DashboardDynamic = ({ onSectionChange }) => {
     const total = counters.longForm + counters.shorts + counters.live || 1;
 
     return [
-      { platform: 'YouTube Long-form', percentage: Math.round((counters.longForm / total) * 100) },
-      { platform: 'YouTube Shorts', percentage: Math.round((counters.shorts / total) * 100) },
-      { platform: 'YouTube Live', percentage: Math.round((counters.live / total) * 100) }
+      {
+        platform: 'YouTube Long-form',
+        percentage: Math.round((counters.longForm / total) * 100),
+        count: counters.longForm
+      },
+      {
+        platform: 'YouTube Shorts',
+        percentage: Math.round((counters.shorts / total) * 100),
+        count: counters.shorts
+      },
+      {
+        platform: 'YouTube Live',
+        percentage: Math.round((counters.live / total) * 100),
+        count: counters.live
+      }
     ];
   };
 
@@ -1166,9 +1256,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
         { day: 'Dom', views: 720000, engagement: 76000 }
       ],
       platformDistribution: [
-        { platform: 'YouTube Long-form', percentage: 62 },
-        { platform: 'YouTube Shorts', percentage: 28 },
-        { platform: 'YouTube Live', percentage: 10 }
+        { platform: 'YouTube Long-form', percentage: 62, count: 38 },
+        { platform: 'YouTube Shorts', percentage: 28, count: 17 },
+        { platform: 'YouTube Live', percentage: 10, count: 6 }
       ],
       contentTypes: [
         { type: 'Investigación', percentage: 35 },
@@ -1205,20 +1295,83 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const platformChartData = nichemMetrics ? {
     labels: nichemMetrics.platformDistribution.map(p => p.platform),
     datasets: [{
+      label: 'Distribución de formatos',
       data: nichemMetrics.platformDistribution.map(p => p.percentage),
+      rawCounts: nichemMetrics.platformDistribution.map(p => p.count ?? 0),
       backgroundColor: [
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(34, 197, 94, 0.8)'
+        'rgba(168, 85, 247, 0.92)',
+        'rgba(59, 130, 246, 0.92)',
+        'rgba(45, 212, 191, 0.92)'
       ],
-      borderColor: [
-        'rgb(239, 68, 68)',
-        'rgb(59, 130, 246)',
-        'rgb(34, 197, 94)'
+      hoverBackgroundColor: [
+        'rgba(192, 132, 252, 0.98)',
+        'rgba(96, 165, 250, 0.98)',
+        'rgba(94, 234, 212, 0.98)'
       ],
-      borderWidth: 2
+      borderColor: '#0f172a',
+      borderWidth: 2,
+      hoverBorderColor: '#c084fc',
+      hoverOffset: 12
     }]
   } : null;
+
+  const platformChartOptions = React.useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    cutout: '66%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: '#cbd5f5',
+          padding: 14,
+          usePointStyle: true,
+          pointStyle: 'circle',
+          font: {
+            family: 'Inter, sans-serif',
+            size: 11
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: '#020617',
+        borderColor: '#a855f7',
+        borderWidth: 1,
+        padding: 12,
+        titleColor: '#f8fafc',
+        bodyColor: '#e2e8f0',
+        callbacks: {
+          title: (items) => {
+            const label = items?.[0]?.label;
+            return label ? `CreoVision • ${label}` : 'CreoVision Insights';
+          },
+          label: (ctx) => {
+            const value = ctx.parsed ?? 0;
+            const base = `${value}% del contenido analizado`;
+            const raw = ctx.dataset?.rawCounts?.[ctx.dataIndex];
+            if (Number.isFinite(raw) && raw > 0) {
+              return ` ${base} (${raw} videos)`;
+            }
+            return ` ${base}`;
+          }
+        }
+      },
+      subtitle: topPlatform ? {
+        display: true,
+        text: `Formato dominante: ${topPlatform.platform} (${topPlatform.percentage}%)`,
+        color: '#94a3b8',
+        font: {
+          family: 'Inter, sans-serif',
+          size: 11,
+          weight: '600'
+        },
+        padding: { top: 10, bottom: -8 }
+      } : undefined
+    }
+  }), [topPlatform]);
+
+  const donutLabelPlugin = React.useMemo(() => createDonutLabelPlugin(topPlatform), [topPlatform]);
 
   const contentTypePalette = [
     {
@@ -1428,6 +1581,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 change="Datos directos de YouTube"
                 trend="neutral"
                 color="from-purple-500/20 to-pink-500/20"
+                userName={displayName}
+                context={statContext}
               />
               <StatCard
                 icon={EyeIcon}
@@ -1436,6 +1591,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 change="Últimos lanzamientos en el nicho"
                 trend={nichemMetrics.weeklyGrowth >= 0 ? 'up' : 'down'}
                 color="from-blue-500/20 to-cyan-500/20"
+                userName={displayName}
+                context={statContext}
               />
               <StatCard
                 icon={HeartIcon}
@@ -1444,6 +1601,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 change="Baseline basado en likes + comentarios"
                 trend="neutral"
                 color="from-pink-500/20 to-red-500/20"
+                userName={displayName}
+                context={statContext}
               />
               <StatCard
                 icon={ArrowTrendingUpIcon}
@@ -1452,6 +1611,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                 change={nichemMetrics.trendScore >= 75 ? 'Momentum alto' : nichemMetrics.trendScore >= 55 ? 'Crecimiento saludable' : 'Oportunidad emergente'}
                 trend={nichemMetrics.trendScore >= 75 ? 'up' : nichemMetrics.trendScore < 50 ? 'down' : 'neutral'}
                 color="from-green-500/20 to-emerald-500/20"
+                userName={displayName}
+                context={statContext}
               />
             </div>
 
@@ -1508,14 +1669,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     <Doughnut
                       className="!h-full !w-full"
                       data={platformChartData}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: false,
-                        plugins: {
-                          legend: { labels: { color: '#fff' } }
-                        }
-                      }}
+                      options={platformChartOptions}
+                      plugins={donutLabelPlugin ? [donutLabelPlugin] : undefined}
                     />
                   )}
                 </CardContent>
@@ -2339,32 +2494,148 @@ const DashboardDynamic = ({ onSectionChange }) => {
 const METRIC_EXPLANATIONS = {
   "Creadores analizados": {
     title: "📊 ¿Qué significa 'Creadores analizados'?",
-    explanation: "Este número muestra cuántos creadores están activos en tu nicho, pero lo importante no es solo la cantidad: analizamos desde canales grandes hasta emergentes con contenido de calidad. Buscamos videos con buena retención y engagement, sin importar si el creador tiene 1M o 10K suscriptores.",
-    advice: "💡 Consejo CreoVision: No te frenes si ves muchos creadores. La IA prioriza canales pequeños con videos virales, demostrando que el tema tiene potencial sin necesitar ser famoso. Si ves creadores emergentes destacando, es tu señal de oportunidad."
+    getExplanation: ({ context }) => {
+      const topic = context?.topic ? `en ${context.topic}` : 'en este nicho';
+      const creators = Number.isFinite(context?.creatorsInNiche) ? formatCompactNumber(context.creatorsInNiche) : null;
+      return creators
+        ? `Mapeamos ${creators} creadores ${topic} para identificar quién lidera la conversación, qué formatos despegan y dónde puedes posicionar tu voz.`
+        : `Mapeamos creadores ${topic} para entender quiénes dominan la conversación, qué formatos funcionan y dónde hay huecos para destacar.`;
+    },
+    advices: [
+      ({ userName = 'creador', context }) => {
+        const creators = context?.creatorsInNiche ?? 0;
+        if (creators <= 12) {
+          return `👀 ${userName}, es un territorio poco explorado: posiciona tu voz ahora que sólo hay ${formatCompactNumber(creators)} jugadores activos.`;
+        }
+        if (creators <= 40) {
+          return `🎯 ${userName}, el nicho está creciendo. Analiza qué hacen los creadores medianos y publica con consistencia para capturar a la audiencia que llega.`;
+        }
+        return `🔥 ${userName}, ya es competitivo. Diferénciate con ángulos únicos y colaboraciones selectas para ganar autoridad frente a los ${formatCompactNumber(creators)} creadores activos.`;
+      },
+      ({ context }) => {
+        const creators = context?.creatorsInNiche ?? 0;
+        const sample = Math.max(5, Math.min(creators, 20));
+        return `📌 Tip CreoVision Coach: guarda a tus ${sample} creadores de referencia y monitorea cuándo publican. Encontrar huecos horarios suele subir tu CTR más rápido.`;
+      }
+    ]
   },
   "Rango de vistas por video": {
     title: "¿Cómo interpretar el rango de vistas?",
-    explanation: "👁️ Este rango muestra las visualizaciones promedio que están obteniendo los videos en este tema. Si ves '5K-50K', significa que los videos típicos obtienen entre 5,000 y 50,000 vistas. Un rango amplio indica alta variabilidad - algunos videos explotan mientras otros no.",
-    advice: "💡 Consejo CreoVision: Si el rango es bajo (menos de 10K), el tema puede estar poco demandado O puedes ser pionero. Si es alto (100K+), hay audiencia masiva pero también más competencia. Tu calidad debe ser impecable."
+    getExplanation: ({ value, context }) => {
+      const avgViews = Number.isFinite(context?.avgViews) ? formatCompactNumber(context.avgViews) : null;
+      const base = `👁️ Ese rango refleja las vistas típicas que está recibiendo el contenido del tema. Si aparece ${value}, los videos comunes se mueven dentro de esos números.`;
+      return avgViews
+        ? `${base} La media exacta ronda las ${avgViews} vistas por pieza según nuestros datos.`
+        : base;
+    },
+    advices: [
+      ({ userName = 'creador', context }) => {
+        const avgViews = context?.avgViews ?? 0;
+        if (avgViews < 10000) {
+          return `🚀 ${userName}, los videos aún tienen pocas vistas promedio (${formatCompactNumber(avgViews)}). Perfecto para lanzar una pieza bandera y ganar posicionamiento antes de que el tema se masifique.`;
+        }
+        if (avgViews < 75000) {
+          return `📈 ${userName}, los vídeos medianos están en ${formatCompactNumber(avgViews)} vistas. Eleva tu retención con hooks agresivos y CTA claros para subir al siguiente rango.`;
+        }
+        return `🏁 ${userName}, los mejores videos superan ${formatCompactNumber(avgViews)} vistas. Invierte tiempo en narrativa y producción: la audiencia espera piezas con alto valor percibido.`;
+      },
+      ({ context }) => {
+        const growth = context?.weeklyGrowth;
+        if (Number.isFinite(growth)) {
+          return `📊 Tendencia semanal: ${formatSignedPercentage(growth)} en vistas. Usa ese impulso para publicar 2-3 piezas seguidas y aprovechar el algoritmo.`;
+        }
+        return `📊 Analiza qué videos disparan el rango superior y replica sus ángulos con tu estilo.`;
+      }
+    ]
   },
   "Engagement estimado": {
     title: "¿Qué es el engagement y por qué importa?",
-    explanation: "❤️ El engagement mide cuánto interactúa la audiencia (likes, comentarios, compartidos). Un buen engagement (>5%) indica que el tema REALMENTE conecta con las personas, no solo que lo miran. Esto es oro para el algoritmo de YouTube.",
-    advice: "💡 Consejo CreoVision: Engagement alto = audiencia apasionada. Estos nichos son mejores para monetización porque la comunidad es leal. Si ves engagement bajo (<2%), el tema puede ser aburrido o estar saturado de contenido genérico."
+    getExplanation: ({ context }) => {
+      const engagement = Number.isFinite(context?.avgEngagement) ? formatPercentage(context.avgEngagement) : null;
+      return engagement
+        ? `❤️ El engagement mide cuánto participa la audiencia (likes, comentarios, compartidos). En este nicho la media está en ${engagement}, así detectamos qué tan viva está la conversación.`
+        : '❤️ El engagement mide cuánto participa la audiencia (likes, comentarios, compartidos). Un porcentaje alto indica que el tema genera conversación genuina.';
+    },
+    advices: [
+      ({ userName = 'creador', context }) => {
+        const engagement = context?.avgEngagement ?? 0;
+        if (engagement >= 7) {
+          return `🔥 ${userName}, la comunidad está hiperactiva (${formatPercentage(engagement)}). Lanza retos, lives o colaboraciones: su predisposición a interactuar es altísima.`;
+        }
+        if (engagement >= 3) {
+          return `💬 ${userName}, un engagement de ${formatPercentage(engagement)} indica interés sano. Refuerza tus CTAs y preguntas directas para convertir espectadores en fans leales.`;
+        }
+        return `🧊 ${userName}, el engagement es bajo (${formatPercentage(engagement)}). Aporta historias personales o casos específicos para reactivar conversación y diferenciarte del contenido genérico.`;
+      },
+      () => '🛠️ Coach: responde comentarios en los primeros 30 minutos tras publicar. Ese gesto eleva el engagement inicial y empuja tu video en recomendaciones.'
+    ]
   },
   "Momentum del tema": {
     title: "¿Qué significa el 'Momentum'?",
-    explanation: "🚀 El Momentum (0-100) mide si un tema está creciendo, estable o muriendo. 75+ es explosivo (sube ahora al tren), 50-75 es saludable (crecimiento sostenido), 25-50 es estable, <25 está decayendo. CreoVision calcula esto analizando vistas, engagement y frecuencia de publicación.",
-    advice: "💡 Consejo CreoVision: Momentum alto NO siempre es mejor. Si está en 90+, llegas tarde - ya es mainstream. Busca temas en 50-70: tienen tracción pero aún hay espacio para crecer con ellos."
+    getExplanation: ({ context }) => {
+      const momentum = Number.isFinite(context?.trendScore) ? context.trendScore : null;
+      return momentum !== null
+        ? `🚀 El Momentum (0-100) combina recency, vistas y engagement para medir cuán acelerado está el interés del nicho. Ahora mismo lo estimamos en ${momentum}/100.`
+        : '🚀 El Momentum (0-100) combina recency, vistas y engagement para mostrar cuán acelerado está el interés del nicho.';
+    },
+    advices: [
+      ({ userName = 'creador', context }) => {
+        const momentum = context?.trendScore ?? 0;
+        if (momentum >= 80) {
+          return `⚡ ${userName}, el Momentum es ${momentum}/100: la ola ya es grande. Súbete rápido con un contenido premium o prepara un spin-off para surfear la demanda antes de que se sature.`;
+        }
+        if (momentum >= 55) {
+          return `🌱 ${userName}, Momentum ${momentum}/100 indica crecimiento saludable. Planifica una serie de videos y mantén ritmo constante; el mercado aún tiene espacio para nuevos referentes.`;
+        }
+        return `🧭 ${userName}, Momentum ${momentum}/100 señala oportunidad emergente. Educa a la audiencia, crea contenido semilla y posiciona tu narrativa antes de que lleguen los grandes.`;
+      },
+      ({ context }) => {
+        const growth = context?.weeklyGrowth;
+        if (Number.isFinite(growth)) {
+          return `📈 Variación semanal: ${formatSignedPercentage(growth)}. Ajusta tu calendario para publicar justo cuando la curva empiece a subir.`;
+        }
+        return '📈 Observa el histórico: si el momentum sube semana a semana, planifica un lanzamiento mayor (curso, masterclass) cuando alcance el pico.';
+      }
+    ]
   }
 };
 
 // Componente de tarjeta de estadística con tooltip explicativo
-const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
+const StatCard = ({ icon: Icon, title, value, change, trend, color, userName, context }) => {
   const [showTooltip, setShowTooltip] = React.useState(false);
   const TrendIcon = trend === 'up' ? ArrowUpIcon : trend === 'down' ? ArrowDownIcon : MinusIcon;
   const trendColor = trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-yellow-400';
-  const explanation = METRIC_EXPLANATIONS[title];
+  const explanationConfig = METRIC_EXPLANATIONS[title];
+
+  const explanationText = React.useMemo(() => {
+    if (!explanationConfig) return '';
+    if (typeof explanationConfig.getExplanation === 'function') {
+      try {
+        return explanationConfig.getExplanation({ value, context, userName });
+      } catch (error) {
+        console.warn('[StatCard] Error building explanation for', title, error);
+      }
+    }
+    return explanationConfig.explanation || '';
+  }, [explanationConfig, value, context, userName]);
+
+  const adviceText = React.useMemo(() => {
+    if (!explanationConfig) return '';
+    const pool = explanationConfig.advices || [];
+    if (pool.length === 0) {
+      return explanationConfig.advice || '';
+    }
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const selectedAdvice = pool[randomIndex];
+    try {
+      return typeof selectedAdvice === 'function'
+        ? selectedAdvice({ value, context, userName })
+        : selectedAdvice;
+    } catch (error) {
+      console.warn('[StatCard] Error building advice for', title, error);
+      return '';
+    }
+  }, [explanationConfig, value, context, userName, showTooltip]);
 
   return (
     <div className="relative h-full">
@@ -2396,7 +2667,7 @@ const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
       </Card>
 
       {/* 🆕 TOOLTIP EXPLICATIVO CREOVISION AI */}
-      {showTooltip && explanation && (
+      {showTooltip && explanationConfig && (
         <div className="absolute left-0 right-0 top-full mt-2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="relative">
             {/* Flecha decorativa */}
@@ -2408,16 +2679,18 @@ const StatCard = ({ icon: Icon, title, value, change, trend, color }) => {
               <div className="flex items-center gap-2 mb-3 pb-2 border-b border-purple-400/20">
                 <SparklesSolidIcon className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200 uppercase tracking-wide">
-                  {explanation.title}
+                  {explanationConfig.title}
                 </span>
               </div>
 
               {/* Explicación */}
               <div className="space-y-3 text-sm text-gray-100 leading-relaxed">
-                <p>{explanation.explanation}</p>
-                <div className="pt-2 border-t border-purple-400/10">
-                  <p className="text-yellow-300/90 font-medium">{explanation.advice}</p>
-                </div>
+                {explanationText && <p>{explanationText}</p>}
+                {adviceText && (
+                  <div className="pt-2 border-t border-purple-400/10">
+                    <p className="text-yellow-300/90 font-medium">{adviceText}</p>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}
