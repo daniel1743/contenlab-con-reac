@@ -193,16 +193,23 @@ Sé empático, práctico y enfocado en resultados medibles.`;
 
       const data = await response.json();
       console.log('✅ API Response received:', data);
+      console.log('🔍 Estructura completa de la respuesta:', JSON.stringify(data, null, 2));
 
       if (data.content) {
         console.log('✅ Setting AI response');
         setAiResponse(data.content);
-        
-        // Guardar interaction_id si está disponible (para feedback)
-        // Nota: El endpoint actual no devuelve interaction_id, pero podemos obtenerlo
-        // de otra forma o actualizar el endpoint para que lo devuelva
+
+        // Guardar interaction_id para el sistema de feedback
+        console.log('🔍 Buscando interaction_id en respuesta...');
+        console.log('data.interaction_id:', data.interaction_id);
+        console.log('typeof data.interaction_id:', typeof data.interaction_id);
+
         if (data.interaction_id) {
+          console.log('💾 Interaction ID guardado:', data.interaction_id);
           setInteractionId(data.interaction_id);
+        } else {
+          console.warn('⚠️ No se recibió interaction_id del servidor');
+          console.warn('⚠️ Keys disponibles en data:', Object.keys(data));
         }
       } else {
         console.error('❌ Invalid response structure:', data);
@@ -525,22 +532,39 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                       </p>
                     </div>
                   ) : (
-                    <div className="prose prose-invert max-w-none">
-                      <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
-                        {aiResponse}
+                    <>
+                      <div className="prose prose-invert max-w-none">
+                        <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
+                          {aiResponse}
+                        </div>
+
+                        <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm text-purple-300">
+                            <Sparkles className="w-4 h-4" />
+                            <span className="font-medium">
+                              Análisis generado por CreoVision AI GP-4
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Motor de análisis avanzado impulsado por CreoVision IA
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                        <div className="flex items-center gap-2 text-sm text-purple-300">
-                          <Sparkles className="w-4 h-4" />
-                          <span className="font-medium">
-                            Análisis generado por CreoVision AI GP-4
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Motor de análisis avanzado impulsado por CreoVision IA
-                        </p>
-                      </div>
+                      {/* Widget de Feedback FUERA de prose para evitar conflictos de CSS */}
+                      {aiResponse && (
+                        <AIFeedbackWidget
+                          interactionId={interactionId}
+                          sessionId={sessionId}
+                          onFeedbackSubmitted={(interaction) => {
+                            console.log('✅ Feedback recibido:', interaction);
+                            toast({
+                              title: 'Gracias por tu feedback',
+                              description: 'Tu opinión nos ayuda a mejorar',
+                            });
+                          }}
+                        />
+                      )}
 
                       <div className="mt-4 flex gap-2">
                         <Button
@@ -563,22 +587,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                           Cerrar
                         </Button>
                       </div>
-
-                      {/* Widget de Feedback para el sistema de aprendizaje */}
-                      {aiResponse && (
-                        <AIFeedbackWidget
-                          interactionId={interactionId}
-                          sessionId={sessionId}
-                          onFeedbackSubmitted={(interaction) => {
-                            console.log('✅ Feedback recibido:', interaction);
-                            toast({
-                              title: 'Gracias por tu feedback',
-                              description: 'Tu opinión nos ayuda a mejorar',
-                            });
-                          }}
-                        />
-                      )}
-                    </div>
+                    </>
                   )}
                 </CardContent>
               </Card>

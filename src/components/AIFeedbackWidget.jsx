@@ -10,10 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function AIFeedbackWidget({ 
-  interactionId, 
+export default function AIFeedbackWidget({
+  interactionId,
   sessionId,
-  onFeedbackSubmitted 
+  onFeedbackSubmitted
 }) {
   const [score, setScore] = useState(null);
   const [hoveredScore, setHoveredScore] = useState(null);
@@ -23,8 +23,14 @@ export default function AIFeedbackWidget({
   const { session } = useAuth();
   const { toast } = useToast();
 
+  // Debug log
+  console.log('🎨 AIFeedbackWidget renderizado con:', { interactionId, sessionId });
+
   const handleSubmit = async () => {
+    console.log('🎯 Enviando feedback:', { interactionId, sessionId, score, feedbackText });
+
     if (!interactionId) {
+      console.error('❌ No hay interactionId disponible');
       toast({
         title: 'Error',
         description: 'ID de interacción no disponible',
@@ -44,6 +50,8 @@ export default function AIFeedbackWidget({
         : '';
       const endpoint = `${apiBaseUrl}/api/ai/interactions`;
 
+      console.log('📡 Enviando PATCH a:', endpoint);
+
       const response = await fetch(endpoint, {
         method: 'PATCH',
         headers: {
@@ -57,6 +65,8 @@ export default function AIFeedbackWidget({
           feedback_text: feedbackText.trim() || null
         })
       });
+
+      console.log('📡 Respuesta recibida:', response.status);
 
       const data = await response.json();
 

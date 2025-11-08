@@ -275,6 +275,7 @@ export default async function handler(req, res) {
         const qwenContent = qwenData.choices[0]?.message?.content || '';
 
         if (capture_interaction) {
+          console.log('[qwen] 🎯 Capturando interacción...');
           const responseTime = Date.now() - startTime;
           interactionId = await captureInteraction({
             userId: user?.id || null,
@@ -288,7 +289,12 @@ export default async function handler(req, res) {
             featureSlug: feature_slug,
             intentId
           });
+          console.log('[qwen] 💾 Interaction ID capturado:', interactionId);
+        } else {
+          console.log('[qwen] ⚠️ capture_interaction es false, no se guardará');
         }
+
+        console.log('[qwen] 📤 Enviando respuesta con interaction_id:', interactionId || null);
 
         return res.status(200).json({
           content: qwenContent,
