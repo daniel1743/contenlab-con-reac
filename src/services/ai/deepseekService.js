@@ -39,7 +39,7 @@ export const generateContent = async (prompt, options = {}) => {
     );
   }
 
-  /* 🔴 DESCOMENTAR CUANDO QUIERAS USAR DEEPSEEK:
+  // ✅ DEEPSEEK ACTIVADO
 
   try {
     console.log('💎 Llamando a DeepSeek API...');
@@ -83,17 +83,6 @@ export const generateContent = async (prompt, options = {}) => {
     console.error('❌ Error calling DeepSeek API:', error);
     throw error;
   }
-
-  */ // FIN DEL BLOQUE COMENTADO
-
-  // 🟡 MIENTRAS TANTO, LANZAR ERROR INFORMATIVO
-  throw new Error(
-    '❌ DeepSeek service not active yet. To enable:\n' +
-    '1. Register at https://platform.deepseek.com/\n' +
-    '2. Add VITE_DEEPSEEK_API_KEY to .env\n' +
-    '3. Uncomment code in src/services/ai/deepseekService.js\n' +
-    '4. Enjoy 100x cheaper AI! 💎'
-  );
 };
 
 // ===== INFORMACIÓN DE CONFIGURACIÓN =====

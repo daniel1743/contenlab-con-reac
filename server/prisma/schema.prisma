@@ -1,0 +1,174 @@
+// Configuración de Prisma con SQLite
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../database/creovision.db"
+}
+
+// ============================================
+// MODELOS DE BASE DE DATOS
+// ============================================
+
+// 👤 Usuario
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String?
+  fullName      String?
+  avatarUrl     String?
+  role          String   @default("user") // user, premium, admin
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  profile       CreatorProfile?
+  threads       Thread[]
+  threadLikes   ThreadLike[]
+  threadReplies ThreadReply[]
+  content       Content[]
+  credits       CreditTransaction[]
+
+  @@map("users")
+}
+
+// 👨‍🎨 Perfil de Creador
+model CreatorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  displayName     String
+  username        String   @unique
+  bio             String?
+  mission         String?
+  vision          String?
+
+  // Estadísticas
+  followers       Int      @default(0)
+  engagement      Float    @default(0)
+  totalViews      Int      @default(0)
+
+  // Redes sociales
+  twitterHandle   String?
+  instagramHandle String?
+  youtubeChannel  String?
+  tiktokHandle    String?
+
+  // Imágenes (base64 en SQLite, URLs en producción)
+  profileImage    String?
+  coverImage      String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("creator_profiles")
+}
+
+// 🧵 Hilo (Thread)
+model Thread {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  gif       String?  // URL del GIF
+
+  // Métricas
+  likes     Int      @default(0)
+  views     Int      @default(0)
+  shares    Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threadLikes ThreadLike[]
+  replies   ThreadReply[]
+
+  @@map("threads")
+}
+
+// ❤️ Like en Hilo
+model ThreadLike {
+  id        String   @id @default(uuid())
+  threadId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@map("thread_likes")
+}
+
+// 💬 Respuesta a Hilo
+model ThreadReply {
+  id        String   @id @default(uuid())
+  threadId  String
+  userId    String
+  content   String   // Máximo 50 caracteres (validar en backend)
+  userName  String
+
+  createdAt DateTime @default(now())
+
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("thread_replies")
+}
+
+// 🎥 Contenido (Videos/Posts)
+model Content {
+  id           String   @id @default(uuid())
+  userId       String
+  platform     String   // youtube, tiktok, instagram
+  contentUrl   String?
+  title        String
+  displayOrder Int      @default(0)
+
+  // Métricas
+  likes        Int      @default(0)
+  views        Int      @default(0)
+  comments     Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("content")
+}
+
+// 💰 Sistema de Créditos
+model CreditTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int      // Positivo = ganó, negativo = gastó
+  type        String   // earned, spent, purchased, bonus
+  description String
+
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_transactions")
+}
+
+// 📊 Análisis de Tendencias (caché)
+model TrendCache {
+  id        String   @id @default(uuid())
+  keyword   String   @unique
+  platform  String   // youtube, tiktok, twitter, google
+  data      String   // JSON stringificado
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("trend_cache")
+}

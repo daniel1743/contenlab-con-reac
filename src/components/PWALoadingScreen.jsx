@@ -70,9 +70,9 @@ const PWALoadingScreen = () => {
 
           {/* Logo */}
           <motion.img
-            src="/icon-512.png"
+            src="/robot.png"
             alt="CreoVision"
-            className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-2xl"
+            className="relative w-24 h-24 md:w-32 md:h-32 rounded-full shadow-2xl shadow-purple-800/40"
             animate={{ rotate: [0, 360] }}
             transition={{
               duration: 20,
