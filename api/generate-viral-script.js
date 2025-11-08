@@ -16,19 +16,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Verificar autenticación (Supabase JWT)
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    // 1. Verificar autenticación (Supabase JWT) - IMPLEMENTADO
+    const { supabaseAdmin, getUserFromRequest } = await import('./_utils/supabaseClient.js');
+
+    const { user, error: authError } = await getUserFromRequest(req);
+    if (authError || !user) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        details: authError?.message || 'Invalid or missing authentication token'
+      });
     }
-
-    const token = authHeader.replace('Bearer ', '');
-
-    // TODO: Validar JWT con Supabase
-    // const { data: user, error } = await supabase.auth.getUser(token);
-    // if (error || !user) {
-    //   return res.status(401).json({ error: 'Invalid token' });
-    // }
 
     // 2. Obtener parámetros del request
     const {

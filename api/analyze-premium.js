@@ -12,10 +12,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Verificar autenticación
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    // 1. Verificar autenticación - IMPLEMENTADO
+    const { getUserFromRequest } = await import('./_utils/supabaseClient.js');
+
+    const { user, error: authError } = await getUserFromRequest(req);
+    if (authError || !user) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        details: authError?.message || 'Invalid or missing authentication token'
+      });
     }
 
     // 2. Obtener parámetros
