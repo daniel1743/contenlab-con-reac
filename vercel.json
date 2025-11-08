@@ -42,11 +42,11 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://creovision.io"
+          "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
+          "value": "GET, POST, PATCH, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",

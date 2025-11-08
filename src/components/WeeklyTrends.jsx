@@ -127,9 +127,10 @@ const WeeklyTrends = () => {
     setIsAiThinking(true);
     setAiResponse('');
 
-    const apiBaseUrl =
-      (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')) ||
-      (import.meta.env.DEV ? 'http://localhost:3000' : '');
+    // Si VITE_API_BASE_URL está definida, úsala; si no, usa URL relativa (funcionará en Vercel)
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
+      : '';
     const endpoint = `${apiBaseUrl}/api/ai/chat`;
 
     try {

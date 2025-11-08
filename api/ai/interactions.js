@@ -9,6 +9,16 @@ import { supabaseAdmin, getUserFromRequest } from '../_utils/supabaseClient.js';
  * Crear nueva interacción
  */
 export default async function handler(req, res) {
+  // Configurar CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+
+  // Manejar preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method === 'POST') {
     return handleCreateInteraction(req, res);
   } else if (req.method === 'PATCH') {

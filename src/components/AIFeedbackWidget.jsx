@@ -37,8 +37,14 @@ export default function AIFeedbackWidget({
 
     try {
       const authToken = session?.access_token || null;
-      
-      const response = await fetch('/api/ai/interactions', {
+
+      // Si VITE_API_BASE_URL está definida, úsala; si no, usa URL relativa (funcionará en Vercel)
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+        ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
+        : '';
+      const endpoint = `${apiBaseUrl}/api/ai/interactions`;
+
+      const response = await fetch(endpoint, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

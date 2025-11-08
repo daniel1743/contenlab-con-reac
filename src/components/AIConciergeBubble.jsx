@@ -63,13 +63,11 @@ const AIConciergeBubble = () => {
 
   const apiBaseUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
+    // Si VITE_API_BASE_URL está definida, úsala; si no, usa URL relativa
     if (import.meta.env.VITE_API_BASE_URL) {
       return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
     }
-    const origin = window.location.origin;
-    if (origin.includes('localhost')) {
-      return 'http://localhost:3000';
-    }
+    // Para Vercel, usar URL relativa (vacío)
     return '';
   }, []);
 
