@@ -517,7 +517,7 @@ const FloatingAssistant = ({ userContext }) => {
               </div>
               {/* Hint text */}
               <p className="text-xs text-gray-500 mt-3 text-center">
-                Presiona Enter para enviar • Powered by DeepSeek AI
+                Presiona Enter para enviar • Powered by CreoVision IA
               </p>
             </form>
           </motion.div>

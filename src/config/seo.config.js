@@ -78,7 +78,7 @@ export const pageMetadata = {
 
   tools: {
     title: 'Generador de Contenido Viral con IA - CreoVision',
-    description: 'Genera scripts virales optimizados con múltiples IA (Gemini, Claude, GPT-4). Análisis de SEO, keywords y sugerencias por plataforma en segundos.',
+    description: 'Genera scripts virales optimizados con inteligencia artificial avanzada. Análisis de SEO, keywords y sugerencias por plataforma en segundos.',
     keywords: [
       'generador de scripts con IA',
       'contenido viral youtube',
@@ -310,7 +310,7 @@ export const structuredData = {
         name: '¿Qué IAs utiliza CreoVision?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'CreoVision integra múltiples proveedores de IA incluyendo Google Gemini, Claude (Anthropic), GPT-4 (OpenAI), DeepSeek y Cohere, con sistema de fallback automático para máxima disponibilidad.'
+          text: 'CreoVision utiliza inteligencia artificial de última generación con múltiples modelos avanzados y sistema de fallback automático para máxima disponibilidad y calidad.'
         }
       },
       // COMENTADO TEMPORALMENTE - ThumbnailEditor no disponible

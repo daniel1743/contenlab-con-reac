@@ -1893,7 +1893,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
               </CardContent>
             </Card>
 
-            {/* 📰 TENDENCIAS EMERGENTES DE NEWSAPI + ANÁLISIS SEO DE GEMINI */}
+            {/* 📰 TENDENCIAS EMERGENTES DE NEWSAPI + ANÁLISIS SEO DE CREOVISION */}
             {newsArticles.length > 0 && (
               <div className="col-span-full">
                 <div className="flex items-center gap-3 mb-4">
@@ -1990,7 +1990,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                         </CardContent>
                       </Card>
 
-                      {/* Tooltip de hover con análisis SEO de Gemini */}
+                      {/* Tooltip de hover con análisis SEO de CreoVision */}
                       {hoveredArticle?.id === article.id && seoAnalysis[article.id] && !seoAnalysis[article.id].error && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
@@ -2001,7 +2001,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                           <div className="flex items-start gap-2 mb-2">
                             <SparklesSolidIcon className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                             <div className="flex-1">
-                              <p className="text-[10px] font-semibold text-cyan-300 mb-1">ANÁLISIS SEO GEMINI AI</p>
+                              <p className="text-[10px] font-semibold text-cyan-300 mb-1">ANÁLISIS SEO CREOVISION</p>
                               <p className="text-[9px] text-gray-300 leading-relaxed line-clamp-3">
                                 {seoAnalysis[article.id].analysis.consejoRapido}
                               </p>
@@ -2265,7 +2265,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                   <SparklesSolidIcon className="w-6 h-6 text-yellow-400 animate-pulse" />
                   <div>
                     <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-blue-200">
-                      Análisis SEO con Gemini AI
+                      Análisis SEO con CreoVision IA
                     </h3>
                     <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
                       {selectedArticle.title}
@@ -2469,7 +2469,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                   </Button>
                 </div>
                 <p className="text-xs text-center text-gray-400 mt-3 italic">
-                  Powered by Gemini AI + CreoVision
+                  Powered by CreoVision IA
                 </p>
               </div>
             </motion.div>

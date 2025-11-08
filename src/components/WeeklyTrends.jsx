@@ -537,7 +537,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Motor de análisis avanzado impulsado por DeepSeek
+                          Motor de análisis avanzado impulsado por CreoVision IA
                         </p>
                       </div>
 
