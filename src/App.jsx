@@ -60,18 +60,29 @@ function App() {
       const creatorProfile = localStorage.getItem('creatorProfile');
       const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
 
-      // Si no tiene perfil y no ha completado onboarding, mostrarlo
-      if (!creatorProfile && !hasCompletedOnboarding) {
-        // Esperar 1 segundo después de autenticarse para mostrar onboarding
-        const timer = setTimeout(() => {
-          setShowOnboarding(true);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
+      // 🚀 REDIRECT AUTOMÁTICO: Si está autenticado y en landing, redirigir SIEMPRE
+      if (location.pathname === '/') {
+        // Limpiar cache de landing para usuarios autenticados
+        if (typeof window !== 'undefined' && 'caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => {
+              if (name.includes('landing') || name.includes('home')) {
+                caches.delete(name);
+              }
+            });
+          });
+        }
 
-      // 🚀 REDIRECT AUTOMÁTICO: Si ya completó onboarding y está en landing, ir a perfil
-      if (hasCompletedOnboarding && location.pathname === '/') {
-        navigate('/mi-perfil');
+        // Si no ha completado onboarding, mostrar onboarding primero
+        if (!creatorProfile && !hasCompletedOnboarding) {
+          const timer = setTimeout(() => {
+            setShowOnboarding(true);
+          }, 1000);
+          return () => clearTimeout(timer);
+        }
+
+        // Si ya completó onboarding, ir directamente a mi-perfil
+        navigate('/mi-perfil', { replace: true });
       }
     }
   }, [isAuthenticated, loading, location.pathname, navigate]);

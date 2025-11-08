@@ -4,6 +4,7 @@ import { SendHorizontal, Loader2, X, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
@@ -82,27 +83,22 @@ const AIConciergeBubble = () => {
 
   useEffect(() => {
     if (!messages.length) {
-      const warmIntro = `¡Hola ${displayName}! Soy Creo 🤖✨. Estoy aquí para ayudarte con ideas, estrategia y feedback creativo. ¿En qué quieres que nos enfoquemos hoy?`;
+      const warmIntro = CREO_USER_GREETING(displayName);
       setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
     }
   }, [messages.length, displayName]);
 
   const personaPrompt = useMemo(() => {
-    const profileLines = [];
-    if (profileData?.name) profileLines.push(`Nombre de creador: ${profileData.name}`);
-    if (profileData?.role) profileLines.push(`Rol creativo: ${profileData.role}`);
-    if (profileData?.toneStyle) profileLines.push(`Tono preferido: ${profileData.toneStyle}`);
-    if (profileData?.uniqueSlogan) profileLines.push(`Eslogan característico: "${profileData.uniqueSlogan}"`);
-    if (profileData?.targetAudience) profileLines.push(`Audiencia principal: ${profileData.targetAudience}`);
-    if (profileData?.primaryGoal) profileLines.push(`Meta principal: ${profileData.primaryGoal}`);
+    const contextInfo = CREO_CONTEXT_BUILDER(profileData);
 
-    return `Eres "Creo", el coach creativo conversacional de CreoVision. Siempre hablas en español, con tono cercano y empático, celebrando los avances del usuario y proponiendo siguientes pasos concretos. Tienes memoria conversacional y puedes referenciar mensajes previos.
+    return `${CREO_SYSTEM_PROMPT}
 
-Información del usuario:
-- Nombre preferido: ${displayName}
-${profileLines.length ? `- Detalles del creador:\n  ${profileLines.join('\n  ')}` : ''}
+📋 INFORMACIÓN DEL USUARIO:
+- Nombre preferido: ${displayName}${contextInfo}
 
-Objetivo: acompañarlo como un mentor creativo personalizado, ofreciendo ideas accionables, reforzando su estilo y motivándolo a ejecutar.`;
+🔧 APIs Y HERRAMIENTAS DISPONIBLES:
+Puedes consultar tendencias en tiempo real usando: YouTube Trends, Google Trends, NewsAPI, Twitter/X Trends.
+`;
   }, [displayName, profileData]);
 
   const handleSend = async () => {

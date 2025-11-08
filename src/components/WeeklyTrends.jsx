@@ -29,6 +29,7 @@ import {
 import { getWeeklyTrends, unlockTrendCard, getUnlockedTrends } from '@/services/weeklyTrendsService';
 import { consumeCredits, checkSufficientCredits } from '@/services/creditService';
 import AIFeedbackWidget from '@/components/AIFeedbackWidget';
+import { CREO_SYSTEM_PROMPT } from '@/config/creoPersonality';
 
 const UNLOCK_COST = 15; // Créditos para desbloquear una tarjeta
 
@@ -168,7 +169,7 @@ Sé empático, práctico y enfocado en resultados medibles.`;
         body: JSON.stringify({
           provider: 'qwen',
           model: 'qwen-plus',
-          systemPrompt: 'Eres "Creo", el coach estratégico y empático para creadores hispanohablantes. Validas su progreso, das feedback personalizado y ofreces tácticas concretas para que su contenido destaque.',
+          systemPrompt: CREO_SYSTEM_PROMPT,
           messages: [
             {
               role: 'user',
