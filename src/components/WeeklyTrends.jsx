@@ -29,7 +29,8 @@ import {
 import { getWeeklyTrends, unlockTrendCard, getUnlockedTrends } from '@/services/weeklyTrendsService';
 import { consumeCredits, checkSufficientCredits } from '@/services/creditService';
 import AIFeedbackWidget from '@/components/AIFeedbackWidget';
-import { CREO_SYSTEM_PROMPT } from '@/config/creoPersonality';
+import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
+import { getMemories, saveMemory, buildMemoryContext } from '@/services/memoryService';
 
 const UNLOCK_COST = 15; // Créditos para desbloquear una tarjeta
 
@@ -48,6 +49,8 @@ const WeeklyTrends = () => {
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [interactionId, setInteractionId] = useState(null);
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [persistentMemories, setPersistentMemories] = useState([]);
+  const [profileData, setProfileData] = useState(null);
 
   const displayName = useMemo(() => {
     const fullName = user?.user_metadata?.full_name?.trim();
@@ -69,8 +72,36 @@ const WeeklyTrends = () => {
   useEffect(() => {
     if (user) {
       loadUnlockedTrends();
+      loadUserProfile();
+      loadPersistentMemories();
     }
   }, [user]);
+
+  // Cargar perfil del creador desde localStorage
+  const loadUserProfile = () => {
+    try {
+      const raw = localStorage.getItem('creatorProfile');
+      if (raw) {
+        setProfileData(JSON.parse(raw));
+      }
+    } catch (error) {
+      console.warn('[WeeklyTrends] Error loading creator profile', error);
+    }
+  };
+
+  // Cargar memorias persistentes
+  const loadPersistentMemories = async () => {
+    try {
+      const memories = await getMemories({
+        limit: 8,
+        authToken: session?.access_token
+      });
+      setPersistentMemories(memories);
+      console.log(`[WeeklyTrends] 🧠 Cargadas ${memories.length} memorias`);
+    } catch (error) {
+      console.warn('[WeeklyTrends] No se pudieron cargar memorias:', error);
+    }
+  };
 
   const loadTrends = async () => {
     try {
@@ -140,6 +171,10 @@ const WeeklyTrends = () => {
       // Obtener token de autenticación si está disponible
       const authToken = session?.access_token || null;
 
+      // Construir contexto personalizado con perfil y memorias
+      const profileContext = CREO_CONTEXT_BUILDER(profileData);
+      const memoryContext = buildMemoryContext(persistentMemories, 800);
+
       // Construir prompt
       const userPrompt = `Te habla ${displayName}. Necesito que actúes como "Creo", mi analista creativo personal.
 Analiza esta tendencia y dame recomendaciones accionables ajustadas a mi voz:
@@ -159,6 +194,12 @@ Quiero un análisis que cubra:
 
 Sé empático, práctico y enfocado en resultados medibles.`;
 
+      // Construir system prompt completo con contexto
+      const fullSystemPrompt = `${CREO_SYSTEM_PROMPT}
+
+📋 INFORMACIÓN DEL USUARIO:
+- Nombre preferido: ${displayName}${profileContext}${memoryContext}`;
+
       // Llamar a nuestro backend con sistema de aprendizaje integrado
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -169,7 +210,7 @@ Sé empático, práctico y enfocado en resultados medibles.`;
         body: JSON.stringify({
           provider: 'qwen',
           model: 'qwen-plus',
-          systemPrompt: CREO_SYSTEM_PROMPT,
+          systemPrompt: fullSystemPrompt,
           messages: [
             {
               role: 'user',
@@ -211,6 +252,24 @@ Sé empático, práctico y enfocado en resultados medibles.`;
         } else {
           console.warn('⚠️ No se recibió interaction_id del servidor');
           console.warn('⚠️ Keys disponibles en data:', Object.keys(data));
+        }
+
+        // 💾 Guardar análisis como memoria contextual
+        try {
+          await saveMemory({
+            type: 'context',
+            content: `Analicé la tendencia "${trend.title}" - ${trend.description || 'Tendencia de ' + selectedCategory}`,
+            metadata: {
+              source: 'weekly_trends_analysis',
+              trend_id: trend.id,
+              category: selectedCategory,
+              timestamp: Date.now()
+            },
+            authToken
+          });
+          console.log('[WeeklyTrends] 💾 Análisis guardado en memoria');
+        } catch (memError) {
+          console.warn('[WeeklyTrends] No se pudo guardar en memoria:', memError);
         }
       } else {
         console.error('❌ Invalid response structure:', data);

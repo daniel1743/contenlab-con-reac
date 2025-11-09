@@ -5,9 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
+import {
+  getMemories,
+  saveMemory,
+  buildMemoryContext,
+  extractMemoriesFromConversation
+} from '@/services/memoryService';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
+const MEMORY_AUTO_SAVE_THRESHOLD = 5; // Guardar memoria cada 5 mensajes
 
 const loadStoredProfile = () => {
   if (typeof window === 'undefined') return null;
@@ -39,8 +46,11 @@ const AIConciergeBubble = () => {
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [error, setError] = useState('');
+  const [persistentMemories, setPersistentMemories] = useState([]);
+  const [memoryLoaded, setMemoryLoaded] = useState(false);
   const chatContainerRef = useRef(null);
   const sessionIdRef = useRef(`creochat_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+  const messageCountRef = useRef(0);
 
   const profileData = useMemo(() => loadStoredProfile(), []);
 
@@ -88,18 +98,80 @@ const AIConciergeBubble = () => {
     }
   }, [messages.length, displayName]);
 
+  // 🧠 Cargar memorias persistentes al abrir el chat
+  useEffect(() => {
+    if (isOpen && user && session?.access_token && !memoryLoaded) {
+      loadPersistentMemories();
+    }
+  }, [isOpen, user, session?.access_token, memoryLoaded]);
+
+  // Cargar memorias de la base de datos
+  const loadPersistentMemories = async () => {
+    try {
+      const memories = await getMemories({
+        limit: 10,
+        authToken: session?.access_token
+      });
+      setPersistentMemories(memories);
+      setMemoryLoaded(true);
+      console.log(`[Creo] 🧠 Cargadas ${memories.length} memorias persistentes`);
+    } catch (error) {
+      console.warn('[Creo] No se pudieron cargar memorias:', error);
+      setMemoryLoaded(true); // Marcar como cargado incluso si falla
+    }
+  };
+
+  // 💾 Auto-guardar memorias importantes cada N mensajes
+  useEffect(() => {
+    if (!user || !session?.access_token) return;
+
+    const userMessages = messages.filter(m => m.role === 'user');
+    messageCountRef.current = userMessages.length;
+
+    // Guardar memoria cada X mensajes del usuario
+    if (userMessages.length > 0 && userMessages.length % MEMORY_AUTO_SAVE_THRESHOLD === 0) {
+      autoSaveMemories();
+    }
+  }, [messages, user, session?.access_token]);
+
+  const autoSaveMemories = async () => {
+    try {
+      const recentMessages = messages.slice(-10); // Últimos 10 mensajes
+      const extractedMemories = extractMemoriesFromConversation(recentMessages);
+
+      if (extractedMemories.length === 0) return;
+
+      console.log(`[Creo] 💾 Auto-guardando ${extractedMemories.length} memorias...`);
+
+      for (const memory of extractedMemories) {
+        await saveMemory({
+          type: memory.type,
+          content: memory.content,
+          metadata: memory.metadata,
+          authToken: session?.access_token
+        });
+      }
+
+      // Recargar memorias después de guardar
+      await loadPersistentMemories();
+    } catch (error) {
+      console.warn('[Creo] Error al auto-guardar memorias:', error);
+    }
+  };
+
   const personaPrompt = useMemo(() => {
     const contextInfo = CREO_CONTEXT_BUILDER(profileData);
+    const memoryContext = buildMemoryContext(persistentMemories, 1200);
 
     return `${CREO_SYSTEM_PROMPT}
 
 📋 INFORMACIÓN DEL USUARIO:
-- Nombre preferido: ${displayName}${contextInfo}
+- Nombre preferido: ${displayName}${contextInfo}${memoryContext}
 
 🔧 APIs Y HERRAMIENTAS DISPONIBLES:
 Puedes consultar tendencias en tiempo real usando: YouTube Trends, Google Trends, NewsAPI, Twitter/X Trends.
 `;
-  }, [displayName, profileData]);
+  }, [displayName, profileData, persistentMemories]);
 
   const handleSend = async () => {
     const trimmed = input.trim();

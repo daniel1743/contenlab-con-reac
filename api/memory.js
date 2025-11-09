@@ -77,14 +77,21 @@ export default async function handler(req, res) {
         ? content.slice(0, 2000) + '...'
         : content;
 
+      // Construir el objeto a insertar
+      const insertData = {
+        user_id: userId,
+        memory_type: type,
+        content: truncatedContent
+      };
+
+      // Solo agregar metadata si la columna existe (para compatibilidad)
+      if (metadata && Object.keys(metadata).length > 0) {
+        insertData.metadata = metadata;
+      }
+
       const { data, error } = await supabaseAdmin
         .from('creator_memory')
-        .insert([{
-          user_id: userId,
-          memory_type: type,
-          content: truncatedContent,
-          metadata: metadata || {}
-        }])
+        .insert([insertData])
         .select()
         .single();
 
@@ -157,7 +164,10 @@ export default async function handler(req, res) {
           ? content.slice(0, 2000) + '...'
           : content;
       }
-      if (metadata) updates.metadata = metadata;
+      // Solo actualizar metadata si se proporciona (para compatibilidad)
+      if (metadata && Object.keys(metadata).length > 0) {
+        updates.metadata = metadata;
+      }
       updates.updated_at = new Date().toISOString();
 
       const { data, error } = await supabaseAdmin
