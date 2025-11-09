@@ -422,7 +422,8 @@ Formato de salida OBLIGATORIO (JSON puro sin comentarios ni texto adicional):
       "Insight accionable 3"
     ],
     "cta": "Acción recomendable en una frase",
-    "icon": "Nombre de icono Lucide (p.ej. Lightbulb, Rocket, LineChart, Diamond)"
+    "icon": "Nombre de icono Lucide (p.ej. Lightbulb, Rocket, LineChart, Diamond)",
+    "rating": 4
   }
 ]
 
@@ -431,6 +432,7 @@ Reglas:
 - Evita texto genérico. Cada bullet debe aportar un consejo práctico y diferenciador.
 - Combina tácticas SEO, storytelling, contenido y monetización/retención.
 - Selecciona iconos de Lucide existentes.
+- "rating" debe ser un número entero del 2 al 5 que mida la utilidad estratégica (2 = limitado, 5 = excepcional).
 `;
 
   try {
@@ -466,7 +468,8 @@ Reglas:
             subtitle: 'Basado en búsquedas recientes',
             bullets: ['Alta demanda de contenido sobre este tema', 'Oportunidad de crecimiento'],
             cta: 'Explorar más',
-            icon: 'TrendingUp'
+            icon: 'TrendingUp',
+            rating: 3
           }
         ];
       }
@@ -496,7 +499,10 @@ Reglas:
         subtitle: card.subtitle || '',
         bullets: normalizeList(card.bullets || card.points),
         cta: card.cta || card.action || '',
-        icon: card.icon || 'Sparkles'
+        icon: card.icon || 'Sparkles',
+        rating: Number.isFinite(Number(card.rating))
+          ? Math.min(5, Math.max(2, Math.round(Number(card.rating))))
+          : 3
       };
     });
   } catch (error) {

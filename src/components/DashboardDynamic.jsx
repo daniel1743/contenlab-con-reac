@@ -48,7 +48,8 @@ import {
 import {
   SparklesIcon as SparklesSolidIcon,
   FireIcon as FireSolidIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  StarIcon
 } from '@heroicons/react/24/solid';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -68,6 +69,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { getAllTrending } from '@/services/trendingContentService';
 import { generateExpertAdvisoryInsights, analyzeTopCreator } from '@/services/geminiService';
+import { consumeCredits } from '@/services/creditService';
 import {
   searchYouTubeVideos,
   getWeeklyTrends,
@@ -124,7 +126,8 @@ const generateFallbackInsights = (topic) => [
       'Implementa schema Article + FAQ con preguntas reales de Search Console para acelerar rich snippets.'
     ],
     cta: 'Agenda una auditoría mensual de keywords emergentes y refresca contenidos veteranos cada 45 días.',
-    icon: 'LineChart'
+    icon: 'LineChart',
+    rating: 4
   },
   {
     id: 'story-hook',
@@ -137,7 +140,8 @@ const generateFallbackInsights = (topic) => [
       'Cierra el primer bloque con una pregunta abierta que invite a comentar y extienda la retención.'
     ],
     cta: 'Guioniza los hooks en batch y prueba dos versiones A/B por semana para detectar el tono ganador.',
-    icon: 'Lightbulb'
+    icon: 'Lightbulb',
+    rating: 3
   },
   {
     id: 'growth-play',
@@ -150,7 +154,8 @@ const generateFallbackInsights = (topic) => [
       'Distribuye el contenido colaborativo en newsletters y comunidades privadas para aumentar repetición omnicanal.'
     ],
     cta: 'Planifica un calendario de 4 colaboraciones por trimestre y mide CAC cruzado.',
-    icon: 'Rocket'
+    icon: 'Rocket',
+    rating: 4
   },
   {
     id: 'monetize',
@@ -163,7 +168,8 @@ const generateFallbackInsights = (topic) => [
       'Activa un funnel de email con storytelling de caso de éxito y CTA hacia la masterclass + upsell de asesoría.'
     ],
     cta: 'Lanza el piloto con lista de espera y valida conversión antes de escalar campañas pagadas.',
-    icon: 'DollarSign'
+    icon: 'DollarSign',
+    rating: 4
   }
 ];
 
@@ -380,6 +386,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [nichemMetrics, setNichemMetrics] = useState(null);
   const [expertInsights, setExpertInsights] = useState([]);
   const [isInsightsLoading, setIsInsightsLoading] = useState(false);
+  const [isRegeneratingInsights, setIsRegeneratingInsights] = useState(false);
 
   // 🆕 NUEVOS ESTADOS PARA APIs REALES
   const [youtubeData, setYoutubeData] = useState(null);
@@ -929,6 +936,65 @@ const DashboardDynamic = ({ onSectionChange }) => {
     },
     []
   );
+
+  const handleRegenerateInsights = useCallback(async () => {
+    if (!nichemMetrics?.topic) {
+      toast({
+        title: 'Tema no disponible',
+        description: 'Analiza un tema primero para regenerar los playbooks.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: 'Necesitas iniciar sesión',
+        description: 'Inicia sesión para usar la regeneración premium de playbooks.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsRegeneratingInsights(true);
+    const CREDIT_COST = 50;
+
+    try {
+      const creditResult = await consumeCredits(
+        user.id,
+        CREDIT_COST,
+        'insight_regeneration',
+        `Regenerar playbooks para ${nichemMetrics.topic}`
+      );
+
+      if (!creditResult.success) {
+        toast({
+          title: creditResult.error === 'INSUFFICIENT_CREDITS'
+            ? 'Créditos insuficientes'
+            : 'No se pudo consumir créditos',
+          description: creditResult.message || 'Recarga tus créditos para continuar.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      await fetchExpertInsights(nichemMetrics.topic, nichemMetrics);
+
+      toast({
+        title: '✨ Playbooks actualizados',
+        description: `Se consumieron ${CREDIT_COST} créditos. Créditos restantes: ${creditResult.remaining ?? 'N/D'}.`,
+      });
+    } catch (error) {
+      console.error('Error regenerando insights:', error);
+      toast({
+        title: 'Error regenerando playbooks',
+        description: 'Intenta nuevamente en unos minutos.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsRegeneratingInsights(false);
+    }
+  }, [fetchExpertInsights, nichemMetrics, toast, user]);
 
   // Buscar tema cuando el usuario presiona Enter o click
   const handleSearch = async () => {
@@ -2194,7 +2260,20 @@ const DashboardDynamic = ({ onSectionChange }) => {
             </Card>
 
             {/* Consejos Premium IA */}
-            <Card className="glass-effect border-purple-500/30">
+            <Card className="glass-effect border-purple-500/30 relative overflow-visible">
+              <div className="absolute top-4 right-4 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-2 border-purple-500/40 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20"
+                  disabled={isRegeneratingInsights || isInsightsLoading}
+                  onClick={handleRegenerateInsights}
+                >
+                  <SparklesSolidIcon className="w-4 h-4" />
+                  {isRegeneratingInsights ? 'Regenerando…' : 'Regenerar con Gemini'}
+                  <span className="ml-1 text-xs text-purple-200/70">50 créditos</span>
+                </Button>
+              </div>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <SparklesSolidIcon className="w-5 h-5 text-purple-300" />
@@ -2221,6 +2300,10 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     {expertInsights.map((insight) => {
                       const InsightIcon =
                         insightIconMap[insight.icon] || SparklesSolidIcon;
+                      const normalizedRating = Math.min(
+                        5,
+                        Math.max(2, Math.round(insight.rating ?? 3))
+                      );
                       return (
                         <div
                           key={insight.id}
@@ -2258,6 +2341,21 @@ const DashboardDynamic = ({ onSectionChange }) => {
                               {insight.cta}
                             </div>
                           )}
+                          <div className="mt-6 flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((value) => (
+                              <StarIcon
+                                key={`${insight.id}-star-${value}`}
+                                className={`w-4 h-4 ${
+                                  value <= normalizedRating
+                                    ? 'text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.45)]'
+                                    : 'text-slate-600'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-xs text-gray-400">
+                              {normalizedRating} / 5 utilidad
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
