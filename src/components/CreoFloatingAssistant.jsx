@@ -27,7 +27,16 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const CreoFloatingAssistant = ({ userContext = {} }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+
+  let authContext;
+  try {
+    authContext = useAuth();
+  } catch (error) {
+    console.warn('[CreoFloatingAssistant] Auth context no disponible, usando modo invitado.', error);
+    authContext = null;
+  }
+
+  const user = authContext?.user ?? null;
 
   // Estados del componente
   const [isOpen, setIsOpen] = useState(false);
@@ -344,7 +353,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full sm:w-[420px] h-full sm:h-[650px] sm:max-h-[calc(100vh-120px)] bg-gray-900 sm:rounded-3xl shadow-2xl shadow-purple-500/40 border-0 sm:border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] max-w-[420px] h-[calc(100vh-96px)] sm:bottom-24 sm:h-[650px] sm:max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border border-purple-500/40 sm:border-2 sm:border-purple-500/50 flex flex-col overflow-hidden z-50"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}

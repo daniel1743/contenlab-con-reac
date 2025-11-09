@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SendHorizontal, Loader2, X, MessageSquare, Sparkles } from 'lucide-react';
+import { SendHorizontal, Loader2, X, MessageSquare, Sparkles, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -10,6 +10,7 @@ import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING } from '@/config/creoPersonality
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
 // Usar Gemini 2.0 Flash Experimental (gratis, rápido, 1M tokens input)
 const GEMINI_MODEL = 'gemini-2.0-flash-exp';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -49,6 +50,7 @@ const AIConciergeBubbleV2 = () => {
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [extensionCost, setExtensionCost] = useState(2);
   const [showResetButton, setShowResetButton] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const chatContainerRef = useRef(null);
   const messageCountRef = useRef(0);
 
@@ -71,9 +73,16 @@ const AIConciergeBubbleV2 = () => {
   // Inicializar sesión de Supabase
   useEffect(() => {
     const initSession = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('⏳ Esperando autenticación de usuario...');
+        setSessionLoading(false);
+        return;
+      }
 
       try {
+        setSessionLoading(true);
+        console.log('🔄 Inicializando sesión para usuario:', user.id);
+
         // Buscar sesión activa existente
         const { data: existingSession, error: sessionError } = await supabase
           .from('creo_chat_sessions')
@@ -84,13 +93,17 @@ const AIConciergeBubbleV2 = () => {
           .limit(1)
           .maybeSingle();
 
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('❌ Error buscando sesión:', sessionError);
+          throw sessionError;
+        }
 
         if (existingSession) {
           console.log('✅ Sesión activa recuperada:', existingSession.id);
           setCurrentSession(existingSession);
           updateSessionStats(existingSession);
         } else {
+          console.log('🆕 Creando nueva sesión...');
           // Crear nueva sesión
           const { data: newSession, error: createError } = await supabase
             .from('creo_chat_sessions')
@@ -99,20 +112,28 @@ const AIConciergeBubbleV2 = () => {
               message_count: 0,
               free_messages_used: 0,
               paid_messages_used: 0,
+              paid_messages_available: 0,
               conversation_stage: 'intro',
               status: 'active'
             })
             .select()
             .single();
 
-          if (createError) throw createError;
+          if (createError) {
+            console.error('❌ Error creando sesión:', createError);
+            throw createError;
+          }
 
           console.log('✅ Nueva sesión creada:', newSession.id);
           setCurrentSession(newSession);
           updateSessionStats(newSession);
         }
+
+        setSessionLoading(false);
       } catch (error) {
         console.error('❌ Error inicializando sesión:', error);
+        setError('Error al inicializar sesión. Por favor recarga la página.');
+        setSessionLoading(false);
       }
     };
 
@@ -154,6 +175,10 @@ const AIConciergeBubbleV2 = () => {
       setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
     }
   }, [messages.length, displayName]);
+
+  useEffect(() => {
+    setShowResetButton(messages.length > 1);
+  }, [messages.length]);
 
   const personaPrompt = useMemo(() => {
     let contextInfo = '';
@@ -205,8 +230,103 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 `;
   }, [displayName, profileData, sessionStats]);
 
+  const handleResetConversation = async () => {
+    try {
+      const warmIntro = CREO_USER_GREETING(displayName);
+      setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(storageKey);
+      }
+
+      if (currentSession?.id) {
+        await supabase
+          .from('creo_chat_sessions')
+          .update({
+            message_count: 0,
+            free_messages_used: 0,
+            paid_messages_used: 0,
+            conversation_stage: 'intro'
+          })
+          .eq('id', currentSession.id);
+
+        setSessionStats((prev) =>
+          prev
+            ? {
+                ...prev,
+                freeMessagesUsed: 0,
+                messageCount: 0,
+                freeMessagesRemaining: 8
+              }
+            : prev
+        );
+      }
+    } catch (error) {
+      console.error('Error reseteando conversación:', error);
+    }
+  };
+
+  const callDeepSeekAPI = async (conversationHistory) => {
+    try {
+      console.log('🧠 Fallback: Llamando a DeepSeek API...');
+
+      if (!DEEPSEEK_API_KEY) {
+        throw new Error('DeepSeek API key no configurada');
+      }
+
+      // Construir mensajes para DeepSeek (formato OpenAI)
+      const messages = [
+        { role: 'system', content: personaPrompt },
+        ...conversationHistory.map(msg => ({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
+        }))
+      ];
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages,
+          temperature: 0.85,
+          max_tokens: 150
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || `DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content?.trim();
+
+      if (!content) {
+        throw new Error('Respuesta vacía de DeepSeek');
+      }
+
+      console.log('✅ Respuesta de DeepSeek:', content.substring(0, 100) + '...');
+      return content;
+    } catch (error) {
+      console.error('❌ Error en DeepSeek API:', error);
+      throw error;
+    }
+  };
+
   const callGeminiAPI = async (conversationHistory) => {
     try {
+      console.log('🤖 Llamando a Gemini API...');
+
+      // Verificar que tenemos API key
+      if (!GEMINI_API_KEY) {
+        console.warn('⚠️ GEMINI_API_KEY no está configurada, usando DeepSeek');
+        return await callDeepSeekAPI(conversationHistory);
+      }
+
       const contents = conversationHistory.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
@@ -222,6 +342,8 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         parts: [{ text: '¡Entendido! Seré tu Coach Creo amigable y motivador. 🚀' }]
       });
 
+      console.log('📤 Enviando request a Gemini con', contents.length, 'mensajes');
+
       const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,35 +358,54 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         })
       });
 
+      console.log('📥 Respuesta de Gemini:', response.status, response.statusText);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || `Gemini API error: ${response.status}`);
+        console.error('❌ Error de Gemini API:', errorData);
+        console.log('🔄 Intentando con DeepSeek...');
+        return await callDeepSeekAPI(conversationHistory);
       }
 
       const data = await response.json();
+      console.log('📦 Data recibida de Gemini:', data);
+
       const content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
       if (!content) {
-        throw new Error('Respuesta vacía de Gemini');
+        console.error('❌ Respuesta vacía de Gemini');
+        console.log('🔄 Intentando con DeepSeek...');
+        return await callDeepSeekAPI(conversationHistory);
       }
 
+      console.log('✅ Respuesta de Gemini:', content.substring(0, 100) + '...');
       return content;
     } catch (error) {
       console.error('❌ Error en Gemini API:', error);
-      throw error;
+      console.log('🔄 Intentando con DeepSeek como fallback...');
+      return await callDeepSeekAPI(conversationHistory);
     }
   };
 
   const handleExtendSession = async () => {
-    if (!currentSession || !user?.id) return;
+    if (!currentSession || !user?.id) {
+      setError('No se pudo identificar la sesión o usuario.');
+      return;
+    }
 
     try {
       setIsThinking(true);
       setShowExtensionModal(false);
+      setError('');
 
       // TODO: Aquí deberías verificar/descontar créditos del usuario
       // Por ahora solo actualizamos la sesión
       console.log(`💳 Extendiendo sesión por ${extensionCost} créditos`);
+
+      // Validar que el usuario tenga créditos suficientes (implementar cuando tengas sistema de créditos)
+      // if (userCredits < extensionCost) {
+      //   throw new Error('Créditos insuficientes');
+      // }
 
       // Calcular nuevos límites
       const currentPaidUsed = currentSession.paid_messages_used || 0;
@@ -283,21 +424,26 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error en Supabase:', error);
+        throw new Error('Error al actualizar la sesión en la base de datos');
+      }
 
-      console.log('✅ Sesión extendida:', {
+      console.log('✅ Sesión extendida exitosamente:', {
+        session_id: updatedSession.id,
         paid_messages_available: newPaidAvailable,
         paid_messages_used: currentPaidUsed,
+        messages_remaining: newPaidAvailable - currentPaidUsed,
         credits_spent: newCreditsSpent
       });
 
       setCurrentSession(updatedSession);
       updateSessionStats(updatedSession);
 
-      // Agregar mensaje del sistema
+      // Agregar mensaje del sistema confirmando la extensión
       const systemMessage = {
         role: 'assistant',
-        content: `¡Genial, ${displayName}! 🎉 Extendiste la sesión por 2 mensajes más. Sigamos creando contenido increíble.`,
+        content: `¡Genial, ${displayName}! 🎉 Extendiste la sesión por 2 mensajes más. Sigamos creando contenido increíble juntos.`,
         timestamp: Date.now()
       };
       setMessages(prev => [...prev, systemMessage]);
@@ -305,8 +451,9 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
       setIsThinking(false);
     } catch (error) {
       console.error('❌ Error extendiendo sesión:', error);
-      setError('No se pudo extender la sesión. Intentá de nuevo.');
+      setError(`Error: ${error.message || 'No se pudo extender la sesión'}. Intentá de nuevo.`);
       setIsThinking(false);
+      setShowExtensionModal(true); // Volver a mostrar el modal si hubo error
     }
   };
 
@@ -316,6 +463,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
     try {
       const messageNumber = (currentSession.message_count || 0) + 1;
 
+      // Guardar el mensaje en el log
       await supabase.from('creo_message_log').insert({
         session_id: currentSession.id,
         role,
@@ -326,23 +474,43 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         created_at: new Date().toISOString()
       });
 
-      // Actualizar contador de mensajes en la sesión
+      // Actualizar contadores en la sesión solo para mensajes del usuario
       if (role === 'user') {
-        const newFreeUsed = (currentSession.free_messages_used || 0) + 1;
-        const newMessageCount = messageNumber;
+        const freeUsed = currentSession.free_messages_used || 0;
+        const paidUsed = currentSession.paid_messages_used || 0;
+
+        // Determinar si este mensaje es gratuito o pago
+        const isUsingFreeMessage = freeUsed < 8;
+
+        const updateData = {
+          message_count: messageNumber,
+          updated_at: new Date().toISOString()
+        };
+
+        if (isUsingFreeMessage) {
+          // Incrementar mensajes gratis usados
+          updateData.free_messages_used = freeUsed + 1;
+        } else {
+          // Incrementar mensajes pagos usados
+          updateData.paid_messages_used = paidUsed + 1;
+        }
 
         const { data: updatedSession, error } = await supabase
           .from('creo_chat_sessions')
-          .update({
-            message_count: newMessageCount,
-            free_messages_used: newFreeUsed,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', currentSession.id)
           .select()
           .single();
 
-        if (!error && updatedSession) {
+        if (error) {
+          console.error('Error actualizando sesión:', error);
+        } else if (updatedSession) {
+          console.log('📊 Sesión actualizada:', {
+            message_count: updatedSession.message_count,
+            free_messages_used: updatedSession.free_messages_used,
+            paid_messages_used: updatedSession.paid_messages_used,
+            paid_messages_available: updatedSession.paid_messages_available
+          });
           setCurrentSession(updatedSession);
           updateSessionStats(updatedSession);
         }
@@ -356,8 +524,15 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
     const trimmed = input.trim();
     if (!trimmed || isThinking) return;
 
+    // Validar que hay sesión
     if (!currentSession) {
-      setError('Sesión no inicializada');
+      if (!user?.id) {
+        setError('Debes iniciar sesión para usar el Coach Creo.');
+      } else if (sessionLoading) {
+        setError('Cargando sesión, espera un momento...');
+      } else {
+        setError('Error al cargar la sesión. Por favor recarga la página.');
+      }
       return;
     }
 
@@ -477,7 +652,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 50 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-20 left-4 right-4 sm:bottom-24 sm:left-auto sm:right-6 w-full sm:w-[420px] max-w-[420px] h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+            className="fixed bottom-20 left-4 right-4 sm:bottom-24 sm:left-auto sm:right-6 w-auto sm:w-[420px] max-w-full h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
           >
             {/* Header con animación gradient */}
             <div className="relative p-6 overflow-hidden">
@@ -497,21 +672,30 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                 }}
               />
 
-              <div className="relative z-10 flex items-center justify-between">
+              <div className="relative z-10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <img src="/robot.png" alt="Creo" className="w-12 h-12 rounded-full object-cover border-2 border-white/30" />
+                  <div className="relative">
+                    <img src="/robot.png" alt="Creo" className="w-12 h-12 rounded-full object-cover border-2 border-white/30" />
+                    <span
+                      className="absolute -right-1 -bottom-1 w-3 h-3 rounded-full bg-green-400 border-2 border-purple-700 animate-pulse"
+                      aria-hidden="true"
+                    />
+                  </div>
                   <div>
                     <h3 className="text-white font-bold text-lg">Coach Creo</h3>
-                    <p className="text-white/80 text-xs">Tu asistente creativo ✨</p>
+                    <p className="text-white/80 text-xs flex items-center gap-1">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
+                      En línea ahora
+                    </p>
                   </div>
                 </div>
 
                 {sessionStats && (
-                  <div className="flex flex-col items-end relative z-10">
+                  <div className="flex flex-col items-end relative z-10 gap-1">
                     <div className="text-white/90 text-xs font-semibold">
-                      {sessionStats.freeMessagesUsed}/8 usados
+                      {sessionStats.freeMessagesUsed}/8 gratis
                     </div>
-                    <div className="w-16 h-1.5 bg-white/20 rounded-full mt-1 overflow-hidden">
+                    <div className="w-16 h-1.5 bg-white/20 rounded-full overflow-hidden">
                       <motion.div
                         className="h-full bg-gradient-to-r from-green-400 to-yellow-400"
                         initial={{ width: '100%' }}
@@ -521,15 +705,33 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                         transition={{ duration: 0.3 }}
                       />
                     </div>
+                    {currentSession?.paid_messages_available > 0 && (
+                      <div className="text-yellow-300 text-xs font-semibold flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        +{currentSession.paid_messages_available - (currentSession.paid_messages_used || 0)} pagos
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-white/80 hover:text-white transition-colors relative z-10"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {showResetButton && (
+                    <button
+                      onClick={handleResetConversation}
+                      className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                      aria-label="Reiniciar conversación"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="text-white/80 hover:text-white transition-colors relative z-10"
+                    aria-label="Cerrar Coach Creo"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -538,43 +740,54 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
               ref={chatContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50"
             >
-              {messages.map((msg, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                      msg.role === 'user'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-700 text-gray-100'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              {sessionLoading && user?.id ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">Cargando sesión...</p>
                   </div>
-                </motion.div>
-              ))}
-
-              {isThinking && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
-                >
-                  <div className="bg-gray-700 text-gray-100 px-4 py-3 rounded-2xl flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Creo está pensando...</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {error && (
-                <div className="text-center text-red-400 text-sm py-2">
-                  {error}
                 </div>
+              ) : (
+                <>
+                  {messages.map((msg, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                          msg.role === 'user'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-700 text-gray-100'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+
+                  {isThinking && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start"
+                    >
+                      <div className="bg-gray-700 text-gray-100 px-4 py-3 rounded-2xl flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">Creo está pensando...</span>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {error && (
+                    <div className="text-center text-red-400 text-sm py-2 bg-red-900/20 rounded-lg p-3">
+                      {error}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
