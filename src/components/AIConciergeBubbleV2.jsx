@@ -1,0 +1,500 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SendHorizontal, Loader2, X, MessageSquare, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/lib/supabaseClient';
+import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING } from '@/config/creoPersonality';
+
+const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
+const PROFILE_STORAGE_KEY = 'creatorProfile';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// Usar Gemini 2.0 Flash Experimental (gratis, rápido, 1M tokens input)
+const GEMINI_MODEL = 'gemini-2.0-flash-exp';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+const loadStoredProfile = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.warn('Failed to load creator profile', error);
+    return null;
+  }
+};
+
+const loadHistory = (key) => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Failed to load Creo chat history', error);
+    return [];
+  }
+};
+
+const AIConciergeBubbleV2 = () => {
+  const { user, session } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const [error, setError] = useState('');
+  const [currentSession, setCurrentSession] = useState(null);
+  const [sessionStats, setSessionStats] = useState(null);
+  const chatContainerRef = useRef(null);
+  const messageCountRef = useRef(0);
+
+  const profileData = useMemo(() => loadStoredProfile(), []);
+
+  const displayName = useMemo(() => {
+    const fullName = user?.user_metadata?.full_name?.trim();
+    if (fullName) return fullName.split(' ')[0];
+    if (user?.email) return user.email.split('@')[0];
+    return 'creador';
+  }, [user]);
+
+  const storageKey = useMemo(() => {
+    const suffix = user?.id ? `_${user.id}` : '';
+    return `${CHAT_STORAGE_KEY}${suffix}`;
+  }, [user?.id]);
+
+  const [messages, setMessages] = useState(() => loadHistory(storageKey));
+
+  // Inicializar sesión de Supabase
+  useEffect(() => {
+    const initSession = async () => {
+      if (!user?.id) return;
+
+      try {
+        // Buscar sesión activa existente
+        const { data: existingSession, error: sessionError } = await supabase
+          .from('creo_chat_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (sessionError) throw sessionError;
+
+        if (existingSession) {
+          console.log('✅ Sesión activa recuperada:', existingSession.id);
+          setCurrentSession(existingSession);
+          updateSessionStats(existingSession);
+        } else {
+          // Crear nueva sesión
+          const { data: newSession, error: createError } = await supabase
+            .from('creo_chat_sessions')
+            .insert({
+              user_id: user.id,
+              message_count: 0,
+              free_messages_used: 0,
+              paid_messages_used: 0,
+              conversation_stage: 'intro',
+              status: 'active'
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+
+          console.log('✅ Nueva sesión creada:', newSession.id);
+          setCurrentSession(newSession);
+          updateSessionStats(newSession);
+        }
+      } catch (error) {
+        console.error('❌ Error inicializando sesión:', error);
+      }
+    };
+
+    initSession();
+  }, [user?.id]);
+
+  const updateSessionStats = (session) => {
+    const stats = {
+      freeMessagesUsed: session.free_messages_used || 0,
+      freeMessagesRemaining: Math.max(0, 8 - (session.free_messages_used || 0)),
+      messageCount: session.message_count || 0,
+      stage: session.conversation_stage || 'intro'
+    };
+    setSessionStats(stats);
+  };
+
+  useEffect(() => {
+    setMessages(loadHistory(storageKey));
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, JSON.stringify(messages.slice(-30)));
+    }
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, storageKey]);
+
+  useEffect(() => {
+    if (!messages.length) {
+      const warmIntro = CREO_USER_GREETING(displayName);
+      setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+    }
+  }, [messages.length, displayName]);
+
+  const personaPrompt = useMemo(() => {
+    let contextInfo = '';
+    if (profileData) {
+      const { niche, platform, goals, experience } = profileData;
+      if (niche) contextInfo += `\n- Nicho: ${niche}`;
+      if (platform) contextInfo += `\n- Plataforma principal: ${platform}`;
+      if (goals) contextInfo += `\n- Objetivos: ${goals}`;
+      if (experience) contextInfo += `\n- Experiencia: ${experience}`;
+    }
+
+    return `${CREO_SYSTEM_PROMPT}
+
+📋 INFORMACIÓN DEL USUARIO:
+- Nombre: ${displayName}${contextInfo}
+
+🎯 TU MISIÓN:
+1. Ser ULTRA amigable, cercano y motivador
+2. Explorar qué quiere crear el usuario (máximo 4-5 mensajes)
+3. LLEVAR AL CTA: "¿Querés que te ayude a crear el guion completo? Usá 'Genera tu Guion' 🎬"
+4. Ser persuasivo para upgrade si es usuario FREE
+
+📝 REGLAS:
+- Máximo 40 palabras por respuesta
+- NO usar markdown (**negritas**, *cursivas*, etc)
+- Usar 1-2 emojis relevantes
+- Ser directo y entusiasta
+- Después de entender el tema, llevar SIEMPRE al CTA del generador de guiones
+`;
+  }, [displayName, profileData]);
+
+  const callGeminiAPI = async (conversationHistory) => {
+    try {
+      const contents = conversationHistory.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      }));
+
+      // Agregar el system prompt como primer mensaje del user
+      contents.unshift({
+        role: 'user',
+        parts: [{ text: personaPrompt }]
+      });
+      contents.splice(1, 0, {
+        role: 'model',
+        parts: [{ text: '¡Entendido! Seré tu Coach Creo amigable y motivador. 🚀' }]
+      });
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature: 0.85,
+            maxOutputTokens: 150,
+            topP: 0.95,
+            topK: 40
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || `Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      if (!content) {
+        throw new Error('Respuesta vacía de Gemini');
+      }
+
+      return content;
+    } catch (error) {
+      console.error('❌ Error en Gemini API:', error);
+      throw error;
+    }
+  };
+
+  const saveMessageToSupabase = async (role, content, isFree = true) => {
+    if (!currentSession) return;
+
+    try {
+      const messageNumber = (currentSession.message_count || 0) + 1;
+
+      await supabase.from('creo_message_log').insert({
+        session_id: currentSession.id,
+        role,
+        content,
+        message_number: messageNumber,
+        is_free: isFree,
+        ai_provider: role === 'assistant' ? 'gemini' : null,
+        created_at: new Date().toISOString()
+      });
+
+      // Actualizar contador de mensajes en la sesión
+      if (role === 'user') {
+        const newFreeUsed = (currentSession.free_messages_used || 0) + 1;
+        const newMessageCount = messageNumber;
+
+        const { data: updatedSession, error } = await supabase
+          .from('creo_chat_sessions')
+          .update({
+            message_count: newMessageCount,
+            free_messages_used: newFreeUsed,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentSession.id)
+          .select()
+          .single();
+
+        if (!error && updatedSession) {
+          setCurrentSession(updatedSession);
+          updateSessionStats(updatedSession);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error guardando mensaje:', error);
+    }
+  };
+
+  const handleSend = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || isThinking) return;
+
+    const optimisticMessages = [
+      ...messages,
+      { role: 'user', content: trimmed, timestamp: Date.now() }
+    ];
+    setMessages(optimisticMessages);
+    setInput('');
+    setIsThinking(true);
+    setError('');
+
+    // Guardar mensaje del usuario
+    await saveMessageToSupabase('user', trimmed, true);
+
+    try {
+      const recentMessages = optimisticMessages.slice(-8).map(({ role, content }) => ({
+        role,
+        content
+      }));
+
+      const assistantReply = await callGeminiAPI(recentMessages);
+
+      const finalMessages = [
+        ...optimisticMessages,
+        { role: 'assistant', content: assistantReply, timestamp: Date.now() }
+      ];
+
+      setMessages(finalMessages);
+      messageCountRef.current += 1;
+
+      // Guardar respuesta del asistente
+      await saveMessageToSupabase('assistant', assistantReply, true);
+
+    } catch (err) {
+      console.error('[Creo Chat] Error:', err);
+      setError('⚠️ No pude responder. Intentá de nuevo.');
+
+      const fallbackReply = '¡Ups! 😅 Tuve un problemita técnico. ¿Podés repetir lo que me dijiste?';
+      setMessages([
+        ...optimisticMessages,
+        { role: 'assistant', content: fallbackReply, timestamp: Date.now() }
+      ]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <>
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center z-50 overflow-hidden group"
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              backgroundSize: '200% 200%',
+              animation: 'gradientShift 3s ease infinite'
+            }}
+          >
+            <img
+              src="/robot.png"
+              alt="Coach Creo"
+              className="w-10 h-10 relative z-10 rounded-full object-cover"
+            />
+            <motion.div
+              className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"
+            />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-20 left-4 right-4 sm:bottom-24 sm:left-auto sm:right-6 w-full sm:w-[420px] max-w-[420px] h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+          >
+            {/* Header con animación gradient */}
+            <div className="relative p-6 overflow-hidden">
+              <motion.div
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                  backgroundSize: '200% 200%'
+                }}
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'linear'
+                }}
+              />
+
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src="/robot.png" alt="Creo" className="w-12 h-12 rounded-full object-cover border-2 border-white/30" />
+                  <div>
+                    <h3 className="text-white font-bold text-lg">Coach Creo</h3>
+                    <p className="text-white/80 text-xs">Tu asistente creativo ✨</p>
+                  </div>
+                </div>
+
+                {sessionStats && (
+                  <div className="flex flex-col items-end relative z-10">
+                    <div className="text-white/90 text-xs font-semibold">
+                      {sessionStats.freeMessagesUsed}/8 usados
+                    </div>
+                    <div className="w-16 h-1.5 bg-white/20 rounded-full mt-1 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-green-400 to-yellow-400"
+                        initial={{ width: '100%' }}
+                        animate={{
+                          width: `${((8 - sessionStats.freeMessagesUsed) / 8) * 100}%`
+                        }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors relative z-10"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Chat messages */}
+            <div
+              ref={chatContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50"
+            >
+              {messages.map((msg, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                      msg.role === 'user'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-700 text-gray-100'
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                </motion.div>
+              ))}
+
+              {isThinking && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-gray-700 text-gray-100 px-4 py-3 rounded-2xl flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Creo está pensando...</span>
+                  </div>
+                </motion.div>
+              )}
+
+              {error && (
+                <div className="text-center text-red-400 text-sm py-2">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Input area */}
+            <div className="p-4 bg-gray-900 border-t border-purple-500/30">
+              <div className="flex gap-2">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Escribí tu mensaje..."
+                  className="flex-1 min-h-[50px] max-h-[100px] bg-gray-800 border-purple-500/30 text-white placeholder:text-gray-500 resize-none"
+                  disabled={isThinking}
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isThinking}
+                  className="h-[50px] px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                >
+                  <SendHorizontal className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+    </>
+  );
+};
+
+export default AIConciergeBubbleV2;

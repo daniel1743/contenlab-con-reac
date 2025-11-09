@@ -30,23 +30,32 @@ const CONFIG = {
 export async function checkUsageLimit(userId, planType, featureSlug) {
   try {
     // Verificar si el usuario está bloqueado
-    const isBlocked = await checkUserBlock(userId, featureSlug);
-    if (isBlocked.blocked) {
+    const blockCheck = await checkUserBlock(userId, featureSlug);
+    console.log('🔍 DEBUG checkUsageLimit - Block check:', blockCheck);
+
+    if (blockCheck.isBlocked) {
+      console.log('🚫 Usuario bloqueado:', blockCheck);
       return {
         allowed: false,
         reason: 'user_blocked',
-        blockInfo: isBlocked
+        blockInfo: blockCheck
       };
     }
 
     // Verificar límites usando función de Supabase
+    console.log('🔍 DEBUG checkUsageLimit - Calling RPC with:', { userId, planType, featureSlug });
     const { data, error } = await supabase.rpc('check_usage_limit', {
       p_user_id: userId,
       p_plan_type: planType,
       p_feature_slug: featureSlug
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ RPC check_usage_limit error:', error);
+      throw error;
+    }
+
+    console.log('✅ RPC check_usage_limit response:', data);
 
     return {
       ...data,

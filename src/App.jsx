@@ -8,8 +8,9 @@ import PWALoadingScreen from '@/components/PWALoadingScreen';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
-// import AIConciergeBubble from '@/components/AIConciergeBubble';
-import CreoFloatingAssistant from '@/components/CreoFloatingAssistant';
+// import AIConciergeBubble from '@/components/AIConciergeBubble'; // VERSIÓN ANTIGUA
+import AIConciergeBubble from '@/components/AIConciergeBubbleV2'; // VERSIÓN CON GEMINI + SUPABASE
+// import CreoFloatingAssistant from '@/components/CreoFloatingAssistant'; // COMENTADO TEMPORALMENTE
 
 // Lazy load de componentes pesados
 const AuthModal = lazy(() => import('@/components/AuthModal'));
@@ -424,11 +425,11 @@ function App() {
           )}
         </Suspense>
 
-        {/* AI Concierge Bubble (Asistente original) */}
-        {/* <AIConciergeBubble /> */}
+        {/* AI Concierge Bubble (Asistente original) - PRUEBA TEMPORAL */}
+        <AIConciergeBubble />
 
-        {/* Coach Creo - Solo para usuarios autenticados */}
-        {isAuthenticated && user && (
+        {/* Coach Creo - COMENTADO TEMPORALMENTE PARA PRUEBAS */}
+        {/* {isAuthenticated && user && (
           <CreoFloatingAssistant
             userContext={{
               name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Creador',
@@ -436,7 +437,7 @@ function App() {
               topic: null // Puedes agregar lógica para detectar el último tema buscado
             }}
           />
-        )}
+        )} */}
       </div>
     </>
   );

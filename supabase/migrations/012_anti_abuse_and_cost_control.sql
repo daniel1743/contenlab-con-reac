@@ -441,11 +441,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_calculate_cost
-    BEFORE INSERT ON usage_tracking
-    FOR EACH ROW
-    WHEN (NEW.ai_provider IS NOT NULL)
-    EXECUTE FUNCTION calculate_usage_cost();
+-- Crear trigger solo si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trigger_calculate_cost'
+        AND tgrelid = 'usage_tracking'::regclass
+    ) THEN
+        CREATE TRIGGER trigger_calculate_cost
+            BEFORE INSERT ON usage_tracking
+            FOR EACH ROW
+            WHEN (NEW.ai_provider IS NOT NULL)
+            EXECUTE FUNCTION calculate_usage_cost();
+        RAISE NOTICE '✅ Trigger trigger_calculate_cost creado';
+    ELSE
+        RAISE NOTICE '⚠️ Trigger trigger_calculate_cost ya existe, omitiendo';
+    END IF;
+END $$;
 
 -- ==========================================
 -- 8. ROW LEVEL SECURITY
@@ -459,13 +472,37 @@ ALTER TABLE cost_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_blocks ENABLE ROW LEVEL SECURITY;
 
 -- Políticas: Los usuarios solo ven su propio uso
-CREATE POLICY "Users can view their own usage"
-    ON usage_tracking FOR SELECT
-    USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'usage_tracking'
+        AND policyname = 'Users can view their own usage'
+    ) THEN
+        CREATE POLICY "Users can view their own usage"
+            ON usage_tracking FOR SELECT
+            USING (auth.uid() = user_id);
+        RAISE NOTICE '✅ Policy "Users can view their own usage" creada';
+    ELSE
+        RAISE NOTICE '⚠️ Policy ya existe, omitiendo';
+    END IF;
+END $$;
 
-CREATE POLICY "Users can view their own blocks"
-    ON user_blocks FOR SELECT
-    USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'user_blocks'
+        AND policyname = 'Users can view their own blocks'
+    ) THEN
+        CREATE POLICY "Users can view their own blocks"
+            ON user_blocks FOR SELECT
+            USING (auth.uid() = user_id);
+        RAISE NOTICE '✅ Policy "Users can view their own blocks" creada';
+    ELSE
+        RAISE NOTICE '⚠️ Policy ya existe, omitiendo';
+    END IF;
+END $$;
 
 -- Políticas: Solo admins ven todo lo demás
 -- (Nota: Implementar función is_admin() según tu sistema de roles)

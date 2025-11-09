@@ -14,7 +14,6 @@ import { supabase } from '@/lib/supabaseClient';
 import { CREO_SYSTEM_PROMPT, getStagePrompt } from '@/config/creoPersonality';
 import { buildCreoPrompt } from '@/utils/creoPromptBuilder';
 import {
-  checkUsageLimit,
   trackUsage,
   checkUserBlock
 } from '@/services/abuseDetectionService';
@@ -27,7 +26,7 @@ const CONFIG = {
   MAX_TOTAL_MESSAGES: 12,           // Máximo total de mensajes
   SESSION_TIMEOUT_MINUTES: 30,      // Tiempo de inactividad para cerrar sesión
   DEEPSEEK_API_KEY: import.meta.env.VITE_DEEPSEEK_API_KEY,
-  DEEPSEEK_API_URL: 'https://api.deepseek.com/v1/chat/completions'
+  DEEPSEEK_API_URL: 'https://api.deepseek.com/chat/completions' // URL correcta sin /v1
 };
 
 // ===== CLASE PRINCIPAL DEL SERVICIO =====
@@ -109,7 +108,9 @@ class CreoChatService {
       }
 
       // 2. ✅ ANTI-ABUSO: Verificar si usuario está bloqueado
-      const blockCheck = await checkUserBlock(userId, 'creo_chat');
+      const blockCheck = await checkUserBlock(userId, 'ai_chat');
+      console.log('🔍 DEBUG - Block check:', blockCheck);
+
       if (blockCheck.isBlocked) {
         return {
           content: `Lo siento, tu cuenta está temporalmente bloqueada. ${blockCheck.reason}`,
@@ -119,28 +120,15 @@ class CreoChatService {
         };
       }
 
-      // 3. ✅ ANTI-ABUSO: Verificar límites de uso según plan
-      const userPlan = await this._getUserPlan(userId);
-      const limitCheck = await checkUsageLimit(userId, userPlan, 'creo_chat');
-
-      if (!limitCheck.allowed) {
-        return {
-          content: `Has alcanzado tu límite de uso. ${limitCheck.reason}`,
-          limitReached: true,
-          current: limitCheck.current,
-          limit: limitCheck.limit,
-          error: true
-        };
-      }
-
-      // 4. Verificar límite de mensajes (lógica existente de 8 mensajes)
+      // 3. Verificar límite de mensajes del Coach Creo (8 mensajes gratuitos + 2 pagados)
       const canContinue = await this._checkMessageLimit(userId);
+      console.log('🔍 DEBUG - Message limit check:', canContinue);
 
       if (!canContinue.allowed) {
         return this._generateLimitResponse(canContinue);
       }
 
-      // 3. Guardar mensaje del usuario
+      // 4. Guardar mensaje del usuario
       await this._saveMessage({
         session_id: this.currentSession.id,
         role: 'user',
@@ -149,13 +137,13 @@ class CreoChatService {
         is_free: canContinue.isFree
       });
 
-      // 4. Obtener historial de conversación
+      // 5. Obtener historial de conversación
       const conversationHistory = await this._getConversationHistory();
 
-      // 5. Determinar etapa de conversación
+      // 6. Determinar etapa de conversación
       const stage = this._determineConversationStage();
 
-      // 6. Construir prompt contextualizado
+      // 7. Construir prompt contextualizado
       const prompt = buildCreoPrompt({
         userMessage,
         conversationHistory,
@@ -165,13 +153,13 @@ class CreoChatService {
         messageCount: this.currentSession.message_count
       });
 
-      // 7. Generar respuesta con DeepSeek
+      // 8. Generar respuesta con DeepSeek
       const assistantResponse = await this._generateAIResponse(prompt, stage);
 
-      // 8. ✅ ANTI-ABUSO: Registrar uso y calcular costos automáticamente
+      // 9. ✅ ANTI-ABUSO: Registrar uso y calcular costos automáticamente (solo tracking, no validación)
       await trackUsage({
         userId: userId,
-        featureSlug: 'creo_chat',
+        featureSlug: 'ai_chat',
         actionType: 'chat_message',
         aiProvider: 'deepseek',
         modelUsed: 'deepseek-chat',
@@ -188,10 +176,10 @@ class CreoChatService {
         }
       });
 
-      // 9. Analizar sentimiento de la interacción
+      // 10. Analizar sentimiento de la interacción
       await this._analyzeSentiment(userMessage, assistantResponse);
 
-      // 10. Guardar respuesta del asistente
+      // 11. Guardar respuesta del asistente
       await this._saveMessage({
         session_id: this.currentSession.id,
         role: 'assistant',
@@ -204,13 +192,13 @@ class CreoChatService {
         response_time_ms: assistantResponse.responseTime
       });
 
-      // 10. Actualizar sesión
+      // 12. Actualizar sesión
       await this._updateSession({
         conversation_stage: stage,
         main_topic: assistantResponse.detectedTopic || this.currentSession.main_topic
       });
 
-      // 11. Verificar si debe redirigir
+      // 13. Verificar si debe redirigir
       const shouldRedirect = this._shouldRedirect();
 
       return {
@@ -231,7 +219,7 @@ class CreoChatService {
       try {
         await trackUsage({
           userId: userId,
-          featureSlug: 'creo_chat',
+          featureSlug: 'ai_chat',
           actionType: 'chat_message',
           aiProvider: 'deepseek',
           modelUsed: 'deepseek-chat',
