@@ -48,6 +48,7 @@ const AIConciergeBubbleV2 = () => {
   const [sessionStats, setSessionStats] = useState(null);
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [extensionCost, setExtensionCost] = useState(2);
+  const [showResetButton, setShowResetButton] = useState(false);
   const chatContainerRef = useRef(null);
   const messageCountRef = useRef(0);
 

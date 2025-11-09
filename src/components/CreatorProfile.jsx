@@ -62,12 +62,40 @@ export default function CreatorProfile() {
   const [instagramPosts, setInstagramPosts] = useState([]);
 
   const [showThreadComposer, setShowThreadComposer] = useState(false);
+  const [profileVisuals, setProfileVisuals] = useState({
+    profileImage: '',
+    coverImage: ''
+  });
 
   // Cargar datos al montar
   useEffect(() => {
     if (user) {
       loadProfileData();
     }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loadVisuals = () => {
+      setProfileVisuals({
+        profileImage: localStorage.getItem('creovision_profile_image') || user.user_metadata?.avatar_url || '',
+        coverImage: localStorage.getItem('creovision_cover_image') || ''
+      });
+    };
+
+    loadVisuals();
+
+    const handleProfileUpdate = (event) => {
+      const { profileImage, coverImage } = event.detail || {};
+      setProfileVisuals((prev) => ({
+        profileImage: profileImage ?? prev.profileImage,
+        coverImage: coverImage ?? prev.coverImage
+      }));
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate);
   }, [user]);
 
   const loadProfileData = async () => {
@@ -527,11 +555,21 @@ export default function CreatorProfile() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
       {/* Banner */}
       <motion.div
-        className="h-[300px] md:h-[400px] lg:h-[600px] bg-gradient-to-r from-purple-600 via-pink-500 to-cyan-500 relative overflow-hidden"
+        className="h-[300px] md:h-[400px] lg:h-[600px] relative overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
+        {profileVisuals.coverImage ? (
+          <img
+            src={profileVisuals.coverImage}
+            alt="Portada del perfil"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-500 to-cyan-500" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/10" />
         <div className="absolute inset-0 opacity-30">
           {/* Decorative circles */}
           <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-xl" />
@@ -550,12 +588,24 @@ export default function CreatorProfile() {
         >
           {/* Profile Photo */}
           <motion.div
-            className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-6xl font-bold text-white border-4 border-gray-900 shadow-xl hover:rotate-6 transition-transform cursor-pointer"
+            className="rounded-full border-4 border-gray-900 shadow-xl hover:rotate-3 transition-transform cursor-pointer"
             initial={{ rotate: -10, scale: 0.8 }}
             animate={{ rotate: 0, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            {profileData.display_name?.charAt(0)?.toUpperCase() || 'U'}
+            {profileVisuals.profileImage ? (
+              <div className="w-32 h-32 rounded-full overflow-hidden">
+                <img
+                  src={profileVisuals.profileImage}
+                  alt={profileData.display_name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-6xl font-bold text-white">
+                {profileData.display_name?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+            )}
           </motion.div>
 
           {/* Profile Info */}

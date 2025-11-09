@@ -14,10 +14,14 @@ const Profile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
 
   // Cargar datos desde localStorage al inicio
   const [profileImage, setProfileImage] = useState(() => {
     return localStorage.getItem('creovision_profile_image') || user?.user_metadata?.avatar_url || '';
+  });
+  const [coverImage, setCoverImage] = useState(() => {
+    return localStorage.getItem('creovision_cover_image') || '';
   });
 
   const [formData, setFormData] = useState(() => {
@@ -43,32 +47,32 @@ const Profile = () => {
     });
   };
 
-  // Manejar la carga de imagen
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validar tamaño (máximo 2MB)
+  const validateImageFile = (file) => {
+    if (!file) return false;
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: 'Error',
         description: 'La imagen no puede superar los 2MB.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
-
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       toast({
         title: 'Error',
         description: 'Solo se permiten archivos de imagen.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
+    return true;
+  };
 
-    // Convertir imagen a base64 y guardar en localStorage
+  // Manejar la carga de imagen
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!validateImageFile(file)) return;
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64Image = reader.result;
@@ -82,6 +86,23 @@ const Profile = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleCoverUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!validateImageFile(file)) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Image = reader.result;
+      setCoverImage(base64Image);
+      localStorage.setItem('creovision_cover_image', base64Image);
+      toast({
+        title: 'Portada actualizada',
+        description: 'Tu foto de portada se ha actualizado correctamente.',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = () => {
     // Guardar datos en localStorage
     localStorage.setItem('creovision_profile_data', JSON.stringify(formData));
@@ -90,7 +111,8 @@ const Profile = () => {
     window.dispatchEvent(new CustomEvent('profileUpdated', {
       detail: {
         fullName: formData.fullName,
-        profileImage: profileImage
+        profileImage: profileImage,
+        coverImage: coverImage
       }
     }));
 
@@ -109,6 +131,12 @@ const Profile = () => {
     const savedImage = localStorage.getItem('creovision_profile_image');
     if (savedImage) {
       setProfileImage(savedImage);
+    }
+    const savedCover = localStorage.getItem('creovision_cover_image');
+    if (savedCover) {
+      setCoverImage(savedCover);
+    } else {
+      setCoverImage('');
     }
     toast({
       title: 'Cambios descartados',
@@ -141,6 +169,69 @@ const Profile = () => {
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
           Personaliza tu perfil y configura tu identidad de creador
         </p>
+      </motion.div>
+
+      {/* Cover Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <Card className="glass-effect border-purple-500/20">
+          <CardHeader>
+            <CardTitle className="text-white">Foto de Portada</CardTitle>
+            <CardDescription>Personaliza el fondo de tu perfil</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="h-48 rounded-2xl overflow-hidden border border-purple-500/20 bg-gradient-to-r from-purple-600 via-pink-500 to-cyan-500">
+              {coverImage ? (
+                <img
+                  src={coverImage}
+                  alt="Portada del perfil"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-200 text-sm">
+                  No has cargado una portada
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                className="border-purple-500/20 hover:bg-purple-500/10"
+                onClick={() => coverInputRef.current?.click()}
+                type="button"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Subir portada
+              </Button>
+              {coverImage && (
+                <Button
+                  variant="ghost"
+                  className="text-gray-300 hover:text-white"
+                  onClick={() => {
+                    setCoverImage('');
+                    localStorage.removeItem('creovision_cover_image');
+                  }}
+                  type="button"
+                >
+                  Quitar portada
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">
+              Recomendado 1200x400px. Formatos JPG o PNG (máximo 2MB).
+            </p>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Avatar Section */}
