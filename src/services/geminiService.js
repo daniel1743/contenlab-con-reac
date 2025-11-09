@@ -1,14 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { withAiModelCache } from '@/services/aiModelCacheService';
+import { stripJsonCodeFences } from '@/utils/jsonUtils';
 
 // Usar la API key correcta de Gemini
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const GEMINI_MODEL_ID = 'gemini-2.0-flash-exp';
+const GEMINI_PROVIDER_CODE = 'creovision-gp5';
 
 // Función base para generar contenido
 const generateContent = async (prompt) => {
   try {
     console.log('🤖 CreoVision AI GP-5 está procesando tu solicitud...');
     // Usar el modelo propietario CreoVision AI GP-5
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_ID });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -375,7 +379,25 @@ Ejemplo de estructura (ADAPTA al tema y estilo solicitado):
 IMPORTANTE: Debes generar las TRES secciones completas. No omitas ninguna.
 `;
 
-  return await generateContent(prompt);
+  const { data } = await withAiModelCache({
+    topic: topic || 'general',
+    providerCode: GEMINI_PROVIDER_CODE,
+    modelVersion: GEMINI_MODEL_ID,
+    requestPayload: {
+      type: 'seo_titles',
+      topic
+    },
+    metadata: {
+      promptType: 'seo_titles'
+    },
+    ttlHours: 18,
+    fetchFreshData: async () => {
+      const raw = await generateContent(prompt);
+      return { raw };
+    }
+  });
+
+  return data?.raw || '';
 };
 
 export const generateExpertAdvisoryInsights = async (topic, context = {}) => {
@@ -580,7 +602,31 @@ REGLAS:
 4. Responde SOLO JSON
 `;
 
-  return await generateContent(prompt);
+  const { data } = await withAiModelCache({
+    topic: topic || 'general',
+    providerCode: GEMINI_PROVIDER_CODE,
+    modelVersion: GEMINI_MODEL_ID,
+    requestPayload: {
+      type: 'premium_cards',
+      themeValue,
+      themeLabel,
+      topic
+    },
+    metadata: {
+      promptType: 'premium_cards',
+      themeLabel: themeLabel || themeValue
+    },
+    ttlHours: 24,
+    fetchFreshData: async () => {
+      const raw = await generateContent(prompt);
+      return {
+        raw,
+        sanitized: stripJsonCodeFences(raw)
+      };
+    }
+  });
+
+  return data?.sanitized || data?.raw || '';
 };
 
 // 4. Generar títulos SEO optimizados con análisis profesional
@@ -720,7 +766,25 @@ Genera 2 keywords con potencial de crecimiento:
 FORMATO: Responde en markdown estructurado y profesional, NO en JSON simple.
 `;
 
-  return await generateContent(prompt);
+  const { data } = await withAiModelCache({
+    topic: topic || 'general',
+    providerCode: GEMINI_PROVIDER_CODE,
+    modelVersion: GEMINI_MODEL_ID,
+    requestPayload: {
+      type: 'seo_keywords',
+      topic
+    },
+    metadata: {
+      promptType: 'seo_keywords'
+    },
+    ttlHours: 18,
+    fetchFreshData: async () => {
+      const raw = await generateContent(prompt);
+      return { raw };
+    }
+  });
+
+  return data?.raw || '';
 };
 
 /**

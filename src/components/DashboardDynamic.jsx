@@ -1019,12 +1019,24 @@ const DashboardDynamic = ({ onSectionChange }) => {
             ]);
 
             // Combinar snippet + statistics
-            const videosWithStats = searchResults.items.map((item, index) => ({
-              ...item,
-              statistics: statsResults.items[index]?.statistics || {},
-              channelId: item.snippet.channelId,
-              channelTitle: item.snippet.channelTitle
-            }));
+            const statsMap = new Map(
+              (statsResults.items || []).map(statItem => [statItem.id, statItem])
+            );
+
+            const videosWithStats = searchResults.items.map(item => {
+              const videoId = item.id?.videoId;
+              const statEntry = videoId ? statsMap.get(videoId) : null;
+
+              return {
+                ...item,
+                statistics: statEntry?.statistics || {},
+                contentDetails: statEntry?.contentDetails || {},
+                publishedAt: item.snippet?.publishedAt ?? statEntry?.snippet?.publishedAt ?? null,
+                duration: statEntry?.contentDetails?.duration || null,
+                channelId: item.snippet?.channelId,
+                channelTitle: item.snippet?.channelTitle
+              };
+            });
 
             // Procesar datos de canales
             const channels = (channelsData.items || []).map(channel => ({
@@ -1091,12 +1103,24 @@ const DashboardDynamic = ({ onSectionChange }) => {
               .catch(() => ({ items: [] }))
           ]);
 
-          const videosWithStats = searchResults.items.map((item, index) => ({
-            ...item,
-            statistics: statsResults.items[index]?.statistics || {},
-            channelId: item.snippet.channelId,
-            channelTitle: item.snippet.channelTitle
-          }));
+          const statsMap = new Map(
+            (statsResults.items || []).map(statItem => [statItem.id, statItem])
+          );
+
+          const videosWithStats = searchResults.items.map(item => {
+            const videoId = item.id?.videoId;
+            const statEntry = videoId ? statsMap.get(videoId) : null;
+
+            return {
+              ...item,
+              statistics: statEntry?.statistics || {},
+              contentDetails: statEntry?.contentDetails || {},
+              publishedAt: item.snippet?.publishedAt ?? statEntry?.snippet?.publishedAt ?? null,
+              duration: statEntry?.contentDetails?.duration || null,
+              channelId: item.snippet?.channelId,
+              channelTitle: item.snippet?.channelTitle
+            };
+          });
 
           const channels = (channelsData.items || []).map(channel => ({
             id: channel.id,
@@ -1337,14 +1361,14 @@ const DashboardDynamic = ({ onSectionChange }) => {
     };
 
     videos.forEach(video => {
-      const publishedAt = video.publishedAt || video.contentDetails?.publishedAt;
+      const publishedAt = video.publishedAt || video.contentDetails?.publishedAt || video.snippet?.publishedAt;
       const date = publishedAt ? new Date(publishedAt) : null;
       if (!date || Number.isNaN(date.getTime())) return;
       const day = (date.getUTCDay() + 6) % 7; // Ajustar para que Lunes sea el primer día
 
-      const views = Number(video.statistics?.viewCount || 0);
-      const likes = Number(video.statistics?.likeCount || 0);
-      const comments = Number(video.statistics?.commentCount || 0);
+      const views = Number(video.statistics?.viewCount ?? video.viewCount ?? 0);
+      const likes = Number(video.statistics?.likeCount ?? video.likeCount ?? 0);
+      const comments = Number(video.statistics?.commentCount ?? video.commentCount ?? 0);
 
       accumulator[day].views += views;
       accumulator[day].engagement += likes + comments;
@@ -1379,10 +1403,17 @@ const DashboardDynamic = ({ onSectionChange }) => {
         return;
       }
 
-      const seconds = parseISODuration(video.contentDetails?.duration);
-      if (seconds && seconds <= 75) {
-        counters.shorts += 1;
+      const durationRaw = video.duration || video.contentDetails?.duration;
+      const seconds = parseISODuration(durationRaw);
+
+      if (seconds) {
+        if (seconds <= 75) {
+          counters.shorts += 1;
+        } else {
+          counters.longForm += 1;
+        }
       } else {
+        // Si no hay duración disponible, asumir long-form para no perder el dato
         counters.longForm += 1;
       }
     });

@@ -48,27 +48,28 @@ CREATE INDEX IF NOT EXISTS idx_ai_model_cache_response_gin
 -- Seguridad
 ALTER TABLE public.ai_model_cache ENABLE ROW LEVEL SECURITY;
 
--- Lectura abierta para clientes autenticados (los datos no son sensibles)
+-- Lectura abierta para cualquier cliente (los datos son cacheados, no sensibles)
 CREATE POLICY "ai_model_cache_read"
   ON public.ai_model_cache
   FOR SELECT
   TO authenticated, anon
   USING (true);
 
--- Gestión reservada para el service role
-CREATE POLICY "ai_model_cache_insert_service"
+-- Inserciones/actualizaciones desde frontend autenticado (igual que youtube/twitter cache)
+CREATE POLICY "ai_model_cache_insert_authenticated"
   ON public.ai_model_cache
   FOR INSERT
-  TO service_role
+  TO authenticated, service_role
   WITH CHECK (true);
 
-CREATE POLICY "ai_model_cache_update_service"
+CREATE POLICY "ai_model_cache_update_authenticated"
   ON public.ai_model_cache
   FOR UPDATE
-  TO service_role
+  TO authenticated, service_role
   USING (true)
   WITH CHECK (true);
 
+-- Eliminación reservada para automatismos (service_role)
 CREATE POLICY "ai_model_cache_delete_service"
   ON public.ai_model_cache
   FOR DELETE
@@ -76,7 +77,7 @@ CREATE POLICY "ai_model_cache_delete_service"
   USING (true);
 
 GRANT SELECT ON public.ai_model_cache TO authenticated, anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.ai_model_cache TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ai_model_cache TO authenticated, service_role;
 
 COMMENT ON TABLE public.ai_model_cache IS
   'Caché global de respuestas generadas por motores IA de CreoVision para reutilizar resultados por tema y proveedor.';

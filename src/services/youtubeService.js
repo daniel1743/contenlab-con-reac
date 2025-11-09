@@ -70,7 +70,7 @@ export const getVideoStatistics = async (videoIds) => {
 
   try {
     const ids = videoIds.join(',');
-    const url = `${YOUTUBE_BASE_URL}/videos?part=statistics&id=${ids}&key=${YOUTUBE_API_KEY}`;
+    const url = `${YOUTUBE_BASE_URL}/videos?part=statistics,contentDetails&id=${ids}&key=${YOUTUBE_API_KEY}`;
 
     // ⚡ OPTIMIZACIÓN: Cache reducido para tiempo real (1 minuto para estadísticas)
     const apiCache = (await import('@/utils/apiCache')).default;

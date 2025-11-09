@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING } from '@/config/creoPersonality';
+import { withCache, getCacheStats } from '@/services/aiCacheService';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
@@ -51,6 +52,7 @@ const AIConciergeBubbleV2 = () => {
   const [extensionCost, setExtensionCost] = useState(2);
   const [showResetButton, setShowResetButton] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [cacheStats, setCacheStats] = useState(null);
   const chatContainerRef = useRef(null);
   const messageCountRef = useRef(0);
 
@@ -179,6 +181,18 @@ const AIConciergeBubbleV2 = () => {
   useEffect(() => {
     setShowResetButton(messages.length > 1);
   }, [messages.length]);
+
+  // Cargar estadísticas del caché cuando se abre el chat
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      getCacheStats().then(stats => {
+        if (stats) {
+          setCacheStats(stats);
+          console.log('📊 Estadísticas de caché AI:', stats);
+        }
+      });
+    }
+  }, [isOpen, user?.id]);
 
   const personaPrompt = useMemo(() => {
     let contextInfo = '';
@@ -581,7 +595,16 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         content
       }));
 
-      const assistantReply = await callGeminiAPI(recentMessages);
+      // Crear un string único del historial de conversación para caché
+      const conversationText = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n');
+
+      // Usar caché automático
+      const assistantReply = await withCache(
+        () => callGeminiAPI(recentMessages),
+        conversationText,
+        personaPrompt,
+        'gemini'
+      );
 
       const finalMessages = [
         ...optimisticMessages,

@@ -89,6 +89,7 @@ import {
   generateThemeSEOSuggestions,
   analyzeTrendingTopic
 } from '@/services/geminiService';
+import { safeJsonParse } from '@/utils/jsonUtils';
 
 // 📊 IMPORT DE SERVICIOS YOUTUBE
 import {
@@ -448,7 +449,7 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
           });
 
           console.log('🎁 CreoVision AI GP-5 generó tu contenido:', aiResponse);
-          const aiCards = JSON.parse(aiResponse);
+          const aiCards = safeJsonParse(aiResponse);
 
           if (Array.isArray(aiCards) && aiCards.length > 0) {
             cards.push({
@@ -497,10 +498,10 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
         const titlesResponse = await generateSEOTitles(contentTopic);
         console.log('📝 Respuesta títulos:', titlesResponse);
         
-        try {
-          const titlesArray = JSON.parse(titlesResponse);
-          setRealTitles(Array.isArray(titlesArray) ? titlesArray : [titlesResponse]);
-        } catch (parseError) {
+        const titlesArray = safeJsonParse(titlesResponse);
+        if (Array.isArray(titlesArray)) {
+          setRealTitles(titlesArray);
+        } else {
           console.log('⚠️ Títulos no son JSON válido, usando como texto');
           setRealTitles([titlesResponse]);
         }
@@ -514,16 +515,16 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
         console.log('🔑 Generando keywords...');
         const keywordsResponse = await generateKeywords(contentTopic);
         console.log('🔑 Respuesta keywords:', keywordsResponse);
-        
-        try {
-          const keywordsArray = JSON.parse(keywordsResponse);
-          setRealKeywords(Array.isArray(keywordsArray) ? keywordsArray : []);
-        } catch (parseError) {
+
+        const keywordsArray = safeJsonParse(keywordsResponse);
+        if (Array.isArray(keywordsArray)) {
+          setRealKeywords(keywordsArray);
+        } else {
           console.log('⚠️ Keywords no son JSON válido, usando fallback');
-          setRealKeywords([{keyword: keywordsResponse, trend: 85}]);
+          setRealKeywords([{ keyword: keywordsResponse, trend: 85 }]);
         }
       } catch (error) {
-        console.error('❌ Error generando keywords:', error);
+        console.error('⚠️ Error generando keywords:', error);
         setRealKeywords([]);
       }
 
