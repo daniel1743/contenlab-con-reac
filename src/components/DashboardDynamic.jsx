@@ -442,6 +442,74 @@ const DashboardDynamic = ({ onSectionChange }) => {
     if (!key) return null;
     return videoAnalysis[key] || null;
   }, [selectedHighlightVideo, videoAnalysis]);
+
+  const videoInsightCharts = React.useMemo(() => {
+    if (!selectedHighlightVideo) {
+      return {
+        growthLine: null,
+        audienceDonut: null
+      };
+    }
+
+    const views = Number(selectedHighlightVideo.viewCount) || 250000;
+    const momentumState = currentHighlightAnalysis?.crecimiento?.estadoActual || 'estable';
+    const momentumMultiplier =
+      momentumState === 'en alza' ? 1.35 : momentumState === 'desacelerando' ? 0.9 : 1;
+
+    const historyPoints = Array.from({ length: 6 }).map((_, index) => {
+      const monthOffset = 5 - index;
+      const factor = 0.55 + index * 0.12 * momentumMultiplier;
+      return Math.round(views * factor * 0.45);
+    });
+
+    const growthLine = {
+      labels: ['-5M', '-4M', '-3M', '-2M', '-1M', 'Actual'],
+      datasets: [
+        {
+          label: 'Proyección de vistas (escala relativa)',
+          data: historyPoints,
+          borderColor: 'rgba(236, 72, 153, 0.9)',
+          backgroundColor: 'rgba(236, 72, 153, 0.18)',
+          borderWidth: 3,
+          fill: true,
+          pointRadius: 3,
+          tension: 0.35
+        }
+      ]
+    };
+
+    const audienceMix = (() => {
+      if (momentumState === 'en alza') {
+        return [52, 30, 18];
+      }
+      if (momentumState === 'desacelerando') {
+        return [28, 45, 27];
+      }
+      return [38, 37, 25];
+    })();
+
+    const audienceDonut = {
+      labels: ['Audiencia nueva', 'Fans recurrentes', 'Exploradores ocasionales'],
+      datasets: [
+        {
+          data: audienceMix,
+          backgroundColor: [
+            'rgba(168, 85, 247, 0.92)',
+            'rgba(59, 130, 246, 0.92)',
+            'rgba(45, 212, 191, 0.92)'
+          ],
+          borderColor: '#0f172a',
+          borderWidth: 2,
+          hoverOffset: 10
+        }
+      ]
+    };
+
+    return {
+      growthLine,
+      audienceDonut
+    };
+  }, [selectedHighlightVideo, currentHighlightAnalysis]);
   const [loadingSEOAnalysis, setLoadingSEOAnalysis] = useState(false);
   const [showSEOModal, setShowSEOModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -1652,7 +1720,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
     {
       id: `fallback-gemii-trend-${topic}`,
       title: `Gemii detecta focos de interes para "${topic}"`,
-      description: 'Insight sintetizado de NewsAPI + Gemini que destaca volumen de menciones y oportunidades inmediatas para contenido evergreen.',
+      description: 'Insight sintetizado de NewsAPI + CreoVision GP5 que destaca volumen de menciones y oportunidades inmediatas para contenido evergreen.',
       source: 'Gemii Insights',
       imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
       url: null,
@@ -1913,7 +1981,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 justify-items-center">
                     {nichemMetrics.highlightVideos.slice(0, 6).map((video, idx) => {
                       const published = formatEsDate(video.publishedAt);
                       const videoKey = getHighlightVideoKey(video) || idx;
@@ -1921,7 +1989,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                       return (
                         <div
                           key={videoKey}
-                          className="group flex flex-col overflow-hidden rounded-xl border border-purple-500/10 bg-slate-900/60 transition hover:border-purple-400/50 focus-within:border-purple-400/50"
+                          className="group flex w-full max-w-[420px] flex-col overflow-hidden rounded-xl border border-purple-500/10 bg-slate-900/60 transition hover:border-purple-400/50 focus-within:border-purple-400/50"
                         >
                           <div className="relative aspect-video overflow-hidden">
                             {videoUrl ? (
@@ -2030,7 +2098,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     nichemMetrics.topCreators.map((creator, idx) => (
                       <div
                         key={creator.id || idx}
-                        className="relative flex items-center justify-between p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer group"
+                        className="relative flex flex-wrap items-center justify-between gap-y-3 p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer group sm:flex-nowrap"
                         onClick={() => {
                           setSelectedCreator(creator);
                           setShowCreatorModal(true);
@@ -2039,38 +2107,38 @@ const DashboardDynamic = ({ onSectionChange }) => {
                         onMouseEnter={() => setHoveredCreator(creator)}
                         onMouseLeave={() => setHoveredCreator(null)}
                       >
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                        <div className="flex items-center gap-3 flex-1 min-w-[180px]">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
                             {idx + 1}
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             {creator.channelUrl ? (
                               <a
                                 href={creator.channelUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="font-semibold text-white hover:text-purple-300 transition-colors"
+                                className="font-semibold text-white hover:text-purple-300 transition-colors text-sm sm:text-base truncate"
                               >
                                 {creator.name}
                               </a>
                             ) : (
-                              <p className="font-semibold text-white">{creator.name}</p>
+                              <p className="font-semibold text-white text-sm sm:text-base truncate">{creator.name}</p>
                             )}
-                            <p className="text-xs text-gray-400">{creator.platform}</p>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-wide sm:text-xs">{creator.platform}</p>
                           </div>
                         </div>
-                        <div className="flex gap-6 text-sm">
-                          <div className="text-center">
-                            <p className="text-gray-400 text-xs">Seguidores</p>
-                            <p className="text-white font-semibold">{creator.followers}</p>
+                        <div className="flex gap-4 text-xs sm:text-sm w-full sm:w-auto sm:justify-end">
+                          <div className="text-left sm:text-center min-w-[90px]">
+                            <p className="text-gray-400 text-[10px] sm:text-xs uppercase tracking-wide">Seguidores</p>
+                            <p className="text-white font-semibold truncate">{creator.followers}</p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-gray-400 text-xs">Vistas Prom</p>
-                            <p className="text-white font-semibold">{creator.avgViews}</p>
+                          <div className="text-left sm:text-center min-w-[90px]">
+                            <p className="text-gray-400 text-[10px] sm:text-xs uppercase tracking-wide">Vistas Prom</p>
+                            <p className="text-white font-semibold truncate">{creator.avgViews}</p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-gray-400 text-xs">Engagement</p>
-                            <p className="text-green-400 font-semibold">{creator.engagement}</p>
+                          <div className="text-left sm:text-center min-w-[90px]">
+                            <p className="text-gray-400 text-[10px] sm:text-xs uppercase tracking-wide">Engagement</p>
+                            <p className="text-green-400 font-semibold truncate">{creator.engagement}</p>
                           </div>
                         </div>
 
@@ -2337,7 +2405,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                         >
                           <div className="flex items-center gap-2">
                             <ArrowPathIcon className="w-4 h-4 text-cyan-400 animate-spin" />
-                            <span className="text-[10px] text-white">Analizando con Gemini...</span>
+                            <span className="text-[10px] text-white">Analizando con CreoVision GP5...</span>
                           </div>
                         </motion.div>
                       )}
@@ -2790,6 +2858,266 @@ const DashboardDynamic = ({ onSectionChange }) => {
         }}
         context={coachContext}
       />
+      <Dialog open={isVideoAnalysisOpen} onOpenChange={handleVideoAnalysisModalChange}>
+        <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-hidden border border-purple-500/40 bg-slate-950/95 p-0 text-white !left-1/2 !top-1/2 !translate-x-[-50%] !translate-y-[-50%] sm:max-w-4xl flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-3 bg-gradient-to-r from-purple-900/60 to-slate-900/60">
+            <DialogTitle className="text-2xl font-semibold text-purple-100 flex flex-col gap-1">
+              {selectedHighlightVideo?.title || 'Análisis del video'}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-300">
+              Insights generados por CreoVision (motor IA GP5) sobre el desempeño y oportunidades del video.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            {selectedHighlightVideo && (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-400">
+                    Canal: <span className="text-gray-200">{selectedHighlightVideo.channelTitle || 'No disponible'}</span>
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                    <div className="rounded-lg border border-purple-500/20 bg-slate-900/70 p-3">
+                      <p className="text-[11px] uppercase text-gray-400 tracking-wide">Duración</p>
+                      <p className="text-lg font-semibold text-white">
+                        {selectedHighlightVideo.duration || 'N/D'}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-purple-500/20 bg-slate-900/70 p-3">
+                      <p className="text-[11px] uppercase text-gray-400 tracking-wide">Publicación</p>
+                      <p className="text-lg font-semibold text-white">
+                        {formatEsDate(selectedHighlightVideo.publishedAt) || 'N/D'}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-purple-500/20 bg-slate-900/70 p-3">
+                      <p className="text-[11px] uppercase text-gray-400 tracking-wide">Vistas</p>
+                      <p className="text-lg font-semibold text-white">
+                        {selectedHighlightVideo.viewCount
+                          ? `${formatCompactNumber(selectedHighlightVideo.viewCount)}`
+                          : 'N/D'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {selectedHighlightVideo.thumbnail && (
+                  <div className="relative w-full sm:w-48 overflow-hidden rounded-xl border border-purple-500/30 shadow-lg shadow-purple-500/20">
+                    <img
+                      src={selectedHighlightVideo.thumbnail}
+                      alt={selectedHighlightVideo.title}
+                      className="w-full object-cover"
+                    />
+                    {selectedHighlightVideo.duration && (
+                      <span className="absolute bottom-2 right-2 rounded bg-slate-900/85 px-2 py-1 text-[10px] font-medium text-white">
+                        {selectedHighlightVideo.duration}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isVideoAnalysisLoading ? (
+              <div className="flex items-center justify-center py-12 text-purple-200 gap-3 text-center">
+                <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                <span className="text-sm leading-relaxed">
+                  Motores analíticos de CreoVision GP5 procesando métricas para darte un insight profundo...
+                </span>
+              </div>
+            ) : videoAnalysisError && !currentHighlightAnalysis ? (
+              <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+                {videoAnalysisError}
+              </div>
+            ) : currentHighlightAnalysis ? (
+              <div className="space-y-6">
+                <div className="rounded-lg border border-purple-500/30 bg-slate-900/70 p-5">
+                  <p className="text-sm text-gray-300 leading-relaxed">{currentHighlightAnalysis.resumen}</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Momentum</p>
+                    <h4 className="mt-2 text-lg font-semibold text-white">
+                      {currentHighlightAnalysis.crecimiento.estadoActual || 'Sin datos'}
+                    </h4>
+                    <p className="mt-2 text-sm text-emerald-100/90">
+                      {currentHighlightAnalysis.crecimiento.explicacion}
+                    </p>
+                    <p className="mt-3 text-xs text-emerald-200/80 italic">
+                      {currentHighlightAnalysis.crecimiento.recomendacion}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-200">Creador</p>
+                    <h4 className="mt-2 text-lg font-semibold text-white">
+                      {currentHighlightAnalysis.creador.nivelReconocimiento || 'Desconocido'}
+                    </h4>
+                    <p className="mt-2 text-sm text-indigo-100/90">
+                      {currentHighlightAnalysis.creador.explicacion}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/10 p-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-200">Miniatura</p>
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {currentHighlightAnalysis.miniatura.insightsClave.map((insight, index) => (
+                        <div
+                          key={`insight-${index}`}
+                          className="rounded-md border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-sm text-fuchsia-100"
+                        >
+                          {insight}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {currentHighlightAnalysis.miniatura.accionesSugeridas.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-200">Acciones sugeridas</p>
+                      <ul className="mt-2 space-y-2 text-sm text-fuchsia-100">
+                        {currentHighlightAnalysis.miniatura.accionesSugeridas.map((accion, index) => (
+                          <li key={`accion-${index}`} className="flex items-start gap-2">
+                            <span className="mt-0.5 text-fuchsia-300">•</span>
+                            <span>{accion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {currentHighlightAnalysis.metricasDestacadas.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-purple-200 mb-3">
+                      Métricas destacadas
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {currentHighlightAnalysis.metricasDestacadas.map((metrica, index) => (
+                        <div
+                          key={`metrica-${index}`}
+                          className="rounded-lg border border-purple-500/20 bg-slate-900/70 p-4"
+                        >
+                          <p className="text-sm font-semibold text-white">{metrica.label}</p>
+                          <p className="mt-1 text-lg font-bold text-purple-200">{metrica.value}</p>
+                          <p className="mt-2 text-xs text-gray-400">{metrica.contexto}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentHighlightAnalysis.ideasAccion.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-purple-200 mb-3">
+                      Próximos pasos sugeridos
+                    </p>
+                    <ul className="space-y-2 text-sm text-gray-200">
+                      {currentHighlightAnalysis.ideasAccion.map((idea, index) => (
+                        <li key={`idea-${index}`} className="flex items-start gap-2">
+                          <SparklesSolidIcon className="h-4 w-4 text-purple-200 mt-0.5" />
+                          <span>{idea}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(videoInsightCharts.growthLine || videoInsightCharts.audienceDonut) && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {videoInsightCharts.growthLine && (
+                      <div className="rounded-xl border border-purple-500/30 bg-slate-900/70 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-purple-200">
+                            Curva de crecimiento
+                          </p>
+                          <span className="text-[10px] text-gray-400">Escala relativa</span>
+                        </div>
+                        <div className="h-40 md:h-48">
+                          <Line
+                            data={videoInsightCharts.growthLine}
+                            options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: { display: false }
+                              },
+                              scales: {
+                                x: {
+                                  ticks: { color: '#c4b5fd', font: { size: 10 } },
+                                  grid: { color: 'rgba(148, 163, 184, 0.15)' }
+                                },
+                                y: {
+                                  ticks: { color: '#e2e8f0', font: { size: 10 } },
+                                  grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                                  beginAtZero: true
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {videoInsightCharts.audienceDonut && (
+                      <div className="rounded-xl border border-purple-500/30 bg-slate-900/70 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-purple-200 mb-3">
+                          Mix estimado de audiencia
+                        </p>
+                        <div className="h-40 md:h-48">
+                          <Doughnut
+                            data={videoInsightCharts.audienceDonut}
+                            options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              plugins: {
+                                legend: {
+                                  position: 'bottom',
+                                  labels: {
+                                    color: '#e2e8f0',
+                                    font: { size: 11 },
+                                    padding: 12
+                                  }
+                                }
+                              },
+                              cutout: '60%'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-purple-500/20 bg-slate-900/70 p-6 text-sm text-gray-300">
+                Selecciona un video destacado y pulsa “Análisis” para generar el mini dashboard inteligente.
+              </div>
+            )}
+          </div>
+          {selectedHighlightVideo && (
+            <div className="flex items-center justify-between gap-3 border-t border-purple-500/20 bg-black/40 px-6 py-4">
+              <p className="text-xs text-gray-400">
+                Insights potenciados por CreoVision GP5. Usa esta lectura como brújula para tu siguiente producción.
+              </p>
+              {(() => {
+                const videoUrl =
+                  selectedHighlightVideo.url ||
+                  (selectedHighlightVideo.id ? `https://www.youtube.com/watch?v=${selectedHighlightVideo.id}` : null);
+                if (!videoUrl) return null;
+                return (
+                  <Button
+                    variant="outline"
+                    className="border-purple-500/40 text-purple-100 hover:bg-purple-500/20"
+                    asChild
+                  >
+                    <a href={videoUrl} target="_blank" rel="noreferrer">
+                      Ver en YouTube
+                    </a>
+                  </Button>
+                );
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

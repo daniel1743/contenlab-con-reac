@@ -265,13 +265,16 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
       // Por ahora solo actualizamos la sesión
       console.log(`💳 Extendiendo sesión por ${extensionCost} créditos`);
 
-      const newPaidUsed = (currentSession.paid_messages_used || 0) + 2;
+      // Calcular nuevos límites
+      const currentPaidUsed = currentSession.paid_messages_used || 0;
+      const currentPaidAvailable = currentSession.paid_messages_available || 0;
+      const newPaidAvailable = currentPaidAvailable + 2; // Agregar 2 mensajes más
       const newCreditsSpent = (currentSession.credits_spent || 0) + extensionCost;
 
       const { data: updatedSession, error } = await supabase
         .from('creo_chat_sessions')
         .update({
-          paid_messages_used: newPaidUsed,
+          paid_messages_available: newPaidAvailable,
           credits_spent: newCreditsSpent,
           updated_at: new Date().toISOString()
         })
@@ -280,6 +283,12 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         .single();
 
       if (error) throw error;
+
+      console.log('✅ Sesión extendida:', {
+        paid_messages_available: newPaidAvailable,
+        paid_messages_used: currentPaidUsed,
+        credits_spent: newCreditsSpent
+      });
 
       setCurrentSession(updatedSession);
       updateSessionStats(updatedSession);
@@ -346,13 +355,34 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
     const trimmed = input.trim();
     if (!trimmed || isThinking) return;
 
-    // ✅ VERIFICAR LÍMITE DE 8 MENSAJES GRATIS
-    const freeUsed = sessionStats?.freeMessagesUsed || 0;
-    const paidUsed = sessionStats?.paidMessagesUsed || 0;
-    const totalPaidAvailable = Math.floor(paidUsed / 2) * 2; // Mensajes pagos disponibles
+    if (!currentSession) {
+      setError('Sesión no inicializada');
+      return;
+    }
 
-    if (freeUsed >= 8 && paidUsed >= totalPaidAvailable) {
-      // Mostrar modal de extensión
+    // ✅ LÓGICA SIMPLE: Mensajes disponibles vs usados
+    const freeUsed = currentSession.free_messages_used || 0;
+    const paidUsed = currentSession.paid_messages_used || 0;
+    const paidAvailable = currentSession.paid_messages_available || 0;
+
+    const freeLimit = 8;
+    const totalAvailable = freeLimit + paidAvailable;
+    const totalUsed = freeUsed + paidUsed;
+
+    console.log('🔍 DEBUG Límites:', {
+      freeUsed,
+      freeLimit,
+      paidUsed,
+      paidAvailable,
+      totalUsed,
+      totalAvailable,
+      creditsSpent: currentSession.credits_spent || 0,
+      shouldBlock: totalUsed >= totalAvailable
+    });
+
+    // Bloquear si ya usó todos los mensajes disponibles
+    if (totalUsed >= totalAvailable) {
+      console.log('🚫 Todos los mensajes usados, mostrando modal');
       setShowExtensionModal(true);
       return;
     }
@@ -567,6 +597,74 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                 </Button>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de extensión */}
+      <AnimatePresence>
+        {showExtensionModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] px-4"
+            onClick={() => setShowExtensionModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border-2 border-purple-500/50 shadow-2xl"
+            >
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+
+                <h3 className="text-2xl font-bold text-white">
+                  ¡Oye, {displayName}! 👋
+                </h3>
+
+                <p className="text-gray-300 text-base leading-relaxed">
+                  Hoy el límite eran <span className="text-purple-400 font-semibold">8 mensajes gratis</span>.
+                  {' '}Podés volver <span className="text-green-400 font-semibold">mañana</span> para una nueva conversación,
+                  o extender ahora mismo por <span className="text-yellow-400 font-semibold">{extensionCost} créditos</span>
+                  {' '}y seguimos hablando con <span className="text-pink-400 font-semibold">2 mensajes más</span>. 🚀
+                </p>
+
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button
+                    onClick={handleExtendSession}
+                    disabled={isThinking}
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    {isThinking ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        ✨ Continuar por {extensionCost} créditos
+                      </>
+                    )}
+                  </Button>
+
+                  <button
+                    onClick={() => setShowExtensionModal(false)}
+                    className="w-full h-10 text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Vuelvo mañana
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-500 pt-2">
+                  💡 Cada extensión suma créditos: 2, 3, 4, 5... progresivamente
+                </p>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
