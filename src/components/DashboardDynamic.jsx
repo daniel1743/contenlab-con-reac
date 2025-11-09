@@ -387,6 +387,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [expertInsights, setExpertInsights] = useState([]);
   const [isInsightsLoading, setIsInsightsLoading] = useState(false);
   const [isRegeneratingInsights, setIsRegeneratingInsights] = useState(false);
+  const [isUnlockingNews, setIsUnlockingNews] = useState(false);
+  const [visibleNewsCount, setVisibleNewsCount] = useState(2);
 
   // 🆕 NUEVOS ESTADOS PARA APIs REALES
   const [youtubeData, setYoutubeData] = useState(null);
@@ -995,6 +997,63 @@ const DashboardDynamic = ({ onSectionChange }) => {
       setIsRegeneratingInsights(false);
     }
   }, [fetchExpertInsights, nichemMetrics, toast, user]);
+
+  const handleUnlockMoreNews = useCallback(async () => {
+    const CREDIT_COST = 150;
+
+    if (!user) {
+      toast({
+        title: 'Inicia sesión para desbloquear más información',
+        description: 'Los artículos premium requieren una cuenta activa.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (visibleNewsCount >= newsArticles.length) {
+      toast({
+        title: 'Ya estás viendo todo el contenido disponible',
+        description: 'No hay más artículos por desbloquear para este tema.',
+      });
+      return;
+    }
+
+    try {
+      setIsUnlockingNews(true);
+      const creditResult = await consumeCredits(
+        user.id,
+        CREDIT_COST,
+        'unlock_news_insights',
+        `Desbloquear noticias adicionales para ${nichemMetrics?.topic || 'tema actual'}`
+      );
+
+      if (!creditResult.success) {
+        toast({
+          title: creditResult.error === 'INSUFFICIENT_CREDITS'
+            ? 'Créditos insuficientes'
+            : 'No se pudieron consumir créditos',
+          description: creditResult.message || 'Recarga tus créditos para acceder a más insights.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setVisibleNewsCount(prev => Math.min(prev + 2, newsArticles.length));
+      toast({
+        title: '🔓 Tendencias premium desbloqueadas',
+        description: `Se consumieron ${CREDIT_COST} créditos. Créditos restantes: ${creditResult.remaining ?? 'N/D'}.`,
+      });
+    } catch (error) {
+      console.error('Error desbloqueando noticias adicionales:', error);
+      toast({
+        title: 'No se pudo desbloquear contenido adicional',
+        description: 'Intenta nuevamente más tarde.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUnlockingNews(false);
+    }
+  }, [nichemMetrics?.topic, newsArticles.length, toast, user, visibleNewsCount]);
 
   // Buscar tema cuando el usuario presiona Enter o click
   const handleSearch = async () => {
@@ -2260,28 +2319,30 @@ const DashboardDynamic = ({ onSectionChange }) => {
             </Card>
 
             {/* Consejos Premium IA */}
-            <Card className="glass-effect border-purple-500/30 relative overflow-visible">
-              <div className="absolute top-4 right-4 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2 border-purple-500/40 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20"
-                  disabled={isRegeneratingInsights || isInsightsLoading}
-                  onClick={handleRegenerateInsights}
-                >
-                  <SparklesSolidIcon className="w-4 h-4" />
-                  {isRegeneratingInsights ? 'Regenerando…' : 'Regenerar con Gemini'}
-                  <span className="ml-1 text-xs text-purple-200/70">50 créditos</span>
-                </Button>
-              </div>
+            <Card className="glass-effect border-purple-500/30">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <SparklesSolidIcon className="w-5 h-5 text-purple-300" />
-                  Playbooks expertos para "{nichemMetrics.topic}"
-                </CardTitle>
-                <CardDescription>
-                  Recomendaciones generadas por nuestro estratega CreoVision AI para accionar de inmediato
-                </CardDescription>
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <SparklesSolidIcon className="w-5 h-5 text-purple-300" />
+                      Playbooks expertos para "{nichemMetrics.topic}"
+                    </CardTitle>
+                    <CardDescription>
+                      Recomendaciones generadas por nuestro estratega CreoVision AI para accionar de inmediato
+                    </CardDescription>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex w-full justify-center md:w-auto items-center gap-2 border-purple-500/40 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20 md:self-center"
+                    disabled={isRegeneratingInsights || isInsightsLoading}
+                    onClick={handleRegenerateInsights}
+                  >
+                    <SparklesSolidIcon className="w-4 h-4" />
+                    {isRegeneratingInsights ? 'Regenerando…' : 'Regenerar con CreoVision'}
+                    <span className="ml-1 text-xs text-purple-200/70">50 créditos</span>
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {isInsightsLoading ? (
@@ -2410,7 +2471,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
                 {/* Grid de tarjetas de noticias (mínimo 4) */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {newsArticles.slice(0, 4).map((article, index) => (
+                  {newsArticles.slice(0, visibleNewsCount).map((article, index) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -2541,6 +2602,18 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     </motion.div>
                   ))}
                 </div>
+                {newsArticles.length > visibleNewsCount && (
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      variant="outline"
+                      className="border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20"
+                      disabled={isInsightsLoading || isUnlockingNews}
+                      onClick={handleUnlockMoreNews}
+                    >
+                      {isUnlockingNews ? 'Desbloqueando…' : 'Desbloquear dos más · 150 créditos'}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2602,12 +2675,15 @@ const DashboardDynamic = ({ onSectionChange }) => {
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 sm:p-6 border-b border-purple-400/20 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <SparklesSolidIcon className="w-6 h-6 text-yellow-400 animate-pulse" />
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200">
-                      Análisis CreoVision AI
-                    </h3>
+              <div className="flex items-center gap-3">
+                <div className="relative h-11 w-11 sm:h-12 sm:w-12 rounded-2xl border border-purple-400/40 bg-purple-900/40 flex items-center justify-center shadow-inner shadow-purple-500/30 overflow-hidden">
+                  <img src="/robot.png" alt="CreoVision AI" className="h-7 w-7 object-contain drop-shadow-lg" />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0b0618] bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/50" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-blue-200">
+                    Análisis CreoVision AI
+                  </h3>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {selectedCreator.name} • {selectedCreator.platform}
                     </p>
@@ -2728,7 +2804,10 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     title="Abrir SEO Coach"
                   >
                     <div className="flex items-center justify-center gap-2 sm:gap-0">
-                      <img src="/mascota.png" alt="SEO Coach CreoVision" className="h-7 w-7 object-contain drop-shadow" />
+                      <div className="relative">
+                        <img src="/robot.png" alt="SEO Coach CreoVision" className="h-7 w-7 object-contain drop-shadow" />
+                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#1a0b2d] bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/60" />
+                      </div>
                       <span className="text-sm font-semibold sm:hidden">SEO Coach</span>
                     </div>
                   </Button>
@@ -2763,7 +2842,10 @@ const DashboardDynamic = ({ onSectionChange }) => {
               {/* Header */}
               <div className="flex items-center justify-between p-4 sm:p-6 border-b border-cyan-400/20 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <SparklesSolidIcon className="w-6 h-6 text-yellow-400 animate-pulse" />
+                  <div className="relative h-11 w-11 sm:h-12 sm:w-12 rounded-2xl border border-cyan-300/40 bg-cyan-900/40 flex items-center justify-center shadow-inner shadow-cyan-500/30 overflow-hidden">
+                    <img src="/robot.png" alt="CreoVision AI" className="h-7 w-7 object-contain drop-shadow-lg" />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#031423] bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/50" />
+                  </div>
                   <div>
                     <h3 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-blue-200">
                       Análisis SEO con CreoVision IA
@@ -2964,7 +3046,10 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     title="Abrir SEO Coach"
                   >
                     <div className="flex items-center justify-center gap-2 sm:gap-0">
-                      <img src="/mascota.png" alt="SEO Coach CreoVision" className="h-7 w-7 object-contain drop-shadow" />
+                      <div className="relative">
+                        <img src="/robot.png" alt="SEO Coach CreoVision" className="h-7 w-7 object-contain drop-shadow" />
+                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#041427] bg-gradient-to-br from-purple-500 to-fuchsia-500 shadow-lg shadow-purple-500/60" />
+                      </div>
                       <span className="text-sm font-semibold sm:hidden">SEO Coach</span>
                     </div>
                   </Button>
