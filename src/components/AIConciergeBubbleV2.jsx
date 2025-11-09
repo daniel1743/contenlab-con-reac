@@ -46,6 +46,8 @@ const AIConciergeBubbleV2 = () => {
   const [error, setError] = useState('');
   const [currentSession, setCurrentSession] = useState(null);
   const [sessionStats, setSessionStats] = useState(null);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [extensionCost, setExtensionCost] = useState(2);
   const chatContainerRef = useRef(null);
   const messageCountRef = useRef(0);
 
@@ -119,11 +121,17 @@ const AIConciergeBubbleV2 = () => {
   const updateSessionStats = (session) => {
     const stats = {
       freeMessagesUsed: session.free_messages_used || 0,
+      paidMessagesUsed: session.paid_messages_used || 0,
       freeMessagesRemaining: Math.max(0, 8 - (session.free_messages_used || 0)),
       messageCount: session.message_count || 0,
-      stage: session.conversation_stage || 'intro'
+      stage: session.conversation_stage || 'intro',
+      creditsSpent: session.credits_spent || 0
     };
     setSessionStats(stats);
+
+    // Calcular costo progresivo: 2, 3, 4, 5... créditos
+    const extensionsCount = Math.floor((session.paid_messages_used || 0) / 2);
+    setExtensionCost(2 + extensionsCount);
   };
 
   useEffect(() => {
@@ -156,25 +164,45 @@ const AIConciergeBubbleV2 = () => {
       if (experience) contextInfo += `\n- Experiencia: ${experience}`;
     }
 
+    const messagesUsed = sessionStats?.freeMessagesUsed || 0;
+    const messagesLeft = 8 - messagesUsed;
+
     return `${CREO_SYSTEM_PROMPT}
 
 📋 INFORMACIÓN DEL USUARIO:
 - Nombre: ${displayName}${contextInfo}
+- Mensajes usados: ${messagesUsed}/8 gratis
+- Mensajes restantes: ${messagesLeft}
 
-🎯 TU MISIÓN:
-1. Ser ULTRA amigable, cercano y motivador
-2. Explorar qué quiere crear el usuario (máximo 4-5 mensajes)
-3. LLEVAR AL CTA: "¿Querés que te ayude a crear el guion completo? Usá 'Genera tu Guion' 🎬"
-4. Ser persuasivo para upgrade si es usuario FREE
+🎯 TU MISIÓN COMO COACH CREO:
+1. Tienes SOLO 8 mensajes para lograr tu objetivo
+2. OBJETIVO: Llevar al usuario a usar las HERRAMIENTAS de CreoVision
+3. Ser ultra amigable, cercano y motivador
+4. Explorar rápido (máximo 2-3 mensajes) qué quiere crear
+5. DESPUÉS DEL MENSAJE 3-4: SIEMPRE llevar al CTA de herramientas
 
-📝 REGLAS:
-- Máximo 40 palabras por respuesta
+🛠️ HERRAMIENTAS DISPONIBLES EN CREOVISION:
+- "Genera tu Guion" 🎬 (crear guiones virales)
+- "Analiza tu Canal" 📊 (métricas y tendencias)
+- "Biblioteca de Contenido" 📚 (guardar y organizar)
+- "Calendario Editorial" 📅 (planificar publicaciones)
+
+📝 REGLAS ESTRICTAS:
+- Máximo 35 palabras por respuesta
 - NO usar markdown (**negritas**, *cursivas*, etc)
 - Usar 1-2 emojis relevantes
-- Ser directo y entusiasta
-- Después de entender el tema, llevar SIEMPRE al CTA del generador de guiones
+- Ser directo, entusiasta y persuasivo
+- Si el usuario es FREE y está cerca del límite (mensaje 6-8), sugerir: "Podés extender con 2 créditos por 2 mensajes más 🚀"
+
+🎯 ESTRATEGIA POR MENSAJE:
+- Mensaje 1-2: Saludo + explorar tema
+- Mensaje 3-4: Entender detalles + LLEVAR AL CTA
+- Mensaje 5-6: Insistir en herramienta específica
+- Mensaje 7-8: Urgencia + beneficio claro + CTA final
+
+IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A USAR LAS HERRAMIENTAS. Sé breve, directo y persuasivo.
 `;
-  }, [displayName, profileData]);
+  }, [displayName, profileData, sessionStats]);
 
   const callGeminiAPI = async (conversationHistory) => {
     try {
@@ -226,6 +254,52 @@ const AIConciergeBubbleV2 = () => {
     }
   };
 
+  const handleExtendSession = async () => {
+    if (!currentSession || !user?.id) return;
+
+    try {
+      setIsThinking(true);
+      setShowExtensionModal(false);
+
+      // TODO: Aquí deberías verificar/descontar créditos del usuario
+      // Por ahora solo actualizamos la sesión
+      console.log(`💳 Extendiendo sesión por ${extensionCost} créditos`);
+
+      const newPaidUsed = (currentSession.paid_messages_used || 0) + 2;
+      const newCreditsSpent = (currentSession.credits_spent || 0) + extensionCost;
+
+      const { data: updatedSession, error } = await supabase
+        .from('creo_chat_sessions')
+        .update({
+          paid_messages_used: newPaidUsed,
+          credits_spent: newCreditsSpent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentSession.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCurrentSession(updatedSession);
+      updateSessionStats(updatedSession);
+
+      // Agregar mensaje del sistema
+      const systemMessage = {
+        role: 'assistant',
+        content: `¡Genial, ${displayName}! 🎉 Extendiste la sesión por 2 mensajes más. Sigamos creando contenido increíble.`,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, systemMessage]);
+
+      setIsThinking(false);
+    } catch (error) {
+      console.error('❌ Error extendiendo sesión:', error);
+      setError('No se pudo extender la sesión. Intentá de nuevo.');
+      setIsThinking(false);
+    }
+  };
+
   const saveMessageToSupabase = async (role, content, isFree = true) => {
     if (!currentSession) return;
 
@@ -271,6 +345,17 @@ const AIConciergeBubbleV2 = () => {
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isThinking) return;
+
+    // ✅ VERIFICAR LÍMITE DE 8 MENSAJES GRATIS
+    const freeUsed = sessionStats?.freeMessagesUsed || 0;
+    const paidUsed = sessionStats?.paidMessagesUsed || 0;
+    const totalPaidAvailable = Math.floor(paidUsed / 2) * 2; // Mensajes pagos disponibles
+
+    if (freeUsed >= 8 && paidUsed >= totalPaidAvailable) {
+      // Mostrar modal de extensión
+      setShowExtensionModal(true);
+      return;
+    }
 
     const optimisticMessages = [
       ...messages,

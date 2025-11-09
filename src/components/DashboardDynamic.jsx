@@ -29,6 +29,7 @@ import {
   MinusIcon,
   LightBulbIcon,
   ChartPieIcon,
+  PlayCircleIcon,
   FireIcon,
   RocketLaunchIcon,
   MapIcon,
@@ -50,6 +51,7 @@ import {
   InformationCircleIcon
 } from '@heroicons/react/24/solid';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -79,7 +81,7 @@ import {
 } from '@/services/twitterApiService';
 import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiService';
 import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
-import PuzzleC from '@/components/charts/PuzzleC';
+import { analyzeYouTubeHighlightVideo } from '@/services/videoAnalysisService';
 import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer';
 import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import { exportCreatorReport, exportSeoReport } from '@/utils/reportExporter';
@@ -176,6 +178,45 @@ function parseISODuration(duration) {
   const seconds = Number(matches[4] || 0);
   return days * 86400 + hours * 3600 + minutes * 60 + seconds;
 }
+
+function formatVideoDuration(duration) {
+  if (!duration) return null;
+  const totalSeconds = typeof duration === 'number'
+    ? duration
+    : parseISODuration(duration);
+
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+    return null;
+  }
+
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatEsDate(dateString) {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toLocaleDateString('es', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+const getHighlightVideoKey = (video) => {
+  if (!video) return null;
+  return video.id || video.videoId || video.url || video.title || null;
+};
 
 const compactFormatter = new Intl.NumberFormat('es', {
   notation: 'compact',
@@ -359,6 +400,11 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [newsArticles, setNewsArticles] = useState([]);
   const [seoAnalysis, setSeoAnalysis] = useState({});
   const [hoveredArticle, setHoveredArticle] = useState(null);
+  const [selectedHighlightVideo, setSelectedHighlightVideo] = useState(null);
+  const [isVideoAnalysisOpen, setIsVideoAnalysisOpen] = useState(false);
+  const [isVideoAnalysisLoading, setIsVideoAnalysisLoading] = useState(false);
+  const [videoAnalysis, setVideoAnalysis] = useState({});
+  const [videoAnalysisError, setVideoAnalysisError] = useState(null);
 
   const displayName = React.useMemo(() => {
     const fullName = user?.user_metadata?.full_name?.trim();
@@ -391,6 +437,11 @@ const DashboardDynamic = ({ onSectionChange }) => {
       return current.percentage > best.percentage ? current : best;
     }, null);
   }, [nichemMetrics]);
+  const currentHighlightAnalysis = React.useMemo(() => {
+    const key = getHighlightVideoKey(selectedHighlightVideo);
+    if (!key) return null;
+    return videoAnalysis[key] || null;
+  }, [selectedHighlightVideo, videoAnalysis]);
   const [loadingSEOAnalysis, setLoadingSEOAnalysis] = useState(false);
   const [showSEOModal, setShowSEOModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -428,6 +479,57 @@ const DashboardDynamic = ({ onSectionChange }) => {
       setLoadingAnalysis(false);
     }
   }, [creatorAnalysis]);
+
+  const handleHighlightVideoAnalysis = async (video) => {
+    if (!video) return;
+
+    const videoKey = getHighlightVideoKey(video);
+    if (!videoKey) {
+      toast({
+        title: 'No se puede analizar este video',
+        description: 'Faltan datos clave para generar el análisis.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setSelectedHighlightVideo(video);
+    setIsVideoAnalysisOpen(true);
+    setVideoAnalysisError(null);
+
+    if (videoAnalysis[videoKey]) {
+      return;
+    }
+
+    setIsVideoAnalysisLoading(true);
+
+    try {
+      const analysis = await analyzeYouTubeHighlightVideo(video, nichemMetrics?.topic);
+      setVideoAnalysis(prev => ({
+        ...prev,
+        [videoKey]: analysis
+      }));
+    } catch (error) {
+      console.error('Error generando análisis del video:', error);
+      const message = error.message || 'No se pudo generar el análisis del video.';
+      setVideoAnalysisError(message);
+      toast({
+        title: 'Análisis no disponible',
+        description: message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsVideoAnalysisLoading(false);
+    }
+  };
+
+  const handleVideoAnalysisModalChange = (open) => {
+    setIsVideoAnalysisOpen(open);
+    if (!open) {
+      setSelectedHighlightVideo(null);
+      setVideoAnalysisError(null);
+    }
+  };
 
   // 🆕 FUNCIÓN PARA GUARDAR CONSEJO EN LOCALSTORAGE
   const saveAdviceToVault = useCallback((advice) => {
@@ -1003,6 +1105,59 @@ const DashboardDynamic = ({ onSectionChange }) => {
     const trendScore = calculateTrendScore(videos, averageViews, averageEngagement, newsArticles.length);
     const weeklyGrowth = calculateWeeklyGrowth(videos);
 
+  const highlightVideos = (() => {
+    if (!videos.length) return [];
+    const selected = [];
+    const seenIds = new Set();
+
+    for (const video of videos) {
+      const snippet = video.snippet || {};
+      const rawId = video.videoId || video.id?.videoId || video.id || snippet.resourceId?.videoId;
+      const videoId = typeof rawId === 'string' ? rawId : null;
+
+      if (!videoId || seenIds.has(videoId)) {
+        continue;
+      }
+
+      const title = snippet.title || video.title;
+      const thumbnail =
+        video.thumbnail ||
+        snippet.thumbnails?.maxres?.url ||
+        snippet.thumbnails?.high?.url ||
+        snippet.thumbnails?.medium?.url ||
+        snippet.thumbnails?.default?.url ||
+        null;
+
+      const channelTitle = video.channelTitle || snippet.channelTitle || video.channel?.title || '';
+      const channelId = video.channelId || snippet.channelId || video.channel?.id || '';
+      const publishedAt = video.publishedAt || snippet.publishedAt || video.contentDetails?.publishedAt || null;
+      const durationRaw = video.duration || video.durationSeconds || video.contentDetails?.duration || null;
+      const duration = formatVideoDuration(durationRaw);
+      const viewCountRaw =
+        Number(video.statistics?.viewCount ?? snippet.statistics?.viewCount ?? video.viewCount ?? 0);
+      const url = video.url || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : null);
+
+      if (!url || !title) continue;
+
+      selected.push({
+        id: videoId,
+        title,
+        thumbnail,
+        channelTitle,
+        channelId,
+        publishedAt,
+        duration,
+        viewCount: Number.isFinite(viewCountRaw) && viewCountRaw > 0 ? viewCountRaw : null,
+        url
+      });
+
+      seenIds.add(videoId);
+      if (selected.length >= 6) break;
+    }
+
+    return selected;
+  })();
+
     return {
       topic,
       creatorsInNiche: channels.length || new Set(videos.map(video => video.channelId)).size,
@@ -1016,7 +1171,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
       topCreators: extractTopCreators(videos, channels),
       weeklyData: generateWeeklyData(videos),
       platformDistribution: generatePlatformData(videos),
-      contentTypes: generateContentTypes(videos),
+    contentTypes: generateContentTypes(videos),
+    highlightVideos,
       fetchedAt: new Date().toISOString()
     };
   };
@@ -1265,6 +1421,74 @@ const DashboardDynamic = ({ onSectionChange }) => {
         { type: 'Storytelling', percentage: 30 },
         { type: 'Entrevistas', percentage: 20 },
         { type: 'Actualidad', percentage: 15 }
+      ],
+      highlightVideos: [
+        {
+          id: 'mock-video-1',
+          title: 'El misterio de la Dalia Negra explicado a fondo',
+          thumbnail: 'https://i.ytimg.com/vi/1LeMockDalia1/hqdefault.jpg',
+          channelTitle: 'Crónica Urbana',
+          channelId: 'mock-channel-1',
+          publishedAt: '2024-06-12T18:30:00Z',
+          duration: '28:45',
+          viewCount: 1240000,
+          url: 'https://www.youtube.com/watch?v=1LeMockDalia1'
+        },
+        {
+          id: 'mock-video-2',
+          title: 'Caso Dalia Negra: evidencias ocultas y teorías reales',
+          thumbnail: 'https://i.ytimg.com/vi/1LeMockDalia2/hqdefault.jpg',
+          channelTitle: 'Historias Inquietantes',
+          channelId: 'mock-channel-2',
+          publishedAt: '2024-05-22T15:10:00Z',
+          duration: '36:12',
+          viewCount: 987000,
+          url: 'https://www.youtube.com/watch?v=1LeMockDalia2'
+        },
+        {
+          id: 'mock-video-3',
+          title: 'Quién mató a la Dalia Negra: investigación definitiva',
+          thumbnail: 'https://i.ytimg.com/vi/1LeMockDalia3/hqdefault.jpg',
+          channelTitle: 'Archivo Forense',
+          channelId: 'mock-channel-3',
+          publishedAt: '2024-07-03T20:05:00Z',
+          duration: '24:08',
+          viewCount: 756000,
+          url: 'https://www.youtube.com/watch?v=1LeMockDalia3'
+        },
+        {
+          id: 'mock-video-4',
+          title: 'La Dalia Negra: reconstrucción minuto a minuto',
+          thumbnail: 'https://i.ytimg.com/vi/1LeMockDalia4/hqdefault.jpg',
+          channelTitle: 'Relatos Criminales',
+          channelId: 'mock-channel-4',
+          publishedAt: '2024-04-18T11:50:00Z',
+          duration: '31:27',
+          viewCount: 689000,
+          url: 'https://www.youtube.com/watch?v=1LeMockDalia4'
+        },
+        {
+          id: 'mock-video-5',
+          title: 'Dalia Negra: la conexión de Hollywood que pocos conocen',
+          thumbnail: 'https://i.ytimg.com/vi/1LeMockDalia5/hqdefault.jpg',
+          channelTitle: 'Expedientes Secretos TV',
+          channelId: 'mock-channel-5',
+          publishedAt: '2024-03-09T17:40:00Z',
+          duration: '22:18',
+          viewCount: 543000,
+          url: 'https://www.youtube.com/watch?v=1LeMockDalia5'
+        },
+        {
+          id: 'mock-video-6',
+          title: 'Dalia Negra: nuevas pistas y documentos revelados',
+          thumbnail: 'https://i.ytimg.com/vi/1LeMockDalia6/hqdefault.jpg',
+          channelTitle: 'Crimen Real Podcast',
+          channelId: 'mock-channel-6',
+          publishedAt: '2024-02-27T09:25:00Z',
+          duration: '18:54',
+          viewCount: 412000,
+          url: 'https://www.youtube.com/watch?v=1LeMockDalia6'
+        }
       ],
       fetchedAt: new Date().toISOString()
     };
@@ -1677,34 +1901,114 @@ const DashboardDynamic = ({ onSectionChange }) => {
               </Card>
             </div>
 
-            {(nichemMetrics?.contentTypes || []).length > 0 && (
+            {(nichemMetrics?.highlightVideos || []).length > 0 && (
               <Card className="glass-effect border-purple-500/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <ChartPieIcon className="w-5 h-5 text-fuchsia-300 stroke-[2]" />
-                    Tipos de Contenido Destacados
+                    <PlayCircleIcon className="w-5 h-5 text-fuchsia-300 stroke-[2]" />
+                    Videos Destacados de YouTube
                   </CardTitle>
                   <CardDescription>
-                    Distribución de tipos de contenido en el nicho (análisis visual circular)
+                    6 piezas clave sobre "{nichemMetrics.topic}" listas para inspirar tu próximo contenido
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="max-w-xl mx-auto">
-                    <PuzzleC
-                      mode="distribution"
-                      items={(nichemMetrics?.contentTypes || []).map(ct => ({
-                        label: ct.type,
-                        value: ct.percentage
-                      }))}
-                      centerTitle="Tipos"
-                      size={420}
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {nichemMetrics.highlightVideos.slice(0, 6).map((video, idx) => {
+                      const published = formatEsDate(video.publishedAt);
+                      const videoKey = getHighlightVideoKey(video) || idx;
+                      const videoUrl = video.url || (video.id ? `https://www.youtube.com/watch?v=${video.id}` : null);
+                      return (
+                        <div
+                          key={videoKey}
+                          className="group flex flex-col overflow-hidden rounded-xl border border-purple-500/10 bg-slate-900/60 transition hover:border-purple-400/50 focus-within:border-purple-400/50"
+                        >
+                          <div className="relative aspect-video overflow-hidden">
+                            {videoUrl ? (
+                              <a
+                                href={videoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block h-full w-full"
+                              >
+                                {video.thumbnail ? (
+                                  <img
+                                    src={video.thumbnail}
+                                    alt={video.title}
+                                    loading="lazy"
+                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-sm text-white/80">
+                                    Vista previa no disponible
+                                  </div>
+                                )}
+                              </a>
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-sm text-white/80">
+                                Vista previa no disponible
+                              </div>
+                            )}
+                            <div className="absolute top-2 left-2 rounded-full bg-slate-900/80 px-3 py-1 text-xs font-semibold text-white">
+                              {`0${idx + 1}`.slice(-2)}
+                            </div>
+                            {video.duration && (
+                              <div className="absolute bottom-2 right-2 rounded bg-slate-900/85 px-2 py-1 text-[10px] font-medium text-white tracking-wide">
+                                {video.duration}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-1 flex-col p-4">
+                            <p className="text-[11px] uppercase tracking-wide text-purple-300/90">
+                              Inspiración directa
+                            </p>
+                            <h3 className="mt-2 text-sm font-semibold text-white line-clamp-2 group-hover:text-purple-200">
+                              {video.title}
+                            </h3>
+                            <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                              <span className="truncate pr-2">{video.channelTitle || 'Canal sin nombre'}</span>
+                              <span className="shrink-0">
+                                {video.viewCount ? `${formatCompactNumber(video.viewCount)} vistas` : 'Vistas N/D'}
+                              </span>
+                            </div>
+                            {published && (
+                              <p className="mt-2 text-[11px] text-gray-500">
+                                Publicado el {published}
+                              </p>
+                            )}
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <Button
+                                variant="outline"
+                                className="border-purple-500/40 bg-transparent text-xs text-purple-200 hover:bg-purple-500/20 sm:text-sm"
+                                asChild
+                              >
+                                <a
+                                  href={videoUrl || '#'}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-disabled={!videoUrl}
+                                  className={!videoUrl ? 'pointer-events-none opacity-60' : ''}
+                                >
+                                  Ver video
+                                </a>
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => handleHighlightVideoAnalysis(video)}
+                                className="flex items-center gap-2 border border-purple-500/50 bg-purple-600/30 text-xs text-purple-100 transition hover:bg-purple-600/50 sm:text-sm"
+                              >
+                                <SparklesSolidIcon className="h-4 w-4 text-purple-200" />
+                                Análisis
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="mt-6 text-center">
-                    <p className="text-xs text-gray-400">
-                      💡 Cada pieza representa un tipo de contenido y su peso relativo en el nicho
-                    </p>
-                  </div>
+                  <p className="mt-6 text-center text-xs text-gray-400">
+                    💡 Identifica patrones narrativos, miniaturas y ganchos que puedas adaptar a tu estrategia.
+                  </p>
                 </CardContent>
               </Card>
             )}
