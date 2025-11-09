@@ -13,6 +13,11 @@
 import { supabase } from '@/lib/supabaseClient';
 import { CREO_SYSTEM_PROMPT, getStagePrompt } from '@/config/creoPersonality';
 import { buildCreoPrompt } from '@/utils/creoPromptBuilder';
+import {
+  checkUsageLimit,
+  trackUsage,
+  checkUserBlock
+} from '@/services/abuseDetectionService';
 
 // ===== CONSTANTES DE CONFIGURACIÓN =====
 const CONFIG = {
@@ -103,7 +108,32 @@ class CreoChatService {
         await this.initSession(userId);
       }
 
-      // 2. Verificar límite de mensajes
+      // 2. ✅ ANTI-ABUSO: Verificar si usuario está bloqueado
+      const blockCheck = await checkUserBlock(userId, 'creo_chat');
+      if (blockCheck.isBlocked) {
+        return {
+          content: `Lo siento, tu cuenta está temporalmente bloqueada. ${blockCheck.reason}`,
+          isBlocked: true,
+          blockedUntil: blockCheck.blockedUntil,
+          error: true
+        };
+      }
+
+      // 3. ✅ ANTI-ABUSO: Verificar límites de uso según plan
+      const userPlan = await this._getUserPlan(userId);
+      const limitCheck = await checkUsageLimit(userId, userPlan, 'creo_chat');
+
+      if (!limitCheck.allowed) {
+        return {
+          content: `Has alcanzado tu límite de uso. ${limitCheck.reason}`,
+          limitReached: true,
+          current: limitCheck.current,
+          limit: limitCheck.limit,
+          error: true
+        };
+      }
+
+      // 4. Verificar límite de mensajes (lógica existente de 8 mensajes)
       const canContinue = await this._checkMessageLimit(userId);
 
       if (!canContinue.allowed) {
@@ -138,10 +168,30 @@ class CreoChatService {
       // 7. Generar respuesta con DeepSeek
       const assistantResponse = await this._generateAIResponse(prompt, stage);
 
-      // 8. Analizar sentimiento de la interacción
+      // 8. ✅ ANTI-ABUSO: Registrar uso y calcular costos automáticamente
+      await trackUsage({
+        userId: userId,
+        featureSlug: 'creo_chat',
+        actionType: 'chat_message',
+        aiProvider: 'deepseek',
+        modelUsed: 'deepseek-chat',
+        tokensInput: assistantResponse.tokensInput || 0,
+        tokensOutput: assistantResponse.tokensOutput || 0,
+        status: 'success',
+        ipAddress: options.ipAddress || null,
+        userAgent: options.userAgent || null,
+        metadata: {
+          sessionId: this.currentSession.id,
+          conversationStage: stage,
+          messageCount: this.currentSession.message_count + 2,
+          isFree: canContinue.isFree
+        }
+      });
+
+      // 9. Analizar sentimiento de la interacción
       await this._analyzeSentiment(userMessage, assistantResponse);
 
-      // 9. Guardar respuesta del asistente
+      // 10. Guardar respuesta del asistente
       await this._saveMessage({
         session_id: this.currentSession.id,
         role: 'assistant',
@@ -176,6 +226,27 @@ class CreoChatService {
 
     } catch (error) {
       console.error('❌ Error enviando mensaje:', error);
+
+      // ✅ ANTI-ABUSO: Registrar error también para detectar patrones
+      try {
+        await trackUsage({
+          userId: userId,
+          featureSlug: 'creo_chat',
+          actionType: 'chat_message',
+          aiProvider: 'deepseek',
+          modelUsed: 'deepseek-chat',
+          tokensInput: 0,
+          tokensOutput: 0,
+          status: 'error',
+          metadata: {
+            error: error.message,
+            sessionId: this.currentSession?.id
+          }
+        });
+      } catch (trackError) {
+        console.error('❌ Error registrando fallo:', trackError);
+      }
+
       throw new Error('No se pudo procesar el mensaje');
     }
   }
@@ -375,6 +446,30 @@ class CreoChatService {
       this.userContext = newContext;
     } else {
       this.userContext = data;
+    }
+  }
+
+  /**
+   * Obtener plan del usuario
+   * @private
+   */
+  async _getUserPlan(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('plan')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.warn('⚠️ No se pudo obtener plan del usuario, usando FREE por defecto');
+        return 'FREE';
+      }
+
+      return data?.plan || 'FREE';
+    } catch (error) {
+      console.warn('⚠️ Error obteniendo plan del usuario:', error);
+      return 'FREE';
     }
   }
 

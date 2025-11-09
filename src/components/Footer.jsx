@@ -63,7 +63,7 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 lg:col-span-1">
             <div className="flex items-center space-x-3 mb-4">
-              <img src="/logo de marca.png" alt="CreoVision Logo" className="w-10 h-10 object-contain" />
+              <img src="/robot.png" alt="CreoVision Logo" className="w-10 h-10 object-contain" />
               <div className="relative">
                 <span className="text-xl font-bold text-gradient">CreoVision</span>
                 {/* BETA badge comentado temporalmente */}

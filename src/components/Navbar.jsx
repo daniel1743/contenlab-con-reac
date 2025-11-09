@@ -215,7 +215,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             onClick={() => onSectionChange('landing')}
             whileHover={{ scale: 1.05 }}
           >
-            <img src="/mascota.png" alt="CreoVision" className="w-10 h-10 rounded-full object-cover" />
+            <img src="/robot.png" alt="CreoVision" className="w-10 h-10 rounded-full object-cover" />
             <div className="relative">
               <span className="text-xl font-bold text-gradient">CreoVision</span>
               {/* BETA badge comentado temporalmente */}

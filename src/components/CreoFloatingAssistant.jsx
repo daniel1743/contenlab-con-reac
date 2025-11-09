@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import {
   ChatBubbleLeftRightIcon,
   XMarkIcon,
@@ -23,10 +23,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesSolid } from '@heroicons/react/24/solid';
 import creoChatService, { CREO_CONFIG } from '@/services/CreoChatService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 const CreoFloatingAssistant = ({ userContext = {} }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   // Estados del componente
@@ -277,7 +277,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
    * Redirigir al generador
    */
   const handleRedirect = (url) => {
-    router.push(url);
+    navigate(url);
     setIsOpen(false);
   };
 
