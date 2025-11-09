@@ -79,12 +79,12 @@ export async function checkUserBlock(userId, featureSlug = null) {
       .or(`blocked_until.is.null,blocked_until.gt.${new Date().toISOString()}`)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
 
     if (!data) {
-      return { blocked: false };
+      return { isBlocked: false };
     }
 
     // Verificar si el feature específico está bloqueado
@@ -92,17 +92,17 @@ export async function checkUserBlock(userId, featureSlug = null) {
       const blockedFeatures = data.blocked_features || [];
       if (blockedFeatures.length === 0 || blockedFeatures.includes(featureSlug)) {
         return {
-          blocked: true,
+          isBlocked: true,
           blockType: data.block_type,
           reason: data.block_reason,
           blockedUntil: data.blocked_until
         };
       }
-      return { blocked: false };
+      return { isBlocked: false };
     }
 
     return {
-      blocked: true,
+      isBlocked: true,
       blockType: data.block_type,
       reason: data.block_reason,
       blockedUntil: data.blocked_until
@@ -110,7 +110,7 @@ export async function checkUserBlock(userId, featureSlug = null) {
 
   } catch (error) {
     console.error('❌ Error verificando bloqueo:', error);
-    return { blocked: false, error: error.message };
+    return { isBlocked: false, error: error.message };
   }
 }
 

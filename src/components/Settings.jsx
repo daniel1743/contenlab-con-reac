@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,9 @@ const Settings = () => {
     fullName: user?.user_metadata?.full_name || 'Usuario',
     email: user?.email || '',
     bio: 'Creador de contenido digital',
-    website: 'https://creovision.com'
+    website: 'https://creovision.com',
+    profileImage: user?.user_metadata?.avatar_url || '',
+    coverImage: user?.user_metadata?.cover_url || ''
   });
 
   const [notifications, setNotifications] = useState({
@@ -59,12 +61,63 @@ const Settings = () => {
     { platform: 'facebook', name: 'Facebook', icon: Facebook, connected: false, username: null, color: 'text-blue-600' },
   ]);
 
+  const handleProfileImageChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile(prev => ({ ...prev, profileImage: reader.result }));
+        localStorage.setItem('creovision_profile_image', reader.result);
+
+        // Disparar evento para actualizar navbar
+        window.dispatchEvent(new CustomEvent('profileUpdated', {
+          detail: { profileImage: reader.result, fullName: profile.fullName }
+        }));
+
+        toast({
+          title: '✅ Foto de perfil actualizada',
+          description: 'Tu foto de perfil ha sido cambiada correctamente',
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [profile.fullName, toast]);
+
+  const handleCoverImageChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile(prev => ({ ...prev, coverImage: reader.result }));
+        localStorage.setItem('creovision_cover_image', reader.result);
+
+        toast({
+          title: '✅ Foto de portada actualizada',
+          description: 'Tu foto de portada ha sido cambiada correctamente',
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [toast]);
+
   const handleSaveProfile = useCallback(() => {
+    // Guardar datos en localStorage
+    localStorage.setItem('creovision_profile_data', JSON.stringify({
+      fullName: profile.fullName,
+      bio: profile.bio,
+      website: profile.website
+    }));
+
+    // Disparar evento para actualizar navbar
+    window.dispatchEvent(new CustomEvent('profileUpdated', {
+      detail: { profileImage: profile.profileImage, fullName: profile.fullName }
+    }));
+
     toast({
       title: '✅ Perfil actualizado',
       description: 'Tus cambios han sido guardados correctamente',
     });
-  }, [toast]);
+  }, [profile, toast]);
 
   const handleToggleNotification = useCallback((key) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
@@ -85,6 +138,26 @@ const Settings = () => {
         : 'La cuenta ha sido conectada exitosamente',
     });
   }, [connectedAccounts, toast]);
+
+  // Cargar imágenes guardadas al montar el componente
+  useEffect(() => {
+    const savedProfileImage = localStorage.getItem('creovision_profile_image');
+    const savedCoverImage = localStorage.getItem('creovision_cover_image');
+    const savedProfileData = localStorage.getItem('creovision_profile_data');
+
+    if (savedProfileImage) {
+      setProfile(prev => ({ ...prev, profileImage: savedProfileImage }));
+    }
+
+    if (savedCoverImage) {
+      setProfile(prev => ({ ...prev, coverImage: savedCoverImage }));
+    }
+
+    if (savedProfileData) {
+      const data = JSON.parse(savedProfileData);
+      setProfile(prev => ({ ...prev, ...data }));
+    }
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -135,19 +208,66 @@ const Settings = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="glass-effect border-purple-500/20">
                 <CardHeader>
-                  <CardTitle className="text-white">Avatar</CardTitle>
-                  <CardDescription>Tu imagen de perfil</CardDescription>
+                  <CardTitle className="text-white">Imágenes de Perfil</CardTitle>
+                  <CardDescription>Personaliza tu perfil</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col items-center gap-4">
-                  <Avatar className="w-32 h-32">
-                    <AvatarImage src={user?.user_metadata?.avatar_url} alt="Avatar" />
-                    <AvatarFallback className="bg-purple-600 text-2xl">
-                      {profile.fullName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Button variant="outline" className="border-purple-500/20 hover:bg-purple-500/10">
-                    Cambiar Avatar
-                  </Button>
+                <CardContent className="space-y-6">
+                  {/* Foto de Perfil */}
+                  <div className="flex flex-col items-center gap-4">
+                    <Label className="text-white text-sm font-semibold">Foto de Perfil</Label>
+                    <Avatar className="w-32 h-32 ring-2 ring-purple-500/50">
+                      <AvatarImage src={profile.profileImage} alt="Avatar" />
+                      <AvatarFallback className="bg-purple-600 text-2xl">
+                        {profile.fullName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <label htmlFor="profile-image-upload" className="w-full">
+                      <input
+                        id="profile-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfileImageChange}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        className="w-full border-purple-500/20 hover:bg-purple-500/10"
+                        onClick={() => document.getElementById('profile-image-upload').click()}
+                        type="button"
+                      >
+                        Cambiar Foto de Perfil
+                      </Button>
+                    </label>
+                  </div>
+
+                  {/* Foto de Portada */}
+                  <div className="flex flex-col gap-4">
+                    <Label className="text-white text-sm font-semibold">Foto de Portada</Label>
+                    <div className="w-full h-32 rounded-lg overflow-hidden bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-2 border-purple-500/30 flex items-center justify-center">
+                      {profile.coverImage ? (
+                        <img src={profile.coverImage} alt="Portada" className="w-full h-full object-cover" />
+                      ) : (
+                        <p className="text-gray-400 text-sm">Sin portada</p>
+                      )}
+                    </div>
+                    <label htmlFor="cover-image-upload" className="w-full">
+                      <input
+                        id="cover-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverImageChange}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        className="w-full border-purple-500/20 hover:bg-purple-500/10"
+                        onClick={() => document.getElementById('cover-image-upload').click()}
+                        type="button"
+                      >
+                        Cambiar Portada
+                      </Button>
+                    </label>
+                  </div>
                 </CardContent>
               </Card>
 

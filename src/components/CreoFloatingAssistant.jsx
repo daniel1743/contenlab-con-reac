@@ -344,23 +344,23 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-24 right-6 w-[420px] h-[650px] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+            className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 w-full sm:w-[420px] h-full sm:h-[650px] sm:max-h-[calc(100vh-120px)] bg-gray-900 sm:rounded-3xl shadow-2xl shadow-purple-500/40 border-0 sm:border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 p-5 flex items-center justify-between overflow-hidden">
+            <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 p-3 sm:p-5 flex items-center justify-between overflow-hidden">
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
                 animate={{ x: ['-100%', '200%'] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 2 }}
               />
 
-              <div className="flex items-center gap-3 relative z-10">
+              <div className="flex items-center gap-2 sm:gap-3 relative z-10">
                 <motion.div
-                  className="w-12 h-12 bg-gradient-to-br from-white/30 to-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg overflow-hidden"
+                  className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-white/30 to-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg overflow-hidden"
                   animate={{
                     boxShadow: [
                       '0 0 20px rgba(255,255,255,0.2)',
@@ -373,11 +373,11 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
                   <img src="/robot.png" alt="Creo" className="w-full h-full object-cover" />
                 </motion.div>
                 <div>
-                  <h3 className="text-white font-bold text-lg tracking-tight drop-shadow-lg">
+                  <h3 className="text-white font-bold text-base sm:text-lg tracking-tight drop-shadow-lg">
                     Coach Creo
                   </h3>
-                  <p className="text-purple-100/90 text-xs flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
+                  <p className="text-purple-100/90 text-[10px] sm:text-xs flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
                     Tu guía creativa
                   </p>
                 </div>
@@ -386,15 +386,15 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
               {/* Contador de mensajes */}
               {sessionStats && (
                 <div className="flex flex-col items-end relative z-10">
-                  <div className="text-white/90 text-xs font-semibold">
-                    {sessionStats.freeMessagesRemaining}/8 gratis
+                  <div className="text-white/90 text-[10px] sm:text-xs font-semibold">
+                    {sessionStats.freeMessagesUsed}/8 usados
                   </div>
-                  <div className="w-16 h-1.5 bg-white/20 rounded-full mt-1 overflow-hidden">
+                  <div className="w-12 sm:w-16 h-1 sm:h-1.5 bg-white/20 rounded-full mt-1 overflow-hidden">
                     <motion.div
                       className="h-full bg-gradient-to-r from-green-400 to-yellow-400"
                       initial={{ width: '100%' }}
                       animate={{
-                        width: `${(sessionStats.freeMessagesRemaining / CREO_CONFIG.FREE_MESSAGES_LIMIT) * 100}%`
+                        width: `${((8 - sessionStats.freeMessagesUsed) / 8) * 100}%`
                       }}
                       transition={{ duration: 0.3 }}
                     />
@@ -411,7 +411,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
             </div>
 
             {/* Mensajes */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-900">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4 bg-gray-900">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center px-6">
                   <motion.div
@@ -436,7 +436,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.4, type: 'spring' }}
                 >
-                  <div className={`max-w-[85%] rounded-2xl px-5 py-3.5 shadow-lg ${
+                  <div className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3.5 shadow-lg ${
                     message.role === 'user'
                       ? 'bg-purple-600 text-white shadow-purple-500/30'
                       : message.isWarning
@@ -515,16 +515,16 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSendMessage} className="p-5 bg-gray-900 border-t-2 border-purple-500/30">
-              <div className="flex items-end gap-3">
+            <form onSubmit={handleSendMessage} className="p-3 sm:p-5 bg-gray-900 border-t-2 border-purple-500/30">
+              <div className="flex items-end gap-2 sm:gap-3">
                 <div className="flex-1 relative">
                   <input
                     ref={inputRef}
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Escribe tu pregunta aquí..."
-                    className="w-full bg-gray-800 text-white placeholder-gray-400 px-5 py-3.5 rounded-2xl border-2 border-purple-500/30 focus:outline-none focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/30 transition-all duration-200"
+                    placeholder="Escribe tu pregunta..."
+                    className="w-full bg-gray-800 text-white placeholder-gray-400 px-3 sm:px-5 py-2.5 sm:py-3.5 text-sm sm:text-base rounded-2xl border-2 border-purple-500/30 focus:outline-none focus:border-purple-500 focus:shadow-lg focus:shadow-purple-500/30 transition-all duration-200"
                     disabled={isLoading}
                   />
                   {inputValue && (
@@ -540,14 +540,14 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
                 <motion.button
                   type="submit"
                   disabled={!inputValue.trim() || isLoading}
-                  className="bg-gradient-to-br from-purple-600 via-purple-500 to-pink-600 hover:from-purple-500 hover:via-purple-400 hover:to-pink-500 disabled:opacity-40 disabled:cursor-not-allowed text-white p-4 rounded-2xl transition-all duration-200 shadow-xl shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 active:scale-95"
+                  className="bg-gradient-to-br from-purple-600 via-purple-500 to-pink-600 hover:from-purple-500 hover:via-purple-400 hover:to-pink-500 disabled:opacity-40 disabled:cursor-not-allowed text-white p-3 sm:p-4 rounded-2xl transition-all duration-200 shadow-xl shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 active:scale-95"
                   whileHover={{ scale: !inputValue.trim() || isLoading ? 1 : 1.05 }}
                   whileTap={{ scale: !inputValue.trim() || isLoading ? 1 : 0.95 }}
                 >
-                  <PaperAirplaneIcon className="w-5 h-5" />
+                  <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </motion.button>
               </div>
-              <p className="text-xs text-gray-500 mt-3 text-center">
+              <p className="text-xs text-gray-500 mt-2 sm:mt-3 text-center hidden sm:block">
                 Presiona Enter para enviar • Powered by CreoVision IA
               </p>
             </form>

@@ -341,7 +341,7 @@ class CreoChatService {
       return null;
     }
 
-    return {
+    const stats = {
       messageCount: this.currentSession.message_count,
       freeMessagesUsed: this.currentSession.free_messages_used,
       paidMessagesUsed: this.currentSession.paid_messages_used,
@@ -351,6 +351,14 @@ class CreoChatService {
       canExtend: this.currentSession.free_messages_used >= CONFIG.FREE_MESSAGES_LIMIT &&
                  this.currentSession.message_count < CONFIG.MAX_TOTAL_MESSAGES
     };
+
+    console.log('📊 Session Stats:', {
+      free_messages_used: this.currentSession.free_messages_used,
+      FREE_MESSAGES_LIMIT: CONFIG.FREE_MESSAGES_LIMIT,
+      freeMessagesRemaining: stats.freeMessagesRemaining
+    });
+
+    return stats;
   }
 
   // ===== MÉTODOS PRIVADOS =====
@@ -450,23 +458,28 @@ class CreoChatService {
   }
 
   /**
-   * Obtener plan del usuario
+   * Obtener plan del usuario desde localStorage o user_metadata
    * @private
    */
   async _getUserPlan(userId) {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('plan')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.warn('⚠️ No se pudo obtener plan del usuario, usando FREE por defecto');
-        return 'FREE';
+      // Intentar obtener desde localStorage primero
+      const savedProfileData = localStorage.getItem('creovision_profile_data');
+      if (savedProfileData) {
+        const data = JSON.parse(savedProfileData);
+        if (data.plan) {
+          return data.plan.toUpperCase();
+        }
       }
 
-      return data?.plan || 'FREE';
+      // Fallback: obtener desde user metadata de Supabase auth
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (user?.user_metadata?.plan) {
+        return user.user_metadata.plan.toUpperCase();
+      }
+
+      // Default: FREE
+      return 'FREE';
     } catch (error) {
       console.warn('⚠️ Error obteniendo plan del usuario:', error);
       return 'FREE';
