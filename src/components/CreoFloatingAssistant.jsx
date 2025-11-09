@@ -23,7 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesSolid } from '@heroicons/react/24/solid';
 import creoChatService, { CREO_CONFIG } from '@/services/CreoChatService';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const CreoFloatingAssistant = ({ userContext = {} }) => {
   const navigate = useNavigate();
@@ -324,7 +324,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
           {isOpen ? (
             <XMarkIcon className="w-8 h-8 text-white relative z-10" />
           ) : (
-            <SparklesSolid className="w-8 h-8 text-white relative z-10 animate-pulse" />
+            <img src="/robot.png" alt="Creo" className="w-10 h-10 relative z-10 rounded-full object-cover" />
           )}
 
           {hasNewMessage && !isOpen && (
@@ -360,7 +360,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
 
               <div className="flex items-center gap-3 relative z-10">
                 <motion.div
-                  className="w-12 h-12 bg-gradient-to-br from-white/30 to-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg"
+                  className="w-12 h-12 bg-gradient-to-br from-white/30 to-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg overflow-hidden"
                   animate={{
                     boxShadow: [
                       '0 0 20px rgba(255,255,255,0.2)',
@@ -370,7 +370,7 @@ const CreoFloatingAssistant = ({ userContext = {} }) => {
                   }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  <SparklesSolid className="w-7 h-7 text-white drop-shadow-lg" />
+                  <img src="/robot.png" alt="Creo" className="w-full h-full object-cover" />
                 </motion.div>
                 <div>
                   <h3 className="text-white font-bold text-lg tracking-tight drop-shadow-lg">

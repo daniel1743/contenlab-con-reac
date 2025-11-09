@@ -8,7 +8,7 @@ import PWALoadingScreen from '@/components/PWALoadingScreen';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
-import AIConciergeBubble from '@/components/AIConciergeBubble';
+// import AIConciergeBubble from '@/components/AIConciergeBubble';
 import CreoFloatingAssistant from '@/components/CreoFloatingAssistant';
 
 // Lazy load de componentes pesados
@@ -18,7 +18,7 @@ const Tools = lazy(() => import('@/components/Tools'));
 const Calendar = lazy(() => import('@/components/Calendar'));
 const ContentLibrary = lazy(() => import('@/components/ContentLibrary'));
 const Settings = lazy(() => import('@/components/Settings'));
-const FakeNotifications = lazy(() => import('@/components/FakeNotifications'));
+// const FakeNotifications = lazy(() => import('@/components/FakeNotifications'));
 const SubscriptionModal = lazy(() => import('@/components/SubscriptionModal'));
 const Badges = lazy(() => import('@/components/Badges'));
 const History = lazy(() => import('@/components/History'));
@@ -405,9 +405,9 @@ function App() {
           )}
 
           {/* FakeNotifications - Solo mostrar si no hay errores de carga */}
-          <Suspense fallback={null}>
+          {/* <Suspense fallback={null}>
             <FakeNotifications />
-          </Suspense>
+          </Suspense> */}
           {!cookiesAccepted && !showTermsModal && (
             <CookieConsentBanner onAccept={() => setCookiesAccepted(true)} />
           )}
@@ -425,7 +425,7 @@ function App() {
         </Suspense>
 
         {/* AI Concierge Bubble (Asistente original) */}
-        <AIConciergeBubble />
+        {/* <AIConciergeBubble /> */}
 
         {/* Coach Creo - Solo para usuarios autenticados */}
         {isAuthenticated && user && (
