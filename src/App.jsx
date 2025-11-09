@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
 import AIConciergeBubble from '@/components/AIConciergeBubble';
+import CreoFloatingAssistant from '@/components/CreoFloatingAssistant';
 
 // Lazy load de componentes pesados
 const AuthModal = lazy(() => import('@/components/AuthModal'));
@@ -423,7 +424,19 @@ function App() {
           )}
         </Suspense>
 
+        {/* AI Concierge Bubble (Asistente original) */}
         <AIConciergeBubble />
+
+        {/* Coach Creo - Solo para usuarios autenticados */}
+        {isAuthenticated && user && (
+          <CreoFloatingAssistant
+            userContext={{
+              name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Creador',
+              plan: user.user_metadata?.plan || 'FREE',
+              topic: null // Puedes agregar lógica para detectar el último tema buscado
+            }}
+          />
+        )}
       </div>
     </>
   );
