@@ -160,7 +160,7 @@ export default function GrowthDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-3 sm:p-4 md:p-6 pb-24 sm:pb-28">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div

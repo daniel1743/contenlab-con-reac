@@ -650,7 +650,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center z-50 overflow-hidden group"
+            className="fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center z-50 overflow-hidden group md:bottom-8 md:right-10"
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
               backgroundSize: '200% 200%',
@@ -677,6 +677,10 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
             exit={{ opacity: 0, scale: 0.8, y: 50 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed bottom-20 left-4 right-4 sm:bottom-24 sm:left-auto sm:right-6 w-auto sm:w-[420px] max-w-full h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+            style={{
+              left: '1rem',
+              right: '1rem'
+            }}
           >
             {/* Header con animación gradient */}
             <div className="relative p-6 overflow-hidden">

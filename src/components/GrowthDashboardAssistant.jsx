@@ -216,7 +216,7 @@ Responde de forma clara y convincente:`;
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-6 right-6 z-40"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50"
           >
             <Button
               onClick={() => setIsOpen(true)}
@@ -237,9 +237,9 @@ Responde de forma clara y convincente:`;
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50"
           >
-            <Card className="w-[420px] h-[600px] bg-slate-900 border-slate-700 shadow-2xl flex flex-col overflow-hidden">
+            <Card className="w-full sm:w-[420px] h-[600px] max-h-[80vh] bg-slate-900 border-slate-700 shadow-2xl flex flex-col overflow-hidden">
               {/* Header */}
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">

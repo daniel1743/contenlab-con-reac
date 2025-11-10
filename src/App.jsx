@@ -211,7 +211,7 @@ function App() {
       {/* SEO Head dinámico según la sección activa */}
       <SEOHead page={activeSection} schemas={getSchemas()} />
 
-      <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+      <div className="min-h-screen flex flex-col bg-gray-900 text-white relative">
         {/* activeSection !== 'thumbnail-editor' && */ (
           <Navbar
             isAuthenticated={isAuthenticated}

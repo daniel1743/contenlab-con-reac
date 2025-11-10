@@ -122,13 +122,6 @@ import {
   getTrendingHashtags
 } from '@/services/twitterService';
 
-// 💎 IMPORT DE SERVICIO DE CRÉDITOS
-import {
-  consumeCredits,
-  checkSufficientCredits,
-  getFeatureCost
-} from '@/services/creditService';
-
 // 💎 IMPORT DE SERVICIOS PREMIUM
 import {
   generateSEOOptimizerCard,
@@ -1593,7 +1586,7 @@ const handleCopy = useCallback(() => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-32">
       {/* Header */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold text-gradient">Centro Creativo</h1>
