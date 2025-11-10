@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
+import { StarRating } from '@/components/FeedbackWidget';
 // Heroicons imports for professional iconography
 import {
   SparklesIcon,
@@ -146,6 +147,8 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [contentTopic, setContentTopic] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showFeedbackRating, setShowFeedbackRating] = useState(false);
+  const [currentPrompt, setCurrentPrompt] = useState('');
 
   // 🆕 ESTADOS PARA LAS 3 VERSIONES DEL CONTENIDO
   const [contentAnalisis, setContentAnalisis] = useState('');
@@ -750,6 +753,15 @@ const handleCopy = useCallback(() => {
 
       // Mantener el contenido completo para compatibilidad
       setGeneratedContent(generatedScript);
+
+      // Guardar prompt para feedback
+      const fullPrompt = `Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Tópico: ${contentTopic}`;
+      setCurrentPrompt(fullPrompt);
+
+      // Mostrar rating después de 3 segundos
+      setTimeout(() => {
+        setShowFeedbackRating(true);
+      }, 3000);
 
       // 💎 CONSUMIR CRÉDITOS DESPUÉS DE GENERACIÓN EXITOSA
       const creditResult = await consumeCredits(user.id, COST, 'viral_script', 'Generación de guion viral');
@@ -1914,6 +1926,32 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
             </CardContent>
           </Card>
 
+        </div>
+      )}
+
+      {/* ⭐ FEEDBACK RATING - Calificar guión generado */}
+      {showFeedbackRating && generatedContent && (
+        <div className="fixed bottom-4 right-4 max-w-md z-50 animate-fade-in">
+          <StarRating
+            prompt={currentPrompt}
+            response={generatedContent}
+            provider="gemini"
+            model="gemini-2.0-flash-exp"
+            featureSlug="script_generator"
+            showCommentBox={true}
+            autoShow={true}
+            onFeedbackSaved={(rating, comment) => {
+              console.log('✅ Feedback de guión guardado:', rating, comment);
+              toast({
+                title: '¡Gracias por tu feedback!',
+                description: 'Tu opinión nos ayuda a mejorar los guiones.',
+                duration: 3000,
+              });
+            }}
+            onDismiss={() => {
+              setShowFeedbackRating(false);
+            }}
+          />
         </div>
       )}
 

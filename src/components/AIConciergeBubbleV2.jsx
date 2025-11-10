@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING } from '@/config/creoPersonality';
 import { withCache, getCacheStats } from '@/services/aiCacheService';
+import { QuickFeedback } from '@/components/FeedbackWidget';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
@@ -772,25 +773,48 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                 </div>
               ) : (
                 <>
-                  {messages.map((msg, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                          msg.role === 'user'
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-700 text-gray-100'
-                        }`}
+                  {messages.map((msg, idx) => {
+                    // Obtener el mensaje anterior del usuario para el feedback
+                    const previousUserMsg = msg.role === 'assistant' && idx > 0
+                      ? messages[idx - 1]
+                      : null;
+
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} gap-2`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                      </div>
-                    </motion.div>
-                  ))}
+                        <div
+                          className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                            msg.role === 'user'
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-700 text-gray-100'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+
+                        {/* Agregar QuickFeedback solo para mensajes del asistente */}
+                        {msg.role === 'assistant' && previousUserMsg && (
+                          <div className="ml-2">
+                            <QuickFeedback
+                              prompt={previousUserMsg.content}
+                              response={msg.content}
+                              provider="gemini"
+                              model={GEMINI_MODEL}
+                              featureSlug="coach_creo"
+                              onFeedbackSaved={(feedbackType) => {
+                                console.log('✅ Feedback guardado:', feedbackType);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
 
                   {isThinking && (
                     <motion.div

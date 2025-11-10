@@ -15,6 +15,7 @@ import DashboardAnalysis from './Dashboard/DashboardAnalysis';
 import { integrateWithDashboard } from '@/services/channelAnalysisOrchestrator';
 import { canPerformAnalysis, markFreeAnalysisAsUsed } from '@/services/firstVisitTracker';
 import { consumePromoAnalysis, getPromoAnalysesRemaining, redeemPromoCode } from '@/services/promoCodeService';
+import { FeedbackModal } from '@/components/FeedbackWidget';
 
 const ChannelAnalysisPage = () => {
   const [channelUrl, setChannelUrl] = useState('');
@@ -25,6 +26,7 @@ const ChannelAnalysisPage = () => {
   const [promoCode, setPromoCode] = useState('');
   const [promoMessage, setPromoMessage] = useState('');
   const [promoAnalysesLeft, setPromoAnalysesLeft] = useState(getPromoAnalysesRemaining());
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const { toast } = useToast();
 
   // Simular usuario autenticado (en producción usar real auth)
@@ -94,6 +96,11 @@ const ChannelAnalysisPage = () => {
       }
 
       setDashboardData(data);
+
+      // Mostrar modal de feedback 5 segundos después del análisis
+      setTimeout(() => {
+        setShowFeedbackModal(true);
+      }, 5000);
 
       if (typeof window !== 'undefined') {
         const conciergePayload = {
@@ -182,7 +189,30 @@ const ChannelAnalysisPage = () => {
 
   // Si hay datos del dashboard, mostrar el dashboard
   if (dashboardData) {
-    return <DashboardAnalysis analysisData={dashboardData} onReset={handleReset} isGuest={isGuest} />;
+    return (
+      <>
+        <DashboardAnalysis analysisData={dashboardData} onReset={handleReset} isGuest={isGuest} />
+
+        {/* Modal de Feedback para calificar el análisis */}
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          prompt={`Análisis de canal: ${channelUrl}`}
+          response={JSON.stringify(dashboardData)}
+          provider="gemini"
+          model="gemini-2.0-flash-exp"
+          featureSlug="channel_analysis"
+          onFeedbackSaved={(rating, comment) => {
+            console.log('✅ Feedback de análisis guardado:', rating, comment);
+            toast({
+              title: '¡Gracias por tu feedback!',
+              description: 'Tu opinión nos ayuda a mejorar los análisis.',
+              duration: 3000,
+            });
+          }}
+        />
+      </>
+    );
   }
 
   // Vista de entrada/búsqueda
