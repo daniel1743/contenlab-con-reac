@@ -49,15 +49,18 @@ export default async function handler(req, res) {
     }
 
     console.log('📊 Iniciando Growth Dashboard para usuario:', userId);
+    console.log('📊 Supabase URL:', supabaseUrl);
+    console.log('📊 Service Key configurada:', !!supabaseServiceKey);
+    console.log('📊 Service Key primeros chars:', supabaseServiceKey?.substring(0, 20));
 
     // 1. Verificar créditos disponibles
     let { data: userData, error: userError } = await supabase
       .from('user_credits')
-      .select('total_credits')
+      .select('*')
       .eq('user_id', userId)
       .maybeSingle(); // Usar maybeSingle() en lugar de single() para evitar error si no existe
 
-    console.log('📊 Resultado de consulta user_credits:', { userData, userError });
+    console.log('📊 Resultado de consulta user_credits:', { userData, userError, userId });
 
     // Si el usuario no existe, retornar error pidiendo inicialización
     if (!userData) {
