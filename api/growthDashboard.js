@@ -53,20 +53,24 @@ export default async function handler(req, res) {
     // 1. Verificar créditos disponibles
     const { data: userData, error: userError } = await supabase
       .from('user_credits')
-      .select('balance')
+      .select('total_credits')
       .eq('user_id', userId)
       .single();
 
     if (userError || !userData) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      console.error('Error consultando usuario:', userError);
+      return res.status(404).json({
+        error: 'Usuario no encontrado',
+        details: userError?.message
+      });
     }
 
-    if (userData.balance < CREDIT_COST) {
+    if (userData.total_credits < CREDIT_COST) {
       return res.status(402).json({
         error: 'Créditos insuficientes',
         required: CREDIT_COST,
-        available: userData.balance,
-        missing: CREDIT_COST - userData.balance
+        available: userData.total_credits,
+        missing: CREDIT_COST - userData.total_credits
       });
     }
 
@@ -121,7 +125,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       creditsConsumed: CREDIT_COST,
-      remainingCredits: userData.balance - CREDIT_COST,
+      remainingCredits: userData.total_credits - CREDIT_COST,
       data: analysis
     });
 
