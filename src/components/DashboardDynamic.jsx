@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,8 @@ import {
   XMarkIcon,
   NewspaperIcon,
   LinkIcon,
-  TagIcon
+  TagIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/outline';
 
 // Íconos solid para énfasis
@@ -389,6 +390,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [isRegeneratingInsights, setIsRegeneratingInsights] = useState(false);
   const [isUnlockingNews, setIsUnlockingNews] = useState(false);
   const [visibleNewsCount, setVisibleNewsCount] = useState(2);
+  const highlightUnlockStorageKey = useMemo(
+    () => (user?.id ? `creovision_highlights_unlocked_${user.id}` : 'creovision_highlights_unlocked_guest'),
+    [user?.id]
+  );
+  const [unlockedHighlightIds, setUnlockedHighlightIds] = useState([]);
+  const [unlockingHighlightId, setUnlockingHighlightId] = useState(null);
 
   // 🆕 NUEVOS ESTADOS PARA APIs REALES
   const [youtubeData, setYoutubeData] = useState(null);
@@ -414,6 +421,51 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [isVideoAnalysisLoading, setIsVideoAnalysisLoading] = useState(false);
   const [videoAnalysis, setVideoAnalysis] = useState({});
   const [videoAnalysisError, setVideoAnalysisError] = useState(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !highlightUnlockStorageKey) {
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(highlightUnlockStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setUnlockedHighlightIds(parsed);
+        }
+      }
+    } catch (error) {
+      console.warn('[Highlights] No se pudo cargar el estado de desbloqueo', error);
+      setUnlockedHighlightIds([]);
+    }
+  }, [highlightUnlockStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !highlightUnlockStorageKey) {
+      return;
+    }
+    try {
+      localStorage.setItem(highlightUnlockStorageKey, JSON.stringify(unlockedHighlightIds));
+    } catch (error) {
+      console.warn('[Highlights] No se pudo guardar el estado de desbloqueo', error);
+    }
+  }, [highlightUnlockStorageKey, unlockedHighlightIds]);
+
+  useEffect(() => {
+    if (!nichemMetrics?.highlightVideos?.length) return;
+    setUnlockedHighlightIds(prev => {
+      const existing = new Set(prev);
+      nichemMetrics.highlightVideos.slice(0, 2).forEach((video, index) => {
+        const key = getHighlightVideoKey(video) || `highlight-${index}`;
+        existing.add(key);
+      });
+      const next = Array.from(existing);
+      if (next.length === prev.length && next.every((value, index) => value === prev[index])) {
+        return prev;
+      }
+      return next;
+    });
+  }, [nichemMetrics?.highlightVideos]);
 
   const displayName = React.useMemo(() => {
     const fullName = user?.user_metadata?.full_name?.trim();
@@ -1054,6 +1106,66 @@ const DashboardDynamic = ({ onSectionChange }) => {
       setIsUnlockingNews(false);
     }
   }, [nichemMetrics?.topic, newsArticles.length, toast, user, visibleNewsCount]);
+
+  const handleUnlockHighlight = useCallback(async (videoKey) => {
+    if (!videoKey) return;
+
+    if (unlockedHighlightIds.includes(videoKey)) {
+      toast({
+        title: 'Video ya desbloqueado',
+        description: 'Puedes analizar esta inspiración sin costo adicional.',
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: 'Inicia sesión para desbloquear inspiraciones',
+        description: 'Accede con tu cuenta para aprovechar estas recomendaciones.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const CREDIT_COST = 15;
+    setUnlockingHighlightId(videoKey);
+
+    try {
+      const creditResult = await consumeCredits(
+        user.id,
+        CREDIT_COST,
+        'highlight_video_unlock',
+        `Desbloquear inspiración ${videoKey}`
+      );
+
+      if (!creditResult.success) {
+        toast({
+          title: creditResult.error === 'INSUFFICIENT_CREDITS'
+            ? 'Créditos insuficientes'
+            : 'No se pudo completar el pago',
+          description: creditResult.message || 'Recarga tus créditos para continuar.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setUnlockedHighlightIds(prev => (prev.includes(videoKey) ? prev : [...prev, videoKey]));
+
+      toast({
+        title: 'Inspiración desbloqueada',
+        description: `Se consumieron ${CREDIT_COST} créditos. Créditos restantes: ${creditResult.remaining ?? 'N/D'}.`,
+      });
+    } catch (error) {
+      console.error('Error desbloqueando video destacado:', error);
+      toast({
+        title: 'No se pudo desbloquear',
+        description: 'Intenta nuevamente más tarde.',
+        variant: 'destructive'
+      });
+    } finally {
+      setUnlockingHighlightId(null);
+    }
+  }, [toast, unlockedHighlightIds, user]);
 
   // Buscar tema cuando el usuario presiona Enter o click
   const handleSearch = async () => {
@@ -2140,12 +2252,14 @@ const DashboardDynamic = ({ onSectionChange }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 justify-items-center">
                     {nichemMetrics.highlightVideos.slice(0, 6).map((video, idx) => {
                       const published = formatEsDate(video.publishedAt);
-                      const videoKey = getHighlightVideoKey(video) || idx;
+                      const videoKey = getHighlightVideoKey(video) || `highlight-${idx}`;
                       const videoUrl = video.url || (video.id ? `https://www.youtube.com/watch?v=${video.id}` : null);
+                      const isUnlocked = idx < 2 || unlockedHighlightIds.includes(videoKey);
+                      const isUnlocking = unlockingHighlightId === videoKey;
                       return (
                         <div
                           key={videoKey}
-                          className="group flex w-full max-w-[420px] flex-col overflow-hidden rounded-xl border border-purple-500/10 bg-slate-900/60 transition hover:border-purple-400/50 focus-within:border-purple-400/50"
+                          className={`group relative flex w-full max-w-[420px] flex-col overflow-hidden rounded-xl border border-purple-500/10 bg-slate-900/60 transition focus-within:border-purple-400/50 ${isUnlocked ? 'hover:border-purple-400/50' : 'opacity-70 hover:opacity-80'}`}
                         >
                           <div className="relative aspect-video overflow-hidden">
                             {videoUrl ? (
@@ -2201,31 +2315,58 @@ const DashboardDynamic = ({ onSectionChange }) => {
                               </p>
                             )}
                             <div className="mt-4 flex flex-wrap gap-2">
-                              <Button
-                                variant="outline"
-                                className="border-purple-500/40 bg-transparent text-xs text-purple-200 hover:bg-purple-500/20 sm:text-sm"
-                                asChild
-                              >
-                                <a
-                                  href={videoUrl || '#'}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  aria-disabled={!videoUrl}
-                                  className={!videoUrl ? 'pointer-events-none opacity-60' : ''}
+                              {isUnlocked ? (
+                                <Button
+                                  variant="outline"
+                                  className="border-purple-500/40 bg-transparent text-xs text-purple-200 hover:bg-purple-500/20 sm:text-sm"
+                                  asChild
+                                >
+                                  <a
+                                    href={videoUrl || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-disabled={!videoUrl}
+                                    className={!videoUrl ? 'pointer-events-none opacity-60' : ''}
+                                  >
+                                    Ver video
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  className="border-purple-500/40 bg-transparent text-xs text-purple-200 sm:text-sm opacity-60 cursor-not-allowed"
+                                  disabled
                                 >
                                   Ver video
-                                </a>
-                              </Button>
+                                </Button>
+                              )}
                               <Button
                                 type="button"
                                 onClick={() => handleHighlightVideoAnalysis(video)}
-                                className="flex items-center gap-2 border border-purple-500/50 bg-purple-600/30 text-xs text-purple-100 transition hover:bg-purple-600/50 sm:text-sm"
+                                disabled={!isUnlocked || isUnlocking}
+                                className="flex items-center gap-2 border border-purple-500/50 bg-purple-600/30 text-xs text-purple-100 transition hover:bg-purple-600/50 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
                               >
                                 <SparklesSolidIcon className="h-4 w-4 text-purple-200" />
                                 Análisis
                               </Button>
                             </div>
                           </div>
+                          {!isUnlocked && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-slate-950/85 backdrop-blur-md p-4 text-center">
+                              <LockClosedIcon className="w-8 h-8 text-purple-200" />
+                              <p className="text-sm font-semibold text-purple-100">Inspiración premium</p>
+                              <p className="text-xs text-gray-300">
+                                Desbloquéala para estudiar miniaturas, hooks y estructura completa.
+                              </p>
+                              <Button
+                                onClick={() => handleUnlockHighlight(videoKey)}
+                                disabled={isUnlocking}
+                                className="gradient-primary px-4 py-2 text-sm font-semibold"
+                              >
+                                {isUnlocking ? 'Desbloqueando…' : 'Desbloquear · 15 créditos'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

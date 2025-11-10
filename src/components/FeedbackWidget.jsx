@@ -14,7 +14,7 @@
 import React, { useState } from 'react';
 import { ThumbsUp, ThumbsDown, Star } from 'lucide-react';
 import { saveInteraction, updateFeedback, saveQuickFeedback, saveStarRating } from '@/services/feedbackService';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 /**
  * QuickFeedback Component

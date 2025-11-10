@@ -266,8 +266,29 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const viralityStorageKey = useMemo(
+    () => (user?.id ? `creovision_virality_unlocked_${user.id}` : 'creovision_virality_unlocked_guest'),
+    [user?.id]
+  );
+  const [isViralityUnlocked, setIsViralityUnlocked] = useState(false);
+  const [isUnlockingVirality, setIsUnlockingVirality] = useState(false);
   const isFreePlan = isDemoUser;
   const guardCooldownRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !viralityStorageKey) {
+      return;
+    }
+    const stored = localStorage.getItem(viralityStorageKey);
+    setIsViralityUnlocked(stored === 'true');
+  }, [viralityStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !viralityStorageKey) {
+      return;
+    }
+    localStorage.setItem(viralityStorageKey, isViralityUnlocked ? 'true' : 'false');
+  }, [isViralityUnlocked, viralityStorageKey]);
 
   const guardProtectedAction = useCallback((context = 'esta acción') => {
     if (user) {
@@ -286,6 +307,62 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
     setShowAuthRequiredModal(true);
     return true;
   }, [user, toast]);
+
+  const handleUnlockVirality = useCallback(async () => {
+    if (guardProtectedAction('predicción de viralidad')) {
+      return;
+    }
+
+    if (isViralityUnlocked) {
+      toast({
+        title: 'Panel ya desbloqueado',
+        description: 'Puedes usar la predicción de viralidad sin costo adicional.',
+      });
+      return;
+    }
+
+    if (!user) {
+      return;
+    }
+
+    const CREDIT_COST = 200;
+    setIsUnlockingVirality(true);
+
+    try {
+      const creditResult = await consumeCredits(
+        user.id,
+        CREDIT_COST,
+        'virality_prediction',
+        'Desbloquear Predicción de Viralidad'
+      );
+
+      if (!creditResult.success) {
+        toast({
+          title: creditResult.error === 'INSUFFICIENT_CREDITS'
+            ? 'Créditos insuficientes'
+            : 'No se pudo completar el pago',
+          description: creditResult.message || 'Recarga tus créditos para continuar.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setIsViralityUnlocked(true);
+      toast({
+        title: 'Predicción de viralidad desbloqueada',
+        description: `Se consumieron ${CREDIT_COST} créditos. Créditos restantes: ${creditResult.remaining ?? 'N/D'}.`,
+      });
+    } catch (error) {
+      console.error('Error desbloqueando predicción de viralidad:', error);
+      toast({
+        title: 'No se pudo desbloquear',
+        description: 'Intenta nuevamente más tarde.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUnlockingVirality(false);
+    }
+  }, [guardProtectedAction, isViralityUnlocked, toast, user]);
 
   useEffect(() => {
     if (!isDemoUser || user) {
@@ -1340,7 +1417,8 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
         })}
       </div>
 
-      {/* Generador de contenido principal */}
+      {/* Generador de contenido principal (legacy) */}
+      {false && (
       <Card className="glass-effect border-purple-500/20">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1833,6 +1911,103 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
           )}
         </CardContent>
       </Card>
+      )}
+
+      {/* Predicción de Viralidad */}
+      {isViralityUnlocked ? (
+        <ViralityPredictor />
+      ) : (
+        <Card className="glass-effect border-purple-500/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white text-2xl">
+              <Sparkles className="w-6 h-6 text-purple-400" />
+              Predicción de Viralidad
+            </CardTitle>
+            <CardDescription>
+              Desbloquea el laboratorio de predicción CreoVision para estimar qué tan viral será tu próximo contenido antes de lanzarlo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                <h3 className="text-white font-semibold flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-300" />
+                  Análisis integral
+                </h3>
+                <p className="text-sm text-gray-300 mt-2">
+                  Evalúa títulos, descripciones, hashtags y formato para estimar alcance potencial.
+                </p>
+              </div>
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <h3 className="text-white font-semibold flex items-center gap-2">
+                  <ChartBarIcon className="w-4 h-4 text-blue-300" />
+                  Insights accionables
+                </h3>
+                <p className="text-sm text-gray-300 mt-2">
+                  Recibe recomendaciones de optimización antes de publicar y evita fallas de rendimiento.
+                </p>
+              </div>
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                <h3 className="text-white font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-300" />
+                  Benchmarks reales
+                </h3>
+                <p className="text-sm text-gray-300 mt-2">
+                  Compara tu propuesta con históricos de la plataforma para ajustar tu estrategia.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-black/30 rounded-xl border border-purple-500/20 p-6 space-y-4">
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Esta herramienta premium de CreoVision estima la probabilidad de viralidad combinando
+                señales de metadatos, estructura narrativa y contexto del nicho. Es ideal para validar ideas
+                antes de invertir en producción o pauta.
+              </p>
+              <ul className="space-y-2 text-sm text-gray-200">
+                <li className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-300 mt-0.5" />
+                  Predicción numérica de alcance y engagement esperado.
+                </li>
+                <li className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-300 mt-0.5" />
+                  Recomendaciones específicas por plataforma y formato.
+                </li>
+                <li className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-300 mt-0.5" />
+                  Checklist de ajustes para maximizar el potencial viral.
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <p className="text-white font-semibold text-lg">Desbloquear panel avanzado</p>
+                <p className="text-sm text-gray-300">
+                  Pago único de 200 créditos. Las próximas predicciones estarán incluidas sin costo adicional.
+                </p>
+              </div>
+              <Button
+                onClick={handleUnlockVirality}
+                disabled={isUnlockingVirality}
+                className="gradient-primary px-8 py-6 text-lg font-semibold"
+              >
+                {isUnlockingVirality ? (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                    Desbloqueando…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Desbloquear por 200 créditos
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 🆕 TARJETAS CON DATOS REALES DE GEMINI */}
       {generatedContent && (
