@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
 import { StarRating } from '@/components/FeedbackWidget';
+import ShareButton from '@/components/ShareButton';
 // Heroicons imports for professional iconography
 import {
   SparklesIcon,
@@ -2002,7 +2003,19 @@ const handleCopy = useCallback(() => {
                         <CardTitle className="text-white flex items-center">
                           📝 Guión Listo para Narración
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <ShareButton
+                            title="Guión generado con CreoVision"
+                            text={contentLimpio}
+                            variant="outline"
+                            size="sm"
+                            className="border-green-500/20 hover:bg-green-500/10"
+                            onShareSuccess={() => {
+                              if (!guardProtectedAction('compartir guión')) {
+                                console.log('Guión compartido exitosamente');
+                              }
+                            }}
+                          />
                           <Button
                             onClick={() => {
                               if (guardProtectedAction('copiar guión limpio')) {
