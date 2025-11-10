@@ -99,6 +99,13 @@ import {
   getWeeklyViralTrends
 } from '@/services/youtubeService';
 
+// 💎 IMPORT DE SERVICIOS DE CRÉDITOS
+import {
+  getUserCredits,
+  consumeCredits,
+  checkSufficientCredits
+} from '@/services/creditService';
+
 // 🎓 IMPORT DE ASESOR DE CONTENIDO
 // 🚀 IMPORT DE PREDICTOR DE VIRALIDAD
 import ViralityPredictor from '@/components/ViralityPredictor';
@@ -292,6 +299,11 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [trendResults, setTrendResults] = useState(null);
   const [isAnalyzingTrends, setIsAnalyzingTrends] = useState(false);
 
+  // 💎 ESTADOS PARA SISTEMA DE CRÉDITOS
+  const [userCredits, setUserCredits] = useState({ total: 0, monthly: 0, purchased: 0, bonus: 0 });
+  const [showCreditConfirmModal, setShowCreditConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
   // 🎓 ESTADOS PARA ASESOR DE CONTENIDO
   const [activeAdvisor, setActiveAdvisor] = useState(null); // Índice del video activo
   const [advisorInstance, setAdvisorInstance] = useState(null); // Instancia del asesor
@@ -384,6 +396,26 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
       }
     })();
   }, [user]);
+
+  // 💎 Cargar créditos del usuario
+  useEffect(() => {
+    if (!user || isDemoUser) {
+      return;
+    }
+
+    const loadCredits = async () => {
+      try {
+        const result = await getUserCredits(user.id);
+        if (result.success) {
+          setUserCredits(result.credits);
+        }
+      } catch (error) {
+        console.error('Error cargando créditos:', error);
+      }
+    };
+
+    loadCredits();
+  }, [user, isDemoUser]);
 
   const guardProtectedAction = useCallback((context = 'esta acción') => {
     if (user) {
@@ -1444,6 +1476,7 @@ const handleCopy = useCallback(() => {
       description: 'Crea contenido premium optimizado para cada plataforma',
       icon: SparklesIcon,
       color: 'from-purple-500 to-pink-500',
+      creditCost: 30,
       action: () => {
         setShowContentGenerator(true);
         setTimeout(() => {
@@ -1470,6 +1503,7 @@ const handleCopy = useCallback(() => {
       description: 'Encuentra hashtags trending para maximizar alcance',
       icon: HashtagIcon,
       color: 'from-green-500 to-blue-500',
+      creditCost: 30,
       action: () => setShowHashtagModal(true),
       requiresPersonality: true
     },
@@ -1479,6 +1513,7 @@ const handleCopy = useCallback(() => {
       description: 'Descubre qué contenido está funcionando en tu nicho',
       icon: ArrowTrendingUpIcon,
       color: 'from-orange-500 to-red-500',
+      creditCost: 30,
       action: () => setShowTrendModal(true),
       requiresPersonality: true
     },
@@ -1587,6 +1622,14 @@ const handleCopy = useCallback(() => {
                   </div>
                   <CardTitle className="text-white text-lg">{tool.title}</CardTitle>
                   <CardDescription className="text-gray-400">{tool.description}</CardDescription>
+                  {tool.creditCost && (
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full px-3 py-1 flex items-center gap-1.5">
+                        <SparklesIcon className="w-4 h-4 text-yellow-400" />
+                        <span className="text-white font-semibold text-sm">{tool.creditCost} créditos</span>
+                      </div>
+                    </div>
+                  )}
                 </CardHeader>
               </Card>
 
@@ -1762,19 +1805,29 @@ const handleCopy = useCallback(() => {
                 className={`border-purple-500/30 text-purple-400 hover:bg-purple-500/10 ${isFreePlan ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <Cog6ToothIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                {showAdvancedSettings ? 'Ocultar Ajustes Avanzados' : isFreePlan ? 'Personalizacion Avanzada (Solo Pro)' : 'Personalizacion Avanzada (Opcional)'}
+                {showAdvancedSettings ? 'Ocultar Ajustes Avanzados' : isFreePlan ? 'Personalizacion Avanzada (Solo Pro)' : 'Personalización Plus'}
+                {!showAdvancedSettings && !isFreePlan && (
+                  <span className="ml-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-full px-2 py-0.5 text-xs font-semibold text-yellow-300">
+                    50 créditos
+                  </span>
+                )}
               </Button>
             </div>
           )}
 
-          {/* 🆕 PANEL COLAPSABLE: PERSONALIZACIÓN AVANZADA */}
+          {/* 🆕 PANEL COLAPSABLE: PERSONALIZACIÓN PLUS */}
           {showAdvancedSettings && (
             <div className="space-y-4 p-4 bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <SparklesSolidIcon className="w-5 h-5 text-purple-400" />
-                  Personalización Avanzada
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <SparklesSolidIcon className="w-5 h-5 text-purple-400" />
+                    Personalización Plus
+                  </h3>
+                  <span className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-full px-3 py-1 text-xs font-semibold text-yellow-300">
+                    50 créditos
+                  </span>
+                </div>
               </div>
               <p className="text-sm text-gray-400 mb-4">
                 Ajusta estos parámetros para afinar el contenido. Los valores están pre-llenados desde tu perfil.

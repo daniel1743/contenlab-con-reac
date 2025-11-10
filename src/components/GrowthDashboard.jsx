@@ -168,18 +168,18 @@ export default function GrowthDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl font-bold text-white mb-2">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-4">
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                   CreoVision Analytics Command Center
                 </h1>
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <img
                     src="/corona_pro.svg"
                     alt="Premium Crown"
-                    className="premium-crown mb-2"
-                    style={{ width: '48px', height: '48px' }}
+                    className="premium-crown"
+                    style={{ width: '40px', height: '40px' }}
                   />
                   {/* Partículas pequeñas alrededor de la estrella */}
                   <span className="premium-particle premium-particle-1">✨</span>
@@ -187,23 +187,23 @@ export default function GrowthDashboard() {
                   <span className="premium-particle premium-particle-3">✨</span>
                 </div>
               </div>
-              <p className="text-slate-300">
+              <p className="text-slate-300 text-sm sm:text-base mt-2">
                 Dashboard premium de análisis de crecimiento con IA
               </p>
             </div>
 
-            <div className="text-right">
-              <div className="text-sm text-slate-400 mb-1">Balance de créditos</div>
-              <div className="text-3xl font-bold text-white">{credits.total}</div>
-              <div className="flex gap-2 mt-2">
-                <Badge variant="outline" className="text-xs">
+            <div className="lg:text-right">
+              <div className="text-xs sm:text-sm text-slate-400 mb-1">Balance de créditos</div>
+              <div className="text-2xl sm:text-3xl font-bold text-white">{credits.total}</div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="outline" className="text-[10px] sm:text-xs">
                   {credits.monthly} mensuales
                 </Badge>
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-[10px] sm:text-xs">
                   {credits.purchased} comprados
                 </Badge>
                 {credits.bonus > 0 && (
-                  <Badge variant="outline" className="text-xs bg-yellow-500/10">
+                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-yellow-500/10">
                     {credits.bonus} bonus
                   </Badge>
                 )}

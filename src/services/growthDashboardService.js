@@ -141,6 +141,12 @@ export const generateGrowthDashboard = async ({ userId, channelId, keywords }) =
  */
 export const getGrowthDashboardHistory = async (userId, limit = 10) => {
   try {
+    // TODO: Implementar función get_growth_dashboard_history en Supabase
+    // Por ahora retornamos array vacío para evitar errores 404
+    console.log('⚠️ getGrowthDashboardHistory: Función de BD pendiente de implementación');
+    return [];
+
+    /* COMENTADO TEMPORALMENTE HASTA QUE SE CREE LA FUNCIÓN EN SUPABASE
     const { data, error } = await supabase
       .rpc('get_growth_dashboard_history', {
         p_user_id: userId,
@@ -153,6 +159,7 @@ export const getGrowthDashboardHistory = async (userId, limit = 10) => {
     }
 
     return data || [];
+    */
   } catch (err) {
     console.error('❌ Error en getGrowthDashboardHistory:', err);
     return [];
