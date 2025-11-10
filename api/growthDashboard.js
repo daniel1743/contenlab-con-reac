@@ -51,17 +51,42 @@ export default async function handler(req, res) {
     console.log('📊 Iniciando Growth Dashboard para usuario:', userId);
 
     // 1. Verificar créditos disponibles
-    const { data: userData, error: userError } = await supabase
+    let { data: userData, error: userError } = await supabase
       .from('user_credits')
       .select('total_credits')
       .eq('user_id', userId)
       .single();
 
-    if (userError || !userData) {
-      console.error('Error consultando usuario:', userError);
+    // Si el usuario no existe en user_credits, crearlo con créditos iniciales
+    if (userError?.code === 'PGRST116' || !userData) {
+      console.log('⚠️ Usuario no encontrado en user_credits, creando entrada inicial...');
+
+      const { data: newUser, error: createError } = await supabase
+        .from('user_credits')
+        .insert({
+          user_id: userId,
+          monthly_credits: 100, // Créditos iniciales
+          subscription_plan: 'free',
+          subscription_status: 'active'
+        })
+        .select('total_credits')
+        .single();
+
+      if (createError) {
+        console.error('Error creando usuario en user_credits:', createError);
+        return res.status(500).json({
+          error: 'Error inicializando créditos del usuario',
+          details: createError.message
+        });
+      }
+
+      userData = newUser;
+      console.log('✅ Usuario creado en user_credits con 100 créditos iniciales');
+    }
+
+    if (!userData) {
       return res.status(404).json({
-        error: 'Usuario no encontrado',
-        details: userError?.message
+        error: 'Error obteniendo datos del usuario'
       });
     }
 
