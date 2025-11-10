@@ -2130,11 +2130,6 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
         </div>
       )}
 
-      {/* 🚀 PREDICTOR DE VIRALIDAD - NUEVA FUNCIONALIDAD FASE 1 */}
-      <div className="mt-8">
-        <ViralityPredictor />
-      </div>
-
       {/* 🆕 BOTÓN CONTINUAR AL PANEL CREOVISION */}
       {generatedContent && (
         <div className="flex justify-center pt-8">
