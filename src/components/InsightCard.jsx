@@ -45,10 +45,10 @@ export default function InsightCard({ insight = {} }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
+      className="h-full"
     >
-      <Card className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors h-full">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700 h-full">
         <CardContent className="p-5">
           {/* Header */}
           <div className="flex items-start justify-between mb-3">

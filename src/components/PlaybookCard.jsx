@@ -116,10 +116,10 @@ export default function PlaybookCard({ playbook = {}, userId }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: locked && !isUnlocked ? 1.02 : 1 }}
       transition={{ duration: 0.2 }}
+      className="h-full"
     >
-      <Card className={`bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors h-full relative overflow-hidden ${
+      <Card className={`premium-card-hover bg-slate-800/50 border-slate-700 h-full relative overflow-hidden ${
         locked && !isUnlocked ? 'cursor-pointer' : ''
       }`}>
         {/* Lock overlay */}

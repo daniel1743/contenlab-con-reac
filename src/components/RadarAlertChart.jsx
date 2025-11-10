@@ -62,7 +62,7 @@ export default function RadarAlertChart({ data = {} }) {
 
   if (!categories || categories.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardContent className="py-16 text-center">
           <div className="text-4xl mb-4">🎯</div>
           <p className="text-slate-400">No hay datos de Radar disponibles</p>
@@ -73,7 +73,7 @@ export default function RadarAlertChart({ data = {} }) {
 
   return (
     <div className="space-y-4">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Radar de Alertas</CardTitle>
           <CardDescription>
@@ -214,7 +214,7 @@ export default function RadarAlertChart({ data = {} }) {
 
       {/* Risks List */}
       {risks.length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <span className="text-2xl">⚠️</span>
@@ -259,7 +259,7 @@ export default function RadarAlertChart({ data = {} }) {
 
       {/* Opportunities List */}
       {opportunities.length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <span className="text-2xl">💡</span>

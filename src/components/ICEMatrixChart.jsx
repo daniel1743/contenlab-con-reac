@@ -42,7 +42,7 @@ export default function ICEMatrixChart({ data = [] }) {
 
   if (!data || data.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardContent className="py-16 text-center">
           <div className="text-4xl mb-4">📊</div>
           <p className="text-slate-400">No hay datos de ICE Matrix disponibles</p>
@@ -53,7 +53,7 @@ export default function ICEMatrixChart({ data = [] }) {
 
   return (
     <div className="space-y-4">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">ICE Matrix - Priorización de Tareas</CardTitle>
           <CardDescription>

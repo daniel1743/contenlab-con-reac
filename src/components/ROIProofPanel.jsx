@@ -38,7 +38,7 @@ export default function ROIProofPanel({ data = {} }) {
 
       {/* Market Comparison */}
       {market_comparison && Object.keys(market_comparison).length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">📊 Comparación con el Mercado</CardTitle>
             <CardDescription>
@@ -92,7 +92,7 @@ export default function ROIProofPanel({ data = {} }) {
 
       {/* Case Studies */}
       {case_studies && case_studies.length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">🏆 Casos de Éxito</CardTitle>
             <CardDescription>
@@ -156,7 +156,7 @@ export default function ROIProofPanel({ data = {} }) {
 
       {/* Investment Breakdown */}
       {investment_breakdown && Object.keys(investment_breakdown).length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">💎 Desglose de Inversión</CardTitle>
             <CardDescription>
@@ -257,7 +257,7 @@ export default function ROIProofPanel({ data = {} }) {
 
       {/* Testimonials */}
       {testimonials && testimonials.length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">💬 Testimonios</CardTitle>
           </CardHeader>

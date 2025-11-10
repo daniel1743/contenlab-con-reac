@@ -98,6 +98,302 @@ body {
   50% { transform: translateY(-20px); }
 }
 
+/* === EFECTO HOVER PREMIUM GOLD NEON === */
+.premium-card-hover {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg,
+    rgba(255, 215, 0, 0) 0%,
+    rgba(255, 215, 0, 0) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out, background 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.premium-card-hover:hover::before {
+  opacity: 1;
+  background: linear-gradient(135deg,
+    rgba(255, 215, 0, 0.6) 0%,
+    rgba(255, 185, 0, 0.8) 25%,
+    rgba(255, 215, 0, 0.9) 50%,
+    rgba(255, 185, 0, 0.8) 75%,
+    rgba(255, 215, 0, 0.6) 100%
+  );
+}
+
+.premium-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 20px rgba(255, 215, 0, 0.15),
+    0 0 40px rgba(255, 215, 0, 0.1),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* === ROBOT PREMIUM CON ARO BRILLANTE === */
+.premium-robot-container {
+  position: relative;
+  display: inline-block;
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.premium-robot-container::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 215, 0, 0.3) 0%,
+    rgba(255, 185, 0, 0.2) 30%,
+    rgba(255, 215, 0, 0.1) 60%,
+    transparent 100%
+  );
+  animation: pulse-glow-premium 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.premium-robot-container::after {
+  content: '';
+  position: absolute;
+  inset: -15px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  animation: ripple-premium 2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-glow-premium {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes ripple-premium {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.premium-robot-img {
+  position: relative;
+  z-index: 1;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 20px rgba(255, 215, 0, 0.4),
+    0 0 40px rgba(255, 215, 0, 0.2),
+    0 0 60px rgba(255, 215, 0, 0.1);
+}
+
+/* === CORONA PREMIUM CON PARTÍCULAS === */
+.premium-crown {
+  position: relative;
+  display: inline-block;
+  animation: float-crown 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4))
+          drop-shadow(0 0 25px rgba(255, 215, 0, 0.2))
+          drop-shadow(0 0 35px rgba(255, 215, 0, 0.1));
+}
+
+@keyframes float-crown {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+}
+
+.premium-crown::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 215, 0, 0.25) 0%,
+    rgba(255, 185, 0, 0.15) 30%,
+    rgba(255, 215, 0, 0.08) 50%,
+    transparent 70%
+  );
+  animation: crown-pulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.premium-crown::after {
+  content: '';
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background-image: url('/estrella pro.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  animation: sparkle-orbit 3s linear infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.9))
+          drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+}
+
+/* Partículas pequeñas que orbitan alrededor de la corona de forma planetaria */
+.premium-particle {
+  position: absolute;
+  font-size: 12px;
+  pointer-events: none;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+}
+
+.premium-particle-1 {
+  animation: particle-orbit-1 4s linear infinite;
+}
+
+.premium-particle-2 {
+  animation: particle-orbit-2 5s linear infinite;
+}
+
+.premium-particle-3 {
+  animation: particle-orbit-3 6s linear infinite;
+}
+
+/* Órbita 1 - Radio pequeño, rápida */
+@keyframes particle-orbit-1 {
+  0% {
+    transform: translate(-50%, -50%) translate(40px, 0px) scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-50%, -50%) translate(0px, 40px) scale(0.8);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(-40px, 0px) scale(1);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-50%, -50%) translate(0px, -40px) scale(0.8);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(40px, 0px) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Órbita 2 - Radio medio, velocidad media */
+@keyframes particle-orbit-2 {
+  0% {
+    transform: translate(-50%, -50%) translate(55px, 0px) scale(0.9);
+    opacity: 0.9;
+  }
+  25% {
+    transform: translate(-50%, -50%) translate(0px, 55px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(-55px, 0px) scale(0.9);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translate(-50%, -50%) translate(0px, -55px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(55px, 0px) scale(0.9);
+    opacity: 0.9;
+  }
+}
+
+/* Órbita 3 - Radio grande, lenta */
+@keyframes particle-orbit-3 {
+  0% {
+    transform: translate(-50%, -50%) translate(70px, 0px) scale(1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translate(-50%, -50%) translate(0px, 70px) scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(-70px, 0px) scale(1);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translate(-50%, -50%) translate(0px, -70px) scale(0.9);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) translate(70px, 0px) scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes crown-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes sparkle-orbit {
+  0% {
+    transform: rotate(0deg) translateX(25px) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.5;
+  }
+  50% {
+    transform: rotate(180deg) translateX(25px) rotate(-180deg);
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotate(360deg) translateX(25px) rotate(-360deg);
+    opacity: 1;
+  }
+}
+
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite alternate;
 }

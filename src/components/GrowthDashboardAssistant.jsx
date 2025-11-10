@@ -243,8 +243,8 @@ Responde de forma clara y convincente:`;
               {/* Header */}
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-                    🤖
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden">
+                    <img src="/robot.png" alt="Creo Bot" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-lg">Creo Dashboard Bot</h3>

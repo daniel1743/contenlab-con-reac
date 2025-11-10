@@ -170,9 +170,23 @@ export default function GrowthDashboard() {
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">
-                CreoVision Analytics Command Center
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-white mb-2">
+                  CreoVision Analytics Command Center
+                </h1>
+                <div className="relative">
+                  <img
+                    src="/corona_pro.svg"
+                    alt="Premium Crown"
+                    className="premium-crown mb-2"
+                    style={{ width: '48px', height: '48px' }}
+                  />
+                  {/* Partículas pequeñas alrededor de la estrella */}
+                  <span className="premium-particle premium-particle-1">✨</span>
+                  <span className="premium-particle premium-particle-2">⭐</span>
+                  <span className="premium-particle premium-particle-3">✨</span>
+                </div>
+              </div>
               <p className="text-slate-300">
                 Dashboard premium de análisis de crecimiento con IA
               </p>
@@ -213,7 +227,7 @@ export default function GrowthDashboard() {
         </motion.div>
 
         {/* Formulario de generación */}
-        <Card className="mb-6 bg-slate-800/50 border-slate-700">
+        <Card className="premium-card-hover mb-6 bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-white">Generar Nuevo Análisis</CardTitle>
             <CardDescription>
@@ -271,7 +285,7 @@ export default function GrowthDashboard() {
 
         {/* Historial */}
         {history.length > 0 && (
-          <Card className="mb-6 bg-slate-800/50 border-slate-700">
+          <Card className="premium-card-hover mb-6 bg-slate-800/50 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white">Análisis Recientes</CardTitle>
             </CardHeader>
@@ -320,7 +334,7 @@ export default function GrowthDashboard() {
 
                 {/* Overview Tab */}
                 <TabsContent value="overview">
-                  <Card className="bg-slate-800/50 border-slate-700">
+                  <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
                     <CardHeader>
                       <CardTitle className="text-white">Resumen General</CardTitle>
                     </CardHeader>
@@ -404,7 +418,13 @@ export default function GrowthDashboard() {
         {!analysisData && !loading && (
           <Card className="bg-slate-800/30 border-slate-700 border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16">
-              <div className="text-6xl mb-4">📊</div>
+              <div className="premium-robot-container mb-6">
+                <img
+                  src="/robot.png"
+                  alt="CreoVision Robot"
+                  className="premium-robot-img"
+                />
+              </div>
               <h3 className="text-xl font-semibold text-white mb-2">
                 Genera tu primer análisis
               </h3>

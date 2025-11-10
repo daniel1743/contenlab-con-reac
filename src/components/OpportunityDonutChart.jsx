@@ -76,7 +76,7 @@ export default function OpportunityDonutChart({ data = {} }) {
 
   if (!keywords || keywords.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardContent className="py-16 text-center">
           <div className="text-4xl mb-4">🍩</div>
           <p className="text-slate-400">No hay datos de oportunidades disponibles</p>
@@ -87,7 +87,7 @@ export default function OpportunityDonutChart({ data = {} }) {
 
   return (
     <div className="space-y-4">
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Mapa de Oportunidades</CardTitle>
           <CardDescription>
@@ -222,7 +222,7 @@ export default function OpportunityDonutChart({ data = {} }) {
       </Card>
 
       {/* Keyword Details Table */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="premium-card-hover bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Detalles de Keywords</CardTitle>
         </CardHeader>

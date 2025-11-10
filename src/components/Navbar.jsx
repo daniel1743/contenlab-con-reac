@@ -26,7 +26,8 @@ import {
   ArrowRightStartOnRectangleIcon,
   BoltIcon,
   FireIcon,
-  RocketLaunchIcon
+  RocketLaunchIcon,
+  TicketIcon
 } from '@heroicons/react/24/outline';
 
 import {
@@ -36,10 +37,12 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import CreditBalance, { useCreditBalance } from '@/components/CreditBalance';
+import PromoCodeModal from '@/components/PromoCodeModal';
 
 const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, freeUsageCount, onSubscriptionClick, hasDemoAccess }) => {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showPromoCodeModal, setShowPromoCodeModal] = useState(false);
   const { toast } = useToast();
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
@@ -212,16 +215,16 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       transition={{ duration: 0.35, ease: "easeInOut" }}
       className="fixed top-0 left-0 right-0 z-50 glass-effect border-b border-purple-500/20"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex justify-between items-center h-14">
           <motion.div
-            className="flex items-center space-x-3 cursor-pointer"
+            className="flex items-center space-x-2 cursor-pointer"
             onClick={() => onSectionChange('landing')}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
           >
-            <img src="/robot.png" alt="CreoVision" className="w-10 h-10 rounded-full object-cover" />
+            <img src="/robot.png" alt="CreoVision" className="w-8 h-8 rounded-full object-cover" />
             <div className="relative">
-              <span className="text-xl font-bold text-gradient">CreoVision</span>
+              <span className="text-lg font-bold text-gradient">CreoVision</span>
               {/* BETA badge comentado temporalmente */}
               {/* <span className="absolute -top-3 -right-6 px-1 py-0.5 text-[7px] font-bold tracking-wide bg-gradient-to-r from-yellow-400/20 to-amber-500/20 border border-yellow-400/50 rounded text-yellow-300 backdrop-blur-sm animate-pulse-soft shadow-lg shadow-yellow-500/20">
                 BETA
@@ -229,7 +232,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             </div>
           </motion.div>
 
-          <div className="hidden md:flex items-center space-x-8 ml-16">
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-2 ml-8">
             {navigationItems.map((item) => { // Renderiza todos los items
               const Icon = item.icon;
               return (
@@ -238,22 +241,27 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                   type="button" // ✅ evita reload inesperado
                   onClick={() => handleNavClick(item)} // Pasa el ítem completo
                   onMouseEnter={() => handleNavHover(item)} // ⚡ Preload al hover
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
-                    activeSection === item.id 
-                      ? 'bg-purple-600/20 text-purple-300' 
+                  className={`flex items-center space-x-1.5 px-2 lg:px-2.5 py-1.5 rounded-lg transition-all ${
+                    activeSection === item.id
+                      ? 'bg-purple-600/20 text-purple-300'
                       : 'text-gray-300 hover:text-white hover:bg-white/5'
                   }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <Icon className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-1 px-1 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
+                      {item.badge}
+                    </span>
+                  )}
                 </motion.button>
               );
             })}
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {isAuthenticated && user && (
               <CreditBalance
                 onBuyCredits={() => onSectionChange('packages')}
@@ -265,18 +273,18 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
               <div className={`avatar-ring-wrapper ${getAvatarRingClass(userPlan)}`}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 rounded-full cursor-pointer hover:opacity-80 transition-opacity" type="button">
-                      <Avatar className="h-8 w-8 cursor-pointer">
+                    <Button variant="ghost" className="h-9 w-9 rounded-full cursor-pointer hover:opacity-80 transition-opacity p-0" type="button">
+                      <Avatar className="h-9 w-9 cursor-pointer">
                         <AvatarImage alt={profileData.fullName || user.user_metadata?.full_name || 'Avatar de usuario'} src={profileData.profileImage || user.user_metadata?.avatar_url} />
-                        <AvatarFallback className="bg-purple-600">{getAvatarFallback(profileData.fullName || user.user_metadata?.full_name, user.email)}</AvatarFallback>
+                        <AvatarFallback className="bg-purple-600 text-xs">{getAvatarFallback(profileData.fullName || user.user_metadata?.full_name, user.email)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64 glass-effect border-purple-500/20" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-2">
-                        <p className="text-sm font-medium leading-none">{profileData.fullName || user.user_metadata?.full_name || 'Usuario'}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                  <DropdownMenuContent className="w-56 glass-effect border-purple-500/20" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal py-2">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-xs font-semibold leading-none truncate">{profileData.fullName || user.user_metadata?.full_name || 'Usuario'}</p>
+                        <p className="text-[10px] leading-none text-muted-foreground truncate">
                           {user.email}
                         </p>
                       </div>
@@ -285,13 +293,13 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Plan/Poderes */}
-                    <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
+                    <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent py-1.5">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
-                          <BoltIcon className="mr-2 h-4 w-4 text-yellow-400 stroke-[2]" />
-                          <span className="text-xs font-semibold">Plan/Poderes</span>
+                          <BoltIcon className="mr-1.5 h-3.5 w-3.5 text-yellow-400 stroke-[2]" />
+                          <span className="text-[11px] font-semibold">Plan</span>
                         </div>
-                        <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${
+                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
                           userPlan === 'premium'
                             ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                             : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
@@ -302,16 +310,29 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     </DropdownMenuItem>
 
                     {/* Créditos */}
-                    <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent">
+                    <DropdownMenuItem className="cursor-default hover:bg-transparent focus:bg-transparent py-1.5">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
-                          <BanknotesIcon className="mr-2 h-4 w-4 text-purple-400 stroke-[2]" />
-                          <span className="text-xs font-semibold">Créditos</span>
+                          <BanknotesIcon className="mr-1.5 h-3.5 w-3.5 text-purple-400 stroke-[2]" />
+                          <span className="text-[11px] font-semibold">Créditos</span>
                         </div>
-                        <span className="text-xs font-bold text-purple-400">
+                        <span className="text-[11px] font-bold text-purple-400">
                           {userCredits.toLocaleString()}
                         </span>
                       </div>
+                    </DropdownMenuItem>
+
+                    {/* Canjear Código Promocional */}
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setShowPromoCodeModal(true);
+                      }}
+                      className="cursor-pointer bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 py-1.5"
+                    >
+                      <TicketIcon className="mr-1.5 h-3.5 w-3.5 text-purple-400 stroke-[2]" />
+                      <span className="text-[11px] font-bold text-purple-400">Canjear Código</span>
+                      <SparklesSolidIcon className="ml-auto h-3 w-3 text-purple-400" />
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
@@ -323,10 +344,10 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                           setIsMobileMenuOpen(false);
                           onSubscriptionClick?.();
                         }}
-                        className="cursor-pointer bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 border border-yellow-500/30"
+                        className="cursor-pointer bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 border border-yellow-500/30 py-1.5"
                       >
-                        <TrophyIcon className="mr-2 h-4 w-4 text-yellow-400 stroke-[2]" />
-                        <span className="text-xs font-bold text-yellow-400">Actualizar Plan</span>
+                        <TrophyIcon className="mr-1.5 h-3.5 w-3.5 text-yellow-400 stroke-[2]" />
+                        <span className="text-[11px] font-bold text-yellow-400">Actualizar Plan</span>
                         <SparklesSolidIcon className="ml-auto h-3 w-3 text-yellow-400 animate-pulse" />
                       </DropdownMenuItem>
                     )}
@@ -334,44 +355,44 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Insignias */}
-                    <DropdownMenuItem onClick={() => onSectionChange('badges')} className="cursor-pointer">
-                      <TrophyIcon className="mr-2 h-4 w-4 text-purple-400 stroke-[2]" />
-                      <span className="text-xs">Insignias</span>
-                      <span className="ml-auto text-xs text-gray-400">{userBadges}/10</span>
+                    <DropdownMenuItem onClick={() => onSectionChange('badges')} className="cursor-pointer py-1.5">
+                      <TrophyIcon className="mr-1.5 h-3.5 w-3.5 text-purple-400 stroke-[2]" />
+                      <span className="text-[11px]">Insignias</span>
+                      <span className="ml-auto text-[10px] text-gray-400">{userBadges}/10</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
 
                     {/* Mis Investigaciones (Historial) */}
-                    <DropdownMenuItem onClick={() => onSectionChange('history')} className="cursor-pointer">
-                      <ClockIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs">Mis Investigaciones</span>
+                    <DropdownMenuItem onClick={() => onSectionChange('history')} className="cursor-pointer py-1.5">
+                      <ClockIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
+                      <span className="text-[11px]">Mis Investigaciones</span>
                     </DropdownMenuItem>
 
                     {/* Mi Perfil de Creador */}
-                    <DropdownMenuItem onClick={() => onSectionChange('mi-perfil')} className="cursor-pointer">
-                      <SparklesSolidIcon className="mr-2 h-4 w-4" />
-                      <span className="text-xs">Mi Perfil de Creador</span>
+                    <DropdownMenuItem onClick={() => onSectionChange('mi-perfil')} className="cursor-pointer py-1.5">
+                      <SparklesSolidIcon className="mr-1.5 h-3.5 w-3.5" />
+                      <span className="text-[11px]">Mi Perfil de Creador</span>
                     </DropdownMenuItem>
 
                     {/* Configurar Perfil */}
-                    <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer">
-                      <UserCircleIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs">Configurar Perfil</span>
+                    <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer py-1.5">
+                      <UserCircleIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
+                      <span className="text-[11px]">Configurar Perfil</span>
                     </DropdownMenuItem>
 
                     {/* Mis Notificaciones */}
-                    <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="cursor-pointer">
-                      <BellIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs">Mis Notificaciones</span>
+                    <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="cursor-pointer py-1.5">
+                      <BellIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
+                      <span className="text-[11px]">Mis Notificaciones</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
 
                     {/* Cerrar Portal (Cerrar Sesión) */}
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400 cursor-pointer">
-                      <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4 stroke-[2]" />
-                      <span className="text-xs font-semibold">Cerrar Portal</span>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400 cursor-pointer py-1.5">
+                      <ArrowRightOnRectangleIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
+                      <span className="text-[11px] font-semibold">Cerrar Portal</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -379,11 +400,12 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             ) : (
               <Button
                 onClick={onAuthClick}
-                type="button" // ✅ importante
-                className="gradient-primary hover:opacity-90 transition-opacity hidden sm:inline-flex relative"
+                type="button"
+                size="sm"
+                className="gradient-primary hover:opacity-90 transition-opacity hidden sm:inline-flex relative text-xs font-semibold px-4 py-2 h-9"
               >
                 {freeUsageCount > 0 && (
-                  <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-bold text-white bg-pink-500 rounded-full">
+                  <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-bold text-white bg-pink-500 rounded-full shadow-lg">
                       GRATIS
                   </span>
                 )}
@@ -412,22 +434,27 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="py-4 space-y-2 px-4">
+            <div className="py-3 space-y-1.5 px-3">
               {navigationItems.map((item) => { // Renderiza todos los items en el menú móvil
                   const Icon = item.icon;
                   return (
                     <button
                       key={item.id}
-                      type="button" // ✅ importante
+                      type="button"
                       onClick={() => handleNavClick(item)}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all ${
-                        activeSection === item.id 
-                          ? 'bg-purple-600/20 text-purple-300' 
+                      className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg transition-all ${
+                        activeSection === item.id
+                          ? 'bg-purple-600/20 text-purple-300'
                           : 'text-gray-300 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{item.label}</span>
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-xs font-medium">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
+                          {item.badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -437,8 +464,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                      onAuthClick();
                      setIsMobileMenuOpen(false);
                    }}
-                   type="button" // ✅ importante
-                   className="w-full gradient-primary hover:opacity-90 transition-opacity"
+                   type="button"
+                   size="sm"
+                   className="w-full gradient-primary hover:opacity-90 transition-opacity text-xs font-semibold mt-2"
                  >
                    Iniciar Sesión
                  </Button>
@@ -448,6 +476,25 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
         )}
         </AnimatePresence>
       </div>
+
+      {/* Modal de Código Promocional */}
+      <PromoCodeModal
+        isOpen={showPromoCodeModal}
+        onClose={() => setShowPromoCodeModal(false)}
+        userId={user?.id}
+        onSuccess={(creditsGranted) => {
+          // Refrescar balance de créditos
+          if (window.refreshCredits) {
+            window.refreshCredits();
+          }
+
+          toast({
+            title: '¡Créditos agregados! 🎉',
+            description: `Se han agregado ${creditsGranted} créditos a tu cuenta`,
+            duration: 5000,
+          });
+        }}
+      />
     </motion.nav>
   );
 };

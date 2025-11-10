@@ -196,6 +196,29 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [premiumCards, setPremiumCards] = useState([]);
   const [loadingPremium, setLoadingPremium] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showContentGenerator, setShowContentGenerator] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('creovision_show_content_generator');
+    if (stored !== null) {
+      return stored === 'true';
+    }
+    if (localStorage.getItem('creatorProfile') || localStorage.getItem('creatorPersonalityComplete') === 'true') {
+      return true;
+    }
+    return false;
+  });
+  const [freeCreditsRemaining, setFreeCreditsRemaining] = useState(() => {
+    if (typeof window === 'undefined') return { tier: 'free', remaining: 0 };
+    const stored = localStorage.getItem('creovision_content_free_usage');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (error) {
+        console.warn('No se pudo parsear usage limit:', error);
+      }
+    }
+    return { tier: 'free', remaining: 0 };
+  });
 
   // 🆕 ESTADOS PARA PERSONALIDAD DEL CREADOR
   const [showPersonalityModal, setShowPersonalityModal] = useState(false);
@@ -236,6 +259,25 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
       audience: '',
       goals: ''
     };
+  });
+  const [hasDefinedPersonality, setHasDefinedPersonality] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (localStorage.getItem('creatorProfile')) {
+      return true;
+    }
+    if (localStorage.getItem('creatorPersonalityComplete') === 'true') {
+      return true;
+    }
+    const saved = localStorage.getItem('creatorPersonality');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return Boolean(parsed.role && parsed.style && parsed.audience && parsed.goals);
+      } catch (error) {
+        console.warn('No se pudo parsear creatorPersonality:', error);
+      }
+    }
+    return false;
   });
 
   // 🆕 ESTADOS PARA GENERADOR DE HASHTAGS
@@ -289,6 +331,59 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
     }
     localStorage.setItem(viralityStorageKey, isViralityUnlocked ? 'true' : 'false');
   }, [isViralityUnlocked, viralityStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    localStorage.setItem('creovision_show_content_generator', showContentGenerator ? 'true' : 'false');
+  }, [showContentGenerator]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) {
+      return;
+    }
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('plan_type')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.warn('No se pudo obtener plan del usuario:', error);
+          return;
+        }
+
+        const plan = data?.plan_type === 'premium' ? 'premium' : 'pro';
+        const defaultFree = plan === 'premium' ? 10 : 5;
+        const stored = localStorage.getItem('creovision_content_free_usage');
+        if (!stored) {
+          const initial = { tier: plan, remaining: defaultFree };
+          localStorage.setItem('creovision_content_free_usage', JSON.stringify(initial));
+          setFreeCreditsRemaining(initial);
+        } else {
+          try {
+            const parsed = JSON.parse(stored);
+            if (!parsed.tier || parsed.tier !== plan) {
+              const reset = { tier: plan, remaining: defaultFree };
+              localStorage.setItem('creovision_content_free_usage', JSON.stringify(reset));
+              setFreeCreditsRemaining(reset);
+            } else {
+              setFreeCreditsRemaining(parsed);
+            }
+          } catch (error) {
+            const fallback = { tier: plan, remaining: defaultFree };
+            localStorage.setItem('creovision_content_free_usage', JSON.stringify(fallback));
+            setFreeCreditsRemaining(fallback);
+          }
+        }
+      } catch (error) {
+        console.error('Error determinando plan del usuario:', error);
+      }
+    })();
+  }, [user]);
 
   const guardProtectedAction = useCallback((context = 'esta acción') => {
     if (user) {
@@ -767,40 +862,162 @@ const handleCopy = useCallback(() => {
       return;
     }
 
-    // 💎 VERIFICAR CRÉDITOS SUFICIENTES (15 créditos por guión)
-    const COST = 15;
-    const creditCheck = await checkSufficientCredits(user.id, COST);
+    const planTier = freeCreditsRemaining.tier || 'pro';
+    const defaults = planTier === 'premium' ? 10 : 5;
+    const remaining = freeCreditsRemaining.remaining ?? defaults;
 
-    if (!creditCheck.sufficient) {
+    if (remaining <= 0) {
+      const COST = 20;
+      const creditCheck = await checkSufficientCredits(user.id, COST);
+
+      if (!creditCheck.sufficient) {
+        toast({
+          title: '💎 Créditos insuficientes',
+          description: `Necesitas ${COST} créditos para generar contenido. Te faltan ${creditCheck.missing} créditos.`,
+          variant: 'destructive',
+        });
+        onSubscriptionClick?.();
+        return;
+      }
+
+      setIsGenerating(true);
+      setGeneratedContent('');
+      console.log('🎯 Iniciando generación de contenido...');
+
       toast({
-        title: '💎 Créditos insuficientes',
-        description: `Necesitas ${COST} créditos para generar contenido. Te faltan ${creditCheck.missing} créditos.`,
-        variant: 'destructive',
+        title: '🚀 CreoVision está trabajando para ti',
+        description: 'Espera un momento... Nuestro editor senior está analizando tu temática y creando el mejor ángulo narrativo posible.',
+        duration: 4000,
       });
-      onSubscriptionClick?.();
+
+      try {
+        const enrichedProfile = creatorPersonality.role ? {
+          ...creatorPersonality,
+          emotionalObjective: advancedSettings.emotionalObjective,
+          depthLevel: advancedSettings.depthLevel,
+          specificAudience: advancedSettings.audienceType || creatorPersonality.audience,
+          narrativePreference: advancedSettings.narrativeStyle || creatorPersonality.style,
+          coreValues: advancedSettings.brandValues,
+          contentContext: advancedSettings.usageContext
+        } : null;
+
+        const generatedScript = await generateViralScript(
+          selectedTheme,
+          selectedStyle,
+          selectedDuration,
+          contentTopic,
+          enrichedProfile
+        );
+
+        console.log('✅ Script generado:', generatedScript);
+
+        const analisisMatch = generatedScript.match(/---INICIO_ANALISIS---([\s\S]*?)---FIN_ANALISIS---/);
+        const limpioMatch = generatedScript.match(/---INICIO_LIMPIO---([\s\S]*?)---FIN_LIMPIO---/);
+        const sugerenciasMatch = generatedScript.match(/---INICIO_SUGERENCIAS---([\s\S]*?)---FIN_SUGERENCIAS---/);
+
+        if (analisisMatch) setContentAnalisis(analisisMatch[1].trim());
+        if (limpioMatch) setContentLimpio(limpioMatch[1].trim());
+        if (sugerenciasMatch) setContentSugerencias(sugerenciasMatch[1].trim());
+
+        setGeneratedContent(generatedScript);
+
+        const fullPrompt = `Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Tópico: ${contentTopic}`;
+        setCurrentPrompt(fullPrompt);
+
+        setTimeout(() => {
+          setShowFeedbackRating(true);
+        }, 3000);
+
+        const CREDIT_COST = 20;
+        const creditResult = await consumeCredits(user.id, CREDIT_COST, 'viral_script', 'Generación de guion viral');
+
+        if (creditResult.success) {
+          console.log(`💎 ${CREDIT_COST} créditos consumidos. Restantes: ${creditResult.remaining}`);
+        }
+
+        toast({
+          title: '✨ Guión generado exitosamente',
+          description: `Se consumieron ${CREDIT_COST} créditos. Restantes: ${creditResult.remaining || 'N/A'} créditos.`,
+          duration: 5000,
+        });
+
+        try {
+          toast({
+            title: '🎯 Optimizando tu contenido',
+            description: 'Generando títulos SEO, keywords y análisis de tendencias. Esto tomará solo unos segundos más...',
+            duration: 3000,
+          });
+          await generateAllSupplementaryData();
+
+          toast({
+            title: '✅ ¡Tu contenido premium está listo!',
+            description: 'CreoVision ha terminado. Revisa los 3 paneles profesionales y continúa al Panel CreoVision cuando estés listo.',
+            duration: 6000,
+          });
+        } catch (supplementaryError) {
+          console.error('⚠️ Error en datos suplementarios (no crítico):', supplementaryError);
+        }
+
+        if (user) {
+          try {
+            const { error } = await supabase
+              .from('generated_content')
+              .insert({
+                user_id: user.id,
+                theme: selectedTheme,
+                style: selectedStyle,
+                topic: contentTopic,
+                content: generatedScript,
+              });
+            
+            if (!error) {
+              toast({
+                title: '¡También guardado!',
+                description: 'Contenido guardado en tu historial.',
+              });
+            }
+          } catch (error) {
+            console.error("Error saving generated content:", error);
+          }
+        }
+
+      } catch (error) {
+        console.error('💥 Error generating content:', error);
+
+        toast({
+          title: '⚠️ Ups, algo no salió bien',
+          description: error.message || 'Intenta de nuevo más tarde o contacta soporte si persiste.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsGenerating(false);
+      }
+
       return;
     }
-    
+
+    const updated = {
+      tier: planTier,
+      remaining: Math.max(remaining - 1, 0)
+    };
+    setFreeCreditsRemaining(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('creovision_content_free_usage', JSON.stringify(updated));
+    }
+
     setIsGenerating(true);
     setGeneratedContent('');
-    console.log('🎯 Iniciando generación de contenido...');
+    console.log('🎯 Iniciando generación de contenido con crédito gratuito...');
 
-    // 🆕 MENSAJES DE CARGA PROFESIONALES
     toast({
       title: '🚀 CreoVision está trabajando para ti',
-      description: 'Espera un momento... Nuestro editor senior está analizando tu temática y creando el mejor ángulo narrativo posible.',
+      description: `Usando uno de tus ${planTier === 'premium' ? '10' : '5'} accesos libres para producir tu guión.`,
       duration: 4000,
     });
 
     try {
-      // 🎯 LLAMADA A CREOVISION AI GP-5 CON PERSONALIDAD DEL CREADOR
-      console.log('🤖 CreoVision AI GP-5 está trabajando para ti...');
-      console.log('🎭 Personalidad del creador:', creatorPersonality.role ? 'Configurada' : 'No configurada');
-
-      // 🆕 Construir perfil enriquecido con settings avanzados
       const enrichedProfile = creatorPersonality.role ? {
         ...creatorPersonality,
-        // Smart defaults aplicados automáticamente
         emotionalObjective: advancedSettings.emotionalObjective,
         depthLevel: advancedSettings.depthLevel,
         specificAudience: advancedSettings.audienceType || creatorPersonality.audience,
@@ -817,9 +1034,6 @@ const handleCopy = useCallback(() => {
         enrichedProfile
       );
 
-      console.log('✅ Script generado:', generatedScript);
-
-      // 🆕 PARSEAR LAS 3 VERSIONES DEL CONTENIDO
       const analisisMatch = generatedScript.match(/---INICIO_ANALISIS---([\s\S]*?)---FIN_ANALISIS---/);
       const limpioMatch = generatedScript.match(/---INICIO_LIMPIO---([\s\S]*?)---FIN_LIMPIO---/);
       const sugerenciasMatch = generatedScript.match(/---INICIO_SUGERENCIAS---([\s\S]*?)---FIN_SUGERENCIAS---/);
@@ -828,53 +1042,25 @@ const handleCopy = useCallback(() => {
       if (limpioMatch) setContentLimpio(limpioMatch[1].trim());
       if (sugerenciasMatch) setContentSugerencias(sugerenciasMatch[1].trim());
 
-      // Mantener el contenido completo para compatibilidad
       setGeneratedContent(generatedScript);
-
-      // Guardar prompt para feedback
-      const fullPrompt = `Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Tópico: ${contentTopic}`;
-      setCurrentPrompt(fullPrompt);
-
-      // Mostrar rating después de 3 segundos
-      setTimeout(() => {
-        setShowFeedbackRating(true);
-      }, 3000);
-
-      // 💎 CONSUMIR CRÉDITOS DESPUÉS DE GENERACIÓN EXITOSA
-      const creditResult = await consumeCredits(user.id, COST, 'viral_script', 'Generación de guion viral');
-
-      if (creditResult.success) {
-        console.log(`💎 ${COST} créditos consumidos. Restantes: ${creditResult.remaining}`);
-      }
+      setCurrentPrompt(`Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Tópico: ${contentTopic}`);
+      setTimeout(() => setShowFeedbackRating(true), 3000);
 
       toast({
         title: '✨ Guión generado exitosamente',
-        description: `Se consumieron ${COST} créditos. Restantes: ${creditResult.remaining || 'N/A'} créditos.`,
+        description: `Acceso libre restante: ${Math.max(updated.remaining, 0)}.${updated.remaining === 0 ? ' Las siguientes generaciones costarán 20 créditos.' : ''}`,
         duration: 5000,
       });
 
-      // 🚀 GENERAR DATOS ADICIONALES CON GEMINI (sin bloquear la UI)
       try {
-        toast({
-          title: '🎯 Optimizando tu contenido',
-          description: 'Generando títulos SEO, keywords y análisis de tendencias. Esto tomará solo unos segundos más...',
-          duration: 3000,
-        });
         await generateAllSupplementaryData();
-
-        toast({
-          title: '✅ ¡Tu contenido premium está listo!',
-          description: 'CreoVision ha terminado. Revisa los 3 paneles profesionales y continúa al Panel CreoVision cuando estés listo.',
-          duration: 6000,
-        });
       } catch (supplementaryError) {
         console.error('⚠️ Error en datos suplementarios (no crítico):', supplementaryError);
       }
 
-      // Guardar en Supabase solo si el usuario está autenticado
       if (user) {
         try {
-          const { error } = await supabase
+          await supabase
             .from('generated_content')
             .insert({
               user_id: user.id,
@@ -883,48 +1069,21 @@ const handleCopy = useCallback(() => {
               topic: contentTopic,
               content: generatedScript,
             });
-          
-          if (!error) {
-            toast({
-              title: '¡También guardado!',
-              description: 'Contenido guardado en tu historial.',
-            });
-          }
         } catch (error) {
-          console.error("Error saving generated content:", error);
+          console.error('Error guardando contenido generado:', error);
         }
       }
-
     } catch (error) {
-      console.error('💥 Error generating content:', error);
-
+      console.error('💥 Error generating content con crédito libre:', error);
       toast({
-        title: '⚠️ Ups, algo no salió bien',
-        description: 'CreoVision encontró un problema al generar tu contenido. Estamos usando un ejemplo mientras lo solucionamos.',
-        variant: 'destructive'
+        title: '⚠️ Error al generar contenido',
+        description: error.message || 'Intenta nuevamente en unos minutos.',
+        variant: 'destructive',
       });
-      
-      // Fallback al contenido mock
-      const fallbackContent = `## Error - Contenido de ejemplo para: ${contentTopic}
-
-**Nota**: Nuestros agentes de IA están sobrecargados. Intenta nuevamente.
-
-### 🎯 Hook Inicial:
-¿Sabías que ${contentTopic} puede cambiar tu perspectiva?
-
-### 📝 Desarrollo:
-Exploramos ${contentTopic} con enfoque ${selectedStyle}.
-
-### #️⃣ Hashtags:
-#${contentTopic.replace(/\s+/g, '')} #${selectedTheme} #Viral`;
-      
-      setGeneratedContent(fallbackContent);
-      
     } finally {
       setIsGenerating(false);
-      console.log('🏁 Generación de contenido finalizada');
     }
-  }, [contentTopic, selectedTheme, selectedStyle, selectedDuration, creatorPersonality, advancedSettings, toast, user, isDemoUser]);
+  }, [user, isDemoUser, contentTopic, selectedTheme, selectedStyle, selectedDuration, toast, setShowAuthRequiredModal, advancedSettings, creatorPersonality, isUsingProfile, showAdvancedSettings, guardProtectedAction, generateViralScript, generateAllSupplementaryData, supabase, onSubscriptionClick, freeCreditsRemaining]);
 
   // Reproducir (libre para todos)
   const handleReplayScript = useCallback(() => {
@@ -1234,12 +1393,35 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       description: 'Tu perfil se aplicará automáticamente en la generación de contenido.',
     });
 
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('creatorPersonalityComplete', 'true');
+    }
+    setHasDefinedPersonality(true);
+    setShowContentGenerator(true);
     setShowPersonalityModal(false);
   }, [creatorPersonality, toast]);
 
   // 🔒 Estado para verificar si la personalidad está completa
   const [showLockedModal, setShowLockedModal] = useState(false);
-  const isPersonalityComplete = creatorPersonality.role && creatorPersonality.style && creatorPersonality.audience && creatorPersonality.goals;
+  const isPersonalityFormComplete = creatorPersonality.role && creatorPersonality.style && creatorPersonality.audience && creatorPersonality.goals;
+
+  useEffect(() => {
+    if (isPersonalityFormComplete) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('creatorPersonalityComplete', 'true');
+      }
+      setHasDefinedPersonality(true);
+    }
+  }, [isPersonalityFormComplete]);
+
+  useEffect(() => {
+    if (isUsingProfile) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('creatorPersonalityComplete', 'true');
+      }
+      setHasDefinedPersonality(true);
+    }
+  }, [isUsingProfile]);
 
   // 🔒 Función para manejar click en herramientas bloqueadas
   const handleLockedToolClick = useCallback(() => {
@@ -1262,7 +1444,15 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       description: 'Crea contenido premium optimizado para cada plataforma',
       icon: SparklesIcon,
       color: 'from-purple-500 to-pink-500',
-      action: () => {},
+      action: () => {
+        setShowContentGenerator(true);
+        setTimeout(() => {
+          const section = document.getElementById('content-generator-panel');
+          if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 75);
+      },
       requiresPersonality: true
     },
     // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado, reemplazar con Canva SDK
@@ -1381,7 +1571,7 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {tools.map((tool) => {
           const Icon = tool.icon;
-          const isLocked = tool.requiresPersonality && !isPersonalityComplete;
+          const isLocked = tool.requiresPersonality && !hasDefinedPersonality;
 
           return (
             <div key={tool.id} className="relative">
@@ -1418,8 +1608,8 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
       </div>
 
       {/* Generador de contenido principal (legacy) */}
-      {false && (
-      <Card className="glass-effect border-purple-500/20">
+      {(showContentGenerator || generatedContent) && (
+      <Card id="content-generator-panel" className="glass-effect border-purple-500/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -1432,15 +1622,26 @@ Exploramos ${contentTopic} con enfoque ${selectedStyle}.
               </CardDescription>
             </div>
             {/* 🎯 BOTÓN PROMPT WIZARD */}
-            <Button
-              onClick={() => setShowPromptWizard(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600
-                       text-white font-semibold shadow-lg hover:shadow-glow transition-all"
-              size="lg"
-            >
-              <Wand2 className="w-5 h-5 mr-2" />
-              Asistente de Prompt
-            </Button>
+            <div className="flex items-center">
+              <Button
+                onClick={() => setShowPromptWizard(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600
+                         text-white font-semibold shadow-lg hover:shadow-glow transition-all"
+                size="lg"
+              >
+                <Wand2 className="w-5 h-5 mr-2" />
+                Asistente de Prompt
+              </Button>
+              <Button
+                onClick={() => setShowContentGenerator(false)}
+                variant="ghost"
+                size="icon"
+                className="ml-3 text-gray-300 hover:text-white hover:bg-white/10"
+                title="Ocultar generador"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
