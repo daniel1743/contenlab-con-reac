@@ -118,11 +118,12 @@ export const generateGrowthDashboard = async ({ userId, channelId, keywords }) =
     }
 
     console.log('✅ Growth Dashboard generado exitosamente');
-    console.log(`💰 Créditos restantes: ${result.credits_remaining}`);
+    console.log(`💰 Créditos restantes: ${result.remainingCredits}`);
 
     return {
       success: true,
-      data: result,
+      data: result.data,
+      credits_remaining: result.remainingCredits,
     };
   } catch (err) {
     console.error('❌ Error en generateGrowthDashboard:', err);
