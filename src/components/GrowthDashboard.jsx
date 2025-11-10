@@ -28,6 +28,7 @@ import OpportunityDonutChart from './OpportunityDonutChart';
 import InsightCard from './InsightCard';
 import PlaybookCard from './PlaybookCard';
 import ROIProofPanel from './ROIProofPanel';
+import GrowthDashboardAssistant from './GrowthDashboardAssistant';
 
 const CREDIT_COST = 380;
 
@@ -415,6 +416,9 @@ export default function GrowthDashboard() {
           </Card>
         )}
       </div>
+
+      {/* Asistente exclusivo del Growth Dashboard */}
+      <GrowthDashboardAssistant />
     </div>
   );
 }

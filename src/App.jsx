@@ -15,6 +15,7 @@ import AIConciergeBubble from '@/components/AIConciergeBubbleV2'; // VERSIÓN CO
 // Lazy load de componentes pesados
 const AuthModal = lazy(() => import('@/components/AuthModal'));
 const Dashboard = lazy(() => import('@/components/DashboardDynamic'));
+const GrowthDashboard = lazy(() => import('@/components/GrowthDashboard'));
 const Tools = lazy(() => import('@/components/Tools'));
 const Calendar = lazy(() => import('@/components/Calendar'));
 const ContentLibrary = lazy(() => import('@/components/ContentLibrary'));
@@ -32,6 +33,8 @@ const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'));
 const WeeklyTrends = lazy(() => import('@/components/WeeklyTrends'));
 const CreatorProfile = lazy(() => import('@/components/CreatorProfile'));
+const TermsOfServicePage = lazy(() => import('@/components/legal/TermsOfServicePage'));
+const PrivacyPolicyPage = lazy(() => import('@/components/legal/PrivacyPolicyPage'));
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -256,6 +259,15 @@ function App() {
                   />
 
                   <Route
+                    path="/growth-dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <GrowthDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
                     path="/calendar"
                     element={
                       <ProtectedRoute>
@@ -354,6 +366,12 @@ function App() {
                     }
                   />
 
+                  {/* Rutas legales públicas */}
+                  <Route path="/terminos" element={<TermsOfServicePage />} />
+                  <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms" element={<Navigate to="/terminos" replace />} />
+                  <Route path="/privacy" element={<Navigate to="/privacidad" replace />} />
+
                   {/* Rutas comentadas/eliminadas - Redirect a home para evitar 404 */}
                   <Route path="/chat" element={<Navigate to="/" replace />} />
                   <Route path="/inbox" element={<Navigate to="/" replace />} />
@@ -425,8 +443,8 @@ function App() {
           )}
         </Suspense>
 
-        {/* AI Concierge Bubble (Asistente original) - PRUEBA TEMPORAL */}
-        <AIConciergeBubble />
+        {/* AI Concierge Bubble (Asistente original) - No mostrar en Growth Dashboard */}
+        {activeSection !== 'growth-dashboard' && <AIConciergeBubble />}
 
         {/* Coach Creo - COMENTADO TEMPORALMENTE PARA PRUEBAS */}
         {/* {isAuthenticated && user && (

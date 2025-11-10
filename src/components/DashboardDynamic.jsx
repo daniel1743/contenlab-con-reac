@@ -622,6 +622,15 @@ const DashboardDynamic = ({ onSectionChange }) => {
       return;
     }
 
+    if (!unlockedHighlightIds.includes(videoKey)) {
+      toast({
+        title: 'Desbloquea esta inspiración',
+        description: 'Utiliza 15 créditos para acceder al análisis completo.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSelectedHighlightVideo(video);
     setIsVideoAnalysisOpen(true);
     setVideoAnalysisError(null);

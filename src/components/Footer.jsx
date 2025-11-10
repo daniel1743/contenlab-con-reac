@@ -51,8 +51,8 @@ const Footer = () => {
     {
       title: 'Legal',
       links: [
-        { name: 'Términos de Servicio', content: 'Lee nuestros términos y condiciones de uso para entender tus derechos y responsabilidades al utilizar CreoVision Premium. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
-        { name: 'Política de Privacidad', content: 'Conoce cómo recopilamos, usamos y protegemos tu información personal de acuerdo con nuestra política de privacidad. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
+        { name: 'Términos de Servicio', href: '/terminos' },
+        { name: 'Política de Privacidad', href: '/privacidad' },
       ],
     },
   ];
@@ -83,12 +83,21 @@ const Footer = () => {
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.name}>
-                    <button
-                      onClick={() => handleLinkClick(link.name, link.content)}
-                      className="text-gray-400 hover:text-white transition-colors text-sm"
-                    >
-                      {link.name}
-                    </button>
+                    {link.href ? (
+                      <a
+                        href={link.href}
+                        className="text-gray-400 hover:text-white transition-colors text-sm"
+                      >
+                        {link.name}
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => handleLinkClick(link.name, link.content)}
+                        className="text-gray-400 hover:text-white transition-colors text-sm"
+                      >
+                        {link.name}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

@@ -25,7 +25,8 @@ import {
   BellIcon,
   ArrowRightStartOnRectangleIcon,
   BoltIcon,
-  FireIcon
+  FireIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline';
 
 import {
@@ -118,6 +119,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: HomeIcon },
     { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
+    { id: 'growth-dashboard', label: 'Growth Dashboard', icon: RocketLaunchIcon, authRequired: true, badge: '380', premium: true }, // 🆕 GROWTH DASHBOARD
     { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
     { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false }, // 🆕 TENDENCIAS
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
@@ -148,6 +150,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const handleNavHover = (item) => {
     if (item.id === 'dashboard') {
       import('@/components/DashboardDynamic');
+    } else if (item.id === 'growth-dashboard') {
+      import('@/components/GrowthDashboard');
     } else if (item.id === 'tools') {
       import('@/components/Tools');
     } else if (item.id === 'calendar') {
