@@ -55,38 +55,25 @@ export default async function handler(req, res) {
       .from('user_credits')
       .select('total_credits')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle(); // Usar maybeSingle() en lugar de single() para evitar error si no existe
 
-    // Si el usuario no existe en user_credits, crearlo con créditos iniciales
-    if (userError?.code === 'PGRST116' || !userData) {
-      console.log('⚠️ Usuario no encontrado en user_credits, creando entrada inicial...');
+    console.log('📊 Resultado de consulta user_credits:', { userData, userError });
 
-      const { data: newUser, error: createError } = await supabase
-        .from('user_credits')
-        .insert({
-          user_id: userId,
-          monthly_credits: 100, // Créditos iniciales
-          subscription_plan: 'free',
-          subscription_status: 'active'
-        })
-        .select('total_credits')
-        .single();
-
-      if (createError) {
-        console.error('Error creando usuario en user_credits:', createError);
-        return res.status(500).json({
-          error: 'Error inicializando créditos del usuario',
-          details: createError.message
-        });
-      }
-
-      userData = newUser;
-      console.log('✅ Usuario creado en user_credits con 100 créditos iniciales');
+    // Si el usuario no existe, retornar error pidiendo inicialización
+    if (!userData) {
+      console.error('❌ Usuario no encontrado en user_credits:', userId);
+      return res.status(404).json({
+        error: 'Usuario no inicializado en el sistema de créditos',
+        details: 'Por favor, contacta a soporte para inicializar tu cuenta',
+        userId: userId
+      });
     }
 
-    if (!userData) {
-      return res.status(404).json({
-        error: 'Error obteniendo datos del usuario'
+    if (userError) {
+      console.error('❌ Error consultando user_credits:', userError);
+      return res.status(500).json({
+        error: 'Error consultando créditos del usuario',
+        details: userError.message
       });
     }
 
