@@ -443,8 +443,10 @@ function App() {
           )}
         </Suspense>
 
-        {/* AI Concierge Bubble (Asistente original) - No mostrar en Growth Dashboard */}
-        {activeSection !== 'growth-dashboard' && <AIConciergeBubble />}
+        {/* AI Concierge Bubble (solo usuarios registrados, no landing ni growth dashboard) */}
+        {isAuthenticated &&
+          activeSection !== 'growth-dashboard' &&
+          activeSection !== 'landing' && <AIConciergeBubble />}
 
         {/* Coach Creo - COMENTADO TEMPORALMENTE PARA PRUEBAS */}
         {/* {isAuthenticated && user && (

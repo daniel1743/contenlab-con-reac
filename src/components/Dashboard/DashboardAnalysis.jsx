@@ -17,6 +17,7 @@ import VoiceEditionAnalysis from './VoiceEditionAnalysis';
 import EngagementRetention from './EngagementRetention';
 import TextAnalysis from './TextAnalysis';
 import CreoVisionSeal from './CreoVisionSeal';
+import CREOLandingAssistant from '@/components/CREOLandingAssistant';
 
 const DashboardAnalysis = ({ analysisData, onReset, isGuest = false }) => {
   const [loading, setLoading] = useState(true);
@@ -77,8 +78,29 @@ const DashboardAnalysis = ({ analysisData, onReset, isGuest = false }) => {
 
   const { channelInfo, videos, metrics, aiInsights, meta } = analysisData;
 
+  const derivedBestVideo =
+    metrics?.bestVideo?.title ||
+    metrics?.bestVideo?.name ||
+    (typeof metrics?.bestVideo === 'string' ? metrics.bestVideo : null) ||
+    videos?.[0]?.title ||
+    null;
+
+  const derivedNiche =
+    aiInsights?.primaryNiche ||
+    aiInsights?.niche ||
+    channelInfo?.niche ||
+    channelInfo?.category ||
+    channelInfo?.topic ||
+    null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1C1333] via-[#2A1B3D] to-[#1E2A4A] py-8 px-4">
+      <CREOLandingAssistant
+        channelName={channelInfo?.title}
+        bestVideoTitle={derivedBestVideo}
+        detectedNiche={derivedNiche}
+        shouldActivate={Boolean(isGuest && metrics && videos?.length)}
+      />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
