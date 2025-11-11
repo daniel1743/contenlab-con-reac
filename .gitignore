@@ -28,6 +28,10 @@ config.json
 secrets.json
 credentials.json
 
+# Documentación de seguridad (puede contener ejemplos sensibles)
+CORRECCION-SEGURIDAD-CREDENCIALES.md
+GIT-PUSH-BLOQUEADO-SOLUCION.md
+
 # ========================================
 # 📝 LOGS Y DEBUG
 # ========================================
