@@ -12,23 +12,27 @@
  */
 
 // ============================================
-// 🔥 FEATURES PREMIUM (Alto costo / Alto valor)
+// 🔥 HERRAMIENTAS PREMIUM (Ultra alto valor)
 // ============================================
 export const CREDIT_COSTS = {
-  // Growth Dashboard - Feature estrella (380 créditos)
-  GROWTH_DASHBOARD: 380, // YouTube + Gemini 2.0 + News + Cache | $0.15 real
+  // Analytics Command Center - Dashboard completo (400 créditos)
+  ANALYTICS_COMMAND: 400, // YouTube + Gemini 2.0 + News + Cache | $0.18 real
+
+  // Predictor de Viralidad con Reddit (300 créditos)
+  VIRALITY_PREDICTOR: 300, // YouTube + QWEN + Reddit + Gemini | $0.14 real
+
+  // Análisis Completo de Mi Canal (250 créditos)
+  MY_CHANNEL_ANALYSIS: 250, // YouTube Analytics + Gemini + Deep Insights | $0.12 real
+
+  // ============================================
+  // 💎 FEATURES PREMIUM (Alto costo / Alto valor)
+  // ============================================
 
   // Análisis de Competencia (200 créditos)
   COMPETITOR_ANALYSIS: 200, // YouTube + Gemini + QWEN | $0.12 real
 
   // Análisis de Tendencias (150 créditos)
   TREND_ANALYSIS: 150, // YouTube + News + DeepSeek | $0.08 real
-
-  // Análisis de Canal Completo (120 créditos)
-  CHANNEL_ANALYSIS: 120, // YouTube + Gemini | $0.07 real
-
-  // Predictor de Viralidad (100 créditos)
-  VIRALITY_PREDICTOR: 100, // YouTube + QWEN + Reddit | $0.06 real
 
   // ============================================
   // 💼 FEATURES INTERMEDIAS (Costo medio)
@@ -99,6 +103,7 @@ export const SUBSCRIPTION_PLANS = {
     price_usd: 0,
     price_clp: 0,
     rollover_limit: 0, // No rollover en Free
+    is_popular: false, // NO es popular
     features: [
       '150 créditos/mes',
       '7 guiones virales',
@@ -115,6 +120,7 @@ export const SUBSCRIPTION_PLANS = {
     price_usd: 6,
     price_clp: 5400,
     rollover_limit: 500,
+    is_popular: false, // NO es popular
     features: [
       '1000 créditos/mes',
       'Rollover hasta 500 créditos',
@@ -132,7 +138,7 @@ export const SUBSCRIPTION_PLANS = {
     price_usd: 15,
     price_clp: 13500,
     rollover_limit: 1500,
-    is_popular: true,
+    is_popular: true, // ⭐ SOLO ESTE ES TRUE
     features: [
       '3000 créditos/mes',
       'Rollover hasta 1500 créditos',
@@ -151,6 +157,7 @@ export const SUBSCRIPTION_PLANS = {
     price_usd: 30,
     price_clp: 27000,
     rollover_limit: 4000,
+    is_popular: false, // NO es popular
     features: [
       '8000 créditos/mes',
       'Rollover hasta 4000 créditos',
@@ -169,6 +176,7 @@ export const SUBSCRIPTION_PLANS = {
     price_usd: 65,
     price_clp: 58500,
     rollover_limit: 10000,
+    is_popular: false, // NO es popular
     features: [
       '20000 créditos/mes',
       'Rollover hasta 10000 créditos',
@@ -203,11 +211,13 @@ export const INSUFFICIENT_CREDITS_MESSAGES = {
  */
 export function getCreditCost(featureSlug) {
   const slugToConstant = {
-    'growth_dashboard': CREDIT_COSTS.GROWTH_DASHBOARD,
+    // Herramientas Premium
+    'analytics_command': CREDIT_COSTS.ANALYTICS_COMMAND,
+    'virality_predictor': CREDIT_COSTS.VIRALITY_PREDICTOR,
+    'my_channel_analysis': CREDIT_COSTS.MY_CHANNEL_ANALYSIS,
+    // Features Premium
     'competitor_analysis': CREDIT_COSTS.COMPETITOR_ANALYSIS,
     'trend_analysis': CREDIT_COSTS.TREND_ANALYSIS,
-    'channel_analysis': CREDIT_COSTS.CHANNEL_ANALYSIS,
-    'virality_predictor': CREDIT_COSTS.VIRALITY_PREDICTOR,
     'personalization_plus': CREDIT_COSTS.PERSONALIZATION_PLUS,
     'seo_coach': CREDIT_COSTS.SEO_COACH,
     'video_analysis': CREDIT_COSTS.VIDEO_ANALYSIS,

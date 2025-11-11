@@ -7,6 +7,133 @@
 
 ## 🔴 CRÍTICOS - Resolver ASAP
 
+### 0. **Sistema de Créditos - Configuración Pendiente**
+**Status**: 🔴 Código listo, falta ejecutar
+**Prioridad**: CRÍTICA (bloquea monetización)
+
+#### **0.1. Ejecutar Migraciones SQL en Supabase** (10 min)
+**Archivos listos**:
+- ✅ `supabase/migrations/022_create_subscription_packages.sql` (5 planes)
+- ✅ `supabase/migrations/023_create_feature_costs.sql` (25 features)
+- ✅ `supabase/migrations/024_create_credit_functions.sql` (6 funciones)
+
+**Configuración**:
+- Plan Pro: `is_popular = true` ⭐
+- Otros planes: `is_popular = false`
+- 22 features: `is_active = true`
+- 3 features inactivos: TikTok Trend Analyzer, Audience Persona Builder, Monetization Advisor
+
+**Pasos**:
+- [ ] Abrir https://supabase.com/dashboard → Proyecto `bouqpierlyeukedpxugk`
+- [ ] SQL Editor → New query
+- [ ] Copiar y ejecutar 022_create_subscription_packages.sql
+- [ ] Copiar y ejecutar 023_create_feature_costs.sql
+- [ ] Copiar y ejecutar 024_create_credit_functions.sql
+- [ ] Verificar: `SELECT * FROM subscription_packages ORDER BY sort_order;`
+- [ ] Verificar: `SELECT get_feature_cost('growth_dashboard');` → debe retornar 380
+
+**Guía**: Ver `GUIA-EJECUTAR-SQL-SUPABASE.md`
+
+---
+
+#### **0.2. Configurar Reddit API en Vercel** (5 min)
+**Credenciales listas**:
+```
+REDDIT_CLIENT_ID=Po_BNW_hocVZ59rFc8eNog
+REDDIT_CLIENT_SECRET=V17cFVUwjuWQpPcDZYm4vyd9xUxkg
+REDDIT_USER_AGENT=creovision:v1.0 (by /u/Real-Juggernaut-1467)
+REDDIT_REDIRECT_URI=https://creovision.io/api/reddit-auth
+```
+
+**Pasos**:
+- [ ] Abrir https://vercel.com → Proyecto CreoVision
+- [ ] Settings → Environment Variables
+- [ ] Agregar las 4 variables (sin prefijo VITE_)
+- [ ] Redeploy del proyecto
+- [ ] Verificar que las variables estén disponibles en producción
+
+**Guía**: Ver `CONFIGURAR-VERCEL-REDDIT.md`
+
+---
+
+#### **0.3. Actualizar Frontend para Sistema de Créditos** (2-3 horas)
+
+**Archivos a modificar**:
+
+**1. PricingSection.jsx** (30 min)
+- [ ] Importar `SUBSCRIPTION_PLANS` de `src/config/creditCosts.js`
+- [ ] Reemplazar planes hardcodeados por datos dinámicos
+- [ ] Usar `is_popular` para mostrar badge "Más Popular" solo en Pro
+- [ ] Actualizar features de cada plan desde el objeto
+- [ ] Mantener diseño actual, solo cambiar fuente de datos
+
+**2. Tools.jsx - Agregar consumo de créditos** (1.5 horas)
+Features que faltan implementar consumo:
+- [ ] Análisis de Competencia (200 créditos)
+- [ ] Análisis de Tendencias (150 créditos)
+- [ ] Análisis de Canal (120 créditos)
+- [ ] Predictor de Viralidad (100 créditos)
+- [ ] Personalización Plus (50 créditos)
+- [ ] SEO Coach (45 créditos)
+- [ ] Análisis de Video (30 créditos)
+- [ ] Generación de Hashtags (25 créditos)
+- [ ] Calendario Inteligente (25 créditos)
+- [ ] Weekly Trends (15 créditos)
+- [ ] Re-generar Guión (10 créditos)
+- [ ] Análisis de Título (8 créditos)
+- [ ] Búsqueda de Tendencias (5 créditos)
+- [ ] Consultar Historial (2 créditos)
+
+**Patrón a seguir** (igual que Growth Dashboard):
+```javascript
+import { CREDIT_COSTS } from '../config/creditCosts';
+
+// Antes de llamar la API
+const response = await fetch('/api/feature-name', {
+  method: 'POST',
+  body: JSON.stringify({
+    userId,
+    featureSlug: 'feature_name',
+    // ... otros parámetros
+  })
+});
+
+// En el API endpoint, verificar créditos ANTES de ejecutar
+const { data: creditCheck } = await supabase
+  .rpc('check_user_credits', {
+    p_user_id: userId,
+    p_feature_slug: featureSlug
+  });
+
+if (!creditCheck.has_credits) {
+  return res.status(402).json({
+    error: 'Insufficient credits',
+    required: creditCheck.required_credits,
+    current: creditCheck.current_balance
+  });
+}
+
+// Descontar créditos DESPUÉS de éxito
+await supabase.rpc('deduct_credits', {
+  p_user_id: userId,
+  p_amount: CREDIT_COSTS.FEATURE_NAME
+});
+```
+
+**3. api/reddit.js** (Crear endpoint nuevo) (30 min)
+- [ ] Crear archivo `api/reddit.js`
+- [ ] Implementar análisis de Reddit (60 créditos)
+- [ ] Verificar y descontar créditos
+- [ ] Usar `redditService.js` existente
+
+**4. Crear componente CreditBadge** (30 min)
+- [ ] Mostrar créditos actuales del usuario
+- [ ] Animación cuando se consumen créditos
+- [ ] Warning cuando quedan < 20%
+- [ ] Link a "Comprar más créditos"
+
+---
+
 ### 1. **Growth Dashboard API Error**
 **Problema**: Error 404 "Usuario no inicializado en el sistema de créditos"
 **Status**: 🔴 Bloqueado - Requiere debugging
