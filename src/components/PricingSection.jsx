@@ -15,34 +15,57 @@ const PricingSection = ({ onAuthClick }) => {
             name: 'FREE',
             price: '$0',
             period: '/mes',
-            description: 'Para empezar a crear y explorar.',
-            credits: '100 créditos/mes',
+            description: 'Para probar sin miedo, sin tarjeta y sin compromisos.',
+            credits: '150 créditos útiles / mes',
             features: [
-                '💎 100 créditos mensuales',
-                'Acceso a herramientas básicas',
-                'Generador de contenido IA',
-                'Análisis de tendencias básicas',
-                'Generador de hashtags',
-                'Soporte por email'
+                '1 análisis rápido de canal',
+                '1 guion mejorado por IA',
+                'Tendencias básicas (YouTube y TikTok)',
+                'Lector de últimos 5 videos con insights',
+                'Exportación de datos sin límites',
+                'Cancelación en 1 clic',
+                'Multi-IA propietaria con 6 enfoques complementarios'
             ],
-            cta: 'Comenzar Gratis',
+            cta: 'Probar sin costo',
+            isFeatured: false,
+        },
+        {
+            id: 'BASIC',
+            name: 'BASIC',
+            price: '$5',
+            period: '/mes',
+            description: 'Para creadores pequeños que necesitan constancia real.',
+            credits: '600 créditos / mes',
+            features: [
+                'Todos los generadores de contenido',
+                'Growth Dashboard básico',
+                'Tendencias + nichos sugeridos',
+                'Planner semanal',
+                'Multi-IA completa (motores CreoVision)',
+                'Exportación libre',
+                'Soporte estándar'
+            ],
+            cta: 'Elegir BASIC',
             isFeatured: false,
         },
         {
             id: 'PRO',
             name: 'PRO',
-            price: '$15',
+            price: '$12',
             period: '/mes',
-            description: 'Para creadores en crecimiento.',
-            credits: '1,000 créditos/mes',
+            description: 'Plan estrella: precio justo + funcionalidades premium.',
+            credits: '1,500 créditos / mes',
             features: [
-                '💎 1,000 créditos mensuales',
-                'Puede comprar créditos adicionales (20% OFF)',
-                'Créditos comprados NO expiran',
-                'Descarga sin marca de agua',
-                'Prioridad en generación',
-                'Análisis de tendencias avanzado',
-                'Soporte prioritario'
+                'Growth Dashboard completo',
+                'A/B testing de títulos y miniaturas',
+                'SEO Keyword Research',
+                'Competencia YouTube (análisis avanzado)',
+                'Tendencias multi-plataforma + Reddit',
+                'Recomendaciones estratégicas por IA',
+                'Calendario de contenido',
+                'Multi-IA optimizada por costo (CreoVision)',
+                'Exportación ilimitada',
+                'Soporte con prioridad'
             ],
             cta: 'Elegir PRO',
             isFeatured: true,
@@ -52,41 +75,20 @@ const PricingSection = ({ onAuthClick }) => {
             name: 'PREMIUM',
             price: '$25',
             period: '/mes',
-            description: 'Para dominar las redes sociales.',
-            credits: '2,500 créditos/mes',
+            description: 'Para creadores serios, agencias pequeñas y power users.',
+            credits: '4,000 créditos / mes',
             features: [
-                '💎 2,500 créditos mensuales',
-                'Puede comprar créditos adicionales (30% OFF)',
-                'Créditos comprados NO expiran',
-                'Acceso al Asesor Premium IA',
-                'Analytics avanzado',
-                'Calendario de publicaciones',
-                'API Access (próximamente)',
-                'Soporte 24/7'
+                'Predictor de viralidad',
+                'Análisis de audiencia avanzado',
+                'Command Center completo',
+                'Competencia multi-plataforma (YouTube, TikTok, Instagram)',
+                'Automatizaciones IA',
+                'Reportes detallados mensuales',
+                'Acceso prioritario a nuevas funciones',
+                'Soporte premium 24h'
             ],
             cta: 'Elegir PREMIUM',
             isFeatured: false,
-        },
-        {
-            id: 'ENTERPRISE',
-            name: 'ENTERPRISE',
-            price: 'Personalizado',
-            period: '',
-            description: 'Soluciones a medida para equipos y agencias.',
-            credits: 'Créditos ilimitados',
-            features: [
-                '🚀 Todo lo de PREMIUM',
-                '💼 Gestión de equipos',
-                '🔌 API de acceso completo',
-                '👨‍💼 Manager de cuenta dedicado',
-                '⚙️ Integraciones personalizadas',
-                '📊 Reportes avanzados',
-                '🎯 Soporte prioritario 24/7'
-            ],
-            cta: 'Conversemos',
-            isFeatured: false,
-            isDisabled: false,
-            isEnterprise: true,
         }
     ];
 
@@ -103,18 +105,13 @@ const PricingSection = ({ onAuthClick }) => {
 
         if (plan.id === 'FREE') {
             onAuthClick();
-        } else if (plan.isEnterprise) {
-            toast({
-                title: '💼 Plan Enterprise',
-                description: '¿Necesitas una solución personalizada? Escríbenos a contacto@creovision.io y conversemos sobre tus necesidades.',
-                duration: 6000,
-            });
-        } else {
-            toast({
-                title: '🚧 Pasarela de pago en construcción',
-                description: `Pronto podrás suscribirte al plan ${plan.name}. ¡Gracias por tu interés!`,
-            });
+            return;
         }
+
+        toast({
+            title: 'Pasarela de pago en construcción',
+            description: `Pronto podrás suscribirte al plan ${plan.name}. Gracias por tu interés.`,
+        });
     };
 
     const containerVariants = {
@@ -259,6 +256,27 @@ const PricingSection = ({ onAuthClick }) => {
                         )
                     })}
                 </motion.div>
+
+                <div className="mt-16 grid gap-6 lg:grid-cols-2">
+                    <div className="glass-effect rounded-3xl border border-purple-500/30 p-8">
+                        <h3 className="text-2xl font-semibold text-white mb-4">Packs extra de créditos</h3>
+                        <p className="text-gray-300 mb-4">Para quienes producen más sin cambiar de plan.</p>
+                        <ul className="space-y-3 text-gray-200">
+                            <li>- Mini Pack: 500 + 50 bonus → <span className="font-semibold">$4 USD</span></li>
+                            <li>- Medium Pack: 1,500 + 200 bonus → <span className="font-semibold">$10 USD</span></li>
+                            <li>- Pro Pack: 4,000 + 600 bonus → <span className="font-semibold">$22 USD</span></li>
+                        </ul>
+                    </div>
+                    <div className="glass-effect rounded-3xl border border-purple-500/30 p-8">
+                        <h3 className="text-2xl font-semibold text-white mb-4">¿Por qué estos planes funcionan?</h3>
+                        <ul className="space-y-3 text-gray-200">
+                            <li>- Están alineados al costo real de las APIs y modelos.</li>
+                            <li>- Son imposibles de comparar negativamente con la competencia.</li>
+                            <li>- Comunican precio justo y trato adulto: sin contratos ni letra chica.</li>
+                            <li>- El plan PRO concentra el 80% del valor por una fracción del precio.</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
     );

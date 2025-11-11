@@ -73,6 +73,8 @@ import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import ViralScriptGeneratorModal from '@/components/content/ViralScriptGeneratorModal';
 import ViralTitlesModal from '@/components/content/ViralTitlesModal';
 import SEODescriptionsModal from '@/components/content/SEODescriptionsModal';
+import VideoIdeasModal from '@/components/content/VideoIdeasModal';
+import VideoAnalysisModal from '@/components/analysis/VideoAnalysisModal';
 
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -314,6 +316,12 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   // 🔍 ESTADO PARA GENERADOR DE DESCRIPCIONES SEO
   const [showSEODescriptionsModal, setShowSEODescriptionsModal] = useState(false);
+
+  // 💡 ESTADO PARA GENERADOR DE IDEAS DE VIDEOS
+  const [showVideoIdeasModal, setShowVideoIdeasModal] = useState(false);
+
+  // 📊 ESTADO PARA ANÁLISIS DE VIDEO
+  const [showVideoAnalysisModal, setShowVideoAnalysisModal] = useState(false);
 
   // 💎 ESTADOS PARA SISTEMA DE CRÉDITOS
   const [userCredits, setUserCredits] = useState({ total: 0, monthly: 0, purchased: 0, bonus: 0 });
@@ -1561,6 +1569,7 @@ const handleCopy = useCallback(() => {
       'viral-script': () => setShowViralScriptModal(true),
       'viral-titles': () => setShowViralTitlesModal(true),
       'seo-descriptions': () => setShowSEODescriptionsModal(true),
+      'video-ideas': () => setShowVideoIdeasModal(true),
       'hashtag-generator': () => setShowHashtagModal(true),
       'ai-content': () => {
         setShowContentGenerator(true);
@@ -3430,6 +3439,14 @@ const handleCopy = useCallback(() => {
         <SEODescriptionsModal
           open={showSEODescriptionsModal}
           onOpenChange={setShowSEODescriptionsModal}
+        />
+      )}
+
+      {/* 💡 GENERADOR DE IDEAS DE VIDEOS MODAL */}
+      {showVideoIdeasModal && (
+        <VideoIdeasModal
+          open={showVideoIdeasModal}
+          onOpenChange={setShowVideoIdeasModal}
         />
       )}
 
