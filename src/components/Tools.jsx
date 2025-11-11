@@ -65,6 +65,11 @@ import {
 } from '@heroicons/react/24/solid';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+
+// 🎨 NUEVOS COMPONENTES PROFESIONALES
+import { toolCategories, getSortedCategories } from '@/config/toolsConfig';
+import CategorySection from '@/components/CategorySection';
+
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -1454,65 +1459,8 @@ const handleCopy = useCallback(() => {
     setShowLockedModal(true);
   }, []);
 
-  const tools = [
-    {
-      id: 'personality-setup',
-      title: 'Define tu Personalidad',
-      description: 'Configura tu rol, estilo, audiencia y objetivos para contenido personalizado',
-      icon: UserIcon,
-      color: 'from-blue-500 to-cyan-500',
-      action: () => setShowPersonalityModal(true),
-      requiresPersonality: false
-    },
-    {
-      id: 'ai-content',
-      title: 'Generador de Contenido IA',
-      description: 'Crea contenido premium optimizado para cada plataforma',
-      icon: SparklesIcon,
-      color: 'from-purple-500 to-pink-500',
-      creditCost: 30,
-      action: () => {
-        setShowContentGenerator(true);
-        setTimeout(() => {
-          const section = document.getElementById('content-generator-panel');
-          if (section) {
-            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 75);
-      },
-      requiresPersonality: true
-    },
-    // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado, reemplazar con Canva SDK
-    // {
-    //   id: 'thumbnail-editor',
-    //   title: 'Editor de Miniaturas',
-    //   description: 'Diseña miniaturas impactantes con herramientas avanzadas',
-    //   icon: Image,
-    //   color: 'from-blue-500 to-purple-500',
-    //   action: () => onSectionChange && onSectionChange('thumbnail-editor')
-    // },
-    {
-      id: 'hashtag-generator',
-      title: 'Generador de Hashtags',
-      description: 'Encuentra hashtags trending para maximizar alcance',
-      icon: HashtagIcon,
-      color: 'from-green-500 to-blue-500',
-      creditCost: 30,
-      action: () => setShowHashtagModal(true),
-      requiresPersonality: true
-    },
-    {
-      id: 'trend-analyzer',
-      title: 'Analizador de Tendencias',
-      description: 'Descubre qué contenido está funcionando en tu nicho',
-      icon: ArrowTrendingUpIcon,
-      color: 'from-orange-500 to-red-500',
-      creditCost: 30,
-      action: () => setShowTrendModal(true),
-      requiresPersonality: true
-    },
-  ];
-  
+  // ⚠️ Array tools eliminado - ahora se usa toolsConfig.js
+
   const currentStyles = contentOptions.find(option => option.value === selectedTheme)?.styles || [];
 
   // 🆕 DATOS DE GRÁFICO CON YOUTUBE API (Tendencias por día)
@@ -1586,6 +1534,31 @@ const handleCopy = useCallback(() => {
     {keyword: "{tema} vs competidor", trend: 75}
   ];
 
+  // 🎯 MAPEO DE ACCIONES - Conecta tool IDs con funciones modales
+  const getToolAction = useCallback((tool) => {
+    const actionMap = {
+      // CONFIGURACIÓN
+      'personality-setup': () => setShowPersonalityModal(true),
+
+      // CREACIÓN DE CONTENIDO
+      'hashtag-generator': () => setShowHashtagModal(true),
+      'ai-content': () => {
+        setShowContentGenerator(true);
+        setTimeout(() => {
+          const section = document.getElementById('content-generator-panel');
+          if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 75);
+      },
+
+      // ANÁLISIS Y ESTRATEGIA
+      'trend-analyzer': () => setShowTrendModal(true),
+    };
+
+    return actionMap[tool.id] || (() => console.warn(`No action defined for tool: ${tool.id}`));
+  }, []);
+
   return (
     <div className="space-y-8 pb-32">
       {/* Header */}
@@ -1596,52 +1569,21 @@ const handleCopy = useCallback(() => {
         </p>
       </div>
 
-      {/* Grid de herramientas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
-          const isLocked = tool.requiresPersonality && !hasDefinedPersonality;
-
-          return (
-            <div key={tool.id} className="relative">
-              <Card
-                className={`glass-effect border-purple-500/20 hover:shadow-glow transition-all duration-300 cursor-pointer h-full ${
-                  isLocked ? 'opacity-40 blur-[2px] pointer-events-none' : ''
-                }`}
-                onClick={isLocked ? undefined : tool.action}
-              >
-                <CardHeader className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4`}>
-                    <Icon className="w-8 h-8 text-white" />
-                  </div>
-                  <CardTitle className="text-white text-lg">{tool.title}</CardTitle>
-                  <CardDescription className="text-gray-400">{tool.description}</CardDescription>
-                  {tool.creditCost && (
-                    <div className="mt-3 flex items-center justify-center gap-2">
-                      <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full px-3 py-1 flex items-center gap-1.5">
-                        <SparklesIcon className="w-4 h-4 text-yellow-400" />
-                        <span className="text-white font-semibold text-sm">{tool.creditCost} créditos</span>
-                      </div>
-                    </div>
-                  )}
-                </CardHeader>
-              </Card>
-
-              {/* Overlay de bloqueo */}
-              {isLocked && (
-                <div
-                  className="absolute inset-0 flex items-center justify-center cursor-pointer z-10"
-                  onClick={handleLockedToolClick}
-                >
-                  <div className="bg-gradient-to-br from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-2xl p-4 shadow-2xl border border-white/20 transform hover:scale-105 transition-transform">
-                    <Lock className="w-8 h-8 text-white mx-auto mb-2" />
-                    <p className="text-white text-sm font-semibold">Bloqueado</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      {/* 🎨 Categorías de herramientas profesionales */}
+      <div className="space-y-8">
+        {getSortedCategories().map(category => (
+          <CategorySection
+            key={category.id}
+            category={category}
+            tools={category.tools}
+            hasDefinedPersonality={hasDefinedPersonality}
+            onToolAction={(tool) => {
+              const action = getToolAction(tool);
+              action();
+            }}
+            defaultExpanded={true}
+          />
+        ))}
       </div>
 
       {/* Generador de contenido principal (legacy) */}
