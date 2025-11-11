@@ -69,6 +69,10 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 // 🎨 NUEVOS COMPONENTES PROFESIONALES
 import { toolCategories, getSortedCategories } from '@/config/toolsConfig';
 import CategorySection from '@/components/CategorySection';
+import SEOCoachModal from '@/components/seo/SEOCoachModal';
+import ViralScriptGeneratorModal from '@/components/content/ViralScriptGeneratorModal';
+import ViralTitlesModal from '@/components/content/ViralTitlesModal';
+import SEODescriptionsModal from '@/components/content/SEODescriptionsModal';
 
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -297,6 +301,19 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [showTrendModal, setShowTrendModal] = useState(false);
   const [trendResults, setTrendResults] = useState(null);
   const [isAnalyzingTrends, setIsAnalyzingTrends] = useState(false);
+
+  // 🎯 ESTADO PARA SEO COACH
+  const [showSEOCoachModal, setShowSEOCoachModal] = useState(false);
+  const [seoCoachContext, setSeoCoachContext] = useState(null);
+
+  // 🎬 ESTADO PARA GENERADOR DE GUIONES VIRALES
+  const [showViralScriptModal, setShowViralScriptModal] = useState(false);
+
+  // 📝 ESTADO PARA GENERADOR DE TÍTULOS VIRALES
+  const [showViralTitlesModal, setShowViralTitlesModal] = useState(false);
+
+  // 🔍 ESTADO PARA GENERADOR DE DESCRIPCIONES SEO
+  const [showSEODescriptionsModal, setShowSEODescriptionsModal] = useState(false);
 
   // 💎 ESTADOS PARA SISTEMA DE CRÉDITOS
   const [userCredits, setUserCredits] = useState({ total: 0, monthly: 0, purchased: 0, bonus: 0 });
@@ -1541,6 +1558,9 @@ const handleCopy = useCallback(() => {
       'personality-setup': () => setShowPersonalityModal(true),
 
       // CREACIÓN DE CONTENIDO
+      'viral-script': () => setShowViralScriptModal(true),
+      'viral-titles': () => setShowViralTitlesModal(true),
+      'seo-descriptions': () => setShowSEODescriptionsModal(true),
       'hashtag-generator': () => setShowHashtagModal(true),
       'ai-content': () => {
         setShowContentGenerator(true);
@@ -1554,6 +1574,17 @@ const handleCopy = useCallback(() => {
 
       // ANÁLISIS Y ESTRATEGIA
       'trend-analyzer': () => setShowTrendModal(true),
+
+      // YOUTUBE PREMIUM
+      'seo-coach': () => {
+        // Preparar contexto básico para el SEO Coach
+        setSeoCoachContext({
+          title: '',
+          description: '',
+          tags: [],
+        });
+        setShowSEOCoachModal(true);
+      },
     };
 
     return actionMap[tool.id] || (() => console.warn(`No action defined for tool: ${tool.id}`));
@@ -3367,6 +3398,40 @@ const handleCopy = useCallback(() => {
         }}
         featureName="las herramientas de generación de contenido"
       />
+
+      {/* 🎯 SEO COACH MODAL */}
+      {showSEOCoachModal && seoCoachContext && (
+        <SEOCoachModal
+          open={showSEOCoachModal}
+          onOpenChange={setShowSEOCoachModal}
+          context={seoCoachContext}
+        />
+      )}
+
+      {/* 🎬 GENERADOR DE GUIONES VIRALES MODAL */}
+      {showViralScriptModal && (
+        <ViralScriptGeneratorModal
+          open={showViralScriptModal}
+          onOpenChange={setShowViralScriptModal}
+          userPersonality={userPersonality}
+        />
+      )}
+
+      {/* 📝 GENERADOR DE TÍTULOS VIRALES MODAL */}
+      {showViralTitlesModal && (
+        <ViralTitlesModal
+          open={showViralTitlesModal}
+          onOpenChange={setShowViralTitlesModal}
+        />
+      )}
+
+      {/* 🔍 GENERADOR DE DESCRIPCIONES SEO MODAL */}
+      {showSEODescriptionsModal && (
+        <SEODescriptionsModal
+          open={showSEODescriptionsModal}
+          onOpenChange={setShowSEODescriptionsModal}
+        />
+      )}
 
     </div>
   );
