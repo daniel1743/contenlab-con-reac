@@ -1594,6 +1594,7 @@ const handleCopy = useCallback(() => {
         });
         setShowSEOCoachModal(true);
       },
+      'video-analysis': () => setShowVideoAnalysisModal(true),
     };
 
     return actionMap[tool.id] || (() => console.warn(`No action defined for tool: ${tool.id}`));
@@ -3447,6 +3448,14 @@ const handleCopy = useCallback(() => {
         <VideoIdeasModal
           open={showVideoIdeasModal}
           onOpenChange={setShowVideoIdeasModal}
+        />
+      )}
+
+      {/* 📊 ANÁLISIS DE VIDEO MODAL */}
+      {showVideoAnalysisModal && (
+        <VideoAnalysisModal
+          open={showVideoAnalysisModal}
+          onOpenChange={setShowVideoAnalysisModal}
         />
       )}
 
