@@ -1,6 +1,7 @@
 import mercadopago from 'mercadopago';
 import { supabaseAdmin, getUserFromRequest } from '../_utils/supabaseClient.js';
 
+
 const {
   MERCADOPAGO_ACCESS_TOKEN,
   MERCADOPAGO_PUBLIC_KEY,

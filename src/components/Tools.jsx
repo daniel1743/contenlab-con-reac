@@ -75,6 +75,13 @@ import ViralTitlesModal from '@/components/content/ViralTitlesModal';
 import SEODescriptionsModal from '@/components/content/SEODescriptionsModal';
 import VideoIdeasModal from '@/components/content/VideoIdeasModal';
 import VideoAnalysisModal from '@/components/analysis/VideoAnalysisModal';
+import TrendSearchModal from '@/components/analysis/TrendSearchModal';
+import CompetitorAnalysisModal from '@/components/analysis/CompetitorAnalysisModal';
+import WeeklyTrendsModal from '@/components/analysis/WeeklyTrendsModal';
+import ThreadComposerModal from '@/components/social/ThreadComposerModal';
+import InstagramCarouselsModal from '@/components/social/InstagramCarouselsModal';
+import CaptionsOptimizerModal from '@/components/social/CaptionsOptimizerModal';
+import PersonalizationPlusModal from '@/components/preferences/PersonalizationPlusModal';
 
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -322,6 +329,27 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   // 📊 ESTADO PARA ANÁLISIS DE VIDEO
   const [showVideoAnalysisModal, setShowVideoAnalysisModal] = useState(false);
+
+  // 🔥 ESTADO PARA BÚSQUEDA DE TENDENCIAS
+  const [showTrendSearchModal, setShowTrendSearchModal] = useState(false);
+
+  // 👥 ESTADO PARA ANÁLISIS DE COMPETENCIA
+  const [showCompetitorAnalysisModal, setShowCompetitorAnalysisModal] = useState(false);
+
+  // 📅 ESTADO PARA TENDENCIAS SEMANALES
+  const [showWeeklyTrendsModal, setShowWeeklyTrendsModal] = useState(false);
+
+  // 🧵 ESTADO PARA THREAD COMPOSER
+  const [showThreadComposerModal, setShowThreadComposerModal] = useState(false);
+
+  // 📸 ESTADO PARA CARRUSELES INSTAGRAM
+  const [showInstagramCarouselsModal, setShowInstagramCarouselsModal] = useState(false);
+
+  // ✍️ ESTADO PARA CAPTIONS OPTIMIZADOS
+  const [showCaptionsOptimizerModal, setShowCaptionsOptimizerModal] = useState(false);
+
+  // ⚙️ ESTADO PARA PERSONALIZACIÓN PLUS
+  const [showPersonalizationPlusModal, setShowPersonalizationPlusModal] = useState(false);
 
   // 💎 ESTADOS PARA SISTEMA DE CRÉDITOS
   const [userCredits, setUserCredits] = useState({ total: 0, monthly: 0, purchased: 0, bonus: 0 });
@@ -1583,6 +1611,9 @@ const handleCopy = useCallback(() => {
 
       // ANÁLISIS Y ESTRATEGIA
       'trend-analyzer': () => setShowTrendModal(true),
+      'trend-search': () => setShowTrendSearchModal(true),
+      'competitor-analysis': () => setShowCompetitorAnalysisModal(true),
+      'weekly-trends': () => setShowWeeklyTrendsModal(true),
 
       // YOUTUBE PREMIUM
       'seo-coach': () => {
@@ -1595,6 +1626,12 @@ const handleCopy = useCallback(() => {
         setShowSEOCoachModal(true);
       },
       'video-analysis': () => setShowVideoAnalysisModal(true),
+
+      // NUEVAS GENERACIONES (PHASE 3)
+      'thread-composer': () => setShowThreadComposerModal(true),
+      'instagram-carousels': () => setShowInstagramCarouselsModal(true),
+      'captions-optimizer': () => setShowCaptionsOptimizerModal(true),
+      'personalization-plus': () => setShowPersonalizationPlusModal(true),
     };
 
     return actionMap[tool.id] || (() => console.warn(`No action defined for tool: ${tool.id}`));
@@ -3456,6 +3493,64 @@ const handleCopy = useCallback(() => {
         <VideoAnalysisModal
           open={showVideoAnalysisModal}
           onOpenChange={setShowVideoAnalysisModal}
+        />
+      )}
+
+      {/* 🔥 BÚSQUEDA DE TENDENCIAS MODAL */}
+      {showTrendSearchModal && (
+        <TrendSearchModal
+          open={showTrendSearchModal}
+          onOpenChange={setShowTrendSearchModal}
+        />
+      )}
+
+      {/* 👥 ANÁLISIS DE COMPETENCIA MODAL */}
+      {showCompetitorAnalysisModal && (
+        <CompetitorAnalysisModal
+          open={showCompetitorAnalysisModal}
+          onOpenChange={setShowCompetitorAnalysisModal}
+        />
+      )}
+
+      {/* 📅 TENDENCIAS SEMANALES MODAL */}
+      {showWeeklyTrendsModal && (
+        <WeeklyTrendsModal
+          open={showWeeklyTrendsModal}
+          onOpenChange={setShowWeeklyTrendsModal}
+        />
+      )}
+
+      {/* 🧵 THREAD COMPOSER MODAL */}
+      {showThreadComposerModal && (
+        <ThreadComposerModal
+          open={showThreadComposerModal}
+          onOpenChange={setShowThreadComposerModal}
+        />
+      )}
+
+      {/* 📸 CARRUSELES INSTAGRAM MODAL */}
+      {showInstagramCarouselsModal && (
+        <InstagramCarouselsModal
+          open={showInstagramCarouselsModal}
+          onOpenChange={setShowInstagramCarouselsModal}
+        />
+      )}
+
+      {/* ✍️ CAPTIONS OPTIMIZADOS MODAL */}
+      {showCaptionsOptimizerModal && (
+        <CaptionsOptimizerModal
+          open={showCaptionsOptimizerModal}
+          onOpenChange={setShowCaptionsOptimizerModal}
+        />
+      )}
+
+      {/* ⚙️ PERSONALIZACIÓN PLUS MODAL */}
+      {showPersonalizationPlusModal && (
+        <PersonalizationPlusModal
+          open={showPersonalizationPlusModal}
+          onOpenChange={setShowPersonalizationPlusModal}
+          userPersonality={userPersonality}
+          onPersonalityUpdate={setUserPersonality}
         />
       )}
 

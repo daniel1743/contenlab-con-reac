@@ -92,14 +92,29 @@ const WeeklyTrends = () => {
   // Cargar memorias persistentes
   const loadPersistentMemories = async () => {
     try {
+      // Verificar que tengamos un token válido
+      if (!session?.access_token) {
+        console.log('[WeeklyTrends] No hay token de sesión, saltando carga de memorias');
+        return;
+      }
+
       const memories = await getMemories({
         limit: 8,
-        authToken: session?.access_token
+        authToken: session.access_token
       });
-      setPersistentMemories(memories);
-      console.log(`[WeeklyTrends] 🧠 Cargadas ${memories.length} memorias`);
+
+      // Validar que memories sea un array
+      if (Array.isArray(memories)) {
+        setPersistentMemories(memories);
+        console.log(`[WeeklyTrends] 🧠 Cargadas ${memories.length} memorias`);
+      } else {
+        console.warn('[WeeklyTrends] Respuesta de memorias no es un array:', memories);
+        setPersistentMemories([]);
+      }
     } catch (error) {
       console.warn('[WeeklyTrends] No se pudieron cargar memorias:', error);
+      // En caso de error, simplemente usar array vacío
+      setPersistentMemories([]);
     }
   };
 
