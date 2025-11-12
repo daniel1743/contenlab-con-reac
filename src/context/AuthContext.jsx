@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
     if (supabase) {
       const getSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔐 AuthContext: Session loaded', session ? 'Authenticated' : 'Not authenticated');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -24,7 +25,8 @@ export const AuthProvider = ({ children }) => {
       getSession();
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (_event, session) => {
+        (event, session) => {
+          console.log('🔐 AuthContext: Auth state changed', event, session ? 'Authenticated' : 'Not authenticated');
           setSession(session);
           setUser(session?.user ?? null);
         }

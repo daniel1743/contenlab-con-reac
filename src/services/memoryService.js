@@ -9,6 +9,11 @@ const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
   }
+  // En desarrollo local, no hay API de memoria disponible
+  // Solo funciona en producción (Vercel)
+  if (import.meta.env.DEV) {
+    return null; // Indica que no hay API disponible
+  }
   return '';
 };
 
@@ -31,6 +36,13 @@ export async function saveMemory({ type, content, metadata = {}, authToken }) {
   }
 
   const apiBaseUrl = getApiBaseUrl();
+
+  // Si no hay API disponible (desarrollo local), simular éxito
+  if (apiBaseUrl === null) {
+    console.log('[memoryService] 💡 API de memoria no disponible en desarrollo local (solo funciona en producción)');
+    return { id: 'mock-' + Date.now(), type, content, metadata };
+  }
+
   const endpoint = apiBaseUrl ? `${apiBaseUrl}/api/memory` : '/api/memory';
 
   const response = await fetch(endpoint, {
@@ -73,6 +85,13 @@ export async function getMemories({
   authToken = null
 }) {
   const apiBaseUrl = getApiBaseUrl();
+
+  // Si no hay API disponible (desarrollo local), devolver array vacío
+  if (apiBaseUrl === null) {
+    console.log('[memoryService] 💡 API de memoria no disponible en desarrollo local (solo funciona en producción)');
+    return [];
+  }
+
   const endpoint = apiBaseUrl ? `${apiBaseUrl}/api/memory` : '/api/memory';
 
   const params = new URLSearchParams();
@@ -98,6 +117,13 @@ export async function getMemories({
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `Failed to fetch memories: ${response.statusText}`);
+  }
+
+  // Verificar el tipo de contenido antes de parsear
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    console.warn('[memoryService] API returned non-JSON response, memory service not available');
+    return [];
   }
 
   const data = await response.json();

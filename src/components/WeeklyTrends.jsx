@@ -33,6 +33,7 @@ import { consumeCredits, checkSufficientCredits } from '@/services/creditService
 import AIFeedbackWidget from '@/components/AIFeedbackWidget';
 import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
 import { getMemories, saveMemory, buildMemoryContext } from '@/services/memoryService';
+import { getCachedAnalysis, saveAnalysisCache, extractAnalysisMetadata } from '@/services/analysisCacheService';
 
 const UNLOCK_COST = 20; // Créditos para desbloquear una tarjeta individual
 const UNLOCK_ALL_COST_STANDARD = 80; // 4 tarjetas × 20 créditos (YouTube, Twitter, News)
@@ -99,6 +100,7 @@ const WeeklyTrends = () => {
       // Verificar que tengamos un token válido
       if (!session?.access_token) {
         console.log('[WeeklyTrends] No hay token de sesión, saltando carga de memorias');
+        setPersistentMemories([]);
         return;
       }
 
@@ -116,7 +118,12 @@ const WeeklyTrends = () => {
         setPersistentMemories([]);
       }
     } catch (error) {
-      console.warn('[WeeklyTrends] No se pudieron cargar memorias:', error);
+      // Silenciar error si es de JSON parsing (API no disponible)
+      if (error.message && error.message.includes('JSON')) {
+        console.log('[WeeklyTrends] 💡 API de memorias no disponible, usando modo sin memorias');
+      } else {
+        console.warn('[WeeklyTrends] No se pudieron cargar memorias:', error.message);
+      }
       // En caso de error, simplemente usar array vacío
       setPersistentMemories([]);
     }
@@ -159,14 +166,14 @@ const WeeklyTrends = () => {
     });
   };
 
-  const handleTalkWithAI = async (trend) => {
-    console.log('🤖 handleTalkWithAI called with trend:', trend);
+  const handleAnalyzeWithAI = async (trend) => {
+    console.log('🤖 handleAnalyzeWithAI called with trend:', trend);
 
     if (!user) {
       console.warn('❌ No user authenticated');
       toast({
         title: '🔒 Inicia sesión',
-        description: 'Necesitas una cuenta para hablar con Creo.',
+        description: 'Necesitas una cuenta para obtener análisis de Creo.',
         variant: 'destructive'
       });
       return;
@@ -178,6 +185,47 @@ const WeeklyTrends = () => {
     setIsAiThinking(true);
     setAiResponse('');
 
+    // Determinar plataforma y nicho del usuario
+    const userPlatform = profileData?.platform || 'YouTube';
+    const userNiche = profileData?.niche || 'creación de contenido';
+    const userStyle = profileData?.style || 'educativo';
+
+    // 📦 PASO 1: Verificar si existe análisis cacheado
+    const cachedAnalysis = await getCachedAnalysis(trend.id, selectedCategory, user.id);
+
+    if (cachedAnalysis && cachedAnalysis.found) {
+      console.log('📦 Usando análisis desde caché');
+
+      if (cachedAnalysis.personalized) {
+        // Análisis personalizado ya existe para este usuario
+        console.log('✅ Análisis personalizado encontrado en caché');
+        const personalizedData = cachedAnalysis.analysis;
+
+        setAiResponse(personalizedData.analysis);
+        setIsAiThinking(false);
+
+        toast({
+          title: '⚡ Análisis desde caché',
+          description: 'Análisis personalizado cargado instantáneamente',
+          duration: 2000
+        });
+
+        return; // No llamar a IA
+      } else {
+        // Existe análisis base pero no personalizado - adaptar formato
+        console.log('📊 Análisis base encontrado, adaptando formato...');
+
+        toast({
+          title: '⚡ Optimización rápida',
+          description: 'Adaptando análisis base a tu perfil',
+          duration: 2000
+        });
+
+        // CONTINUAR con llamada a IA pero usar análisis base como contexto
+        // (se implementa abajo)
+      }
+    }
+
     // Si VITE_API_BASE_URL está definida, úsala; si no, usa URL relativa (funcionará en Vercel)
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
       ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
@@ -186,7 +234,7 @@ const WeeklyTrends = () => {
 
     try {
       console.log('📡 Calling AI API via backend...');
-      
+
       // Obtener token de autenticación si está disponible
       const authToken = session?.access_token || null;
 
@@ -194,24 +242,80 @@ const WeeklyTrends = () => {
       const profileContext = CREO_CONTEXT_BUILDER(profileData);
       const memoryContext = buildMemoryContext(persistentMemories, 800);
 
-      // Construir prompt
-      const userPrompt = `Te habla ${displayName}. Necesito que actúes como "Creo", mi analista creativo personal.
-Analiza esta tendencia y dame recomendaciones accionables ajustadas a mi voz:
+      // 📊 Preparar contexto de análisis base si existe
+      let baseAnalysisContext = '';
+      if (cachedAnalysis && !cachedAnalysis.personalized) {
+        baseAnalysisContext = `\n\n📊 ANÁLISIS BASE PREVIO (reutilizar estructura y datos):\n${JSON.stringify(cachedAnalysis.base_analysis, null, 2)}\n\nKeywords SEO: ${cachedAnalysis.keywords?.join(', ') || 'N/A'}\nHashtags: ${cachedAnalysis.hashtags?.join(' ') || 'N/A'}\nViralidad: ${cachedAnalysis.virality_score}/10\nSaturación: ${cachedAnalysis.saturation_level || 'N/A'}\n\n**IMPORTANTE**: Adapta este análisis base al perfil de ${displayName} (${userPlatform}, ${userNiche}, ${userStyle}). Mantén los datos SEO pero personaliza la estrategia y recomendaciones.`;
+      }
 
-📌 **Título:** ${trend.title}
-📝 **Descripción:** ${trend.description || 'Sin descripción'}
-📊 **Engagement:** ${trend.engagement || trend.views || 'N/A'}
-${trend.tag ? `🏷️ **Tag/Hashtag:** ${trend.tag}` : ''}
+      // Construir prompt detallado para análisis SEO y estrategia
+      const userPrompt = `Hola Creo, soy ${displayName}. Necesito un **análisis estratégico profundo** de esta tendencia para adaptarla a mi contenido.
 
-Quiero un análisis que cubra:
-1. **¿Por qué está funcionando ahora?** Factores clave y señales de saturación.
-2. **Oportunidad específica para ${displayName}.** Ángulo narrativo y diferenciadores.
-3. **Plan en 3 pasos** (hook, estructura, CTA) para producir contenido competitivo.
-4. **Hashtags y keywords** priorizadas (máx. 6) que puedan posicionarme.
-5. **Timing óptimo** (día, hora, formato) para publicar.
-6. **Consejo motivacional Creo** que me recuerde mi progreso y próximo paso.
+📌 **TENDENCIA A ANALIZAR:**
+- Título: ${trend.title}
+- Descripción: ${trend.description || 'Sin descripción'}
+- Fuente: ${selectedCategory.toUpperCase()}
+- Engagement: ${trend.engagement || trend.views || trend.score || 'N/A'}
+${trend.subreddit ? `- Subreddit: r/${trend.subreddit}` : ''}
+${trend.tag ? `- Hashtag: ${trend.tag}` : ''}
+${trend.url && trend.url !== '#' ? `- URL: ${trend.url}` : ''}
 
-Sé empático, práctico y enfocado en resultados medibles.`;
+👤 **MI PERFIL:**
+- Plataforma principal: ${userPlatform}
+- Nicho: ${userNiche}
+- Estilo: ${userStyle}
+
+🎯 **ANÁLISIS REQUERIDO:**
+
+## 1. 📊 Análisis de la Tendencia
+- ¿Por qué está funcionando AHORA? (timing, contexto, factores sociales)
+- Nivel de saturación (bajo/medio/alto) y ventana de oportunidad
+- Audiencia target y demografía
+- Potencial de viralidad (1-10) con justificación
+
+## 2. 🔍 Análisis SEO y Keywords
+- Keywords principales a usar en título/descripción
+- Hashtags estratégicos (máx. 8) ordenados por prioridad
+- Tags y categorías recomendadas
+- Términos de búsqueda relacionados
+- Long-tail keywords para posicionamiento orgánico
+
+## 3. 🎬 Adaptación a MI Plataforma (${userPlatform})
+- Formato ideal (duración, estructura, estilo)
+- Hook perfecto para los primeros 3 segundos
+- Estructura de contenido en 3 actos
+- CTA (Call to Action) específico y efectivo
+- Momento óptimo de publicación (día, hora, frecuencia)
+
+## 4. 💡 Ángulo Único para ${displayName}
+- Cómo diferenciarme de la competencia
+- Mi perspectiva única basada en ${userNiche} y ${userStyle}
+- Elementos a agregar/quitar de la tendencia original
+- Cómo conectar con mi audiencia actual
+
+## 5. 📈 Plan de Ejecución (3 pasos)
+1. Pre-producción (investigación, guión, recursos)
+2. Producción (grabación, edición, optimización)
+3. Post-publicación (promoción, engagement, análisis)
+
+## 6. 🎨 Elementos Visuales y Técnicos
+- Thumbnail/miniatura estratégica
+- B-roll y recursos visuales necesarios
+- Música/sonido recomendado
+- Efectos y transiciones clave
+
+## 7. 💬 Consejo Motivacional Creo
+Un mensaje personalizado que:
+- Reconozca mi progreso hasta ahora
+- Me motive a ejecutar este contenido
+- Me recuerde mi diferenciador único
+- Incluya el próximo paso concreto
+
+**IMPORTANTE:**
+- Adapta TODO el análisis a mi estilo ${userStyle}
+- Usa ejemplos específicos de ${userNiche}
+- Enfócate en resultados medibles (vistas, engagement, conversión)
+- Sé práctico, accionable y empático${baseAnalysisContext}`;
 
       // Construir system prompt completo con contexto
       const fullSystemPrompt = `${CREO_SYSTEM_PROMPT}
@@ -219,30 +323,57 @@ Sé empático, práctico y enfocado en resultados medibles.`;
 📋 INFORMACIÓN DEL USUARIO:
 - Nombre preferido: ${displayName}${profileContext}${memoryContext}`;
 
-      // Llamar a nuestro backend con sistema de aprendizaje integrado
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        },
-        body: JSON.stringify({
-          provider: 'qwen',
-          model: 'qwen-plus',
-          systemPrompt: fullSystemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: userPrompt
-            }
-          ],
-          temperature: 0.7,
-          maxTokens: 1500,
-          feature_slug: 'weekly_trends_analysis',
-          session_id: sessionId,
-          capture_interaction: true
-        })
-      });
+      // Sistema de fallback: Qwen → DeepSeek
+      let response;
+      let provider = 'qwen';
+      let model = 'qwen-plus';
+
+      try {
+        console.log('🚀 Intentando con Qwen...');
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+          },
+          body: JSON.stringify({
+            provider: 'qwen',
+            model: 'qwen-plus',
+            systemPrompt: fullSystemPrompt,
+            messages: [{ role: 'user', content: userPrompt }],
+            temperature: 0.7,
+            maxTokens: 2500,
+            feature_slug: 'weekly_trends_analysis',
+            session_id: sessionId,
+            capture_interaction: true
+          })
+        });
+
+        if (!response.ok) throw new Error('Qwen failed');
+      } catch (qwenError) {
+        console.warn('⚠️ Qwen falló, intentando con DeepSeek...', qwenError);
+        provider = 'deepseek';
+        model = 'deepseek-chat';
+
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+          },
+          body: JSON.stringify({
+            provider: 'deepseek',
+            model: 'deepseek-chat',
+            systemPrompt: fullSystemPrompt,
+            messages: [{ role: 'user', content: userPrompt }],
+            temperature: 0.7,
+            maxTokens: 2500,
+            feature_slug: 'weekly_trends_analysis',
+            session_id: sessionId,
+            capture_interaction: true
+          })
+        });
+      }
 
       console.log('📡 Response status:', response.status);
 
@@ -257,36 +388,85 @@ Sé empático, práctico y enfocado en resultados medibles.`;
       console.log('🔍 Estructura completa de la respuesta:', JSON.stringify(data, null, 2));
 
       if (data.content) {
-        console.log('✅ Setting AI response');
+        console.log(`✅ Análisis recibido de ${provider.toUpperCase()}`);
         setAiResponse(data.content);
+
+        // Mostrar toast de éxito indicando qué IA respondió
+        toast({
+          title: `✅ Análisis completado`,
+          description: `Análisis estratégico generado por ${provider === 'qwen' ? 'Qwen' : 'DeepSeek'} AI`,
+          duration: 3000
+        });
 
         // Guardar interaction_id para el sistema de feedback
         console.log('🔍 Buscando interaction_id en respuesta...');
-        console.log('data.interaction_id:', data.interaction_id);
-        console.log('typeof data.interaction_id:', typeof data.interaction_id);
-
         if (data.interaction_id) {
           console.log('💾 Interaction ID guardado:', data.interaction_id);
           setInteractionId(data.interaction_id);
         } else {
           console.warn('⚠️ No se recibió interaction_id del servidor');
-          console.warn('⚠️ Keys disponibles en data:', Object.keys(data));
         }
 
-        // 💾 Guardar análisis como memoria contextual
+        // 📦 PASO 2: Extraer metadata y guardar en caché
+        const metadata = extractAnalysisMetadata(data.content);
+
+        // Determinar si es análisis base (nuevo) o personalizado (adaptación)
+        const isNewBaseAnalysis = !cachedAnalysis || !cachedAnalysis.found;
+
+        try {
+          await saveAnalysisCache({
+            trendId: trend.id,
+            trendType: selectedCategory,
+            trendTitle: trend.title,
+            trendUrl: trend.url || '#',
+            baseAnalysis: isNewBaseAnalysis ? {
+              content: data.content,
+              provider: provider,
+              model: model,
+              timestamp: Date.now()
+            } : cachedAnalysis.base_analysis,
+            keywords: metadata.keywords.length > 0 ? metadata.keywords : null,
+            hashtags: metadata.hashtags.length > 0 ? metadata.hashtags : null,
+            viralityScore: metadata.viralityScore,
+            saturationLevel: metadata.saturationLevel,
+            userId: user.id,
+            platform: userPlatform,
+            niche: userNiche,
+            style: userStyle,
+            personalizedAnalysis: data.content
+          });
+          console.log('[WeeklyTrends] 📦 Análisis guardado en caché');
+        } catch (cacheError) {
+          console.warn('[WeeklyTrends] No se pudo guardar en caché:', cacheError);
+        }
+
+        // 💾 Guardar análisis como memoria contextual con más detalles
         try {
           await saveMemory({
             type: 'context',
-            content: `Analicé la tendencia "${trend.title}" - ${trend.description || 'Tendencia de ' + selectedCategory}`,
+            content: `Analicé la tendencia "${trend.title}" de ${selectedCategory.toUpperCase()}. Recibí un análisis SEO y estrategia personalizada para ${userPlatform} en el nicho de ${userNiche} con estilo ${userStyle}.`,
             metadata: {
               source: 'weekly_trends_analysis',
               trend_id: trend.id,
+              trend_title: trend.title,
               category: selectedCategory,
-              timestamp: Date.now()
+              provider: provider,
+              model: model,
+              platform: userPlatform,
+              niche: userNiche,
+              style: userStyle,
+              timestamp: Date.now(),
+              has_url: !!trend.url && trend.url !== '#',
+              cached: true,
+              virality_score: metadata.viralityScore,
+              saturation_level: metadata.saturationLevel
             },
             authToken
           });
-          console.log('[WeeklyTrends] 💾 Análisis guardado en memoria');
+          console.log('[WeeklyTrends] 💾 Análisis guardado en memoria con detalles completos');
+
+          // Recargar memorias para futuras interacciones
+          await loadPersistentMemories();
         } catch (memError) {
           console.warn('[WeeklyTrends] No se pudo guardar en memoria:', memError);
         }
@@ -632,7 +812,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                 category={currentCategory}
                 Icon={Icon}
                 onUnlock={() => handleUnlock(selectedCategory, trend.id, trend.title)}
-                onTalk={handleTalkWithAI}
+                onTalk={handleAnalyzeWithAI}
               />
             );
           })}
@@ -666,7 +846,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                       <div className="flex items-center gap-2 mb-2">
                         <Zap className="w-5 h-5 text-yellow-400" />
                         <CardTitle className="text-white">
-                          Análisis de Tendencia con IA
+                          Análisis Estratégico de Creo
                         </CardTitle>
                       </div>
                       {selectedTrend && (
@@ -675,7 +855,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                         </p>
                       )}
                       <p className="text-xs text-purple-400 mt-1">
-                        ⚡ Impulsado por CreoVision AI GP-4
+                        ⚡ Análisis SEO y Estrategia Personalizada • Qwen/DeepSeek AI
                       </p>
                     </div>
                     <Button
@@ -694,10 +874,10 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                     <div className="flex flex-col items-center justify-center py-12">
                       <RefreshCw className="w-12 h-12 text-purple-500 animate-spin mb-4" />
                       <p className="text-gray-400 text-center">
-                        CreoVision AI está analizando la tendencia...
+                        Creo está analizando la tendencia...
                       </p>
                       <p className="text-sm text-gray-500 mt-2">
-                        Generando insights estratégicos
+                        Generando análisis SEO, estrategia y adaptación personalizada
                       </p>
                     </div>
                   ) : (
@@ -711,11 +891,11 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                           <div className="flex items-center gap-2 text-sm text-purple-300">
                             <Sparkles className="w-4 h-4" />
                             <span className="font-medium">
-                              Análisis generado por CreoVision AI GP-4
+                              Análisis Estratégico Personalizado
                             </span>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            Motor de análisis avanzado impulsado por CreoVision IA
+                            SEO + Estrategia adaptada a tu nicho y estilo • Sistema con memoria
                           </p>
                         </div>
                       </div>
@@ -868,13 +1048,13 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock, onTalk })
 
               {/* Botones de acción */}
               <div className="flex gap-2">
-                {/* Botón Hablar con Creo */}
+                {/* Botón Análisis de Creo */}
                 <Button
                   onClick={() => onTalk?.(trend)}
                   className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Hablar con Creo
+                  <Zap className="w-4 h-4 mr-2" />
+                  Análisis de Creo
                 </Button>
 
                 {/* Botón Ver más */}

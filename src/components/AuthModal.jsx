@@ -91,7 +91,8 @@ const AuthModal = ({ isOpen, onClose }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/mi-perfil`,
+        skipBrowserRedirect: false
       }
     });
     if (error) {
@@ -118,7 +119,7 @@ const AuthModal = ({ isOpen, onClose }) => {
       email: emailToUse,
       options: {
         shouldCreateUser: true, // Crea usuario si no existe
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/mi-perfil`,
       }
     });
 
