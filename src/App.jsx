@@ -10,6 +10,7 @@ import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
 // import AIConciergeBubble from '@/components/AIConciergeBubble'; // VERSIÓN ANTIGUA
 import AIConciergeBubble from '@/components/AIConciergeBubbleV2'; // VERSIÓN CON GEMINI + SUPABASE
+import CreoCoachBubble from '@/components/CreoCoachBubble'; // NUEVO: Coach proactivo con DeepSeek
 // import CreoFloatingAssistant from '@/components/CreoFloatingAssistant'; // COMENTADO TEMPORALMENTE
 
 // Lazy load de componentes pesados
@@ -447,6 +448,18 @@ function App() {
         {isAuthenticated &&
           activeSection !== 'growth-dashboard' &&
           activeSection !== 'landing' && <AIConciergeBubble />}
+
+        {/* CREO Coach Proactivo - Solo usuarios registrados */}
+        {isAuthenticated && user && activeSection !== 'landing' && (
+          <CreoCoachBubble
+            userProfile={{
+              displayName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Creador',
+              platform: user.user_metadata?.platform,
+              niche: user.user_metadata?.niche,
+              style: user.user_metadata?.style
+            }}
+          />
+        )}
 
         {/* Coach Creo - COMENTADO TEMPORALMENTE PARA PRUEBAS */}
         {/* {isAuthenticated && user && (
