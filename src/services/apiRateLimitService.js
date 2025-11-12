@@ -169,20 +169,35 @@ export const fetchCache = async (apiName, query, ttl) => {
  */
 export const setCache = async (apiName, query, result) => {
   try {
-    const { error } = await supabase
+    // First try to find existing entry
+    const queryHash = hashQuery(query);
+    const { data: existing } = await supabase
       .from('api_cache')
-      .upsert({
-        api_name: apiName,
-        query_hash: hashQuery(query),
-        query: query,
-        result: result,
-        created_at: new Date().toISOString()
-      }, {
-        onConflict: 'api_name,query_hash'
-      });
+      .select('id')
+      .eq('api_name', apiName)
+      .eq('query_hash', queryHash)
+      .maybeSingle();
+
+    const cacheData = {
+      api_name: apiName,
+      query_hash: queryHash,
+      query: query,
+      result: result,
+      created_at: new Date().toISOString()
+    };
+
+    // Update if exists, insert if not
+    const { error } = existing
+      ? await supabase
+          .from('api_cache')
+          .update(cacheData)
+          .eq('id', existing.id)
+      : await supabase
+          .from('api_cache')
+          .insert(cacheData);
 
     if (error) {
-      console.error('Error guardando en cache:', error);
+      console.warn('Cache save failed (non-critical):', error.message);
     } else {
       console.log(`💾 Cache guardado para ${apiName}`);
     }

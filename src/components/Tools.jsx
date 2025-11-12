@@ -410,8 +410,8 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
     (async () => {
       try {
         const { data, error } = await supabase
-          .from('users')
-          .select('plan_type')
+          .from('profiles')
+          .select('plan')
           .eq('id', user.id)
           .single();
 
@@ -420,7 +420,7 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
           return;
         }
 
-        const plan = data?.plan_type === 'premium' ? 'premium' : 'pro';
+        const plan = data?.plan === 'premium' ? 'premium' : 'pro';
         const defaultFree = plan === 'premium' ? 10 : 5;
         const stored = localStorage.getItem('creovision_content_free_usage');
         if (!stored) {

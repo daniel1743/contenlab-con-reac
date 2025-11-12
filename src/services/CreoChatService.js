@@ -248,27 +248,27 @@ class CreoChatService {
     try {
       // 1. Verificar créditos del usuario
       const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('credits')
-        .eq('id', userId)
+        .from('user_credits')
+        .select('total_credits')
+        .eq('user_id', userId)
         .single();
 
       if (userError) throw userError;
 
-      if (userData.credits < CONFIG.EXTENSION_COST) {
+      if (userData.total_credits < CONFIG.EXTENSION_COST) {
         return {
           success: false,
           message: 'No tienes suficientes créditos para extender la sesión',
           creditsNeeded: CONFIG.EXTENSION_COST,
-          creditsAvailable: userData.credits
+          creditsAvailable: userData.total_credits
         };
       }
 
       // 2. Deducir créditos
       const { error: deductError } = await supabase
-        .from('users')
-        .update({ credits: userData.credits - CONFIG.EXTENSION_COST })
-        .eq('id', userId);
+        .from('user_credits')
+        .update({ total_credits: userData.total_credits - CONFIG.EXTENSION_COST })
+        .eq('user_id', userId);
 
       if (deductError) throw deductError;
 

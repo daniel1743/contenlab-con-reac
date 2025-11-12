@@ -32,7 +32,9 @@ import AIFeedbackWidget from '@/components/AIFeedbackWidget';
 import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
 import { getMemories, saveMemory, buildMemoryContext } from '@/services/memoryService';
 
-const UNLOCK_COST = 15; // Créditos para desbloquear una tarjeta
+const UNLOCK_COST = 20; // Créditos para desbloquear una tarjeta individual
+const UNLOCK_ALL_COST = 100; // Créditos para desbloquear todas las tarjetas (descuento)
+const CARDS_PER_CATEGORY = 6; // 6 tarjetas por categoría
 
 const WeeklyTrends = () => {
   const { user, session } = useAuth();
@@ -387,6 +389,71 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
     }
   };
 
+  // Función para desbloquear todas las tarjetas de una categoría
+  const handleUnlockAll = async () => {
+    if (!user) {
+      toast({
+        title: '🔒 Inicia sesión',
+        description: 'Necesitas una cuenta para desbloquear tendencias.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const currentTrends = trends[selectedCategory];
+    const lockedTrends = currentTrends.slice(1); // Excluir la primera que ya está desbloqueada
+
+    // Verificar créditos suficientes
+    const creditCheck = await checkSufficientCredits(user.id, UNLOCK_ALL_COST);
+
+    if (!creditCheck.sufficient) {
+      toast({
+        title: '💎 Créditos insuficientes',
+        description: `Necesitas ${UNLOCK_ALL_COST} créditos para desbloquear todas. Te faltan ${creditCheck.missing} créditos.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Consumir créditos
+      const creditResult = await consumeCredits(
+        user.id,
+        UNLOCK_ALL_COST,
+        'unlock_all_trends',
+        `Desbloquear todas (${selectedCategory})`
+      );
+
+      if (!creditResult.success) {
+        throw new Error('No se pudieron consumir los créditos');
+      }
+
+      // Desbloquear todas las tendencias de esta categoría
+      const unlockPromises = lockedTrends.map(trend =>
+        unlockTrendCard(user.id, selectedCategory, trend.id)
+      );
+
+      await Promise.all(unlockPromises);
+
+      // Actualizar lista de desbloqueados
+      const newUnlockedIds = lockedTrends.map(t => t.id);
+      setUnlockedIds(prev => [...prev, ...newUnlockedIds]);
+
+      toast({
+        title: '✨ ¡Todas desbloqueadas!',
+        description: `Se consumieron ${UNLOCK_ALL_COST} créditos. Restantes: ${creditResult.remaining}. Ahorraste ${(UNLOCK_COST * lockedTrends.length) - UNLOCK_ALL_COST} créditos.`,
+        duration: 5000
+      });
+    } catch (error) {
+      console.error('Error unlocking all trends:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron desbloquear todas las tendencias. Intenta de nuevo.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const isUnlocked = (trendId, index) => {
     // Primera tarjeta siempre desbloqueada
     if (index === 0) return true;
@@ -465,16 +532,28 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
         {/* Info de desbloqueo */}
         <Card className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30">
           <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-white font-medium">¿Cómo funciona?</p>
-                <p className="text-gray-300 text-sm mt-1">
-                  La <strong>primera tarjeta</strong> de cada categoría es <strong className="text-green-400">GRATIS</strong>.
-                  Las demás requieren <strong className="text-purple-400">{UNLOCK_COST} créditos</strong> para desbloquear.
-                  Las tendencias se actualizan automáticamente cada 3 días.
-                </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <Sparkles className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white font-medium">¿Cómo funciona?</p>
+                  <p className="text-gray-300 text-sm mt-1">
+                    La <strong>primera tarjeta</strong> de cada categoría es <strong className="text-green-400">GRATIS</strong>.
+                    Las demás requieren <strong className="text-purple-400">{UNLOCK_COST} créditos</strong> cada una.
+                    Las tendencias se actualizan automáticamente cada 3 días.
+                  </p>
+                  <p className="text-sm mt-2 text-purple-300">
+                    💡 <strong>Ahorra {(UNLOCK_COST * 5) - UNLOCK_ALL_COST} créditos</strong> desbloqueando las 5 restantes por solo <strong>{UNLOCK_ALL_COST} créditos</strong>
+                  </p>
+                </div>
               </div>
+              <Button
+                onClick={handleUnlockAll}
+                className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:opacity-90 flex items-center gap-2 whitespace-nowrap"
+              >
+                <Crown className="w-4 h-4" />
+                Desbloquear Todas ({UNLOCK_ALL_COST})
+              </Button>
             </div>
           </CardContent>
         </Card>
