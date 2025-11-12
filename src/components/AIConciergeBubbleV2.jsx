@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/supabaseClient';
-import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING } from '@/config/creoPersonality';
+import { CREO_SYSTEM_PROMPT } from '@/config/creoPersonality';
 import { withCache, getCacheStats } from '@/services/aiCacheService';
 import { QuickFeedback } from '@/components/FeedbackWidget';
+import { generateDynamicGreeting } from '@/services/dynamicGreetingService';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
@@ -174,8 +175,18 @@ const AIConciergeBubbleV2 = () => {
 
   useEffect(() => {
     if (!messages.length) {
-      const warmIntro = CREO_USER_GREETING(displayName);
-      setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+      // Generar saludo dinámico usando DeepSeek
+      generateDynamicGreeting(displayName, false).then(warmIntro => {
+        setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+      }).catch(error => {
+        console.error('Error generando saludo dinámico:', error);
+        // Fallback simple si falla
+        setMessages([{
+          role: 'assistant',
+          content: `¡Hola ${displayName}! 🚀 ¿Qué vamos a crear hoy?`,
+          timestamp: Date.now()
+        }]);
+      });
     }
   }, [messages.length, displayName]);
 
@@ -247,7 +258,8 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 
   const handleResetConversation = async () => {
     try {
-      const warmIntro = CREO_USER_GREETING(displayName);
+      // Generar saludo dinámico para reset (isReset=true)
+      const warmIntro = await generateDynamicGreeting(displayName, true);
       setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
 
       if (typeof window !== 'undefined') {

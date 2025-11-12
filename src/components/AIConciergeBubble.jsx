@@ -4,13 +4,14 @@ import { SendHorizontal, Loader2, X, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { CREO_SYSTEM_PROMPT, CREO_USER_GREETING, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
+import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
 import {
   getMemories,
   saveMemory,
   buildMemoryContext,
   extractMemoriesFromConversation
 } from '@/services/memoryService';
+import { generateDynamicGreeting } from '@/services/dynamicGreetingService';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
@@ -93,8 +94,18 @@ const AIConciergeBubble = () => {
 
   useEffect(() => {
     if (!messages.length) {
-      const warmIntro = CREO_USER_GREETING(displayName);
-      setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+      // Generar saludo dinámico usando DeepSeek
+      generateDynamicGreeting(displayName, false).then(warmIntro => {
+        setMessages([{ role: 'assistant', content: warmIntro, timestamp: Date.now() }]);
+      }).catch(error => {
+        console.error('Error generando saludo dinámico:', error);
+        // Fallback simple si falla
+        setMessages([{
+          role: 'assistant',
+          content: `¡Hola ${displayName}! 🚀 ¿Qué vamos a crear hoy?`,
+          timestamp: Date.now()
+        }]);
+      });
     }
   }, [messages.length, displayName]);
 
