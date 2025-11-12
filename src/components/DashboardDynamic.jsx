@@ -42,7 +42,8 @@ import {
   NewspaperIcon,
   LinkIcon,
   TagIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 // Íconos solid para énfasis
@@ -88,6 +89,7 @@ import { analyzeYouTubeHighlightVideo } from '@/services/videoAnalysisService';
 import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer';
 import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import { exportCreatorReport, exportSeoReport } from '@/utils/reportExporter';
+import { searchViralPosts } from '@/services/redditService';
 
 ChartJS.register(
   CategoryScale,
@@ -389,7 +391,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [isInsightsLoading, setIsInsightsLoading] = useState(false);
   const [isRegeneratingInsights, setIsRegeneratingInsights] = useState(false);
   const [isUnlockingNews, setIsUnlockingNews] = useState(false);
-  const [visibleNewsCount, setVisibleNewsCount] = useState(2);
+  const [visibleNewsCount, setVisibleNewsCount] = useState(4);
   const highlightUnlockStorageKey = useMemo(
     () => (user?.id ? `creovision_highlights_unlocked_${user.id}` : 'creovision_highlights_unlocked_guest'),
     [user?.id]
@@ -414,6 +416,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
   // 🆕 ESTADOS PARA NOTICIAS Y ANÁLISIS SEO CON IA
   const [newsArticles, setNewsArticles] = useState([]);
+  const [redditTrends, setRedditTrends] = useState([]);
   const [seoAnalysis, setSeoAnalysis] = useState({});
   const [hoveredArticle, setHoveredArticle] = useState(null);
   const [selectedHighlightVideo, setSelectedHighlightVideo] = useState(null);
@@ -738,6 +741,11 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
   // 🆕 FUNCIÓN PARA ANALIZAR ARTÍCULO DE NEWS CON SEO AL HACER HOVER
   const handleArticleHover = useCallback(async (article) => {
+    if (!article || article.origin === 'reddit') {
+      setHoveredArticle(null);
+      return;
+    }
+
     const articleKey = article.id;
 
     // Si ya tenemos el análisis cacheado, no volver a pedir
@@ -771,6 +779,21 @@ const DashboardDynamic = ({ onSectionChange }) => {
       setLoadingSEOAnalysis(false);
     }
   }, [seoAnalysis, nichemMetrics]);
+
+  const handleTrendCardClick = useCallback((article) => {
+    if (!article) return;
+
+    if (article.origin === 'reddit') {
+      if (article.url && typeof window !== 'undefined') {
+        window.open(article.url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
+    setSelectedArticle(article);
+    setShowSEOModal(true);
+    handleArticleHover(article);
+  }, [handleArticleHover]);
 
   // 🆕 FUNCIÓN PARA GUARDAR ANÁLISIS SEO EN LOCALSTORAGE
   const saveSEOAdviceToVault = useCallback((seoData, articleTitle) => {
@@ -1061,6 +1084,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
   const handleUnlockMoreNews = useCallback(async () => {
     const CREDIT_COST = 150;
+    const totalTrendItems = newsArticles.length + redditTrends.length;
 
     if (!user) {
       toast({
@@ -1071,7 +1095,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
       return;
     }
 
-    if (visibleNewsCount >= newsArticles.length) {
+    if (visibleNewsCount >= totalTrendItems) {
       toast({
         title: 'Ya estás viendo todo el contenido disponible',
         description: 'No hay más artículos por desbloquear para este tema.',
@@ -1099,7 +1123,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
         return;
       }
 
-      setVisibleNewsCount(prev => Math.min(prev + 2, newsArticles.length));
+      setVisibleNewsCount(prev => Math.min(prev + 2, totalTrendItems));
       toast({
         title: '🔓 Tendencias premium desbloqueadas',
         description: `Se consumieron ${CREDIT_COST} créditos. Créditos restantes: ${creditResult.remaining ?? 'N/D'}.`,
@@ -1114,7 +1138,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
     } finally {
       setIsUnlockingNews(false);
     }
-  }, [nichemMetrics?.topic, newsArticles.length, toast, user, visibleNewsCount]);
+  }, [nichemMetrics?.topic, newsArticles.length, redditTrends.length, toast, user, visibleNewsCount]);
 
   const handleUnlockHighlight = useCallback(async (videoKey) => {
     if (!videoKey) return;
@@ -1201,7 +1225,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
         twitterSentiment,
         twitterHashtags,
         twitterViral,
-        newsArticles
+        newsResponse,
+        redditResponse
       ] = await Promise.all([
         // API existente
         getAllTrending(user.id, searchTopic, ['news', 'youtube']),
@@ -1214,7 +1239,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
         getTrendingHashtags(searchTopic),
         calculateViralScore(searchTopic),
         // 📰 NewsAPI - Artículos trending sobre el tema
-        getTrendingTopicsByKeyword(searchTopic)
+        getTrendingTopicsByKeyword(searchTopic),
+        // 🔺 Reddit - Conversaciones y tendencias emergentes
+        searchViralPosts(searchTopic, ['all'], 800)
       ]);
 
       // 🆕 Guardar datos de las nuevas APIs SIEMPRE (aunque getAllTrending falle)
@@ -1231,8 +1258,21 @@ const DashboardDynamic = ({ onSectionChange }) => {
       });
 
       // 📰 Guardar artículos de NewsAPI
-      const preparedArticles = prepareNewsArticles(newsArticles || [], searchTopic);
+      const newsPayload = Array.isArray(newsResponse?.articles)
+        ? newsResponse.articles
+        : Array.isArray(newsResponse)
+          ? newsResponse
+          : [];
+      const preparedArticles = prepareNewsArticles(newsPayload, searchTopic);
+      const preparedRedditCards = prepareRedditTrendCards(
+        redditResponse?.success ? redditResponse.data?.viralPosts || [] : [],
+        searchTopic
+      );
+
       setNewsArticles(preparedArticles);
+      setRedditTrends(preparedRedditCards);
+      const totalTrendItems = preparedArticles.length + preparedRedditCards.length;
+      setVisibleNewsCount(Math.min(4, totalTrendItems) || 0);
 
       // 🎯 CAMBIO CRÍTICO: Usar directamente YouTube API si getAllTrending falla
       let dataForAnalysis = trendingData.data || {};
@@ -1329,6 +1369,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
     } catch (error) {
       console.error('Error buscando tema:', error);
+      setRedditTrends([]);
 
       // 🎯 INTENTO FINAL: Buscar directamente en YouTube aunque todo falle
       try {
@@ -2032,6 +2073,48 @@ const DashboardDynamic = ({ onSectionChange }) => {
     }
   ];
 
+  const prepareRedditTrendCards = (posts, topic) => {
+    return (Array.isArray(posts) ? posts : [])
+      .filter(Boolean)
+      .slice(0, 6)
+      .map((post, idx) => {
+        const title = post.title || post.headline || `Tendencia destacada en Reddit (${idx + 1})`;
+        const permalink = post.permalink || post.url;
+        const imageCandidate = post.thumbnail || post.previewImage || null;
+        const isValidImage = typeof imageCandidate === 'string' && imageCandidate.startsWith('http');
+        const publishedAt =
+          post.createdAt ||
+          post.created_at ||
+          (post.createdUTC ? new Date(post.createdUTC * 1000).toISOString() : null) ||
+          new Date().toISOString();
+
+        return {
+          id: `reddit-${post.id || idx}`,
+          title,
+          description:
+            post.summary ||
+            (post.selftext ? post.selftext.slice(0, 180) : post.excerpt) ||
+            'Conversación con alto impacto en la comunidad.',
+          source: post.subreddit ? `r/${post.subreddit}` : 'Reddit',
+          origin: 'reddit',
+          url: permalink
+            ? (permalink.startsWith('http') ? permalink : `https://www.reddit.com${permalink}`)
+            : null,
+          imageUrl: isValidImage
+            ? imageCandidate
+            : 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+          publishedAt,
+          stats: {
+            upvotes: post.upvotes || post.ups || 0,
+            comments: post.comments || post.num_comments || 0,
+            score: post.score || 0
+          },
+          flair: post.link_flair_text || post.flair || null,
+          topic
+        };
+      });
+  };
+
   const prepareNewsArticles = (articles, topic) => {
     const sanitized = (Array.isArray(articles) ? articles : [])
       .filter(Boolean)
@@ -2044,6 +2127,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
           ...article,
           id: article.id || `${sourceName?.replace(/\s+/g, '-').toLowerCase()}-${idx}`,
           source: sourceName,
+          origin: article.isFallback ? 'fallback' : 'news',
           imageUrl: article.imageUrl || article.urlToImage || article.thumbnail || null,
           description: article.description || article.summary || 'Cobertura destacada del tema.',
           publishedAt: article.publishedAt || article.published_at || new Date().toISOString()
@@ -2055,7 +2139,8 @@ const DashboardDynamic = ({ onSectionChange }) => {
     while (sanitized.length < 4 && fallbackIndex < fallbackPool.length) {
       const fallbackArticle = {
         ...fallbackPool[fallbackIndex],
-        publishedAt: new Date(Date.now() - fallbackIndex * 3600 * 1000).toISOString()
+        publishedAt: new Date(Date.now() - fallbackIndex * 3600 * 1000).toISOString(),
+        origin: 'fallback'
       };
       sanitized.push(fallbackArticle);
       fallbackIndex += 1;
@@ -2064,10 +2149,15 @@ const DashboardDynamic = ({ onSectionChange }) => {
     return sanitized.slice(0, 4);
   };
 
+  const trendCards = React.useMemo(
+    () => [...newsArticles, ...redditTrends],
+    [newsArticles, redditTrends]
+  );
+
   const formattedWeeklyGrowth = nichemMetrics ? formatSignedPercentage(nichemMetrics.weeklyGrowth) : '+0%';
   const weeklyGrowthPositive = (nichemMetrics?.weeklyGrowth ?? 0) >= 0;
-  const realNewsArticlesCount = newsArticles.filter(article => !article.isFallback).length;
-  const supplementalInsightCount = Math.max(0, newsArticles.length - realNewsArticlesCount);
+  const realNewsArticlesCount = trendCards.filter(card => card.origin === 'news' && !card.isFallback).length;
+  const supplementalInsightCount = Math.max(0, trendCards.length - realNewsArticlesCount);
 
   return (
     <div className="space-y-6">
@@ -2606,7 +2696,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
             </Card>
 
             {/* 📰 TENDENCIAS EMERGENTES DE NEWSAPI + ANÁLISIS SEO DE CREOVISION */}
-            {newsArticles.length > 0 && (
+            {trendCards.length > 0 && (
               <div className="col-span-full">
                 <div className="flex items-center gap-3 mb-4">
                   <NewspaperIcon className="w-6 h-6 text-cyan-400 stroke-[2]" />
@@ -2621,20 +2711,22 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
                 {/* Grid de tarjetas de noticias (mínimo 4) */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {newsArticles.slice(0, visibleNewsCount).map((article, index) => (
+                  {trendCards.slice(0, visibleNewsCount).map((article, index) => (
                     <motion.div
                       key={article.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className="relative group"
-                      onMouseEnter={() => handleArticleHover(article)}
-                      onMouseLeave={() => setHoveredArticle(null)}
-                      onClick={() => {
-                        setSelectedArticle(article);
-                        setShowSEOModal(true);
-                        handleArticleHover(article); // Asegurar que el análisis esté cargado
+                      onMouseEnter={() => {
+                        if (article.origin !== 'reddit') {
+                          handleArticleHover(article);
+                        } else {
+                          setHoveredArticle(null);
+                        }
                       }}
+                      onMouseLeave={() => setHoveredArticle(null)}
+                      onClick={() => handleTrendCardClick(article)}
                     >
                       <Card className="glass-effect border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 hover:border-cyan-400/40 transition-all duration-300 cursor-pointer h-full overflow-hidden">
                         {/* Imagen del artículo */}
@@ -2652,7 +2744,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
                             {/* Badge de fuente */}
                             <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
-                              <p className="text-[10px] text-cyan-300 font-medium">{article.source}</p>
+                              <p className="text-[10px] text-cyan-300 font-medium">
+                                {article.source}
+                              </p>
                             </div>
                           </div>
                         )}
@@ -2669,41 +2763,67 @@ const DashboardDynamic = ({ onSectionChange }) => {
                           </p>
 
                           {/* Footer con fecha y link */}
-                          <div className="flex items-center justify-between pt-2 border-t border-cyan-500/10">
-                            <span className="text-[10px] text-gray-500">
-                              {new Date(article.publishedAt).toLocaleDateString('es', {
-                                day: 'numeric',
-                                month: 'short'
-                              })}
-                            </span>
-                            {!article.isFallback && (
-                              <a
-                                href={article.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group/link"
-                              >
-                                Leer más
-                                <LinkIcon className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
-                              </a>
-                            )}
-                          </div>
-
-                          {/* Indicador de hover para análisis SEO */}
-                          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="bg-yellow-500/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1">
-                              <SparklesSolidIcon className="w-3 h-3 text-yellow-900" />
-                              <span className="text-[9px] font-semibold text-yellow-900">
-                                Click para análisis SEO
+                          {article.origin === 'reddit' ? (
+                            <div className="flex items-center justify-between pt-2 border-t border-cyan-500/10">
+                              <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                                <div className="flex items-center gap-1">
+                                  <FireIcon className="w-3.5 h-3.5 text-amber-300" />
+                                  <span>{formatCompactNumber(article.stats?.upvotes || 0)} votos</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 text-cyan-300" />
+                                  <span>{formatCompactNumber(article.stats?.comments || 0)} comentarios</span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] text-gray-500">
+                                {new Date(article.publishedAt).toLocaleDateString('es', {
+                                  day: 'numeric',
+                                  month: 'short'
+                                })}
                               </span>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="flex items-center justify-between pt-2 border-t border-cyan-500/10">
+                              <span className="text-[10px] text-gray-500">
+                                {new Date(article.publishedAt).toLocaleDateString('es', {
+                                  day: 'numeric',
+                                  month: 'short'
+                                })}
+                              </span>
+                              {!article.isFallback && (
+                                <a
+                                  href={article.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 group/link"
+                                >
+                                  Leer más
+                                  <LinkIcon className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Indicador de hover para análisis SEO / Insight IA */}
+                          {article.origin !== 'reddit' && (
+                            <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className={`backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 ${article.origin === 'fallback' ? 'bg-cyan-300/90' : 'bg-yellow-500/90'}`}>
+                                <SparklesSolidIcon className={`w-3 h-3 ${article.origin === 'fallback' ? 'text-cyan-900' : 'text-yellow-900'}`} />
+                                <span className={`text-[9px] font-semibold ${article.origin === 'fallback' ? 'text-cyan-900' : 'text-yellow-900'}`}>
+                                  {article.origin === 'fallback' ? 'Insight IA disponible' : 'Click para análisis SEO'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
 
                       {/* Tooltip de hover con análisis SEO de CreoVision */}
-                      {hoveredArticle?.id === article.id && seoAnalysis[article.id] && !seoAnalysis[article.id].error && (
+                      {article.origin !== 'reddit' &&
+                        hoveredArticle?.id === article.id &&
+                        seoAnalysis[article.id] &&
+                        !seoAnalysis[article.id].error && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
@@ -2737,7 +2857,9 @@ const DashboardDynamic = ({ onSectionChange }) => {
                       )}
 
                       {/* Loading indicator para análisis */}
-                      {hoveredArticle?.id === article.id && loadingSEOAnalysis && (
+                      {article.origin === 'news' &&
+                        hoveredArticle?.id === article.id &&
+                        loadingSEOAnalysis && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -2752,7 +2874,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
                     </motion.div>
                   ))}
                 </div>
-                {newsArticles.length > visibleNewsCount && (
+                {trendCards.length > visibleNewsCount && (
                   <div className="mt-4 flex justify-center">
                     <Button
                       variant="outline"

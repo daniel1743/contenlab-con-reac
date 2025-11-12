@@ -1,7 +1,8 @@
 /**
  * 📊 TENDENCIAS DE LA SEMANA
- * Muestra 6 tarjetas de cada fuente (YouTube, Twitter, NewsAPI)
- * Primera tarjeta desbloqueada, las demás requieren 15 créditos
+ * Muestra 5 tarjetas de cada fuente (YouTube, Twitter, News)
+ * Muestra 6 tarjetas de Reddit
+ * Primera tarjeta desbloqueada, las demás requieren 20 créditos cada una
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -24,7 +25,8 @@ import {
   RefreshCw,
   Crown,
   MessageCircle,
-  Zap
+  Zap,
+  MessageSquare
 } from 'lucide-react';
 import { getWeeklyTrends, unlockTrendCard, getUnlockedTrends } from '@/services/weeklyTrendsService';
 import { consumeCredits, checkSufficientCredits } from '@/services/creditService';
@@ -33,14 +35,14 @@ import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER } from '@/config/creoPersonali
 import { getMemories, saveMemory, buildMemoryContext } from '@/services/memoryService';
 
 const UNLOCK_COST = 20; // Créditos para desbloquear una tarjeta individual
-const UNLOCK_ALL_COST = 100; // Créditos para desbloquear todas las tarjetas (descuento)
-const CARDS_PER_CATEGORY = 6; // 6 tarjetas por categoría
+const UNLOCK_ALL_COST_STANDARD = 80; // 4 tarjetas × 20 créditos (YouTube, Twitter, News)
+const UNLOCK_ALL_COST_REDDIT = 100; // 5 tarjetas × 20 créditos (Reddit)
 
 const WeeklyTrends = () => {
   const { user, session } = useAuth();
   const { toast } = useToast();
 
-  const [trends, setTrends] = useState({ youtube: [], twitter: [], news: [] });
+  const [trends, setTrends] = useState({ youtube: [], twitter: [], news: [], reddit: [] });
   const [unlockedIds, setUnlockedIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -403,6 +405,9 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
     const currentTrends = trends[selectedCategory];
     const lockedTrends = currentTrends.slice(1); // Excluir la primera que ya está desbloqueada
 
+    // Calcular el costo según la categoría
+    const UNLOCK_ALL_COST = selectedCategory === 'reddit' ? UNLOCK_ALL_COST_REDDIT : UNLOCK_ALL_COST_STANDARD;
+
     // Verificar créditos suficientes
     const creditCheck = await checkSufficientCredits(user.id, UNLOCK_ALL_COST);
 
@@ -485,11 +490,21 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
       color: 'from-purple-500 to-pink-500',
       bgColor: 'bg-purple-500/10',
       borderColor: 'border-purple-500/30'
+    },
+    {
+      id: 'reddit',
+      name: 'Reddit',
+      icon: MessageSquare,
+      color: 'from-orange-500 to-red-500',
+      bgColor: 'bg-orange-500/10',
+      borderColor: 'border-orange-500/30'
     }
   ];
 
   const currentCategory = categories.find(c => c.id === selectedCategory);
   const currentTrends = trends[selectedCategory] || [];
+  const currentUnlockAllCost = selectedCategory === 'reddit' ? UNLOCK_ALL_COST_REDDIT : UNLOCK_ALL_COST_STANDARD;
+  const currentLockedCount = currentTrends.length - 1; // -1 porque la primera es gratis
 
   if (loading) {
     return (
@@ -516,7 +531,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
               📊 Tendencias de la Semana
             </h1>
             <p className="text-gray-400">
-              Descubre las tendencias más virales de YouTube, Twitter y Noticias
+              Descubre las tendencias más virales de YouTube, Twitter, Reddit y Noticias
             </p>
           </div>
           <Button
@@ -543,7 +558,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                     Las tendencias se actualizan automáticamente cada 3 días.
                   </p>
                   <p className="text-sm mt-2 text-purple-300">
-                    💡 <strong>Ahorra {(UNLOCK_COST * 5) - UNLOCK_ALL_COST} créditos</strong> desbloqueando las 5 restantes por solo <strong>{UNLOCK_ALL_COST} créditos</strong>
+                    💡 <strong>Ahorra {(UNLOCK_COST * currentLockedCount) - currentUnlockAllCost} créditos</strong> desbloqueando las {currentLockedCount} restantes por solo <strong>{currentUnlockAllCost} créditos</strong>
                   </p>
                 </div>
               </div>
@@ -552,7 +567,7 @@ ${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
                 className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:opacity-90 flex items-center gap-2 whitespace-nowrap"
               >
                 <Crown className="w-4 h-4" />
-                Desbloquear Todas ({UNLOCK_ALL_COST})
+                Desbloquear Todas ({currentUnlockAllCost} 💎)
               </Button>
             </div>
           </CardContent>
@@ -835,6 +850,18 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock, onTalk })
                   <div className="flex items-center gap-1">
                     <ThumbsUp className="w-4 h-4" />
                     <span>{trend.volume}</span>
+                  </div>
+                )}
+                {trend.score && (
+                  <div className="flex items-center gap-1">
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>{typeof trend.score === 'number' ? trend.score.toLocaleString() : trend.score}</span>
+                  </div>
+                )}
+                {trend.numComments && (
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>{typeof trend.numComments === 'number' ? trend.numComments.toLocaleString() : trend.numComments}</span>
                   </div>
                 )}
               </div>

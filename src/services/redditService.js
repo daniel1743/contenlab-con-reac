@@ -200,9 +200,190 @@ export async function getRecommendedSubreddits(niche, limit = 10) {
   }
 }
 
+/**
+ * Obtener posts trending de Reddit usando la API pública
+ * @param {Array<string>} subreddits - Lista de subreddits a consultar
+ * @param {number} limit - Límite de posts totales
+ * @returns {Promise<Array>} Posts trending formateados
+ */
+export async function getRedditTrendingPosts(subreddits = ['viral', 'videos', 'marketing', 'socialmedia', 'ContentCreators'], limit = 6) {
+  try {
+    console.log(`🔴 Fetching trending posts from ${subreddits.length} subreddits...`);
+
+    const allPosts = [];
+
+    // Obtener posts de cada subreddit en paralelo
+    const promises = subreddits.map(async (subreddit) => {
+      try {
+        // Usar el endpoint público de Reddit (.json)
+        const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=10`;
+
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'CreoVision:v1.0 (by /u/CreoVision)'
+          }
+        });
+
+        if (!response.ok) {
+          console.warn(`⚠️ Error fetching r/${subreddit}: ${response.status}`);
+          return [];
+        }
+
+        const data = await response.json();
+
+        // Extraer posts del formato de Reddit
+        const posts = data.data.children
+          .filter(post => !post.data.stickied && !post.data.over_18) // Filtrar posts fijados y NSFW
+          .map(post => ({
+            id: `reddit-${post.data.id}`,
+            title: post.data.title,
+            description: post.data.selftext ?
+              post.data.selftext.substring(0, 200) + (post.data.selftext.length > 200 ? '...' : '') :
+              `Post trending de r/${subreddit}`,
+            subreddit: post.data.subreddit,
+            author: post.data.author,
+            score: post.data.score,
+            upvoteRatio: post.data.upvote_ratio,
+            numComments: post.data.num_comments,
+            url: `https://www.reddit.com${post.data.permalink}`,
+            thumbnail: post.data.thumbnail && post.data.thumbnail.startsWith('http') ?
+              post.data.thumbnail :
+              null,
+            createdUtc: post.data.created_utc,
+            engagement: post.data.score + post.data.num_comments, // Métrica de engagement
+            trend: post.data.score > 1000 ? 'up' : 'stable'
+          }));
+
+        return posts;
+      } catch (error) {
+        console.error(`❌ Error fetching r/${subreddit}:`, error);
+        return [];
+      }
+    });
+
+    const results = await Promise.all(promises);
+
+    // Combinar todos los posts y ordenar por engagement
+    results.forEach(posts => allPosts.push(...posts));
+
+    allPosts.sort((a, b) => b.engagement - a.engagement);
+
+    // Tomar solo los mejores N posts
+    const topPosts = allPosts.slice(0, limit);
+
+    console.log(`✅ Fetched ${topPosts.length} trending Reddit posts`);
+    return topPosts;
+
+  } catch (error) {
+    console.error('❌ Error in getRedditTrendingPosts:', error);
+    return getMockRedditData(limit);
+  }
+}
+
+/**
+ * Mock data para Reddit (fallback)
+ */
+function getMockRedditData(count = 6) {
+  const mockPosts = [
+    {
+      id: 'reddit-mock-1',
+      title: 'Cómo conseguí 100K seguidores en TikTok en 30 días',
+      description: 'Comparto mi estrategia completa para crecer orgánicamente...',
+      subreddit: 'ContentCreators',
+      author: 'CreatorPro',
+      score: 4500,
+      upvoteRatio: 0.95,
+      numComments: 342,
+      url: '#',
+      thumbnail: null,
+      createdUtc: Date.now() / 1000,
+      engagement: 4842,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-2',
+      title: 'Las mejores herramientas de IA para creadores de contenido en 2025',
+      description: 'Lista completa de herramientas que uso diariamente...',
+      subreddit: 'marketing',
+      author: 'AIEnthusiast',
+      score: 3200,
+      upvoteRatio: 0.92,
+      numComments: 156,
+      url: '#',
+      thumbnail: null,
+      createdUtc: Date.now() / 1000,
+      engagement: 3356,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-3',
+      title: 'Mi video alcanzó 5M de vistas - Aquí está mi fórmula',
+      description: 'Después de años de intentar, finalmente descubrí...',
+      subreddit: 'viral',
+      author: 'ViralKing',
+      score: 2800,
+      upvoteRatio: 0.88,
+      numComments: 234,
+      url: '#',
+      thumbnail: null,
+      createdUtc: Date.now() / 1000,
+      engagement: 3034,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-4',
+      title: 'Análisis: Por qué el algoritmo de Instagram cambió en 2025',
+      description: 'Datos y tendencias que todo creador debe conocer...',
+      subreddit: 'socialmedia',
+      author: 'DataAnalyst',
+      score: 2100,
+      upvoteRatio: 0.91,
+      numComments: 189,
+      url: '#',
+      thumbnail: null,
+      createdUtc: Date.now() / 1000,
+      engagement: 2289,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-5',
+      title: 'Moneticé mi canal de YouTube sin sponsorships - Mi historia',
+      description: 'Flujos de ingresos alternativos que funcionan...',
+      subreddit: 'ContentCreators',
+      author: 'MoneyMaker',
+      score: 1900,
+      upvoteRatio: 0.89,
+      numComments: 145,
+      url: '#',
+      thumbnail: null,
+      createdUtc: Date.now() / 1000,
+      engagement: 2045,
+      trend: 'stable'
+    },
+    {
+      id: 'reddit-mock-6',
+      title: 'El secreto detrás de los primeros 10,000 seguidores',
+      description: 'Lo que aprendí después de probar 50 estrategias diferentes...',
+      subreddit: 'ContentCreators',
+      author: 'GrowthHacker',
+      score: 1650,
+      upvoteRatio: 0.87,
+      numComments: 98,
+      url: '#',
+      thumbnail: null,
+      createdUtc: Date.now() / 1000,
+      engagement: 1748,
+      trend: 'stable'
+    }
+  ];
+
+  return mockPosts.slice(0, count);
+}
+
 export default {
   analyzeRedditTrends,
   searchViralPosts,
   analyzeCommunityEngagement,
-  getRecommendedSubreddits
+  getRecommendedSubreddits,
+  getRedditTrendingPosts
 };

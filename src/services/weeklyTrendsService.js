@@ -8,13 +8,15 @@
 import { supabase } from '@/lib/customSupabaseClient';
 import { getWeeklyViralTrends } from './youtubeService';
 import { getTrendingHashtags } from './twitterService';
+import { getRedditTrendingPosts } from './redditService';
 
 // ==========================================
 // 🔑 CONFIGURACIÓN DE APIs
 // ==========================================
 
 const NEWSAPI_KEY = import.meta.env.VITE_NEWS_API_KEY || '';
-const CACHE_DURATION_DAYS = 3; // Renovar cada 3 días
+const CACHE_DURATION_DAYS = 3; // Renovar cada 3 días (YouTube, Twitter)
+const CACHE_DURATION_HOURS_48 = 48; // 48 horas para News y Reddit
 
 // ==========================================
 // 📰 NEWSAPI - NOTICIAS TRENDING
@@ -26,7 +28,7 @@ const CACHE_DURATION_DAYS = 3; // Renovar cada 3 días
  * @param {number} count - Cantidad de noticias
  * @returns {Promise<Array>} Noticias trending
  */
-async function fetchNewsAPITrends(category = 'technology', count = 6) {
+async function fetchNewsAPITrends(category = 'technology', count = 5) {
   try {
     if (!NEWSAPI_KEY) {
       console.warn('⚠️ NewsAPI key not configured, using mock data');
@@ -96,7 +98,7 @@ function getMockNewsData(count = 6) {
  * @param {number} count - Cantidad de videos
  * @returns {Promise<Array>} Videos trending
  */
-async function fetchYouTubeTrends(count = 6) {
+async function fetchYouTubeTrends(count = 5) {
   try {
     // Usar el servicio existente de YouTube
     const trends = await getWeeklyViralTrends('general', count);
@@ -157,7 +159,7 @@ function getMockYouTubeData(count = 6) {
  * @param {number} count - Cantidad de hashtags
  * @returns {Promise<Array>} Hashtags trending
  */
-async function fetchTwitterTrends(count = 6) {
+async function fetchTwitterTrends(count = 5) {
   try {
     // Usar el servicio existente de Twitter
     const trends = await getTrendingHashtags('contenido digital', 'twitter');
@@ -202,39 +204,230 @@ function getMockTwitterData(count = 6) {
 }
 
 // ==========================================
+// 🔴 REDDIT - POSTS TRENDING
+// ==========================================
+
+/**
+ * Obtener posts trending de Reddit
+ * @param {number} count - Cantidad de posts
+ * @returns {Promise<Array>} Posts trending
+ */
+async function fetchRedditTrends(count = 6) {
+  try {
+    // Usar el servicio de Reddit
+    const trends = await getRedditTrendingPosts(
+      ['viral', 'videos', 'marketing', 'socialmedia', 'ContentCreators'],
+      count
+    );
+
+    const normalized = (Array.isArray(trends) ? trends : [])
+      .filter(Boolean)
+      .map((post) => ({
+        id: post.id || `reddit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: post.title || 'Tendencia destacada en Reddit',
+        description: post.description || 'Cobertura destacada creada por la comunidad.',
+        subreddit: post.subreddit || 'reddit',
+        author: post.author || 'community',
+        score: post.score ?? 0,
+        numComments: post.numComments ?? 0,
+        url: post.url || '#',
+        thumbnail: post.thumbnail || null,
+        engagement: post.engagement ?? 0,
+        trend: post.trend || 'up'
+      }));
+
+    return ensureRedditTrendCount(normalized, count);
+  } catch (error) {
+    console.error('❌ Error fetching Reddit trends:', error);
+    return ensureRedditTrendCount(getMockRedditData(count), count);
+  }
+}
+
+/**
+ * Mock data para Reddit (fallback)
+ */
+function getMockRedditData(count = 6) {
+  const posts = [
+    {
+      id: 'reddit-mock-1',
+      title: 'Cómo conseguí 100K seguidores en TikTok en 30 días',
+      description: 'Comparto mi estrategia completa para crecer orgánicamente...',
+      subreddit: 'ContentCreators',
+      author: 'CreatorPro',
+      score: 4500,
+      numComments: 342,
+      url: '#',
+      thumbnail: null,
+      engagement: 4842,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-2',
+      title: 'Las mejores herramientas de IA para creadores de contenido en 2025',
+      description: 'Lista completa de herramientas que uso diariamente...',
+      subreddit: 'marketing',
+      author: 'AIEnthusiast',
+      score: 3200,
+      numComments: 156,
+      url: '#',
+      thumbnail: null,
+      engagement: 3356,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-3',
+      title: 'Mi video alcanzó 5M de vistas - Aquí está mi fórmula',
+      description: 'Después de años de intentar, finalmente descubrí...',
+      subreddit: 'viral',
+      author: 'ViralKing',
+      score: 2800,
+      numComments: 234,
+      url: '#',
+      thumbnail: null,
+      engagement: 3034,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-4',
+      title: 'Análisis: Por qué el algoritmo de Instagram cambió en 2025',
+      description: 'Datos y tendencias que todo creador debe conocer...',
+      subreddit: 'socialmedia',
+      author: 'DataAnalyst',
+      score: 2100,
+      numComments: 189,
+      url: '#',
+      thumbnail: null,
+      engagement: 2289,
+      trend: 'up'
+    },
+    {
+      id: 'reddit-mock-5',
+      title: 'Moneticé mi canal de YouTube sin sponsorships - Mi historia',
+      description: 'Flujos de ingresos alternativos que funcionan...',
+      subreddit: 'ContentCreators',
+      author: 'MoneyMaker',
+      score: 1900,
+      numComments: 145,
+      url: '#',
+      thumbnail: null,
+      engagement: 2045,
+      trend: 'stable'
+    },
+    {
+      id: 'reddit-mock-6',
+      title: 'El secreto detrás de los primeros 10,000 seguidores',
+      description: 'Lo que aprendí después de probar 50 estrategias diferentes...',
+      subreddit: 'ContentCreators',
+      author: 'GrowthHacker',
+      score: 1650,
+      numComments: 98,
+      url: '#',
+      thumbnail: null,
+      engagement: 1748,
+      trend: 'stable'
+    }
+  ];
+
+  return posts.slice(0, count).map((post) => ({
+    ...post,
+    isFallback: true
+  }));
+}
+
+function ensureRedditTrendCount(trends, desiredCount = 6) {
+  const sanitized = Array.isArray(trends) ? [...trends] : [];
+
+  if (sanitized.length >= desiredCount) {
+    return sanitized.slice(0, desiredCount);
+  }
+
+  const fallbackPool = getMockRedditData(desiredCount);
+  const existingIds = new Set(sanitized.map((item) => item.id));
+  let fallbackIndex = 0;
+
+  while (sanitized.length < desiredCount && fallbackIndex < fallbackPool.length) {
+    const base = fallbackPool[fallbackIndex];
+    let uniqueId = base.id;
+    let suffix = 1;
+
+    while (existingIds.has(uniqueId)) {
+      uniqueId = `${base.id}-${suffix}`;
+      suffix += 1;
+    }
+
+    sanitized.push({
+      ...base,
+      id: uniqueId,
+      isFallback: true
+    });
+    existingIds.add(uniqueId);
+    fallbackIndex += 1;
+  }
+
+  return sanitized;
+}
+
+// ==========================================
 // 💾 SISTEMA DE CACHÉ
 // ==========================================
 
 /**
- * Verificar si el caché es válido (menos de 3 días)
+ * Verificar si el caché es válido
  * @param {string} lastUpdate - Fecha de última actualización
+ * @param {string} trendType - Tipo de tendencia (youtube, twitter, news, reddit)
  * @returns {boolean} Si el caché es válido
  */
-function isCacheValid(lastUpdate) {
+function isCacheValid(lastUpdate, trendType) {
   if (!lastUpdate) return false;
 
   const now = new Date();
   const lastUpdateDate = new Date(lastUpdate);
-  const daysDiff = (now - lastUpdateDate) / (1000 * 60 * 60 * 24);
 
+  // News y Reddit usan caché de 48 horas
+  if (trendType === 'news' || trendType === 'reddit') {
+    const hoursDiff = (now - lastUpdateDate) / (1000 * 60 * 60);
+    const isValid = hoursDiff < CACHE_DURATION_HOURS_48;
+
+    if (isValid) {
+      const hoursRemaining = CACHE_DURATION_HOURS_48 - hoursDiff;
+      console.log(`📦 Caché de ${trendType} válido. Expira en ${hoursRemaining.toFixed(1)}h`);
+    }
+
+    return isValid;
+  }
+
+  // YouTube y Twitter usan caché de 3 días
+  const daysDiff = (now - lastUpdateDate) / (1000 * 60 * 60 * 24);
   return daysDiff < CACHE_DURATION_DAYS;
 }
 
 /**
  * Guardar tendencias en Supabase
- * @param {string} type - Tipo de tendencia (youtube, twitter, news)
+ * @param {string} type - Tipo de tendencia (youtube, twitter, news, reddit)
  * @param {Array} trends - Array de tendencias
  * @returns {Promise<boolean>} Si se guardó correctamente
  */
 async function saveTrendsToCache(type, trends) {
   try {
+    // Calcular duración del caché según el tipo
+    let expirationTime;
+    if (type === 'news' || type === 'reddit') {
+      // 48 horas para News y Reddit
+      expirationTime = Date.now() + (CACHE_DURATION_HOURS_48 * 60 * 60 * 1000);
+      console.log(`💾 Guardando caché de ${type} (válido por 48 horas)`);
+    } else {
+      // 3 días para YouTube y Twitter
+      expirationTime = Date.now() + (CACHE_DURATION_DAYS * 24 * 60 * 60 * 1000);
+      console.log(`💾 Guardando caché de ${type} (válido por 3 días)`);
+    }
+
     const { error } = await supabase
       .from('weekly_trends_cache')
       .upsert({
         trend_type: type,
         trends_data: trends,
         updated_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + CACHE_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(expirationTime).toISOString()
       }, {
         onConflict: 'trend_type'
       });
@@ -244,7 +437,7 @@ async function saveTrendsToCache(type, trends) {
       return false;
     }
 
-    console.log(`✅ ${type} trends cached successfully`);
+    console.log(`✅ Caché de ${type} guardado exitosamente`);
     return true;
   } catch (error) {
     console.error('❌ Error in saveTrendsToCache:', error);
@@ -269,13 +462,14 @@ async function getTrendsFromCache(type) {
       return null;
     }
 
-    // Verificar si el caché es válido
-    if (!isCacheValid(data.updated_at)) {
-      console.log(`⏰ Cache expired for ${type}, fetching new data...`);
+    // Verificar si el caché es válido (con validación específica por tipo)
+    if (!isCacheValid(data.updated_at, type)) {
+      const cacheType = (type === 'news' || type === 'reddit') ? '48h' : '3 días';
+      console.log(`⏰ Caché expirado para ${type} (duración: ${cacheType}), obteniendo nuevos datos...`);
       return null;
     }
 
-    console.log(`✅ Using cached ${type} trends`);
+    console.log(`✅ Usando caché de ${type}`);
     return data.trends_data;
   } catch (error) {
     console.error('❌ Error getting trends from cache:', error);
@@ -301,6 +495,7 @@ export async function getWeeklyTrends(forceRefresh = false) {
       youtube: [],
       twitter: [],
       news: [],
+      reddit: [],
       lastUpdate: new Date().toISOString(),
       cacheUsed: false
     };
@@ -343,14 +538,31 @@ export async function getWeeklyTrends(forceRefresh = false) {
     }
 
     if (results.news.length === 0) {
-      results.news = await fetchNewsAPITrends('technology', 6);
+      results.news = await fetchNewsAPITrends('technology', 5);
       await saveTrendsToCache('news', results.news);
     }
+
+    // Reddit Trends
+    if (!forceRefresh) {
+      const cachedReddit = await getTrendsFromCache('reddit');
+      if (cachedReddit) {
+        results.reddit = cachedReddit;
+        results.cacheUsed = true;
+      }
+    }
+
+    if (results.reddit.length === 0) {
+      results.reddit = await fetchRedditTrends(6);
+      await saveTrendsToCache('reddit', results.reddit);
+    }
+
+    results.reddit = ensureRedditTrendCount(results.reddit, 6);
 
     console.log('✅ Weekly trends fetched:', {
       youtube: results.youtube.length,
       twitter: results.twitter.length,
       news: results.news.length,
+      reddit: results.reddit.length,
       cacheUsed: results.cacheUsed
     });
 
@@ -360,9 +572,10 @@ export async function getWeeklyTrends(forceRefresh = false) {
 
     // Retornar datos mock en caso de error
     return {
-      youtube: getMockYouTubeData(6),
-      twitter: getMockTwitterData(6),
-      news: getMockNewsData(6),
+      youtube: getMockYouTubeData(5),
+      twitter: getMockTwitterData(5),
+      news: getMockNewsData(5),
+      reddit: getMockRedditData(6),
       lastUpdate: new Date().toISOString(),
       cacheUsed: false,
       error: error.message

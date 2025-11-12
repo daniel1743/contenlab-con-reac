@@ -43,6 +43,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showPromoCodeModal, setShowPromoCodeModal] = useState(false);
+  const [showIntelligenceHint, setShowIntelligenceHint] = useState(false);
+  const intelligenceHintTimeout = React.useRef(null);
   const { toast } = useToast();
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
@@ -149,9 +151,29 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     }
   };
 
+  const triggerIntelligenceHint = React.useCallback(() => {
+    if (intelligenceHintTimeout.current) {
+      clearTimeout(intelligenceHintTimeout.current);
+    }
+    setShowIntelligenceHint(true);
+    intelligenceHintTimeout.current = setTimeout(() => {
+      setShowIntelligenceHint(false);
+    }, 3200);
+  }, []);
+
+  React.useEffect(() => {
+    triggerIntelligenceHint();
+    return () => {
+      if (intelligenceHintTimeout.current) {
+        clearTimeout(intelligenceHintTimeout.current);
+      }
+    };
+  }, [triggerIntelligenceHint]);
+
   // ⚡ OPTIMIZACIÓN: Preload de rutas al hacer hover
   const handleNavHover = (item) => {
     if (item.id === 'dashboard') {
+      triggerIntelligenceHint();
       import('@/components/DashboardDynamic');
     } else if (item.id === 'growth-dashboard') {
       import('@/components/GrowthDashboard');
@@ -235,6 +257,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
           <div className="hidden md:flex items-center space-x-1 lg:space-x-2 ml-8">
             {navigationItems.map((item) => { // Renderiza todos los items
               const Icon = item.icon;
+              const highlightIntelligence = item.id === 'dashboard' && showIntelligenceHint;
               return (
                 <motion.button
                   key={item.id}
@@ -249,7 +272,14 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <span className={`relative flex ${highlightIntelligence ? 'intelligence-glow-icon' : ''}`}>
+                    <Icon className="w-3.5 h-3.5" />
+                    {highlightIntelligence && (
+                      <span className="intelligence-hint">
+                        Estudia un tema y ve como lo trata tu competencia
+                      </span>
+                    )}
+                  </span>
                   <span className="text-xs font-medium">{item.label}</span>
                   {item.badge && (
                     <span className="ml-1 px-1 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
@@ -328,7 +358,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                         setIsMobileMenuOpen(false);
                         setShowPromoCodeModal(true);
                       }}
-                      className="cursor-pointer bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 py-1.5"
+                      className="dropdown-menu-item cursor-pointer bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/30 py-1.5"
                     >
                       <TicketIcon className="mr-1.5 h-3.5 w-3.5 text-purple-400 stroke-[2]" />
                       <span className="text-[11px] font-bold text-purple-400">Canjear Código</span>
@@ -344,7 +374,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                           setIsMobileMenuOpen(false);
                           onSubscriptionClick?.();
                         }}
-                        className="cursor-pointer bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 border border-yellow-500/30 py-1.5"
+                        className="dropdown-menu-item cursor-pointer bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 border border-yellow-500/30 py-1.5"
                       >
                         <TrophyIcon className="mr-1.5 h-3.5 w-3.5 text-yellow-400 stroke-[2]" />
                         <span className="text-[11px] font-bold text-yellow-400">Actualizar Plan</span>
@@ -355,7 +385,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Insignias */}
-                    <DropdownMenuItem onClick={() => onSectionChange('badges')} className="cursor-pointer py-1.5">
+                    <DropdownMenuItem onClick={() => onSectionChange('badges')} className="dropdown-menu-item cursor-pointer py-1.5">
                       <TrophyIcon className="mr-1.5 h-3.5 w-3.5 text-purple-400 stroke-[2]" />
                       <span className="text-[11px]">Insignias</span>
                       <span className="ml-auto text-[10px] text-gray-400">{userBadges}/10</span>
@@ -364,25 +394,25 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Mis Investigaciones (Historial) */}
-                    <DropdownMenuItem onClick={() => onSectionChange('history')} className="cursor-pointer py-1.5">
+                    <DropdownMenuItem onClick={() => onSectionChange('history')} className="dropdown-menu-item cursor-pointer py-1.5">
                       <ClockIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
                       <span className="text-[11px]">Mis Investigaciones</span>
                     </DropdownMenuItem>
 
                     {/* Mi Perfil de Creador */}
-                    <DropdownMenuItem onClick={() => onSectionChange('mi-perfil')} className="cursor-pointer py-1.5">
+                    <DropdownMenuItem onClick={() => onSectionChange('mi-perfil')} className="dropdown-menu-item cursor-pointer py-1.5">
                       <SparklesSolidIcon className="mr-1.5 h-3.5 w-3.5" />
                       <span className="text-[11px]">Mi Perfil de Creador</span>
                     </DropdownMenuItem>
 
                     {/* Configurar Perfil */}
-                    <DropdownMenuItem onClick={() => onSectionChange('profile')} className="cursor-pointer py-1.5">
+                    <DropdownMenuItem onClick={() => onSectionChange('profile')} className="dropdown-menu-item cursor-pointer py-1.5">
                       <UserCircleIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
                       <span className="text-[11px]">Configurar Perfil</span>
                     </DropdownMenuItem>
 
                     {/* Mis Notificaciones */}
-                    <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="cursor-pointer py-1.5">
+                    <DropdownMenuItem onClick={() => onSectionChange('notifications')} className="dropdown-menu-item cursor-pointer py-1.5">
                       <BellIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
                       <span className="text-[11px]">Mis Notificaciones</span>
                     </DropdownMenuItem>
@@ -390,7 +420,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                     <DropdownMenuSeparator />
 
                     {/* Cerrar Portal (Cerrar Sesión) */}
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400 cursor-pointer py-1.5">
+                    <DropdownMenuItem onClick={handleLogout} className="dropdown-menu-item text-red-400 focus:text-red-400 cursor-pointer py-1.5">
                       <ArrowRightOnRectangleIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
                       <span className="text-[11px] font-semibold">Cerrar Portal</span>
                     </DropdownMenuItem>
