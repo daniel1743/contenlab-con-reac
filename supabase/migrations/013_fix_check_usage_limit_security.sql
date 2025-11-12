@@ -21,3 +21,4 @@ BEGIN
     RAISE NOTICE '🔐 Función check_usage_limit actualizada a SECURITY DEFINER con search_path seguro y grants';
 END $$;
 
+

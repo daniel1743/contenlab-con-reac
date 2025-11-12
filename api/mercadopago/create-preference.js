@@ -53,17 +53,34 @@ export default async function handler(req, res) {
     if (!preferenceItems && (planId || amount)) {
       let planMeta = null;
       if (planId && supabaseAdmin) {
-        const { data } = await supabaseAdmin
+        console.log('[create-preference] Buscando plan:', planId);
+        const { data, error: planError } = await supabaseAdmin
           .from('subscription_packages')
           .select('id, name, total_credits, price_usd, description')
           .eq('slug', planId)
           .maybeSingle();
+
+        if (planError) {
+          console.error('[create-preference] Error buscando plan:', planError);
+        }
+
         planMeta = data;
+        console.log('[create-preference] Plan encontrado:', planMeta);
       }
 
       const paymentAmount = amount ?? planMeta?.price_usd;
+      console.log('[create-preference] Monto determinado:', paymentAmount, '(amount:', amount, ', planMeta?.price_usd:', planMeta?.price_usd, ')');
+
       if (!paymentAmount) {
-        return res.status(400).json({ error: 'No se pudo determinar el monto a cobrar' });
+        return res.status(400).json({
+          error: 'No se pudo determinar el monto a cobrar',
+          debug: {
+            planId,
+            amount,
+            planFound: !!planMeta,
+            planPrice: planMeta?.price_usd
+          }
+        });
       }
 
       preferenceItems = [

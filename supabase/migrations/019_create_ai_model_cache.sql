@@ -92,3 +92,4 @@ COMMENT ON COLUMN public.ai_model_cache.normalized_topic IS
   'Versión normalizada del tema para búsquedas similares sin depender de mayúsculas o espacios.';
 
 
+
