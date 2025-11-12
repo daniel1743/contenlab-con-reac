@@ -690,7 +690,8 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
         </div>
       </section>
 
-      {/* Carrusel de videos explicativos */}
+      {/* Carrusel de videos explicativos (temporalmente comentado) */}
+      {/*
       <section id="demo-videos" className="py-24 px-4 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent opacity-[0.04] pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
@@ -800,6 +801,60 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
           </div>
         </div>
       </section>
+      */}
+
+      {/* Nueva sección visual */}
+      <motion.section
+        id="vision-experience"
+        initial={{ opacity: 0, scale: 0.96 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="relative py-24 px-4"
+      >
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.15),_transparent_55%)]" />
+        <div className="relative max-w-6xl mx-auto grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <p className="text-sm uppercase tracking-[0.35em] text-purple-200/70 mb-5">
+              Corazón CreoVision · Momentum Creativo
+            </p>
+            <h2 className="text-4xl md:text-5xl font-extrabold text-gradient text-transparent leading-tight mb-6">
+              Donde las ideas se encuentran con la visión.
+            </h2>
+            <p className="text-lg text-gray-300 mb-8">
+              Un manifiesto emocional para reconectar con tu propósito: datos, intuición y presencia escénica
+              respirando al mismo ritmo. Este es el lienzo que te recuerda por qué empezaste.
+            </p>
+            <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-effect border border-white/10">
+                <Sparkles className="w-4 h-4 text-purple-300" />
+                Inspiración asistida por IA
+              </span>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-effect border border-white/10">
+                <TrendingUp className="w-4 h-4 text-cyan-300" />
+                Datos que abrazan emociones
+              </span>
+            </div>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ delay: 0.15, duration: 0.9, ease: 'easeOut' }}
+            className="relative"
+          >
+            <div className="vision-hero-frame">
+              <img
+                src="/creovision.io landing.svg"
+                alt="CreoVision Experience"
+                className="vision-hero-image"
+                loading="lazy"
+              />
+              <div className="vision-light-orb" />
+            </div>
+          </motion.div>
+        </div>
+      </motion.section>
 
 
       {/* Sección "¿Para quién es esto?" */}

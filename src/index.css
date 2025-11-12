@@ -95,6 +95,34 @@ body {
   transform: translateX(2px) scale(0.99);
 }
 
+.vision-hero-frame {
+  position: relative;
+  border-radius: 2rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: radial-gradient(circle at top, rgba(124, 58, 237, 0.35), rgba(8, 12, 29, 0.95));
+  box-shadow: 0 25px 90px -30px rgba(124, 58, 237, 0.65);
+}
+
+.vision-hero-image {
+  width: 100%;
+  display: block;
+  transform-origin: center;
+  animation: visionZoom 12s ease-in-out infinite;
+}
+
+.vision-light-orb {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  bottom: -60px;
+  right: -40px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.7), rgba(59, 130, 246, 0));
+  filter: blur(30px);
+  opacity: 0.85;
+  animation: visionPulse 6s ease-in-out infinite;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -183,6 +211,28 @@ body {
   100% {
     opacity: 0;
     transform: translate(-50%, -4px) scale(0.9);
+  }
+}
+
+@keyframes visionZoom {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.03);
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes visionPulse {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
   }
 }
 
