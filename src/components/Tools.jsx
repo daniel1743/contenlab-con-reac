@@ -280,7 +280,8 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
     };
   });
   const [hasDefinedPersonality, setHasDefinedPersonality] = useState(() => {
-    if (typeof window === 'undefined') return false;
+    // Desbloqueamos las herramientas por defecto para evitar fricción en demos
+    if (typeof window === 'undefined') return true;
     if (localStorage.getItem('creatorProfile')) {
       return true;
     }
@@ -296,7 +297,7 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
         console.warn('No se pudo parsear creatorPersonality:', error);
       }
     }
-    return false;
+    return true;
   });
 
   // 🆕 ESTADOS PARA GENERADOR DE HASHTAGS
