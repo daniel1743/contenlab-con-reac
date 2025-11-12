@@ -22,14 +22,14 @@ console.log(`${colors.cyan}
 ${colors.reset}`);
 
 async function testQwen() {
-  const apiKey = process.env.VITE_QWEN_API_KEY;
+  const apiKey = process.env.QWEN_API_KEY || process.env.VITE_QWEN_API_KEY;
 
   console.log(`\n${colors.blue}━━━ 🤖 QWEN AI (Alibaba Cloud) ━━━${colors.reset}`);
 
   if (!apiKey) {
-    console.log(`${colors.red}❌ ERROR: No se encontró VITE_QWEN_API_KEY en .env${colors.reset}`);
+    console.log(`${colors.red}❌ ERROR: No se encontró QWEN_API_KEY en .env${colors.reset}`);
     console.log(`${colors.yellow}📝 Agrega esta línea a tu archivo .env:${colors.reset}`);
-    console.log(`VITE_QWEN_API_KEY=tu_key_aqui\n`);
+    console.log(`QWEN_API_KEY=tu_key_aqui\n`);
     return false;
   }
 
@@ -252,7 +252,7 @@ ${colors.reset}`);
     console.log(`${colors.red}❌ QWEN no está configurado o tiene errores${colors.reset}`);
     console.log(`\n${colors.yellow}📝 SOLUCIÓN:${colors.reset}`);
     console.log(`  1. Obtén tu API key en: https://qwen.ai/apiplatform`);
-    console.log(`  2. Agrégala al .env: VITE_QWEN_API_KEY=tu_key_aqui`);
+    console.log(`  2. Agrégala al .env: QWEN_API_KEY=tu_key_aqui`);
     console.log(`  3. Vuelve a ejecutar: node test-qwen.js`);
   }
 

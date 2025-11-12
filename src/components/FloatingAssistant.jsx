@@ -2,7 +2,7 @@
  * 🤖 FLOATING ASSISTANT COMPONENT
  *
  * Asistente flotante con mascota de CreoVision que guía al usuario
- * mediante conversaciones contextuales con IA (DeepSeek).
+ * mediante conversaciones contextuales con CreoVision IA.
  *
  * Features:
  * - Burbuja flotante con badge de notificación

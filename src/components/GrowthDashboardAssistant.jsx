@@ -1,7 +1,7 @@
 /**
  * 🚀 Growth Dashboard Assistant
  * Asistente IA exclusivo del Growth Dashboard para explicar funcionalidad y beneficios
- * Usa Qwen como modelo, máximo 3-4 mensajes por conversación
+ * Usa CreoVision GPT-4, máximo 3-4 mensajes por conversación
  */
 
 import React, { useState, useRef, useEffect } from 'react';

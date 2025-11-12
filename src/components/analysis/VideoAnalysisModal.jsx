@@ -1,7 +1,7 @@
 /**
  * 📊 ANÁLISIS DE VIDEO DE YOUTUBE
  * Modal para analizar videos de YouTube con métricas y recomendaciones
- * Usa videoAnalysisService.js con DeepSeek AI
+ * Usa videoAnalysisService.js con CreoVision IA
  */
 
 import React, { useState, useEffect } from 'react';

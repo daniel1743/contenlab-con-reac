@@ -31,7 +31,7 @@ import {
 import { getWeeklyTrends, unlockTrendCard, getUnlockedTrends } from '@/services/weeklyTrendsService';
 import { consumeCredits, checkSufficientCredits } from '@/services/creditService';
 import AIFeedbackWidget from '@/components/AIFeedbackWidget';
-import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER } from '@/config/creoPersonality';
+import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER, buildTrendAnalysisPrompts } from '@/config/creoPersonality';
 import { getMemories, saveMemory, buildMemoryContext } from '@/services/memoryService';
 import { getCachedAnalysis, saveAnalysisCache, extractAnalysisMetadata } from '@/services/analysisCacheService';
 
@@ -238,90 +238,18 @@ const WeeklyTrends = () => {
       // Obtener token de autenticación si está disponible
       const authToken = session?.access_token || null;
 
-      // Construir contexto personalizado con perfil y memorias
-      const profileContext = CREO_CONTEXT_BUILDER(profileData);
-      const memoryContext = buildMemoryContext(persistentMemories, 800);
-
-      // 📊 Preparar contexto de análisis base si existe
-      let baseAnalysisContext = '';
-      if (cachedAnalysis && !cachedAnalysis.personalized) {
-        baseAnalysisContext = `\n\n📊 ANÁLISIS BASE PREVIO (reutilizar estructura y datos):\n${JSON.stringify(cachedAnalysis.base_analysis, null, 2)}\n\nKeywords SEO: ${cachedAnalysis.keywords?.join(', ') || 'N/A'}\nHashtags: ${cachedAnalysis.hashtags?.join(' ') || 'N/A'}\nViralidad: ${cachedAnalysis.virality_score}/10\nSaturación: ${cachedAnalysis.saturation_level || 'N/A'}\n\n**IMPORTANTE**: Adapta este análisis base al perfil de ${displayName} (${userPlatform}, ${userNiche}, ${userStyle}). Mantén los datos SEO pero personaliza la estrategia y recomendaciones.`;
-      }
-
-      // Construir prompt detallado para análisis SEO y estrategia
-      const userPrompt = `Hola Creo, soy ${displayName}. Necesito un **análisis estratégico profundo** de esta tendencia para adaptarla a mi contenido.
-
-📌 **TENDENCIA A ANALIZAR:**
-- Título: ${trend.title}
-- Descripción: ${trend.description || 'Sin descripción'}
-- Fuente: ${selectedCategory.toUpperCase()}
-- Engagement: ${trend.engagement || trend.views || trend.score || 'N/A'}
-${trend.subreddit ? `- Subreddit: r/${trend.subreddit}` : ''}
-${trend.tag ? `- Hashtag: ${trend.tag}` : ''}
-${trend.url && trend.url !== '#' ? `- URL: ${trend.url}` : ''}
-
-👤 **MI PERFIL:**
-- Plataforma principal: ${userPlatform}
-- Nicho: ${userNiche}
-- Estilo: ${userStyle}
-
-🎯 **ANÁLISIS REQUERIDO:**
-
-## 1. 📊 Análisis de la Tendencia
-- ¿Por qué está funcionando AHORA? (timing, contexto, factores sociales)
-- Nivel de saturación (bajo/medio/alto) y ventana de oportunidad
-- Audiencia target y demografía
-- Potencial de viralidad (1-10) con justificación
-
-## 2. 🔍 Análisis SEO y Keywords
-- Keywords principales a usar en título/descripción
-- Hashtags estratégicos (máx. 8) ordenados por prioridad
-- Tags y categorías recomendadas
-- Términos de búsqueda relacionados
-- Long-tail keywords para posicionamiento orgánico
-
-## 3. 🎬 Adaptación a MI Plataforma (${userPlatform})
-- Formato ideal (duración, estructura, estilo)
-- Hook perfecto para los primeros 3 segundos
-- Estructura de contenido en 3 actos
-- CTA (Call to Action) específico y efectivo
-- Momento óptimo de publicación (día, hora, frecuencia)
-
-## 4. 💡 Ángulo Único para ${displayName}
-- Cómo diferenciarme de la competencia
-- Mi perspectiva única basada en ${userNiche} y ${userStyle}
-- Elementos a agregar/quitar de la tendencia original
-- Cómo conectar con mi audiencia actual
-
-## 5. 📈 Plan de Ejecución (3 pasos)
-1. Pre-producción (investigación, guión, recursos)
-2. Producción (grabación, edición, optimización)
-3. Post-publicación (promoción, engagement, análisis)
-
-## 6. 🎨 Elementos Visuales y Técnicos
-- Thumbnail/miniatura estratégica
-- B-roll y recursos visuales necesarios
-- Música/sonido recomendado
-- Efectos y transiciones clave
-
-## 7. 💬 Consejo Motivacional Creo
-Un mensaje personalizado que:
-- Reconozca mi progreso hasta ahora
-- Me motive a ejecutar este contenido
-- Me recuerde mi diferenciador único
-- Incluya el próximo paso concreto
-
-**IMPORTANTE:**
-- Adapta TODO el análisis a mi estilo ${userStyle}
-- Usa ejemplos específicos de ${userNiche}
-- Enfócate en resultados medibles (vistas, engagement, conversión)
-- Sé práctico, accionable y empático${baseAnalysisContext}`;
-
-      // Construir system prompt completo con contexto
-      const fullSystemPrompt = `${CREO_SYSTEM_PROMPT}
-
-📋 INFORMACIÓN DEL USUARIO:
-- Nombre preferido: ${displayName}${profileContext}${memoryContext}`;
+      // 🚀 NUEVO SISTEMA: Construir prompts con el builder especializado
+      const { systemPrompt: fullSystemPrompt, userPrompt } = buildTrendAnalysisPrompts({
+        displayName,
+        platform: userPlatform,
+        niche: userNiche,
+        style: userStyle,
+        trend,
+        category: selectedCategory,
+        profileData,
+        memories: persistentMemories,
+        cachedAnalysis: cachedAnalysis && !cachedAnalysis.personalized ? cachedAnalysis : null
+      });
 
       // Sistema de fallback: Qwen → DeepSeek
       let response;
@@ -329,7 +257,7 @@ Un mensaje personalizado que:
       let model = 'qwen-plus';
 
       try {
-        console.log('🚀 Intentando con Qwen...');
+        console.log('🚀 Generando análisis con CreoVision IA...');
         response = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -349,9 +277,9 @@ Un mensaje personalizado que:
           })
         });
 
-        if (!response.ok) throw new Error('Qwen failed');
-      } catch (qwenError) {
-        console.warn('⚠️ Qwen falló, intentando con DeepSeek...', qwenError);
+        if (!response.ok) throw new Error('Primera opción falló');
+      } catch (firstError) {
+        console.warn('⚠️ Reintentando con motor alternativo...', firstError);
         provider = 'deepseek';
         model = 'deepseek-chat';
 
@@ -485,32 +413,94 @@ Un mensaje personalizado que:
         variant: 'default'
       });
 
-      // Fallback response mejorado
-      setAiResponse(`### 📊 Análisis rápido para "${trend.title}"
+      // 🚀 Fallback response instructivo según nuevo formato
+      setAiResponse(`---
+## 📌 TENDENCIA DESBLOQUEADA
 
-🔥 **¿Por qué destaca?**
-• Tema altamente comentado esta semana.
-• Contenido emocional y fácil de compartir.
-• Formato adaptable a short + long form.
-• Aprovecha referencias culturales recientes.
+**"${trend.title}"** (Fuente: ${selectedCategory.toUpperCase()})
 
-🎯 **Tu oportunidad, ${displayName}:**
-1. Refuerza tu ángulo experto (datos, storytelling o humor inteligente).
-2. Explica la tendencia en tus palabras y conecta con la experiencia de tu audiencia.
-3. Cierra con un CTA que invite a comentar o compartir.
+Desbloqueaste esta tendencia específica de ${selectedCategory.toUpperCase()}. Es relevante para tu nicho de **${userNiche}** en **${userPlatform}** porque está captando atención AHORA y aún no está saturada en tu tipo de contenido.
 
-🛠️ **Plan express (3 pasos)**
-1. **Hook**: abre con una pregunta disruptiva o cifra inesperada.
-2. **Desarrollo**: resume en 3 bullets qué implica la tendencia y cómo aprovecharla.
-3. **Cierre**: comparte tu postura personal y da una acción concreta al espectador.
+---
+## 🎯 ANÁLISIS PARA ${displayName} (${userPlatform} • ${userNiche} • ${userStyle})
 
-🏷️ **Hashtags sugeridos:**
-${trend.tag ? trend.tag : '#CreoVision #ContenidoViral'}
-#TendenciasDigitales #IdeaDelDía #SoyCreo
+**Por qué funciona AHORA:**
+Esta tendencia aprovecha un momento de alta búsqueda en ${selectedCategory.toUpperCase()}. El algoritmo de ${userPlatform} está priorizando contenido relacionado con este tema. Ventana de oportunidad: 48-72h antes de saturación.
 
-⏰ **Timing recomendado:** publica antes de 48h, ideal 11:00 AM o 8:00 PM (hora de tu audiencia). Prepara 2 variaciones para los próximos días.
+**Nivel de saturación:** Media-baja en ${userPlatform} para ${userNiche}
+**Ventana de acción:** 48-72h antes de que se masifique
+**Potencial viral:** 7/10 - Alto engagement en ${selectedCategory.toUpperCase()}, adaptable a ${userPlatform}
 
-💬 **Mensaje de Creo:** Sigamos iterando, ${displayName}. Cada versión te acerca a tu tono ideal. Observa métricas, aprende y vuelve a intentarlo.`);
+---
+## 🔍 ANÁLISIS SEO Y KEYWORDS
+
+**Keywords principales:**
+- ${trend.title.split(' ').slice(0, 3).join(' ')} - Alta prioridad
+- ${userNiche} ${trend.title.split(' ')[0]} - Media prioridad
+- ${userPlatform} ${trend.title.split(' ')[1] || trend.title.split(' ')[0]} - Complementaria
+
+**Hashtags estratégicos:**
+${trend.tag || `#${userNiche.replace(/\s+/g, '')} #${selectedCategory} #ContenidoViral #${userPlatform}`}
+
+**Long-tail keywords:**
+"cómo ${trend.title.toLowerCase()}", "${trend.title.toLowerCase()} tutorial", "${trend.title.toLowerCase()} para ${userNiche}"
+
+---
+## 🎬 ADAPTACIÓN A TU ESTILO "${userStyle}"
+
+**ELIMINA de la tendencia original:**
+• Elementos genéricos que no reflejan tu tono ${userStyle}
+• Información superficial que tu audiencia de ${userNiche} ya conoce
+
+**AGREGA tu perspectiva única:**
+• Tu experiencia específica en ${userNiche}
+• Datos, ejemplos o casos reales de tu trabajo
+• Un ángulo inesperado que conecte con los intereses de tu audiencia en ${userPlatform}
+
+**Formato óptimo para ${userPlatform}:**
+- Duración: ${userPlatform === 'YouTube' ? '8-12 minutos (long-form)' : userPlatform === 'TikTok' ? '45-60 segundos (short-form)' : '60-90 segundos (short-medium)'}
+- Estructura: Hook (3s) → Desarrollo con valor → CTA claro
+- Hook perfecto: Abre con una pregunta o cifra impactante relacionada con "${trend.title}"
+
+---
+## 📈 PLAN DE EJECUCIÓN (PRÓXIMAS 72H)
+
+**Paso 1 (Hoy):**
+Graba tu versión en las próximas 24h. Usa el formato ${userPlatform === 'YouTube' ? '8-12 min' : '45-60s'}. Aplica el hook sugerido. Incluye las keywords principales en título y descripción.
+
+**Paso 2 (24-48h):**
+Publica entre 7-9 PM (horario óptimo para ${userPlatform}). Mide: ${userPlatform === 'TikTok' ? 'views y shares' : userPlatform === 'YouTube' ? 'CTR y retención' : 'engagement rate'} en primeras 48h. Objetivo: superar tu promedio en 20-25%.
+
+**Paso 3 (72h):**
+Si engagement supera objetivo → Crear 2-3 variaciones la próxima semana
+Si no alcanza objetivo → Ajustar hook y thumbnail, reintentar con nuevo ángulo
+
+---
+## 🛠️ SIGUIENTE PASO: USA "GENERA TU GUIÓN"
+
+Para convertir esta estrategia en guión listo para grabar:
+
+1. Ve a **"Genera tu Guión"** en el menú principal
+2. Selecciona plataforma: **${userPlatform}**
+3. Ingresa tema: **"${trend.title}"** (o variante adaptada a tu nicho)
+4. CreoVision armará el script completo con tu tono **${userStyle}**, estructura optimizada, y las keywords SEO integradas
+
+**Otras herramientas útiles:**
+• **Calendario:** Programa la publicación para el horario óptimo (7-9 PM)
+• **Biblioteca:** Guarda este análisis como referencia para futuras tendencias
+
+---
+## ✅ CHECKLIST DE IMPLEMENTACIÓN
+
+- [ ] Grabar contenido en próximas 24h
+- [ ] Aplicar keywords en título, descripción, y tags
+- [ ] Publicar en horario óptimo: 7-9 PM
+- [ ] Medir métrica clave en 48h: ${userPlatform === 'TikTok' ? 'shares y guardados' : userPlatform === 'YouTube' ? 'CTR y retención promedio' : 'engagement rate'}
+- [ ] Ajustar según datos y crear variaciones si funciona
+
+---
+
+💡 **Nota**: Este es un análisis de respaldo. Para insights más profundos con análisis de competencia y estrategia avanzada, intenta nuevamente cuando el sistema esté disponible.`);
     } finally {
       console.log('🏁 Finished AI analysis');
       setIsAiThinking(false);

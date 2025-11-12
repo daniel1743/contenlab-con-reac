@@ -283,13 +283,13 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 
   const callDeepSeekAPI = async (conversationHistory) => {
     try {
-      console.log('🧠 Fallback: Llamando a DeepSeek API...');
+      console.log('🧠 Generando respuesta con CreoVision IA...');
 
       if (!DEEPSEEK_API_KEY) {
-        throw new Error('DeepSeek API key no configurada');
+        throw new Error('CreoVision IA no configurada');
       }
 
-      // Construir mensajes para DeepSeek (formato OpenAI)
+      // Construir mensajes para IA (formato OpenAI)
       const messages = [
         { role: 'system', content: personaPrompt },
         ...conversationHistory.map(msg => ({
@@ -314,20 +314,20 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || `DeepSeek API error: ${response.status}`);
+        throw new Error(errorData?.error?.message || `CreoVision IA error: ${response.status}`);
       }
 
       const data = await response.json();
       const content = data?.choices?.[0]?.message?.content?.trim();
 
       if (!content) {
-        throw new Error('Respuesta vacía de DeepSeek');
+        throw new Error('Respuesta vacía de CreoVision IA');
       }
 
-      console.log('✅ Respuesta de DeepSeek:', content.substring(0, 100) + '...');
+      console.log('✅ Respuesta generada:', content.substring(0, 100) + '...');
       return content;
     } catch (error) {
-      console.error('❌ Error en DeepSeek API:', error);
+      console.error('❌ Error en CreoVision IA:', error);
       throw error;
     }
   };
@@ -338,7 +338,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 
       // Verificar que tenemos API key
       if (!GEMINI_API_KEY) {
-        console.warn('⚠️ GEMINI_API_KEY no está configurada, usando DeepSeek');
+        console.warn('⚠️ GEMINI_API_KEY no está configurada, usando motor alternativo');
         return await callDeepSeekAPI(conversationHistory);
       }
 
@@ -378,26 +378,26 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('❌ Error de Gemini API:', errorData);
-        console.log('🔄 Intentando con DeepSeek...');
+        console.log('🔄 Intentando con motor alternativo...');
         return await callDeepSeekAPI(conversationHistory);
       }
 
       const data = await response.json();
-      console.log('📦 Data recibida de Gemini:', data);
+      console.log('📦 Respuesta recibida de IA');
 
       const content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
       if (!content) {
-        console.error('❌ Respuesta vacía de Gemini');
-        console.log('🔄 Intentando con DeepSeek...');
+        console.error('❌ Respuesta vacía');
+        console.log('🔄 Intentando con motor alternativo...');
         return await callDeepSeekAPI(conversationHistory);
       }
 
-      console.log('✅ Respuesta de Gemini:', content.substring(0, 100) + '...');
+      console.log('✅ Respuesta generada exitosamente');
       return content;
     } catch (error) {
-      console.error('❌ Error en Gemini API:', error);
-      console.log('🔄 Intentando con DeepSeek como fallback...');
+      console.error('❌ Error en IA principal:', error);
+      console.log('🔄 Intentando con motor alternativo...');
       return await callDeepSeekAPI(conversationHistory);
     }
   };

@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 
 dotenv.config();
 
-const DEEPSEEK_API_KEY = process.env.VITE_DEEPSEEK_API_KEY;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 const DEEPSEEK_MODEL = 'deepseek-chat';
 

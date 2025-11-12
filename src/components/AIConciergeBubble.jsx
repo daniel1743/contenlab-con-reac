@@ -189,9 +189,9 @@ Puedes consultar tendencias en tiempo real usando: YouTube Trends, Google Trends
     const authToken = session?.access_token;
 
     const providersChain = [
-      { provider: 'deepseek', model: 'deepseek-chat', label: 'DeepSeek' },
-      { provider: 'qwen', model: 'qwen-plus', label: 'Qwen' },
-      { provider: 'gemini', model: 'gemini-pro', label: 'Gemini' }
+      { provider: 'deepseek', model: 'deepseek-chat', label: 'CreoVision GPT-4' },
+      { provider: 'qwen', model: 'qwen-plus', label: 'CreoVision GPT-4' },
+      { provider: 'gemini', model: 'gemini-pro', label: 'CreoVision GPT-4' }
     ];
 
     let assistantReply = null;

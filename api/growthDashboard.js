@@ -11,7 +11,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Configuración de Supabase
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -19,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const YOUTUBE_API_KEY = process.env.VITE_YOUTUBE_API_KEY;
 const NEWS_API_KEY = process.env.VITE_NEWS_API_KEY;
 const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
-const DEEPSEEK_API_KEY = process.env.VITE_DEEPSEEK_API_KEY;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
 
 // Constantes
 const CREDIT_COST = 380;

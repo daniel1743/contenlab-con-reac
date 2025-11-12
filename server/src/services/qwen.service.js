@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 
 dotenv.config();
 
-const QWEN_API_KEY = process.env.VITE_QWEN_API_KEY;
+const QWEN_API_KEY = process.env.QWEN_API_KEY || process.env.VITE_QWEN_API_KEY;
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const QWEN_MODEL = 'qwen-turbo';
 

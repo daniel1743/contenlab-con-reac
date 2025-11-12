@@ -99,7 +99,7 @@ export default function ToolCard({
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         className={`
-          relative overflow-hidden rounded-xl border transition-all duration-300
+          relative overflow-hidden rounded-xl border transition-all duration-300 h-full
           ${isLocked
             ? 'bg-gray-900/50 border-gray-700 cursor-not-allowed opacity-60'
             : 'bg-gray-900/80 border-gray-700 hover:border-gray-600 cursor-pointer hover:shadow-xl'
@@ -110,7 +110,7 @@ export default function ToolCard({
         <div className={`absolute inset-0 bg-gradient-to-br ${categoryColor} opacity-5`}></div>
 
         {/* Contenido */}
-        <div className="relative p-5 space-y-4">
+        <div className="relative p-5 space-y-4 h-full flex flex-col">
           {/* Header con icono y badges */}
           <div className="flex items-start justify-between gap-3">
             {/* Icono */}
@@ -138,7 +138,7 @@ export default function ToolCard({
           </div>
 
           {/* Título y descripción */}
-          <div>
+          <div className="space-y-1">
             <h3 className="font-bold text-white text-base mb-1 leading-tight">
               {tool.title}
             </h3>
@@ -148,7 +148,7 @@ export default function ToolCard({
           </div>
 
           {/* Footer con créditos y tiempo */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
+          <div className="flex items-center justify-between pt-3 border-t border-gray-700/50 mt-auto w-full">
             <div className="flex items-center gap-1.5 text-blue-400">
               <CreditCardIcon className="w-4 h-4" />
               <span className="text-sm font-semibold">{tool.creditCost}</span>
