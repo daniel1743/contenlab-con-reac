@@ -8,7 +8,10 @@
  * @cost 380 créditos
  */
 
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
+
+// Polyfill para fetch en Node.js
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // Configuración de Supabase
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -28,7 +31,7 @@ const CACHE_DURATION_HOURS = 24;
 /**
  * Handler principal del endpoint
  */
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Solo permitir POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
