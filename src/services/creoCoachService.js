@@ -145,7 +145,7 @@ ${userPrompt}
 
 Responde como CREO Coach (máximo 2-3 líneas, directo y proactivo):`;
 
-    console.log('🤖 Llamando a Gemini para CREO Coach...');
+    // console.log('🤖 Llamando a Gemini para CREO Coach...');
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
@@ -164,7 +164,7 @@ Responde como CREO Coach (máximo 2-3 líneas, directo y proactivo):`;
       throw new Error('Respuesta vacía de Gemini');
     }
 
-    console.log('✅ Respuesta de CREO generada:', coachResponse.substring(0, 100) + '...');
+    // console.log('✅ Respuesta de CREO generada:', coachResponse.substring(0, 100) + '...');
     return coachResponse;
 
   } catch (error) {

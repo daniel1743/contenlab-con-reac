@@ -42,6 +42,7 @@ export function useCreoCoach({ enabled = true, userProfile = {} } = {}) {
 
   /**
    * Resetea el timer de inactividad
+   * 🔇 DESHABILITADO: Para evitar notificaciones molestas
    */
   const resetInactivityTimer = useCallback(() => {
     setLastInteractionTime(Date.now());
@@ -50,62 +51,65 @@ export function useCreoCoach({ enabled = true, userProfile = {} } = {}) {
       clearTimeout(inactivityTimerRef.current);
     }
 
-    if (!enabled) return;
+    // 🔇 DESHABILITADO: Timer de inactividad
+    // if (!enabled) return;
 
-    inactivityTimerRef.current = setTimeout(() => {
-      const now = Date.now();
-      const timeSinceLastSuggestion = now - lastSuggestionTimeRef.current;
+    // inactivityTimerRef.current = setTimeout(() => {
+    //   const now = Date.now();
+    //   const timeSinceLastSuggestion = now - lastSuggestionTimeRef.current;
 
-      // Solo sugerir si ha pasado el cooldown
-      if (timeSinceLastSuggestion > COACH_CONFIG.cooldownPeriod) {
-        console.log('🎯 CREO detectó inactividad');
-        triggerCoach('inactivity', {
-          currentPage: location.pathname,
-          timeInactive: COACH_CONFIG.inactivityThreshold / 1000
-        });
-        lastSuggestionTimeRef.current = now;
-      }
-    }, COACH_CONFIG.inactivityThreshold);
+    //   // Solo sugerir si ha pasado el cooldown
+    //   if (timeSinceLastSuggestion > COACH_CONFIG.cooldownPeriod) {
+    //     console.log('🎯 CREO detectó inactividad');
+    //     triggerCoach('inactivity', {
+    //       currentPage: location.pathname,
+    //       timeInactive: COACH_CONFIG.inactivityThreshold / 1000
+    //     });
+    //     lastSuggestionTimeRef.current = now;
+    //   }
+    // }, COACH_CONFIG.inactivityThreshold);
   }, [enabled, location.pathname]);
 
   /**
    * Detecta clics repetitivos en el mismo elemento
+   * 🔇 DESHABILITADO: Para evitar notificaciones molestas
    */
   const trackRepetitiveClick = useCallback((elementId) => {
-    if (!enabled) return;
+    // 🔇 DESHABILITADO: Detección de clics repetitivos
+    // if (!enabled) return;
 
-    if (!clickCountRef.current[elementId]) {
-      clickCountRef.current[elementId] = {
-        count: 1,
-        lastClick: Date.now()
-      };
-      return;
-    }
+    // if (!clickCountRef.current[elementId]) {
+    //   clickCountRef.current[elementId] = {
+    //     count: 1,
+    //     lastClick: Date.now()
+    //   };
+    //   return;
+    // }
 
-    const clickData = clickCountRef.current[elementId];
-    const timeSinceLastClick = Date.now() - clickData.lastClick;
+    // const clickData = clickCountRef.current[elementId];
+    // const timeSinceLastClick = Date.now() - clickData.lastClick;
 
-    // Si el clic fue dentro de 5 segundos, incrementar contador
-    if (timeSinceLastClick < 5000) {
-      clickData.count++;
-      clickData.lastClick = Date.now();
+    // // Si el clic fue dentro de 5 segundos, incrementar contador
+    // if (timeSinceLastClick < 5000) {
+    //   clickData.count++;
+    //   clickData.lastClick = Date.now();
 
-      // Si llegó al límite, activar coach
-      if (clickData.count >= COACH_CONFIG.repetitionCount) {
-        console.log('🎯 CREO detectó clics repetitivos en:', elementId);
-        triggerCoach('repetition', {
-          element: elementId,
-          count: clickData.count,
-          currentPage: location.pathname
-        });
+    //   // Si llegó al límite, activar coach
+    //   if (clickData.count >= COACH_CONFIG.repetitionCount) {
+    //     console.log('🎯 CREO detectó clics repetitivos en:', elementId);
+    //     triggerCoach('repetition', {
+    //       element: elementId,
+    //       count: clickData.count,
+    //       currentPage: location.pathname
+    //     });
 
-        // Resetear contador
-        clickCountRef.current[elementId] = { count: 0, lastClick: Date.now() };
-      }
-    } else {
-      // Si pasó mucho tiempo, resetear contador
-      clickCountRef.current[elementId] = { count: 1, lastClick: Date.now() };
-    }
+    //     // Resetear contador
+    //     clickCountRef.current[elementId] = { count: 0, lastClick: Date.now() };
+    //   }
+    // } else {
+    //   // Si pasó mucho tiempo, resetear contador
+    //   clickCountRef.current[elementId] = { count: 1, lastClick: Date.now() };
+    // }
   }, [enabled, location.pathname]);
 
   /**
@@ -149,7 +153,7 @@ export function useCreoCoach({ enabled = true, userProfile = {} } = {}) {
    * Acepta la sugerencia de CREO (usuario hace clic en "Sí" o similar)
    */
   const acceptSuggestion = useCallback(() => {
-    console.log('✅ Usuario aceptó sugerencia de CREO');
+    // console.log('✅ Usuario aceptó sugerencia de CREO');
     dismissCoach();
     // Aquí podrías navegar a la herramienta sugerida si es necesario
   }, [dismissCoach]);
@@ -174,54 +178,55 @@ export function useCreoCoach({ enabled = true, userProfile = {} } = {}) {
     const timeOnPreviousPage = now - pageEntryTimeRef.current;
     pageEntryTimeRef.current = now;
 
+    // 🔇 DESHABILITADO: Notificaciones automáticas en cambio de página
     // Solo sugerir en cambio de página si pasó el cooldown
-    const timeSinceLastSuggestion = now - lastSuggestionTimeRef.current;
-    if (timeSinceLastSuggestion > COACH_CONFIG.cooldownPeriod && timeOnPreviousPage > 5000) {
-      console.log('🎯 CREO detectó cambio de página a:', location.pathname);
+    // const timeSinceLastSuggestion = now - lastSuggestionTimeRef.current;
+    // if (timeSinceLastSuggestion > COACH_CONFIG.cooldownPeriod && timeOnPreviousPage > 5000) {
+    //   console.log('🎯 CREO detectó cambio de página a:', location.pathname);
 
-      // Pequeño delay para que la página cargue
-      setTimeout(() => {
-        triggerCoach('page_change', {
-          currentPage: location.pathname
-        });
-        lastSuggestionTimeRef.current = now;
-      }, 2000);
-    }
+    //   // Pequeño delay para que la página cargue
+    //   setTimeout(() => {
+    //     triggerCoach('page_change', {
+    //       currentPage: location.pathname
+    //     });
+    //     lastSuggestionTimeRef.current = now;
+    //   }, 2000);
+    // }
 
     // Resetear click counters al cambiar de página
     clickCountRef.current = {};
 
-    // Iniciar timer de inactividad
-    resetInactivityTimer();
+    // 🔇 DESHABILITADO: Timer de inactividad
+    // resetInactivityTimer();
 
     return () => {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
     };
-  }, [location.pathname, enabled, resetInactivityTimer, triggerCoach]);
+  }, [location.pathname, enabled]);
 
-  // Detectar interacciones del usuario (movimiento de mouse, clicks, scroll)
-  useEffect(() => {
-    if (!enabled) return;
+  // 🔇 DESHABILITADO: Detectar interacciones del usuario (movimiento de mouse, clicks, scroll)
+  // useEffect(() => {
+  //   if (!enabled) return;
 
-    const handleUserActivity = () => {
-      resetInactivityTimer();
-    };
+  //   const handleUserActivity = () => {
+  //     resetInactivityTimer();
+  //   };
 
-    // Eventos a escuchar
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+  //   // Eventos a escuchar
+  //   const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
 
-    events.forEach(event => {
-      window.addEventListener(event, handleUserActivity, { passive: true });
-    });
+  //   events.forEach(event => {
+  //     window.addEventListener(event, handleUserActivity, { passive: true });
+  //   });
 
-    return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [enabled, resetInactivityTimer]);
+  //   return () => {
+  //     events.forEach(event => {
+  //       window.removeEventListener(event, handleUserActivity);
+  //     });
+  //   };
+  // }, [enabled, resetInactivityTimer]);
 
   // Cleanup al desmontar
   useEffect(() => {
