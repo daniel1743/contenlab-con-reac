@@ -469,11 +469,13 @@ function generatePatternInsights(patterns) {
  */
 async function generateAIPrediction({ title, description, hashtags, platform, viralScore, patterns }) {
   try {
-    // Validar que existe la API key
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    // Intentar con DeepSeek/Qwen
+    const { generateContent } = await import('@/services/ai/deepseekService');
 
-    if (!apiKey || apiKey === 'undefined' || apiKey === 'null') {
-      console.error('[ViralityPredictor] Gemini API key no configurada - usando análisis básico');
+    const hasAIConfigured = import.meta.env.VITE_DEEPSEEK_API_KEY || import.meta.env.VITE_QWEN_API_KEY;
+
+    if (!hasAIConfigured) {
+      console.error('[ViralityPredictor] DeepSeek/Qwen API key no configurada - usando análisis básico');
 
       // Análisis básico pero específico basado en el contenido real
       const titleLength = title?.length || 0;
@@ -535,11 +537,7 @@ async function generateAIPrediction({ title, description, hashtags, platform, vi
       };
     }
 
-    // Usar Gemini para análisis profundo
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-    
+    // Usar DeepSeek/Qwen para análisis profundo
     const prompt = `
 Analiza este contenido y predice su potencial de viralidad:
 
@@ -571,12 +569,16 @@ Responde en formato JSON:
 }
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-    
+    const response = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 1000,
+      systemPrompt: 'Eres un experto en predicción de viralidad de contenido. Responde SOLO en formato JSON válido.'
+    });
+
     // Intentar parsear JSON
     try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const cleanResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }

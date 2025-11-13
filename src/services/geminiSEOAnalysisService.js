@@ -7,10 +7,7 @@
  * @author CreoVision
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+import { generateContent } from '@/services/ai/deepseekService';
 
 /**
  * Analiza un art�culo de tendencia y genera recomendaciones SEO
@@ -22,7 +19,7 @@ export const analyzeTrendingSEO = async (article, userTopic) => {
   try {
     console.log(`> [Gemini SEO] Analizando: "${article.title}"`);
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // Usar DeepSeek/Qwen en lugar de Gemini
 
     const prompt = `
 Eres un experto en SEO y marketing de contenidos. Analiza esta tendencia emergente de noticias y proporciona recomendaciones SEO estrat�gicas.
@@ -69,14 +66,17 @@ Proporciona un an�lisis SEO estructurado en formato JSON con esta estructura E
 IMPORTANTE: Responde �NICAMENTE con el JSON, sin texto adicional antes o despu�s.
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = await generateContent(prompt, {
+      temperature: 0.7,
+      maxTokens: 2000,
+      systemPrompt: "Eres un experto en SEO y marketing de contenidos. Responde SOLO en formato JSON válido."
+    });
 
-    // Extraer JSON del texto (por si Gemini incluye markdown)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    // Extraer JSON del texto
+    const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No se pudo extraer JSON de la respuesta de Gemini');
+      throw new Error('No se pudo extraer JSON de la respuesta de la IA');
     }
 
     const analysis = JSON.parse(jsonMatch[0]);
