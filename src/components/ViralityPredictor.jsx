@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { predictVirality, getCreatorHistory } from '@/services/viralityPredictorService';
+import { consumeCredits } from '@/services/creditService';
 import AssistantRobot from '@/components/ui/AssistantRobot';
 import {
   TrendingUp,
@@ -135,8 +136,29 @@ const ViralityPredictor = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: '⚠️ Autenticación requerida',
+        description: 'Debes iniciar sesión para usar esta herramienta',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // 💎 CONSUMIR CRÉDITOS ANTES DE GENERAR PREDICCIÓN (300 créditos)
+      const creditResult = await consumeCredits(user.id, 'virality_predictor');
+
+      if (!creditResult.success) {
+        toast({
+          title: '💎 Créditos insuficientes',
+          description: `Necesitas 300 créditos. Créditos actuales: ${creditResult.currentCredits || 0}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
       // Obtener historial del creador si está disponible
       let creatorHistory = null;
       if (user) {
@@ -158,7 +180,7 @@ const ViralityPredictor = () => {
 
       toast({
         title: '✅ Predicción generada',
-        description: `Probabilidad: ${(result.probability * 100).toFixed(0)}%`,
+        description: `Probabilidad: ${(result.probability * 100).toFixed(0)}% | Créditos restantes: ${creditResult.remainingCredits}`,
       });
 
     } catch (error) {
