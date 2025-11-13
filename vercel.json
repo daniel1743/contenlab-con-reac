@@ -56,7 +56,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/((?!api).*)", "destination": "/" }
   ],
   "functions": {
     "api/**/*.js": {
