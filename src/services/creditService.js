@@ -214,21 +214,22 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
     let featureId, amount;
 
     if (typeof featureOrAmount === 'string') {
-      // Nuevo formato: consumeCredits(userId, 'feature_id')
+      // Nuevo formato: consumeCredits(userId, 'feature_slug')
       featureId = featureOrAmount;
 
-      // Obtener el costo desde feature_costs
+      // Obtener el costo desde feature_credit_costs (tabla correcta)
       const { data: featureCost, error: costError } = await supabase
-        .from('feature_costs')
-        .select('cost, display_name')
-        .eq('feature_id', featureId)
+        .from('feature_credit_costs')
+        .select('credit_cost, feature_name')
+        .eq('feature_slug', featureId)
+        .eq('active', true)
         .maybeSingle();
 
       if (costError || !featureCost) {
-        console.warn(`Feature ${featureId} not found in feature_costs, using default cost 10`);
+        console.warn(`Feature ${featureId} not found in feature_credit_costs, using default cost 10`);
         amount = 10;
       } else {
-        amount = featureCost.cost;
+        amount = featureCost.credit_cost;
       }
     } else {
       // Formato antiguo: consumeCredits(userId, amount, feature)
@@ -381,13 +382,14 @@ async function consumeCreditsFallback(userId, amount, featureId, description = n
 
     // 5. Registrar transacción
     const { data: featureCost } = await supabase
-      .from('feature_costs')
-      .select('display_name')
-      .eq('feature_id', featureId)
+      .from('feature_credit_costs')
+      .select('feature_name')
+      .eq('feature_slug', featureId)
+      .eq('active', true)
       .maybeSingle();
 
     const transactionDescription = description ||
-      featureCost?.display_name ||
+      featureCost?.feature_name ||
       `Uso de ${featureId}`;
 
     await supabase.from('credit_transactions').insert({

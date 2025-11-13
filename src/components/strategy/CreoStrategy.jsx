@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { executeCreoStrategy } from '@/services/creoStrategyService';
 import { consumeCredits } from '@/services/creditService';
 import { generateCreoStrategyPDF } from '@/services/pdfGenerator';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import {
   PlayCircle,
   TrendingUp,
@@ -62,14 +62,16 @@ const CreoStrategy = () => {
     setResult(null);
 
     try {
+      // 🧪 TEMPORALMENTE DESHABILITADO PARA TESTING
       // Consumir créditos (150 créditos por análisis completo)
-      const creditResult = await consumeCredits(user.id, 'creo_strategy');
+      console.log('⚠️ Consumo de créditos deshabilitado temporalmente para testing');
+      // const creditResult = await consumeCredits(user.id, 'creo_strategy');
 
-      if (!creditResult.success) {
-        setError(`Créditos insuficientes. Necesitas ${creditResult.required} créditos.`);
-        setLoading(false);
-        return;
-      }
+      // if (!creditResult.success) {
+      //   setError(`Créditos insuficientes. Necesitas ${creditResult.required} créditos.`);
+      //   setLoading(false);
+      //   return;
+      // }
 
       // Ejecutar análisis
       const analysisResult = await executeCreoStrategy(channelUrl, selectedTheme);
