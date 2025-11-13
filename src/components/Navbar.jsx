@@ -27,7 +27,8 @@ import {
   BoltIcon,
   FireIcon,
   RocketLaunchIcon,
-  TicketIcon
+  TicketIcon,
+  LightBulbIcon
 } from '@heroicons/react/24/outline';
 
 import {
@@ -126,6 +127,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
     { id: 'growth-dashboard', label: 'Growth Dashboard', icon: RocketLaunchIcon, authRequired: true, badge: '380', premium: true }, // 🆕 GROWTH DASHBOARD
     { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
+    { id: 'creo-strategy', label: 'Creo Strategy', icon: LightBulbIcon, authRequired: true, badge: 'NEW' }, // 🆕 CREO STRATEGY
     { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false }, // 🆕 TENDENCIAS
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
     // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
@@ -179,6 +181,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       import('@/components/GrowthDashboard');
     } else if (item.id === 'tools') {
       import('@/components/Tools');
+    } else if (item.id === 'creo-strategy') {
+      import('@/components/strategy/CreoStrategy');
     } else if (item.id === 'calendar') {
       import('@/components/Calendar');
     } else if (item.id === 'library') {

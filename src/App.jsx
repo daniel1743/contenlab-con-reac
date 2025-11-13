@@ -34,6 +34,7 @@ const ResetPassword = lazy(() => import('@/components/ResetPassword'));
 const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'));
 const WeeklyTrends = lazy(() => import('@/components/WeeklyTrends'));
 const CreatorProfile = lazy(() => import('@/components/CreatorProfile'));
+const CreoStrategy = lazy(() => import('@/components/strategy/CreoStrategy'));
 const TermsOfServicePage = lazy(() => import('@/components/legal/TermsOfServicePage'));
 const PrivacyPolicyPage = lazy(() => import('@/components/legal/PrivacyPolicyPage'));
 
@@ -363,6 +364,16 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <CreatorProfile />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Ruta de Creo Strategy */}
+                  <Route
+                    path="/creo-strategy"
+                    element={
+                      <ProtectedRoute>
+                        <CreoStrategy />
                       </ProtectedRoute>
                     }
                   />

@@ -201,33 +201,65 @@ export async function getUserCredits(userId) {
  * @param {string} description - Descripción de la transacción
  * @returns {Promise<Object>} Resultado de la operación
  */
-export async function consumeCredits(userId, amount, feature, description = null) {
+export async function consumeCredits(userId, featureOrAmount, feature = null, description = null) {
   try {
-    if (!userId || amount <= 0) {
+    if (!userId) {
       return {
         success: false,
-        error: 'Invalid parameters'
+        error: 'Invalid parameters: userId required'
       };
+    }
+
+    // Determinar si se está usando el formato antiguo (amount, feature) o nuevo (feature_id)
+    let featureId, amount;
+
+    if (typeof featureOrAmount === 'string') {
+      // Nuevo formato: consumeCredits(userId, 'feature_id')
+      featureId = featureOrAmount;
+
+      // Obtener el costo desde feature_costs
+      const { data: featureCost, error: costError } = await supabase
+        .from('feature_costs')
+        .select('cost, display_name')
+        .eq('feature_id', featureId)
+        .maybeSingle();
+
+      if (costError || !featureCost) {
+        console.warn(`Feature ${featureId} not found in feature_costs, using default cost 10`);
+        amount = 10;
+      } else {
+        amount = featureCost.cost;
+      }
+    } else {
+      // Formato antiguo: consumeCredits(userId, amount, feature)
+      amount = featureOrAmount;
+      featureId = feature || 'unknown';
     }
 
     // Llamar función SQL que maneja la lógica de consumo
     const { data, error } = await supabase.rpc('consume_credits', {
       p_user_id: userId,
-      p_amount: amount,
-      p_feature: feature,
-      p_description: description || `Uso de ${feature}`
+      p_feature: featureId
     });
+
+    // Si la función RPC no existe (404), usar fallback
+    if (error && (error.code === 'PGRST202' || error.message?.includes('Could not find'))) {
+      console.warn('Function consume_credits not found, using fallback');
+      return await consumeCreditsFallback(userId, amount, featureId, description);
+    }
 
     if (error) {
       throw error;
     }
 
-    if (!data) {
-      // Créditos insuficientes
+    // Si la función retorna un objeto con success=false
+    if (data && data.success === false) {
       return {
         success: false,
-        error: 'INSUFFICIENT_CREDITS',
-        message: 'No tienes suficientes créditos para esta acción'
+        error: data.error || 'INSUFFICIENT_CREDITS',
+        message: 'No tienes suficientes créditos para esta acción',
+        required: data.required,
+        currentCredits: data.available
       };
     }
 
@@ -236,7 +268,7 @@ export async function consumeCredits(userId, amount, feature, description = null
 
     return {
       success: true,
-      consumed: amount,
+      consumed: data?.consumed || amount,
       remaining: newBalance.credits.total,
       breakdown: newBalance.credits
     };
@@ -245,6 +277,153 @@ export async function consumeCredits(userId, amount, feature, description = null
     return {
       success: false,
       error: error.message
+    };
+  }
+}
+
+/**
+ * Fallback para consumir créditos cuando la función RPC no existe
+ * @param {string} userId - ID del usuario
+ * @param {number} amount - Cantidad de créditos a consumir
+ * @param {string} featureId - ID de la feature
+ * @param {string} description - Descripción (opcional)
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+async function consumeCreditsFallback(userId, amount, featureId, description = null) {
+  try {
+    console.log('🔄 Usando fallback para consumir créditos:', { userId, amount, featureId });
+
+    // 1. Obtener créditos actuales del usuario
+    const { data: userCredits, error: getError } = await supabase
+      .from('user_credits')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (getError) throw getError;
+
+    // Si no existe el usuario, crearlo con créditos por defecto
+    if (!userCredits) {
+      const { data: newUser, error: createError } = await supabase
+        .from('user_credits')
+        .insert({
+          user_id: userId,
+          monthly_credits: 3000,
+          purchased_credits: 0,
+          bonus_credits: 0,
+          total_credits: 3000,
+          monthly_credits_assigned: 3000,
+          subscription_plan: 'free'
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      userCredits = newUser;
+    }
+
+    // 2. Verificar si tiene suficientes créditos
+    if (userCredits.total_credits < amount) {
+      return {
+        success: false,
+        error: 'INSUFFICIENT_CREDITS',
+        message: 'No tienes suficientes créditos para esta acción',
+        required: amount,
+        currentCredits: userCredits.total_credits,
+        missing: amount - userCredits.total_credits
+      };
+    }
+
+    // 3. Calcular consumo por tipo (monthly -> bonus -> purchased)
+    let remaining = amount;
+    let monthlyUsed = 0;
+    let bonusUsed = 0;
+    let purchasedUsed = 0;
+
+    // Consumir de monthly_credits
+    if (userCredits.monthly_credits >= remaining) {
+      monthlyUsed = remaining;
+      remaining = 0;
+    } else {
+      monthlyUsed = userCredits.monthly_credits;
+      remaining -= userCredits.monthly_credits;
+    }
+
+    // Consumir de bonus_credits
+    if (remaining > 0 && userCredits.bonus_credits >= remaining) {
+      bonusUsed = remaining;
+      remaining = 0;
+    } else if (remaining > 0) {
+      bonusUsed = userCredits.bonus_credits;
+      remaining -= userCredits.bonus_credits;
+    }
+
+    // Consumir de purchased_credits
+    if (remaining > 0) {
+      purchasedUsed = remaining;
+    }
+
+    // 4. Actualizar créditos del usuario
+    const { data: updatedCredits, error: updateError } = await supabase
+      .from('user_credits')
+      .update({
+        monthly_credits: userCredits.monthly_credits - monthlyUsed,
+        purchased_credits: userCredits.purchased_credits - purchasedUsed,
+        bonus_credits: userCredits.bonus_credits - bonusUsed,
+        total_credits: userCredits.total_credits - amount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    // 5. Registrar transacción
+    const { data: featureCost } = await supabase
+      .from('feature_costs')
+      .select('display_name')
+      .eq('feature_id', featureId)
+      .maybeSingle();
+
+    const transactionDescription = description ||
+      featureCost?.display_name ||
+      `Uso de ${featureId}`;
+
+    await supabase.from('credit_transactions').insert({
+      user_id: userId,
+      type: 'consumption',
+      amount: -amount,
+      feature: featureId,
+      description: transactionDescription,
+      balance_after_monthly: updatedCredits.monthly_credits,
+      balance_after_purchased: updatedCredits.purchased_credits,
+      balance_after_bonus: updatedCredits.bonus_credits,
+      balance_after_total: updatedCredits.total_credits
+    });
+
+    console.log('✅ Créditos consumidos con éxito (fallback):', {
+      consumed: amount,
+      remaining: updatedCredits.total_credits,
+      breakdown: { monthlyUsed, bonusUsed, purchasedUsed }
+    });
+
+    return {
+      success: true,
+      consumed: amount,
+      remaining: updatedCredits.total_credits,
+      breakdown: {
+        monthly_used: monthlyUsed,
+        purchased_used: purchasedUsed,
+        bonus_used: bonusUsed
+      }
+    };
+  } catch (error) {
+    console.error('❌ Error en consumeCreditsFallback:', error);
+    return {
+      success: false,
+      error: 'INTERNAL_ERROR',
+      message: error.message
     };
   }
 }
