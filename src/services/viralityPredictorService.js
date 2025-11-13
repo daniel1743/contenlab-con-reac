@@ -469,9 +469,75 @@ function generatePatternInsights(patterns) {
  */
 async function generateAIPrediction({ title, description, hashtags, platform, viralScore, patterns }) {
   try {
+    // Validar que existe la API key
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+    if (!apiKey || apiKey === 'undefined' || apiKey === 'null') {
+      console.error('[ViralityPredictor] Gemini API key no configurada - usando análisis básico');
+
+      // Análisis básico pero específico basado en el contenido real
+      const titleLength = title?.length || 0;
+      const hasNumbers = /\d/.test(title);
+      const hasQuestion = /\?/.test(title);
+      const hashtagCount = hashtags?.length || 0;
+      const descLength = description?.length || 0;
+
+      const recommendations = [];
+      const improvements = [];
+
+      // Recomendaciones específicas basadas en el análisis
+      if (titleLength < 30) {
+        recommendations.push(`Tu título es muy corto (${titleLength} caracteres). Los títulos entre 40-60 caracteres tienen mejor CTR`);
+      } else if (titleLength > 70) {
+        recommendations.push(`Tu título es muy largo (${titleLength} caracteres). Acórtalo a 40-60 caracteres para mejor visualización`);
+      } else {
+        recommendations.push('Longitud del título óptima ✓ Mantén entre 40-60 caracteres');
+      }
+
+      if (!hasNumbers && !hasQuestion) {
+        recommendations.push('Agrega números ("5 formas de...") o una pregunta ("¿Sabías que...?") para aumentar curiosidad');
+      }
+
+      if (hashtagCount === 0) {
+        recommendations.push(`Sin hashtags detectados. Agrega 3-5 hashtags relevantes para ${platform}`);
+      } else if (hashtagCount < 3) {
+        recommendations.push(`Solo ${hashtagCount} hashtag(s). Aumenta a 3-5 para mejor alcance`);
+      } else if (hashtagCount > 10) {
+        recommendations.push(`Demasiados hashtags (${hashtagCount}). Reduce a 3-5 de alta calidad`);
+      } else {
+        recommendations.push(`Cantidad de hashtags óptima (${hashtagCount}) ✓`);
+      }
+
+      if (descLength < 100) {
+        improvements.push('Expande tu descripción a 150-300 caracteres para mejor SEO');
+      }
+
+      if (format === 'short' && platform === 'youtube') {
+        improvements.push('Shorts de YouTube tienen 300% más alcance. Optimiza para vertical (9:16)');
+      } else if (format === 'long' && platform === 'tiktok') {
+        improvements.push('TikTok prioriza videos cortos. Considera reducir a menos de 60 segundos');
+      }
+
+      // Si no hay suficientes recomendaciones, agregar generales
+      if (recommendations.length < 3) {
+        recommendations.push('Incluye un hook fuerte en los primeros 3 segundos');
+      }
+
+      if (improvements.length < 2) {
+        improvements.push('Prueba publicar entre 6-9 PM hora local para máximo engagement');
+      }
+
+      return {
+        agreement: true,
+        reasoning: `Análisis basado en ${titleLength} caracteres de título, ${hashtagCount} hashtags, formato ${format} en ${platform}`,
+        recommendations: recommendations.slice(0, 3),
+        improvements: improvements.slice(0, 2)
+      };
+    }
+
     // Usar Gemini para análisis profundo
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
     
     const prompt = `

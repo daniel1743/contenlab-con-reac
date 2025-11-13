@@ -1,14 +1,14 @@
 /**
  * 🎯 CREO COACH SERVICE
- * Servicio de IA proactiva con DeepSeek que guía al usuario
+ * Servicio de IA proactiva con Gemini que guía al usuario
  * Conoce todas las herramientas de CreoVision y las sugiere contextualmente
- * @version 1.0.0
+ * @version 2.0.0 - Migrado de DeepSeek a Gemini
  */
 
 import { buildCreoKnowledgeContext, findTool, CREOVISION_TOOLS } from '@/config/creoKnowledgeBase';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 /**
  * Prompt base de CREO Coach con conocimiento completo
@@ -86,8 +86,8 @@ export async function generateCoachResponse({
   context = {},
   conversationHistory = []
 }) {
-  if (!DEEPSEEK_API_KEY) {
-    console.error('[creoCoachService] DeepSeek API key no configurada');
+  if (!GEMINI_API_KEY) {
+    console.error('[creoCoachService] Gemini API key no configurada');
     return getFallbackResponse(eventType, context);
   }
 
@@ -127,43 +127,41 @@ Dale una bienvenida MUY breve (1 línea) y sugiérele cómo sacar provecho de es
       userPrompt += `\n\nNombre del usuario: ${userName}`;
     }
 
-    // Construir mensajes para la API
-    const messages = [
-      { role: 'system', content: CREO_COACH_SYSTEM_PROMPT + '\n\n' + knowledgeContext },
-      ...conversationHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
-      { role: 'user', content: userPrompt }
-    ];
-
-    console.log('🤖 Llamando a DeepSeek para CREO Coach...');
-
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages,
-        temperature: 0.8, // Un poco más creativo para respuestas naturales
-        max_tokens: 200, // Respuestas cortas (2-3 líneas)
-        top_p: 0.9
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData?.error?.message || `DeepSeek API error: ${response.status}`);
+    // Construir historial de conversación
+    let conversationContext = '';
+    if (conversationHistory.length > 0) {
+      conversationContext = '\n\nHistorial de conversación:\n' +
+        conversationHistory.map(msg => `${msg.role === 'user' ? 'Usuario' : 'CREO'}: ${msg.content}`).join('\n');
     }
 
-    const data = await response.json();
-    const coachResponse = data?.choices?.[0]?.message?.content?.trim();
+    // Construir prompt completo para Gemini
+    const fullPrompt = `${CREO_COACH_SYSTEM_PROMPT}
+
+${knowledgeContext}
+
+${conversationContext}
+
+${userPrompt}
+
+Responde como CREO Coach (máximo 2-3 líneas, directo y proactivo):`;
+
+    console.log('🤖 Llamando a Gemini para CREO Coach...');
+
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 200,
+        topP: 0.9
+      }
+    });
+
+    const result = await model.generateContent(fullPrompt);
+    const coachResponse = result.response.text().trim();
 
     if (!coachResponse) {
-      throw new Error('Respuesta vacía de DeepSeek');
+      throw new Error('Respuesta vacía de Gemini');
     }
 
     console.log('✅ Respuesta de CREO generada:', coachResponse.substring(0, 100) + '...');
@@ -176,10 +174,10 @@ Dale una bienvenida MUY breve (1 línea) y sugiérele cómo sacar provecho de es
 }
 
 /**
- * Respuestas de fallback si DeepSeek falla
+ * Respuestas de fallback si Gemini falla
  */
-function getFallbackResponse(eventType, context) {
-  const { currentPage, userName } = context;
+function getFallbackResponse(eventType, context = {}) {
+  const { currentPage = '', userName = '' } = context;
   const name = userName || 'Creador';
 
   const fallbacks = {
@@ -190,7 +188,7 @@ function getFallbackResponse(eventType, context) {
       'default': `${name}, ve a 'Tendencias Virales' 🔥 Descubre qué está funcionando en tu nicho ahora mismo`
     },
     repetition: `Te muestro cómo usar esta función: Paso 1 → Selecciona la opción → Paso 2 → Recibe el resultado. ¿Te guío? 🎯`,
-    page_change: `¡Bienvenido a ${currentPage}! 🚀 Aquí puedes potenciar tu contenido`,
+    page_change: `¡Bienvenido! 🚀 Aquí puedes potenciar tu contenido`,
     user_question: `¡Claro! Ve a 'Tendencias Virales' para comenzar 🎯 Allí descubrirás las mejores oportunidades para tu contenido`
   };
 

@@ -82,6 +82,9 @@ import ThreadComposerModal from '@/components/social/ThreadComposerModal';
 import InstagramCarouselsModal from '@/components/social/InstagramCarouselsModal';
 import CaptionsOptimizerModal from '@/components/social/CaptionsOptimizerModal';
 import PersonalizationPlusModal from '@/components/preferences/PersonalizationPlusModal';
+import AudienceAnalysisModal from '@/components/analysis/AudienceAnalysisModal';
+import CommentsAnalysisModal from '@/components/analysis/CommentsAnalysisModal';
+import ThumbnailAnalysisModal from '@/components/analysis/ThumbnailAnalysisModal';
 
 import { Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -351,6 +354,11 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   // ⚙️ ESTADO PARA PERSONALIZACIÓN PLUS
   const [showPersonalizationPlusModal, setShowPersonalizationPlusModal] = useState(false);
+
+  // 🆕 NUEVAS HERRAMIENTAS
+  const [showAudienceAnalysisModal, setShowAudienceAnalysisModal] = useState(false);
+  const [showCommentsAnalysisModal, setShowCommentsAnalysisModal] = useState(false);
+  const [showThumbnailAnalysisModal, setShowThumbnailAnalysisModal] = useState(false);
 
   // 💎 ESTADOS PARA SISTEMA DE CRÉDITOS
   const [userCredits, setUserCredits] = useState({ total: 0, monthly: 0, purchased: 0, bonus: 0 });
@@ -1615,6 +1623,7 @@ const handleCopy = useCallback(() => {
       'trend-search': () => setShowTrendSearchModal(true),
       'competitor-analysis': () => setShowCompetitorAnalysisModal(true),
       'weekly-trends': () => setShowWeeklyTrendsModal(true),
+      'audience-analysis': () => setShowAudienceAnalysisModal(true),
 
       // YOUTUBE PREMIUM
       'seo-coach': () => {
@@ -1627,6 +1636,8 @@ const handleCopy = useCallback(() => {
         setShowSEOCoachModal(true);
       },
       'video-analysis': () => setShowVideoAnalysisModal(true),
+      'comments-analysis': () => setShowCommentsAnalysisModal(true),
+      'thumbnail-analysis': () => setShowThumbnailAnalysisModal(true),
 
       // NUEVAS GENERACIONES (PHASE 3)
       'thread-composer': () => setShowThreadComposerModal(true),
@@ -3461,7 +3472,7 @@ const handleCopy = useCallback(() => {
         <ViralScriptGeneratorModal
           open={showViralScriptModal}
           onOpenChange={setShowViralScriptModal}
-          userPersonality={userPersonality}
+          userPersonality={creatorPersonality}
         />
       )}
 
@@ -3550,8 +3561,30 @@ const handleCopy = useCallback(() => {
         <PersonalizationPlusModal
           open={showPersonalizationPlusModal}
           onOpenChange={setShowPersonalizationPlusModal}
-          userPersonality={userPersonality}
-          onPersonalityUpdate={setUserPersonality}
+          userPersonality={creatorPersonality}
+          onPersonalityUpdate={setCreatorPersonality}
+        />
+      )}
+
+      {/* 🆕 NUEVAS HERRAMIENTAS */}
+      {showAudienceAnalysisModal && (
+        <AudienceAnalysisModal
+          open={showAudienceAnalysisModal}
+          onOpenChange={setShowAudienceAnalysisModal}
+        />
+      )}
+
+      {showCommentsAnalysisModal && (
+        <CommentsAnalysisModal
+          open={showCommentsAnalysisModal}
+          onOpenChange={setShowCommentsAnalysisModal}
+        />
+      )}
+
+      {showThumbnailAnalysisModal && (
+        <ThumbnailAnalysisModal
+          open={showThumbnailAnalysisModal}
+          onOpenChange={setShowThumbnailAnalysisModal}
         />
       )}
 
