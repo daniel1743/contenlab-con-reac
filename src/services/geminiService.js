@@ -1,21 +1,21 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateContent as deepseekGenerate } from '@/services/ai/deepseekService';
 import { withAiModelCache } from '@/services/aiModelCacheService';
 import { stripJsonCodeFences } from '@/utils/jsonUtils';
 
-// Usar la API key correcta de Gemini
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-const GEMINI_MODEL_ID = 'gemini-2.0-flash-exp';
+// Configuración del proveedor
 const GEMINI_PROVIDER_CODE = 'creovision-gp5';
 
-// Función base para generar contenido
-const generateContent = async (prompt) => {
+// Función base para generar contenido usando DeepSeek/Qwen
+const generateContent = async (prompt, systemPrompt = null) => {
   try {
     console.log('🤖 CreoVision AI GP-5 está procesando tu solicitud...');
-    // Usar el modelo propietario CreoVision AI GP-5
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_ID });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+
+    const text = await deepseekGenerate(prompt, {
+      temperature: 0.7,
+      maxTokens: 4000,
+      systemPrompt: systemPrompt || 'Eres un experto creador de contenido viral para redes sociales en español.'
+    });
+
     console.log('✅ CreoVision AI GP-5 completó el análisis');
     return text;
   } catch (error) {

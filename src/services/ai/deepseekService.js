@@ -19,6 +19,12 @@
 const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
 const DEEPSEEK_MODEL = 'deepseek-chat'; // Modelo principal
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+
+// Qwen fallback
+const QWEN_API_KEY = import.meta.env.VITE_QWEN_API_KEY;
+const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const QWEN_MODEL = 'qwen-turbo';
+
 const MAX_TOKENS = 4000;
 const TEMPERATURE = 0.7;
 
@@ -27,62 +33,93 @@ const isConfigured = () => {
   return DEEPSEEK_API_KEY && DEEPSEEK_API_KEY !== 'tu_deepseek_key_aqui';
 };
 
-// ===== FUNCIÓN PRINCIPAL =====
+// ===== FUNCIÓN PRINCIPAL CON FALLBACK =====
 /**
- * Genera contenido usando DeepSeek
+ * Genera contenido usando DeepSeek con fallback a Qwen
  * Compatible con API de OpenAI (misma estructura)
  */
 export const generateContent = async (prompt, options = {}) => {
-  if (!isConfigured()) {
-    throw new Error(
-      'DeepSeek API not configured. Please add VITE_DEEPSEEK_API_KEY to .env'
-    );
-  }
+  const systemPrompt = options.systemPrompt || 'Eres un experto creador de contenido viral para redes sociales en español.';
 
-  // ✅ DEEPSEEK ACTIVADO
+  // Intentar con DeepSeek primero
+  if (isConfigured()) {
+    try {
+      console.log('💎 Llamando a DeepSeek API...');
 
-  try {
-    console.log('💎 Llamando a DeepSeek API...');
+      const response = await fetch(`${DEEPSEEK_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: options.maxTokens || MAX_TOKENS,
+          temperature: options.temperature || TEMPERATURE,
+          stream: false
+        })
+      });
 
-    const response = await fetch(`${DEEPSEEK_BASE_URL}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres un experto creador de contenido viral para redes sociales en español.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: options.maxTokens || MAX_TOKENS,
-        temperature: options.temperature || TEMPERATURE,
-        stream: false
-      })
-    });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'DeepSeek API error');
+      }
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'DeepSeek API error');
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+
+      console.log('✅ Respuesta recibida de DeepSeek');
+      return content;
+
+    } catch (error) {
+      console.warn('⚠️ DeepSeek falló, intentando fallback a Qwen...', error.message);
     }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-
-    console.log('✅ Respuesta recibida de DeepSeek');
-    return content;
-
-  } catch (error) {
-    console.error('❌ Error calling DeepSeek API:', error);
-    throw error;
   }
+
+  // Fallback a Qwen
+  if (QWEN_API_KEY && QWEN_API_KEY !== 'undefined') {
+    try {
+      console.log('🌟 Llamando a Qwen API (fallback)...');
+
+      const response = await fetch(`${QWEN_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${QWEN_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: QWEN_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: options.maxTokens || MAX_TOKENS,
+          temperature: options.temperature || TEMPERATURE
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Qwen API error');
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+
+      console.log('✅ Respuesta recibida de Qwen');
+      return content;
+
+    } catch (error) {
+      console.error('❌ Error calling Qwen API:', error);
+      throw new Error('Ambas IAs fallaron: DeepSeek y Qwen no disponibles');
+    }
+  }
+
+  throw new Error('No hay IAs configuradas. Configura VITE_DEEPSEEK_API_KEY o VITE_QWEN_API_KEY');
 };
 
 // ===== INFORMACIÓN DE CONFIGURACIÓN =====

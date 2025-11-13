@@ -1,14 +1,12 @@
 /**
  * 🎯 CREO COACH SERVICE
- * Servicio de IA proactiva con Gemini que guía al usuario
+ * Servicio de IA proactiva con DeepSeek/Qwen que guía al usuario
  * Conoce todas las herramientas de CreoVision y las sugiere contextualmente
- * @version 2.0.0 - Migrado de DeepSeek a Gemini
+ * @version 3.0.0 - Migrado de Gemini a DeepSeek con fallback a Qwen
  */
 
 import { buildCreoKnowledgeContext, findTool, CREOVISION_TOOLS } from '@/config/creoKnowledgeBase';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+import { generateContent } from '@/services/ai/deepseekService';
 
 /**
  * Prompt base de CREO Coach con conocimiento completo
@@ -145,23 +143,16 @@ ${userPrompt}
 
 Responde como CREO Coach (máximo 2-3 líneas, directo y proactivo):`;
 
-    // console.log('🤖 Llamando a Gemini para CREO Coach...');
+    // console.log('🤖 Llamando a DeepSeek/Qwen para CREO Coach...');
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 200,
-        topP: 0.9
-      }
+    const coachResponse = await generateContent(fullPrompt, {
+      temperature: 0.8,
+      maxTokens: 200,
+      systemPrompt: CREO_COACH_SYSTEM_PROMPT
     });
 
-    const result = await model.generateContent(fullPrompt);
-    const coachResponse = result.response.text().trim();
-
     if (!coachResponse) {
-      throw new Error('Respuesta vacía de Gemini');
+      throw new Error('Respuesta vacía de la IA');
     }
 
     // console.log('✅ Respuesta de CREO generada:', coachResponse.substring(0, 100) + '...');
