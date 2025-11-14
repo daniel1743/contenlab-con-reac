@@ -51,7 +51,7 @@ ChartJS.register(
 const NAV_ITEMS = [
   { id: 'overview', label: 'Resumen', icon: BarChart3 },
   { id: 'campaigns', label: 'Campanas', icon: Target },
-  { id: 'content', label: 'Biblioteca', icon: Layers },
+  { id: 'content', label: 'Historial de Contenido', icon: Layers },
   { id: 'growth', label: 'Crecimiento', icon: TrendingUp },
   { id: 'insights', label: 'Insights IA', icon: Rocket },
 ];

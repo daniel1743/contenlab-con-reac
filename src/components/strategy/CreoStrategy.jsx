@@ -11,6 +11,7 @@ import { executeCreoStrategy } from '@/services/creoStrategyService';
 import { consumeCredits } from '@/services/creditService';
 import { generateCreoStrategyPDF } from '@/services/pdfGenerator';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   PlayCircle,
   TrendingUp,
@@ -26,21 +27,36 @@ import {
   Eye,
   ThumbsUp
 } from 'lucide-react';
+import {
+  FaSearch,
+  FaGhost,
+  FaUtensils,
+  FaChalkboardTeacher,
+  FaGamepad,
+  FaVideo,
+  FaSmileBeam,
+  FaGraduationCap,
+  FaMusic,
+  FaDumbbell,
+  FaLaptopCode,
+  FaSpa,
+  FaPlaneDeparture
+} from 'react-icons/fa';
 
 const THEMES = [
-  { value: 'true-crime', label: 'True Crime', icon: '🔍' },
-  { value: 'terror', label: 'Terror', icon: '👻' },
-  { value: 'cocina', label: 'Cocina', icon: '👨‍🍳' },
-  { value: 'tutoriales', label: 'Tutoriales', icon: '📚' },
-  { value: 'gaming', label: 'Gaming', icon: '🎮' },
-  { value: 'vlogs', label: 'Vlogs', icon: '📹' },
-  { value: 'comedia', label: 'Comedia', icon: '😂' },
-  { value: 'educacion', label: 'Educación', icon: '🎓' },
-  { value: 'musica', label: 'Música', icon: '🎵' },
-  { value: 'fitness', label: 'Fitness', icon: '💪' },
-  { value: 'tecnologia', label: 'Tecnología', icon: '💻' },
-  { value: 'belleza', label: 'Belleza', icon: '💄' },
-  { value: 'viajes', label: 'Viajes', icon: '✈️' }
+  { value: 'true-crime', label: 'True Crime', icon: FaSearch },
+  { value: 'terror', label: 'Terror', icon: FaGhost },
+  { value: 'cocina', label: 'Cocina', icon: FaUtensils },
+  { value: 'tutoriales', label: 'Tutoriales', icon: FaChalkboardTeacher },
+  { value: 'gaming', label: 'Gaming', icon: FaGamepad },
+  { value: 'vlogs', label: 'Vlogs', icon: FaVideo },
+  { value: 'comedia', label: 'Comedia', icon: FaSmileBeam },
+  { value: 'educacion', label: 'Educación', icon: FaGraduationCap },
+  { value: 'musica', label: 'Música', icon: FaMusic },
+  { value: 'fitness', label: 'Fitness', icon: FaDumbbell },
+  { value: 'tecnologia', label: 'Tecnología', icon: FaLaptopCode },
+  { value: 'belleza', label: 'Belleza', icon: FaSpa },
+  { value: 'viajes', label: 'Viajes', icon: FaPlaneDeparture }
 ];
 
 const CreoStrategy = () => {
@@ -146,7 +162,7 @@ const CreoStrategy = () => {
                 value={channelUrl}
                 onChange={(e) => setChannelUrl(e.target.value)}
                 placeholder="https://youtube.com/@tucanal"
-                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-3 rounded-lg bg-gray-800/50 border border-purple-500/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/40"
               />
               <p className="text-sm text-purple-200 mt-2">
                 Acepta formatos: @username, /channel/ID, /c/nombre
@@ -159,18 +175,37 @@ const CreoStrategy = () => {
                 <Sparkles className="inline w-5 h-5 mr-2" />
                 Temática de tu contenido
               </label>
-              <select
-                value={selectedTheme}
-                onChange={(e) => setSelectedTheme(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
-              >
-                <option value="" className="bg-gray-800">Selecciona una temática</option>
-                {THEMES.map((theme) => (
-                  <option key={theme.value} value={theme.value} className="bg-gray-800">
-                    {theme.icon} {theme.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedTheme} onValueChange={setSelectedTheme}>
+                <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
+                  <SelectValue placeholder="Selecciona una temática">
+                    {selectedTheme ? (() => {
+                      const selectedThemeData = THEMES.find(t => t.value === selectedTheme);
+                      if (selectedThemeData) {
+                        const IconComponent = selectedThemeData.icon;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-4 h-4 text-purple-400" />
+                            <span>{selectedThemeData.label}</span>
+                          </div>
+                        );
+                      }
+                    })() : null}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur z-[60]">
+                  {THEMES.map((theme) => {
+                    const IconComponent = theme.icon;
+                    return (
+                      <SelectItem key={theme.value} value={theme.value}>
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4 text-purple-400" />
+                          <span>{theme.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

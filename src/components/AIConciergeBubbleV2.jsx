@@ -236,7 +236,7 @@ const AIConciergeBubbleV2 = () => {
 🛠️ HERRAMIENTAS DISPONIBLES EN CREOVISION:
 - "Genera tu Guion" 🎬 (crear guiones virales)
 - "Analiza tu Canal" 📊 (métricas y tendencias)
-- "Biblioteca de Contenido" 📚 (guardar y organizar)
+- "Historial de Contenido" 📚 (guardar y organizar)
 - "Calendario Editorial" 📅 (planificar publicaciones)
 
 📝 REGLAS ESTRICTAS:

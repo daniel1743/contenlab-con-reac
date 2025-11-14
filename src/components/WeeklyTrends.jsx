@@ -487,7 +487,7 @@ Para convertir esta estrategia en guión listo para grabar:
 
 **Otras herramientas útiles:**
 • **Calendario:** Programa la publicación para el horario óptimo (7-9 PM)
-• **Biblioteca:** Guarda este análisis como referencia para futuras tendencias
+• **Historial de Contenido:** Guarda este análisis como referencia para futuras tendencias
 
 ---
 ## ✅ CHECKLIST DE IMPLEMENTACIÓN
@@ -950,7 +950,7 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock, onTalk })
     >
       <Card className={`
         ${unlocked ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-900/50 border-gray-800'}
-        hover:border-gray-600 transition-all h-full
+        hover:border-gray-600 transition-all h-full flex flex-col
       `}>
         {/* Badge de posición */}
         {index === 0 && (
@@ -995,7 +995,7 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock, onTalk })
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="flex flex-col flex-grow">
           {unlocked ? (
             <>
               <CardDescription className="text-gray-400 line-clamp-3 mb-4">
@@ -1036,8 +1036,8 @@ const TrendCard = ({ trend, index, unlocked, category, Icon, onUnlock, onTalk })
                 )}
               </div>
 
-              {/* Botones de acción */}
-              <div className="flex gap-2">
+              {/* Botones de acción - siempre alineados al final */}
+              <div className="flex gap-2 mt-auto">
                 {/* Botón Análisis de Creo */}
                 <Button
                   onClick={() => onTalk?.(trend)}

@@ -342,7 +342,7 @@ Analizar la tendencia que el creador desbloqueó y darle un plan táctico INMEDI
    - Al final, sugiere EXPLÍCITAMENTE usar "Genera tu Guión" para bajar a texto real
    - Explica cómo esa herramienta complementa este análisis
    - Ejemplo: "Para convertir esta estrategia en guión listo para grabar, usa 'Genera tu Guión' → selecciona tu plataforma, ingresa el tema basado en esta tendencia, y CreoVision armará el script completo con tu tono [ESTILO]"
-   - También menciona otras herramientas relevantes si aplica (Calendario, Biblioteca)
+   - También menciona otras herramientas relevantes si aplica (Calendario, Historial de Contenido)
 
 6. **CIERRE INSTRUCTIVO** (5% del análisis)
    - NO preguntes si quiere ayuda
@@ -428,7 +428,7 @@ Para convertir esta estrategia en guión listo para grabar:
 
 **Otras herramientas útiles:**
 • **Calendario:** Programa publicación para [mejor horario según análisis]
-• **Biblioteca:** Guarda este análisis para referencia futura
+• **Historial de Contenido:** Guarda este análisis para referencia futura
 
 ---
 ## ✅ CHECKLIST DE IMPLEMENTACIÓN

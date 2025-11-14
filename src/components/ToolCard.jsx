@@ -99,7 +99,7 @@ export default function ToolCard({
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         className={`
-          relative overflow-hidden rounded-xl border transition-all duration-300 h-full
+          relative overflow-hidden rounded-xl border transition-all duration-300 h-full flex flex-col
           ${isLocked
             ? 'bg-gray-900/50 border-gray-700 cursor-not-allowed opacity-60'
             : 'bg-gray-900/80 border-gray-700 hover:border-gray-600 cursor-pointer hover:shadow-xl'
@@ -110,9 +110,9 @@ export default function ToolCard({
         <div className={`absolute inset-0 bg-gradient-to-br ${categoryColor} opacity-5`}></div>
 
         {/* Contenido */}
-        <div className="relative p-5 space-y-4 h-full flex flex-col">
+        <div className="relative p-5 h-full flex flex-col">
           {/* Header con icono y badges */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 mb-4">
             {/* Icono */}
             <div className={`
               p-3 rounded-lg bg-gradient-to-r ${categoryColor}
@@ -137,17 +137,17 @@ export default function ToolCard({
             </div>
           </div>
 
-          {/* Título y descripción */}
-          <div className="space-y-1">
-            <h3 className="font-bold text-white text-base mb-1 leading-tight">
+          {/* Título y descripción - altura fija para mantener consistencia */}
+          <div className="space-y-1 mb-4 flex-grow flex flex-col min-h-[90px]">
+            <h3 className="font-bold text-white text-base mb-1 leading-tight line-clamp-2 min-h-[48px]">
               {tool.title}
             </h3>
-            <p className="text-gray-400 text-sm leading-snug line-clamp-2">
+            <p className="text-gray-400 text-sm leading-snug line-clamp-3 flex-1 min-h-[60px]">
               {tool.description}
             </p>
           </div>
 
-          {/* Footer con créditos y tiempo */}
+          {/* Footer con créditos y tiempo - siempre alineado al final */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-700/50 mt-auto w-full">
             <div className="flex items-center gap-1.5 text-blue-400">
               <CreditCardIcon className="w-4 h-4" />

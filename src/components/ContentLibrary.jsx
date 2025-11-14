@@ -229,7 +229,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
     e.stopPropagation();
     setForgedContent(prev => prev.filter(item => item.id !== id));
     toast({
-      title: '🗑️ Forjado eliminado',
+      title: '🗑️ Contenido eliminado',
       description: 'El contenido ha sido eliminado de tu historial',
     });
   }, [toast]);
@@ -292,7 +292,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
       >
         <div className="flex items-center justify-center gap-3">
           <Sparkles className="w-10 h-10 text-purple-400" />
-          <h1 className="text-4xl font-bold text-gradient">Mis Forjados</h1>
+          <h1 className="text-4xl font-bold text-gradient">Historial de Contenido</h1>
         </div>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
           Tu historial completo de creaciones y estrategias generadas con IA
@@ -310,7 +310,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
           <CardContent className="p-4 text-center">
             <Sparkles className="w-6 h-6 mx-auto mb-2 text-purple-400" />
             <p className="text-2xl font-bold text-white">{stats.total}</p>
-            <p className="text-xs text-gray-400">Total Forjados</p>
+            <p className="text-xs text-gray-400">Total de Contenido</p>
           </CardContent>
         </Card>
 
@@ -355,10 +355,10 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
                   <Crown className="w-6 h-6 text-yellow-400" />
                   <div>
                     <p className="text-sm font-semibold text-yellow-300">
-                      Plan Free: {stats.accessible}/{historyLimit} forjados accesibles
+                      Plan Free: {stats.accessible}/{historyLimit} contenidos accesibles
                     </p>
                     <p className="text-xs text-gray-400">
-                      Tienes {stats.locked} forjados bloqueados. Actualiza a Premium para acceso ilimitado.
+                      Tienes {stats.locked} contenidos bloqueados. Actualiza a Premium para acceso ilimitado.
                     </p>
                   </div>
                 </div>
@@ -386,7 +386,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Buscar en tus forjados..."
+              placeholder="Buscar en tu historial..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-gray-800/50 border-purple-500/20 text-white"
@@ -421,7 +421,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
         transition={{ delay: 0.4 }}
       >
         {filteredContent.length > 0 ? (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch' : 'space-y-3'}>
             {filteredContent.map((item, index) => {
               const isLocked = index >= historyLimit && userPlan === 'free';
 
@@ -432,11 +432,11 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 * index }}
                   whileHover={{ scale: isLocked ? 1 : 1.02 }}
-                  className="group relative"
+                  className="group relative h-full"
                 >
                   <Card
                     onClick={() => handleCardClick(item)}
-                    className={`glass-effect border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer overflow-hidden ${
+                    className={`glass-effect border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer overflow-hidden h-full flex flex-col ${
                       isLocked ? 'opacity-60' : ''
                     }`}
                   >
@@ -458,7 +458,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
                             {getTypeIcon(item.type)}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <CardTitle className="text-base text-white line-clamp-2">
+                            <CardTitle className="text-base text-white line-clamp-2 min-h-[48px]">
                               {item.title}
                             </CardTitle>
                             <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -485,12 +485,12 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
                       </div>
                     </CardHeader>
 
-                    <CardContent className="pt-0">
-                      <CardDescription className="text-gray-300 text-sm line-clamp-2 mb-3">
+                    <CardContent className="pt-0 flex flex-col flex-grow">
+                      <CardDescription className="text-gray-300 text-sm line-clamp-2 mb-3 min-h-[40px] flex-grow">
                         {item.preview}
                       </CardDescription>
 
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center justify-between text-xs text-gray-500 mt-auto pt-2 border-t border-purple-500/10">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-3 h-3" />
                           <span>{item.createdAt}</span>
@@ -512,7 +512,7 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
           <Card className="glass-effect border-purple-500/20 min-h-[400px] flex items-center justify-center">
             <CardContent className="text-center">
               <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-400 opacity-30" />
-              <h3 className="text-xl font-semibold text-white mb-2">No hay forjados aún</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">No hay contenido aún</h3>
               <p className="text-gray-400">Comienza a crear contenido para ver tu historial aquí</p>
             </CardContent>
           </Card>

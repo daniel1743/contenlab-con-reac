@@ -134,7 +134,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
     // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
     { id: 'calendar', label: 'Calendario', icon: CalendarIcon, authRequired: true },
-    { id: 'library', label: 'Biblioteca', icon: FolderOpenIcon, authRequired: true },
+    { id: 'library', label: 'Historial de Contenido', icon: FolderOpenIcon, authRequired: true },
     // COMENTADO TEMPORALMENTE - Chat sin backend funcional
     // { id: 'chat', label: 'Chat IA', icon: ChatBubbleLeftRightIcon, authRequired: true },
   ];

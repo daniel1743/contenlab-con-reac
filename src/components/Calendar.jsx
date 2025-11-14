@@ -1177,119 +1177,127 @@ const Calendar = () => {
             </Card>
           </motion.div>
 
-          {/* Estadísticas e Insights */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0 }}
-          >
-            <Card className="glass-effect border-purple-500/20">
-              <CardHeader>
-                <CardTitle className="text-white text-lg flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-purple-400" />
-                  Insights del Calendario
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-purple-400" />
-                        <span className="text-sm text-gray-300">Total eventos</span>
-                      </div>
-                      <span className="text-xl font-bold text-white">{filteredEvents.length}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-green-400" />
-                        <span className="text-sm text-gray-300">Programados</span>
-                      </div>
-                      <span className="text-xl font-bold text-green-400">
-                        {scheduledCount}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm text-gray-300">Borradores</span>
-                      </div>
-                      <span className="text-xl font-bold text-yellow-400">
-                        {draftCount}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-blue-300" />
-                        <span className="text-sm text-gray-300">IQ promedio</span>
-                      </div>
-                      <span className="text-xl font-bold text-blue-300">{averageAiScore}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-purple-500/20">
-                    <p className="text-xs text-gray-400 mb-2">Plataformas con mayor actividad:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {platformUsage.length > 0 ? (
-                        platformUsage.map(({ platform, label, count }) => (
-                          <div
-                            key={platform}
-                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-800/50 border border-purple-500/10"
-                          >
-                            {getPlatformIcon(platform, 'w-3 h-3')}
-                            <span className="text-xs text-gray-300">{label}</span>
-                            <span className="text-xs text-purple-300">({count})</span>
-                          </div>
-                        ))
-                      ) : (
-                        <span className="text-xs text-gray-500">Sin datos suficientes todavía.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {peakMoments.length > 0 && (
-                    <div className="pt-3 border-t border-purple-500/20">
-                      <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3 text-emerald-300" />
-                        Próximos picos recomendados
-                      </p>
-                      <div className="space-y-2">
-                        {peakMoments.map((moment) => (
-                          <div
-                            key={moment.id}
-                            className="flex items-center justify-between p-2 rounded-lg bg-gray-800/40 border border-purple-500/10"
-                          >
-                            <div className="min-w-0">
-                              <p className="text-sm text-white truncate">{moment.title}</p>
-                              <div className="flex items-center gap-2 text-xs text-gray-400">
-                                <span>{moment.optimalTime}</span>
-                                <div className="flex -space-x-1">
-                                  {(moment.platforms || []).slice(0, 3).map((platform, idx) => (
-                                    <div
-                                      key={`${moment.id}-${platform}-peak-${idx}`}
-                                      className="w-5 h-5 rounded-full bg-gray-900/60 border border-purple-500/30 flex items-center justify-center"
-                                    >
-                                      {getPlatformIcon(platform, 'w-3 h-3')}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <Target className="w-4 h-4 text-purple-300" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </div>
+
+      {/* Insights del Calendario - Tarjeta larga */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.0 }}
+      >
+        <Card className="glass-effect border-purple-500/20">
+          <CardHeader>
+            <CardTitle className="text-white text-xl flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-purple-400" />
+              Insights del Calendario
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Análisis completo de tu actividad y rendimiento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="flex flex-col justify-between p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <CalendarIcon className="w-5 h-5 text-purple-400" />
+                  <span className="text-sm text-gray-300">Total eventos</span>
+                </div>
+                <span className="text-3xl font-bold text-white">{filteredEvents.length}</span>
+              </div>
+
+              <div className="flex flex-col justify-between p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-green-400" />
+                  <span className="text-sm text-gray-300">Programados</span>
+                </div>
+                <span className="text-3xl font-bold text-green-400">
+                  {scheduledCount}
+                </span>
+              </div>
+
+              <div className="flex flex-col justify-between p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm text-gray-300">Borradores</span>
+                </div>
+                <span className="text-3xl font-bold text-yellow-400">
+                  {draftCount}
+                </span>
+              </div>
+
+              <div className="flex flex-col justify-between p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-5 h-5 text-blue-300" />
+                  <span className="text-sm text-gray-300">IQ promedio</span>
+                </div>
+                <span className="text-3xl font-bold text-blue-300">{averageAiScore}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="p-4 rounded-lg bg-gray-800/30 border border-purple-500/10">
+                <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-purple-400" />
+                  Plataformas con mayor actividad
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {platformUsage.length > 0 ? (
+                    platformUsage.map(({ platform, label, count }) => (
+                      <div
+                        key={platform}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 border border-purple-500/20 hover:border-purple-500/40 transition-colors"
+                      >
+                        {getPlatformIcon(platform, 'w-4 h-4')}
+                        <span className="text-sm text-gray-300">{label}</span>
+                        <span className="text-sm font-bold text-purple-300">({count})</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">Sin datos suficientes todavía.</span>
+                  )}
+                </div>
+              </div>
+
+              {peakMoments.length > 0 && (
+                <div className="p-4 rounded-lg bg-gray-800/30 border border-purple-500/10">
+                  <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-emerald-400" />
+                    Próximos picos recomendados
+                  </p>
+                  <div className="space-y-2">
+                    {peakMoments.map((moment) => (
+                      <div
+                        key={moment.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-gray-800/40 border border-purple-500/10 hover:border-purple-500/30 transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-white truncate">{moment.title}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{moment.optimalTime}</span>
+                            <div className="flex -space-x-1 ml-2">
+                              {(moment.platforms || []).slice(0, 3).map((platform, idx) => (
+                                <div
+                                  key={`${moment.id}-${platform}-peak-${idx}`}
+                                  className="w-5 h-5 rounded-full bg-gray-900/60 border border-purple-500/30 flex items-center justify-center"
+                                >
+                                  {getPlatformIcon(platform, 'w-3 h-3')}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <Target className="w-4 h-4 text-purple-300 flex-shrink-0 ml-2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div
