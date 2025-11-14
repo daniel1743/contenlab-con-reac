@@ -125,7 +125,9 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: HomeIcon },
     { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
-    { id: 'growth-dashboard', label: 'Growth Dashboard', icon: RocketLaunchIcon, authRequired: true, badge: '380', premium: true }, // 🆕 GROWTH DASHBOARD
+    // 🔮 PROYECCIÓN FUTURA - Growth Dashboard
+    // Dashboard avanzado con métricas de crecimiento, análisis de competencia y proyecciones
+    // { id: 'growth-dashboard', label: 'Growth Dashboard', icon: RocketLaunchIcon, authRequired: true, badge: '380', premium: true },
     { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
     { id: 'creo-strategy', label: 'Creo Strategy', icon: LightBulbIcon, authRequired: true, badge: 'NEW' }, // 🆕 CREO STRATEGY
     { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false }, // 🆕 TENDENCIAS
@@ -177,9 +179,12 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     if (item.id === 'dashboard') {
       triggerIntelligenceHint();
       import('@/components/DashboardDynamic');
-    } else if (item.id === 'growth-dashboard') {
-      import('@/components/GrowthDashboard');
-    } else if (item.id === 'tools') {
+    }
+    // 🔮 PROYECCIÓN FUTURA - Growth Dashboard comentado
+    // else if (item.id === 'growth-dashboard') {
+    //   import('@/components/GrowthDashboard');
+    // }
+    else if (item.id === 'tools') {
       import('@/components/Tools');
     } else if (item.id === 'creo-strategy') {
       import('@/components/strategy/CreoStrategy');

@@ -16,7 +16,7 @@ const CreoVisionSeal = () => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.8, delay: 1.2 }}
     >
-      <Card className="bg-gradient-to-br from-[#2A1B3D] via-[#1E2A4A] to-[#1C1333] border-[#C93CFC]/30 overflow-hidden relative">
+      <Card className="w-full bg-gradient-to-br from-[#2A1B3D] via-[#1E2A4A] to-[#1C1333] border-[#C93CFC]/30 overflow-hidden relative">
         {/* Efecto de brillo animado */}
         <motion.div
           className="absolute inset-0 opacity-30"
@@ -48,7 +48,7 @@ const CreoVisionSeal = () => {
             transition={{ delay: 0.3 }}
             className="text-4xl font-bold mb-4 bg-gradient-to-r from-[#2A8CFF] via-[#C93CFC] to-[#FF6B3D] bg-clip-text text-transparent"
           >
-            ContentLab
+            CreoVision
           </motion.h2>
 
           {/* Mensaje */}

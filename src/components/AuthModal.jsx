@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -181,11 +181,10 @@ const AuthModal = ({ isOpen, onClose }) => {
     setName('');
     setShowPassword(false);
     setShowForgotPassword(false);
-    // Reset OTP state
+    // Reset auth mode
     setAuthMode('password');
-    setOtpEmail('');
-    setOtpCode('');
-    setOtpSent(false);
+    setMagicLinkSent(false);
+    setMagicLinkEmail('');
   };
 
   return (
@@ -224,6 +223,9 @@ const AuthModal = ({ isOpen, onClose }) => {
             <div className="flex-shrink-0 p-6 pb-4 border-b border-gray-100">
               <DialogHeader className="text-center lg:text-left">
                 <DialogTitle className="text-2xl font-bold text-gradient">Accede a CreoVision Premium</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Modal de autenticación para acceder a CreoVision Premium. Puedes iniciar sesión o crear una cuenta nueva.
+                </DialogDescription>
               </DialogHeader>
             </div>
 
@@ -266,15 +268,15 @@ const AuthModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <AnimatePresence mode="wait">
-                  <TabsContent key="login" value="login" asChild>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-4"
-                    >
+                <TabsContent key="login" value="login" asChild>
+                  <motion.div
+                    key="login-content"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
                       {!showForgotPassword ? (
                         <>
                           {/* Selector de modo de auth */}
@@ -489,17 +491,18 @@ const AuthModal = ({ isOpen, onClose }) => {
                           </div>
                         </>
                       )}
-                    </motion.div>
-                  </TabsContent>
+                  </motion.div>
+                </TabsContent>
 
-                  <TabsContent key="register" value="register" asChild>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-4"
-                    >
+                <TabsContent key="register" value="register" asChild>
+                  <motion.div
+                    key="register-content"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
                       {/* Selector de modo de registro */}
                       <div className="flex gap-2 mb-4">
                         <Button
@@ -689,9 +692,8 @@ const AuthModal = ({ isOpen, onClose }) => {
                           )}
                         </>
                       )}
-                    </motion.div>
-                  </TabsContent>
-                </AnimatePresence>
+                  </motion.div>
+                </TabsContent>
               </Tabs>
             </div>
 

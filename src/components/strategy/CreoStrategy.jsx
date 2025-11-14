@@ -62,16 +62,23 @@ const CreoStrategy = () => {
     setResult(null);
 
     try {
-      // 🧪 TEMPORALMENTE DESHABILITADO PARA TESTING
       // Consumir créditos (150 créditos por análisis completo)
-      console.log('⚠️ Consumo de créditos deshabilitado temporalmente para testing');
-      // const creditResult = await consumeCredits(user.id, 'creo_strategy');
+      console.log('💎 Verificando créditos para Creo Strategy...');
+      console.log('🔍 User ID:', user.id);
+      const creditResult = await consumeCredits(user.id, 'creo_strategy');
 
-      // if (!creditResult.success) {
-      //   setError(`Créditos insuficientes. Necesitas ${creditResult.required} créditos.`);
-      //   setLoading(false);
-      //   return;
-      // }
+      console.log('📊 Resultado de consumo:', creditResult);
+
+      if (!creditResult.success) {
+        const errorMsg = creditResult.required
+          ? `Créditos insuficientes. Necesitas ${creditResult.required} créditos pero tienes ${creditResult.currentCredits}.`
+          : `Error al verificar créditos: ${creditResult.error || 'Error desconocido'}`;
+        setError(errorMsg);
+        setLoading(false);
+        return;
+      }
+
+      console.log(`✅ Créditos consumidos: ${creditResult.consumed}, restantes: ${creditResult.remaining}`);
 
       // Ejecutar análisis
       const analysisResult = await executeCreoStrategy(channelUrl, selectedTheme);

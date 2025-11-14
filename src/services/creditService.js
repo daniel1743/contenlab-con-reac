@@ -238,18 +238,22 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
     }
 
     // Llamar función SQL que maneja la lógica de consumo
+    console.log('🔍 Llamando a RPC consume_credits con:', { userId, featureId });
     const { data, error } = await supabase.rpc('consume_credits', {
       p_user_id: userId,
       p_feature: featureId
     });
 
+    console.log('📡 Respuesta RPC:', { data, error });
+
     // Si la función RPC no existe (404), usar fallback
     if (error && (error.code === 'PGRST202' || error.message?.includes('Could not find'))) {
-      console.warn('Function consume_credits not found, using fallback');
+      console.warn('⚠️ Function consume_credits not found, using fallback');
       return await consumeCreditsFallback(userId, amount, featureId, description);
     }
 
     if (error) {
+      console.error('❌ RPC Error:', error);
       throw error;
     }
 
@@ -274,10 +278,17 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
       breakdown: newBalance.credits
     };
   } catch (error) {
-    console.error('Error consuming credits:', error);
+    console.error('❌ Error consuming credits:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details
+    });
     return {
       success: false,
-      error: error.message
+      error: error.message,
+      required: amount || 0,
+      currentCredits: 0
     };
   }
 }

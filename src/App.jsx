@@ -260,14 +260,16 @@ function App() {
                     }
                   />
 
-                  <Route
+                  {/* 🔮 PROYECCIÓN FUTURA - Growth Dashboard */}
+                  {/* Dashboard avanzado con análisis de crecimiento, competencia y proyecciones */}
+                  {/* <Route
                     path="/growth-dashboard"
                     element={
                       <ProtectedRoute>
                         <GrowthDashboard />
                       </ProtectedRoute>
                     }
-                  />
+                  /> */}
 
                   <Route
                     path="/calendar"
