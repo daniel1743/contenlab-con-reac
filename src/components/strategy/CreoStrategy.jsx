@@ -162,7 +162,7 @@ const CreoStrategy = () => {
                 value={channelUrl}
                 onChange={(e) => setChannelUrl(e.target.value)}
                 placeholder="https://youtube.com/@tucanal"
-                className="w-full px-4 py-3 rounded-lg bg-gray-800/50 border border-purple-500/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/40"
+                className="w-full h-11 px-4 rounded-lg bg-gray-800/50 border border-purple-500/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/40"
               />
               <p className="text-sm text-purple-200 mt-2">
                 Acepta formatos: @username, /channel/ID, /c/nombre
@@ -176,7 +176,7 @@ const CreoStrategy = () => {
                 Temática de tu contenido
               </label>
               <Select value={selectedTheme} onValueChange={setSelectedTheme}>
-                <SelectTrigger className="bg-gray-800/50 border-purple-500/20 text-white">
+                <SelectTrigger className="w-full h-11 px-4 rounded-lg bg-gray-800/50 border border-purple-500/20 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/40 [&>span]:flex [&>span]:items-center">
                   <SelectValue placeholder="Selecciona una temática">
                     {selectedTheme ? (() => {
                       const selectedThemeData = THEMES.find(t => t.value === selectedTheme);

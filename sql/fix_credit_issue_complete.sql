@@ -7,13 +7,12 @@
 -- PASO 1: Asegurar que el usuario existe en user_credits con sus créditos actuales
 -- IMPORTANTE: Los bonus_credits (créditos promocionales/de prueba) SÍ se pueden usar
 -- La función consume en orden: monthly -> bonus -> purchased
+-- NOTA: total_credits es GENERATED, se calcula automáticamente (monthly + purchased + bonus)
 INSERT INTO user_credits (
   user_id,
   monthly_credits,
   purchased_credits,
   bonus_credits,
-  total_credits,
-  subscription_tier,
   subscription_plan,
   subscription_status,
   monthly_credits_assigned,
@@ -23,21 +22,16 @@ INSERT INTO user_credits (
   5000,  -- Ajusta según tus créditos mensuales
   0,     -- Créditos comprados
   380,   -- Créditos bonus/promocionales (ESTOS SÍ SE PUEDEN USAR)
-  5380,  -- Total (ajusta según tu balance real)
-  'free',
   'free',
   'active',
   5000,
   NOW()
 ) ON CONFLICT (user_id) DO UPDATE SET
   -- Preservar los créditos existentes, especialmente bonus_credits
+  -- total_credits se calcula automáticamente (monthly + purchased + bonus)
   monthly_credits = COALESCE(EXCLUDED.monthly_credits, user_credits.monthly_credits),
   bonus_credits = COALESCE(EXCLUDED.bonus_credits, user_credits.bonus_credits),
   purchased_credits = COALESCE(EXCLUDED.purchased_credits, user_credits.purchased_credits),
-  total_credits = GREATEST(
-    COALESCE(user_credits.total_credits, 0),
-    COALESCE(EXCLUDED.total_credits, 0)
-  ),
   updated_at = NOW();
 
 -- PASO 2: Asegurar que la feature creo_strategy existe
@@ -178,13 +172,12 @@ BEGIN
   
   IF NOT v_user_exists THEN
     -- Crear usuario con créditos por defecto
+    -- NOTA: total_credits es GENERATED, se calcula automáticamente
     INSERT INTO user_credits (
       user_id,
       monthly_credits,
       purchased_credits,
       bonus_credits,
-      total_credits,
-      subscription_tier,
       subscription_plan,
       subscription_status,
       monthly_credits_assigned,
@@ -194,8 +187,6 @@ BEGIN
       3000,
       0,
       0,
-      3000,
-      'free',
       'free',
       'active',
       3000,
@@ -203,7 +194,7 @@ BEGIN
     );
   END IF;
 
-  -- 3. Obtener créditos actuales
+  -- 3. Obtener créditos actuales con FOR UPDATE (lock para evitar race conditions)
   SELECT 
     total_credits,
     monthly_credits,
@@ -215,7 +206,8 @@ BEGIN
     v_purchased,
     v_bonus
   FROM user_credits
-  WHERE user_id = p_user_id;
+  WHERE user_id = p_user_id
+  FOR UPDATE;
 
   -- 4. Verificar si tiene suficientes créditos
   IF v_current_credits < v_cost THEN
@@ -256,12 +248,13 @@ BEGIN
   END IF;
 
   -- 6. Actualizar créditos
+  -- IMPORTANTE: total_credits es GENERATED, se calcula automáticamente
+  -- NO intentar actualizarlo directamente
   UPDATE user_credits
   SET
     monthly_credits = monthly_credits - v_monthly_used,
     purchased_credits = purchased_credits - v_purchased_used,
     bonus_credits = bonus_credits - v_bonus_used,
-    total_credits = total_credits - v_cost,
     updated_at = NOW()
   WHERE user_id = p_user_id;
 
@@ -330,9 +323,9 @@ GRANT EXECUTE ON FUNCTION consume_credits(UUID, TEXT) TO service_role;
 -- PASO 8: Verificación final
 SELECT 
   '✅ Verificación final' as status,
-  (SELECT total_credits FROM user_credits WHERE user_id = 'ef6c7524-181a-4cb1-8ec3-65e2f140b82f'::uuid) as user_credits,
-  (SELECT credit_cost FROM feature_credit_costs WHERE feature_slug = 'creo_strategy' AND active = true) as feature_cost,
-  (SELECT routine_name FROM information_schema.routines WHERE routine_name = 'consume_credits') as function_exists;
+  (SELECT total_credits FROM user_credits WHERE user_id = 'ef6c7524-181a-4cb1-8ec3-65e2f140b82f'::uuid LIMIT 1) as user_credits,
+  (SELECT credit_cost FROM feature_credit_costs WHERE feature_slug = 'creo_strategy' AND active = true LIMIT 1) as feature_cost,
+  (SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public' AND routine_name = 'consume_credits' LIMIT 1) as function_exists;
 
 -- PASO 9: Test de la función
 SELECT 

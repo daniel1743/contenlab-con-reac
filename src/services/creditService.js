@@ -239,9 +239,11 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
 
     // Llamar función SQL que maneja la lógica de consumo
     console.log('🔍 Llamando a RPC consume_credits con:', { userId, featureId });
+    
+    // 💡 CORRECCIÓN 1: El parámetro se llama 'p_feature_id', no 'p_feature'
     const { data, error } = await supabase.rpc('consume_credits', {
       p_user_id: userId,
-      p_feature: featureId
+      p_feature_id: featureId // <-- CORREGIDO
     });
 
     console.log('📡 Respuesta RPC:', { data, error });
@@ -262,9 +264,9 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
       return {
         success: false,
         error: data.error || 'INSUFFICIENT_CREDITS',
-        message: 'No tienes suficientes créditos para esta acción',
+        message: data.message || 'No tienes suficientes créditos para esta acción',
         required: data.required,
-        currentCredits: data.available
+        currentCredits: data.currentCredits || data.available
       };
     }
 
@@ -323,7 +325,7 @@ async function consumeCreditsFallback(userId, amount, featureId, description = n
           monthly_credits: 3000,
           purchased_credits: 0,
           bonus_credits: 0,
-          total_credits: 3000,
+          // total_credits: 3000, // No se inserta, es columna generada
           monthly_credits_assigned: 3000,
           subscription_plan: 'free'
         })
@@ -376,13 +378,15 @@ async function consumeCreditsFallback(userId, amount, featureId, description = n
     }
 
     // 4. Actualizar créditos del usuario
+    
+    // 💡 CORRECCIÓN 2: No actualizar 'total_credits' porque es una columna generada
     const { data: updatedCredits, error: updateError } = await supabase
       .from('user_credits')
       .update({
         monthly_credits: userCredits.monthly_credits - monthlyUsed,
         purchased_credits: userCredits.purchased_credits - purchasedUsed,
         bonus_credits: userCredits.bonus_credits - bonusUsed,
-        total_credits: userCredits.total_credits - amount,
+        // total_credits: userCredits.total_credits - amount, // <-- LÍNEA ELIMINADA
         updated_at: new Date().toISOString()
       })
       .eq('user_id', userId)
@@ -402,11 +406,14 @@ async function consumeCreditsFallback(userId, amount, featureId, description = n
     const transactionDescription = description ||
       featureCost?.feature_name ||
       `Uso de ${featureId}`;
-
+    
+    // 💡 CORRECCIÓN 3: 
+    //   - 'type' debe ser 'spend' (no 'consumption') para pasar la regla
+    //   - 'amount' debe ser un número positivo (el costo)
     await supabase.from('credit_transactions').insert({
       user_id: userId,
-      type: 'consumption',
-      amount: -amount,
+      type: 'spend', // <-- CORREGIDO
+      amount: amount, // <-- CORREGIDO
       feature: featureId,
       description: transactionDescription,
       balance_after_monthly: updatedCredits.monthly_credits,
@@ -757,7 +764,7 @@ export async function getCreditStats(userId) {
     const history = await getCreditHistory(userId, 1000);
 
     const totalSpent = history
-      .filter(t => t.type === 'spend')
+      .filter(t => t.type === 'spend') // <-- Corregido para 'spend'
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
     const totalPurchased = history
@@ -770,7 +777,7 @@ export async function getCreditStats(userId) {
 
     // Uso por feature
     const byFeature = history
-      .filter(t => t.type === 'spend' && t.feature)
+      .filter(t => t.type === 'spend' && t.feature) // <-- Corregido para 'spend'
       .reduce((acc, t) => {
         if (!acc[t.feature]) {
           acc[t.feature] = { count: 0, credits: 0 };
