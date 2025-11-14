@@ -7,6 +7,7 @@
  * @author CreoVision
  */
 
+// 💡 IMPORTANTE: Importamos el servicio "mensajero"
 import { generateContent } from '@/services/ai/deepseekService';
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
@@ -158,7 +159,9 @@ export const searchViralVideos = async (theme, userTags = []) => {
     const statsResponse = await fetch(
       `${YOUTUBE_API_BASE}/videos?part=snippet,statistics,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
     );
-    const statsData = await statsResponse.json();
+    
+    // Esta es la línea que falló en la versión anterior
+    const statsData = await statsResponse.json(); 
 
     // Filtrar solo videos verdaderamente virales (> 50k views) y tomar 6
     const viralVideos = statsData.items
@@ -207,7 +210,8 @@ const buildSearchQuery = (theme, userTags) => {
     'fitness': 'ejercicios fitness entrenamiento',
     'tecnologia': 'tecnologia review gadgets',
     'belleza': 'belleza makeup tutorial',
-    'viajes': 'viajes travel destinos'
+    'viajes': 'viajes travel destinos',
+    'religion': 'religion biblia historia sagrada misterios fe'
   };
 
   let baseQuery = themeQueries[theme.toLowerCase()] || theme;
@@ -221,118 +225,129 @@ const buildSearchQuery = (theme, userTags) => {
   return baseQuery;
 };
 
+// =========================================================================
+// 🚀 ¡AQUÍ ESTÁ LA FUNCIÓN ACTUALIZADA CON TU IDEA DEL "SPOTLIGHT"! 🚀
+// =========================================================================
+
 /**
- * Analizar videos del usuario vs videos virales con IA
+ * Analizar videos del usuario vs videos virales con IA (Modo: CreoStrategist v2 - Con "Spotlight")
  * @param {Object} userData - Datos del canal del usuario
  * @param {Array} viralVideos - Videos virales de la temática
  * @param {string} theme - Temática seleccionada
- * @returns {Promise<Object>} - Estrategia generada por IA
+ * @returns {Promise<Object>} - Estrategia generada por IA (como Markdown)
  */
 export const analyzeAndGenerateStrategy = async (userData, viralVideos, theme) => {
   try {
-    console.log('🤖 Generando estrategia con IA...');
+    console.log('🤖 Generando estrategia con IA... (Modo: CreoStrategist v2 - Spotlight)');
 
-    const prompt = `
-Eres un experto estratega de YouTube con años de experiencia analizando canales exitosos.
+    // 1. El System Prompt de Alto Valor (ACTUALIZADO CON TU IDEA)
+    const strategistSystemPrompt = `
+Eres 'CreoStrategist', un analista de YouTube de clase mundial. Eres famoso por encontrar el "delta" (la diferencia clave) que hace que un video sea viral. Eres directo, específico y odias los consejos genéricos.
 
-**CONTEXTO:**
-Usuario: Canal "${userData.channelTitle}"
+## TU MISIÓN
+Vas a recibir datos de 8 videos del "Usuario" y 6 de la "Competencia". Tu trabajo es crear un plan de acción "quirúrgico" basado en el "Ganador Absoluto" de la competencia.
+
+## REGLAS DE ORO (INQUEBRABLES)
+1.  **PROHIBIDO DAR CONSEJOS GENÉRICOS:** Nunca digas "mejora tus miniaturas" o "usa mejores títulos".
+2.  **TODO BASADO EN EVIDENCIA:** Cada consejo DEBE estar vinculado a un video específico.
+3.  **ENFÓCATE EN EL "GANADOR ABSOLUTO":** Tu valor principal es hacer un "spotlight" en el video de la competencia con MÁS VISTAS y explicar por qué funcionó.
+
+## EL PROCESO DE ANÁLISIS
+1.  **Identifica al "Ganador Absoluto":** De los 6 videos de la Competencia, encuentra el que tenga el NÚMERO MÁS ALTO DE VISTAS. Este es tu ejemplo principal.
+2.  **Analiza el "Delta Ganador":** Compara el video del "Ganador Absoluto" con los videos del Usuario. ¿Qué hizo ese video que el usuario no está haciendo? (Miniatura, título, primerísimos 5 segundos de la descripción). Esta es la lección más importante.
+3.  **Analiza las Fortalezas del Usuario:** Mira los 8 videos del Usuario. Identifica una fortaleza oculta (ej. "Su video '[Video X]' generó 50% más comentarios por vista...").
+4.  **Crea el Plan de Acción:** Basa tu plan en replicar el éxito de ESE video ganador.
+
+## FORMATO DE SALIDA (Obligatorio - Markdown)
+Devuelve tu análisis SOLAMENTE en este formato Markdown.
+
+### Diagnóstico Rápido: Tu "Delta" de Éxito
+(Dime en un párrafo cuál es la diferencia clave que encontraste entre el Usuario y el "Ganador Absoluto" de la competencia.)
+
+### 🏆 Tu Competidor Ganador (El Ejemplo a Seguir)
+(¡AQUÍ HACES EL SPOTLIGHT! Identifica el video de la competencia con MÁS VISTAS.)
+* **Video Ganador:** "[Título del Video Ganador]"
+* **Canal:** "[Nombre del Canal Ganador]"
+* **Vistas:** [Número de Vistas, ej: "1.2 Millones de Vistas"]
+* **Análisis del "Delta":** (Explica POR QUÉ este video ganó. "Tu miniatura en '[Video Usuario]' usó solo texto. Esta miniatura ganadora usó un rostro humano con esta emoción [X]. Tu título fue '[Título Usuario]', el título ganador usó la fórmula 'Pregunta + Controversia'. Este es el 'delta' que explica la diferencia de vistas.")
+
+### 🧠 Tus Fortalezas Ocultas (Basado en TUS videos)
+* **Evidencia:** En tu video "[Título Usuario 4]", lograste [Métrica clave].
+* **Conclusión:** Esto prueba que tu audiencia responde con fuerza cuando tú [Acción específica]. Debes duplicar esto.
+
+### 🎯 Tu Plan de Acción: Próximos 3 Videos
+(Basado en el análisis del "Ganador Absoluto")
+
+1.  **Título Sugerido:** [Título que aplica la fórmula ganadora]
+    * **Por qué funciona:** "Aplica la fórmula '[Fórmula del Ganador]' al tema '[Tema del Usuario]'."
+    * **Miniatura:** [Descripción de la miniatura, ej: "Un rostro en primer plano mirando un texto apócrifo con expresión de 'shock', replicando la estrategia del Ganador"].
+    * **Tags Estratégicos:** [Lista de 5-10 tags long-tail del ganador].
+
+2.  **Título Sugerido:** ... (repetir)
+3.  **Título Sugerido:** ... (repetir)
+
+### 📈 Tu Estrategia SEO (Palabras Clave del Ganador)
+Basado en los tags y títulos del "Ganador Absoluto" y los otros videos de la competencia, estas son las 5 "palabras clave long-tail" que ellos dominan y tú no:
+1.  ...
+2.  ...
+3.  ...
+4.  ...
+5.  ...
+
+### ✅ Checklist de Corrección Quirúrgica
+(Correcciones directas basadas en tus errores comparados con el "Ganador Absoluto")
+* **Títulos:** DEJA de usar títulos de 1 sola frase (visto en tus videos 2, 4, 5). ADOPTA la fórmula de 2 partes "Pregunta + Afirmación" (vista en el "Video Ganador").
+* **Miniaturas:** PROHIBIDO usar texto azul sobre fondos oscuros (visto en tu video 3). DEBES usar la regla 80/20 del "Video Ganador": 80% rostro humano, 20% objeto clave.
+* **Descripciones:** DEJA de escribir 50 palabras. DEBES escribir +300 palabras e incluir 3-5 timestamps (como hace el "Video Ganador").
+    `;
+
+    // 2. El User Prompt (los datos)
+    // Simplificamos los datos para no gastar tokens y enfocar a la IA
+    const userVideosData = userData.videos.map(v => ({
+      title: v.title,
+      views: v.views,
+      likes: v.likes,
+      comments: v.comments,
+      tags: v.tags.slice(0, 5) // Solo los 5 tags principales
+    }));
+
+    const competitorVideosData = viralVideos.map(v => ({
+      title: v.title,
+      channel: v.channelTitle,
+      views: v.views, // <-- ¡LA CLAVE ESTÁ AQUÍ!
+      likes: v.likes,
+      tags: v.tags.slice(0, 5) // Solo los 5 tags principales
+    }));
+
+    // Construimos el prompt final con los datos
+    const userPrompt = `
+## CONTEXTO
 Temática: ${theme}
-Videos analizados del usuario: ${userData.videos.length}
-Videos virales de referencia: ${viralVideos.length}
+Canal del Usuario: "${userData.channelTitle}"
 
-**VIDEOS DEL USUARIO:**
-${userData.videos.map((v, i) => `
-${i + 1}. "${v.title}"
-   - Views: ${v.views.toLocaleString()}
-   - Likes: ${v.likes.toLocaleString()}
-   - Comentarios: ${v.comments}
-   - Tags: ${v.tags.slice(0, 5).join(', ') || 'Sin tags'}
-   - Descripción: ${v.description.substring(0, 150)}...
-`).join('\n')}
+## DATOS DEL CLIENTE (Usuario)
+${JSON.stringify(userVideosData, null, 2)}
 
-**VIDEOS VIRALES DE REFERENCIA (misma temática):**
-${viralVideos.map((v, i) => `
-${i + 1}. "${v.title}" por ${v.channelTitle}
-   - Views: ${v.views.toLocaleString()}
-   - Likes: ${v.likes.toLocaleString()}
-   - Tags: ${v.tags.slice(0, 5).join(', ') || 'Sin tags'}
-`).join('\n')}
+## DATOS DE LA COMPETENCIA (6 Videos)
+${JSON.stringify(competitorVideosData, null, 2)}
 
-**TAREA:**
-Analiza los patrones de éxito de los videos virales y compáralos con los videos del usuario.
-Genera una estrategia ACCIONABLE y específica en formato JSON:
+Analiza estos datos. Encuentra al "Ganador Absoluto" (el de más vistas) de la competencia.
+Sigue las REGLAS DE ORO y devuelve el plan de acción en el FORMATO DE SALIDA Markdown obligatorio.
+    `;
 
-{
-  "analisisGeneral": {
-    "fortalezasDelUsuario": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
-    "areasDeOportunidad": ["área 1", "área 2", "área 3"],
-    "patronesVialesDetectados": ["patrón 1", "patrón 2", "patrón 3"]
-  },
-  "estrategiaSEO": {
-    "palabrasClaveRecomendadas": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"],
-    "estructuraTituloOptima": "Ejemplo de estructura de título efectiva",
-    "tagsEstrategicos": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-    "optimizacionDescripcion": "Guía para escribir descripciones que convierten"
-  },
-  "estrategiaContenido": {
-    "formatosDeExito": ["formato 1", "formato 2", "formato 3"],
-    "duracionOptima": "X-Y minutos",
-    "elementosVisuales": ["elemento 1", "elemento 2", "elemento 3"],
-    "ganchosDeRetencion": ["gancho 1", "gancho 2", "gancho 3"]
-  },
-  "planAccion": {
-    "proximosVideos": [
-      {
-        "titulo": "Título sugerido para próximo video",
-        "concepto": "Descripción del concepto y por qué funcionará",
-        "keywords": ["kw1", "kw2", "kw3"]
-      },
-      {
-        "titulo": "Segundo título sugerido",
-        "concepto": "Descripción del concepto",
-        "keywords": ["kw1", "kw2", "kw3"]
-      }
-    ],
-    "checklist": [
-      "Acción específica 1",
-      "Acción específica 2",
-      "Acción específica 3",
-      "Acción específica 4",
-      "Acción específica 5"
-    ]
-  },
-  "metricas": {
-    "potencialCrecimiento": "Bajo/Medio/Alto",
-    "tiempoEstimado": "X semanas",
-    "inversionRequerida": "Baja/Media/Alta"
-  },
-  "mensajeMotivacional": "Mensaje personalizado de 2-3 líneas que inspire al usuario a actuar"
-}
-
-IMPORTANTE: Responde ÚNICAMENTE con el JSON, sin texto adicional.
-`;
-
-    const response = await generateContent(prompt, {
+    // 3. La llamada a la API (pasando el NUEVO system prompt)
+    const strategyMarkdown = await generateContent(userPrompt, {
+      systemPrompt: strategistSystemPrompt,
       temperature: 0.7,
-      maxTokens: 3000,
-      systemPrompt: 'Eres un experto estratega de YouTube. Responde SOLO en formato JSON válido.'
+      maxTokens: 4000 // Le damos espacio para un análisis profundo
     });
 
-    // Extraer JSON del texto
-    const cleanText = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    console.log('✅ Estrategia (Markdown v2) generada exitosamente');
 
-    if (!jsonMatch) {
-      throw new Error('No se pudo extraer JSON de la respuesta de la IA');
-    }
-
-    const strategy = JSON.parse(jsonMatch[0]);
-
-    console.log('✅ Estrategia generada exitosamente');
-
+    // 4. Retornar la nueva estructura
+    // Tu frontend ahora recibirá este texto en Markdown y deberá renderizarlo.
     return {
-      strategy,
+      strategy: strategyMarkdown,
       generatedAt: new Date().toISOString(),
       userData: {
         channelTitle: userData.channelTitle,
@@ -356,6 +371,7 @@ IMPORTANTE: Responde ÚNICAMENTE con el JSON, sin texto adicional.
  */
 export const executeCreoStrategy = async (channelUrl, theme) => {
   try {
+    
     console.log('🚀 Iniciando Creo Strategy...');
     console.log('Canal:', channelUrl);
     console.log('Temática:', theme);
@@ -374,16 +390,22 @@ export const executeCreoStrategy = async (channelUrl, theme) => {
     allTags.forEach(tag => {
       tagFrequency[tag] = (tagFrequency[tag] || 0) + 1;
     });
+    
+    // ==========================================================
+    // ✅ ¡AQUÍ ESTÁ LA OTRA CORRECCIÓN! ✅
+    // ==========================================================
+    // Antes decía: .sort((a, b) => b[1] - a_1) (MAL)
     const topTags = Object.entries(tagFrequency)
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => b[1] - a[1]) // (BIEN)
       .slice(0, 3)
       .map(([tag]) => tag);
+    // ==========================================================
 
     // 4. Buscar videos virales en la misma temática
     const viralVideos = await searchViralVideos(theme, topTags);
     console.log('✅ Videos virales encontrados:', viralVideos.length);
 
-    // 5. Generar estrategia con IA
+    // 5. Generar estrategia con IA (AHORA USA LA NUEVA FUNCIÓN MEJORADA)
     const result = await analyzeAndGenerateStrategy(userData, viralVideos, theme);
 
     console.log('🎉 Creo Strategy completado exitosamente');

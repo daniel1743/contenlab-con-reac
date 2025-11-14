@@ -1,18 +1,12 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
- * ║  💎 DEEPSEEK SERVICE - Alternativa Económica a GPT-4           ║
+ * ║  💎 DEEPSEEK SERVICE - Alternativa Económica a GPT-4        ║
  * ╠══════════════════════════════════════════════════════════════════╣
- * ║  API: https://platform.deepseek.com/                           ║
- * ║  Costo: $0.14/millón tokens (⚡ 100x más barato que GPT-4!)     ║
- * ║  Ventajas: MUY económico, buena calidad, rápido                ║
- * ║  Rate Limit: Generoso (depende del plan)                       ║
+ * ║  API: https://platform.deepseek.com/                       ║
+ * ║  Costo: $0.14/millón tokens (⚡ 100x más barato que GPT-4!)   ║
+ * ║  Ventajas: MUY económico, buena calidad, rápido              ║
+ * ║  Rate Limit: Generoso (depende del plan)                     ║
  * ╚══════════════════════════════════════════════════════════════════╝
- *
- * 📝 CÓMO ACTIVAR:
- * 1. Registrarse en https://platform.deepseek.com/
- * 2. Obtener API key en dashboard
- * 3. Agregar a .env: VITE_DEEPSEEK_API_KEY=sk-...
- * 4. ¡Ya está! Compatible con OpenAI SDK
  */
 
 // ===== CONFIGURACIÓN =====
@@ -64,13 +58,23 @@ export const generateContent = async (prompt, options = {}) => {
         })
       });
 
+      // ==========================================================
+      // ✅ ¡AQUÍ ESTÁ LA CORRECCIÓN! ✅
+      // ==========================================================
+      // Leemos la respuesta .json() UNA SOLA VEZ y la guardamos en 'data'
+      // Esto previene el error 'body stream already read'
+      
+      const data = await response.json();
+
+      // AHORA verificamos si 'response' tuvo éxito y si 'data' es un error
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'DeepSeek API error');
+        // 'data' contiene el objeto de error de la API
+        throw new Error(data.error?.message || 'DeepSeek API error');
       }
 
-      const data = await response.json();
+      // Si todo salió bien, 'data' contiene la respuesta exitosa
       const content = data.choices[0].message.content;
+      // ==========================================================
 
       console.log('✅ Respuesta recibida de DeepSeek');
       return content;
@@ -102,14 +106,18 @@ export const generateContent = async (prompt, options = {}) => {
         })
       });
 
+      // ==========================================================
+      // ✅ APLICANDO LA MISMA CORRECCIÓN A QWEN (prevención)
+      // ==========================================================
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Qwen API error');
+        throw new Error(data.message || 'Qwen API error');
       }
 
-      const data = await response.json();
       const content = data.choices[0].message.content;
-
+      // ==========================================================
+      
       console.log('✅ Respuesta recibida de Qwen');
       return content;
 

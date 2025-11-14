@@ -9,16 +9,15 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { executeCreoStrategy } from '@/services/creoStrategyService';
 import { consumeCredits } from '@/services/creditService';
-import { generateCreoStrategyPDF } from '@/services/pdfGenerator';
+// import { generateCreoStrategyPDF } from '@/services/pdfGenerator'; // <-- PDF deshabilitado temporalmente
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   PlayCircle,
   TrendingUp,
   Target,
   Lightbulb,
   CheckCircle2,
-  Download,
+  // Download, // <-- PDF deshabilitado
   Loader2,
   AlertCircle,
   BarChart3,
@@ -27,37 +26,19 @@ import {
   Eye,
   ThumbsUp
 } from 'lucide-react';
-import {
-  FaSearch,
-  FaGhost,
-  FaUtensils,
-  FaChalkboardTeacher,
-  FaGamepad,
-  FaVideo,
-  FaSmileBeam,
-  FaGraduationCap,
-  FaMusic,
-  FaDumbbell,
-  FaLaptopCode,
-  FaSpa,
-  FaPlaneDeparture
-} from 'react-icons/fa';
 
-const THEMES = [
-  { value: 'true-crime', label: 'True Crime', icon: FaSearch },
-  { value: 'terror', label: 'Terror', icon: FaGhost },
-  { value: 'cocina', label: 'Cocina', icon: FaUtensils },
-  { value: 'tutoriales', label: 'Tutoriales', icon: FaChalkboardTeacher },
-  { value: 'gaming', label: 'Gaming', icon: FaGamepad },
-  { value: 'vlogs', label: 'Vlogs', icon: FaVideo },
-  { value: 'comedia', label: 'Comedia', icon: FaSmileBeam },
-  { value: 'educacion', label: 'Educación', icon: FaGraduationCap },
-  { value: 'musica', label: 'Música', icon: FaMusic },
-  { value: 'fitness', label: 'Fitness', icon: FaDumbbell },
-  { value: 'tecnologia', label: 'Tecnología', icon: FaLaptopCode },
-  { value: 'belleza', label: 'Belleza', icon: FaSpa },
-  { value: 'viajes', label: 'Viajes', icon: FaPlaneDeparture }
-];
+// 💡 NUEVAS IMPORTACIONES PARA RENDERIZAR MARKDOWN
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+// Función para formatear números grandes
+const formatCompactNumber = (value) => {
+  if (!value || value === 0) return '0';
+  const num = typeof value === 'string' ? parseInt(value) : value;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toString();
+};
 
 const CreoStrategy = () => {
   const { user } = useAuth();
@@ -99,6 +80,11 @@ const CreoStrategy = () => {
       // Ejecutar análisis
       const analysisResult = await executeCreoStrategy(channelUrl, selectedTheme);
 
+      // ==========================================================
+      // 💡 ¡AQUÍ ESTÁ EL CONSOLE.LOG PARA DEPURAR!
+      // ==========================================================
+      console.log("🕵️‍♂️ EL RESULTADO QUE LLEGÓ AL FRONTEND:", analysisResult); 
+
       if (!analysisResult.success) {
         throw new Error(analysisResult.error);
       }
@@ -112,18 +98,23 @@ const CreoStrategy = () => {
     }
   };
 
+  /*
+  // 🚫 PDF TEMPORALMENTE DESHABILITADO
+  // Esta función espera el JSON antiguo. Necesita ser actualizada
+  // para aceptar el nuevo `result.strategy` que es Markdown.
   const handleDownloadPDF = () => {
     try {
       if (!result) {
         console.error('No hay datos para generar PDF');
         return;
       }
-      generateCreoStrategyPDF(result);
+      // generateCreoStrategyPDF(result); // <-- Esta línea está rota
     } catch (error) {
       console.error('Error generando PDF:', error);
-      setError('Error al generar el PDF. Por favor intenta nuevamente.');
+      setError('Error al generar el PDF. Esta función necesita ser actualizada.');
     }
   };
+  */
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 py-12 px-4">
@@ -169,43 +160,22 @@ const CreoStrategy = () => {
               </p>
             </div>
 
-            {/* Theme Select */}
+            {/* Theme Input */}
             <div>
               <label className="block text-white font-semibold mb-2">
-                <Sparkles className="inline w-5 h-5 mr-2" />
+                <Sparkles className="inline w-5 h-5 mr-2 text-purple-400" />
                 Temática de tu contenido
               </label>
-              <Select value={selectedTheme} onValueChange={setSelectedTheme}>
-                <SelectTrigger className="w-full h-11 px-4 rounded-lg bg-gray-800/50 border border-purple-500/20 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/40 [&>span]:flex [&>span]:items-center">
-                  <SelectValue placeholder="Selecciona una temática">
-                    {selectedTheme ? (() => {
-                      const selectedThemeData = THEMES.find(t => t.value === selectedTheme);
-                      if (selectedThemeData) {
-                        const IconComponent = selectedThemeData.icon;
-                        return (
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-4 h-4 text-purple-400" />
-                            <span>{selectedThemeData.label}</span>
-                          </div>
-                        );
-                      }
-                    })() : null}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900/95 border border-purple-500/30 text-white backdrop-blur z-[60]">
-                  {THEMES.map((theme) => {
-                    const IconComponent = theme.icon;
-                    return (
-                      <SelectItem key={theme.value} value={theme.value}>
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="w-4 h-4 text-purple-400" />
-                          <span>{theme.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <input
+                type="text"
+                value={selectedTheme}
+                onChange={(e) => setSelectedTheme(e.target.value)}
+                placeholder="Ej: terror, true crime, religion, tutorial..."
+                className="w-full h-11 px-4 rounded-lg bg-gray-800/50 border border-purple-500/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500/40"
+              />
+              <p className="text-sm text-purple-200 mt-2">
+                Escribe cualquier temática o nicho que desees analizar
+              </p>
             </div>
           </div>
 
@@ -246,7 +216,9 @@ const CreoStrategy = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Results Section */}
+        {/* ====================================================================== */}
+        {/* 💡 SECCIÓN DE RESULTADOS (MODIFICADA)                                */}
+        {/* ====================================================================== */}
         <AnimatePresence>
           {result && (
             <motion.div
@@ -255,7 +227,7 @@ const CreoStrategy = () => {
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              {/* Canal Info */}
+              {/* Canal Info (ESTO SIGUE FUNCIONANDO) */}
               <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
                 <h2 className="text-2xl font-bold text-white mb-4">
                   📊 Análisis de {result.userData.channelTitle}
@@ -279,127 +251,160 @@ const CreoStrategy = () => {
                 </div>
               </div>
 
-              {/* Análisis General */}
-              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-lg rounded-2xl p-6 border border-green-500/30">
-                <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <CheckCircle2 className="w-6 h-6 text-green-400" />
-                  Tus Fortalezas
-                </h3>
-                <ul className="space-y-2">
-                  {result.strategy.analisisGeneral.fortalezasDelUsuario.map((fortaleza, i) => (
-                    <li key={i} className="text-white flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
-                      <span>{fortaleza}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Áreas de Oportunidad */}
-              <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-lg rounded-2xl p-6 border border-yellow-500/30">
-                <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Target className="w-6 h-6 text-yellow-400" />
-                  Áreas de Oportunidad
-                </h3>
-                <ul className="space-y-2">
-                  {result.strategy.analisisGeneral.areasDeOportunidad.map((area, i) => (
-                    <li key={i} className="text-white flex items-start gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-400 mt-1 flex-shrink-0" />
-                      <span>{area}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Estrategia SEO */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-6 h-6 text-purple-400" />
-                  Estrategia SEO
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-lg font-semibold text-purple-300 mb-2">Palabras Clave Recomendadas:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {result.strategy.estrategiaSEO.palabrasClaveRecomendadas.map((keyword, i) => (
-                        <span key={i} className="px-3 py-1 bg-purple-500/30 rounded-full text-sm text-white">
-                          {keyword}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-purple-300 mb-2">Estructura de Título Óptima:</h4>
-                    <p className="text-white">{result.strategy.estrategiaSEO.estructuraTituloOptima}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Plan de Acción */}
-              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-lg rounded-2xl p-6 border border-blue-500/30">
-                <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <PlayCircle className="w-6 h-6 text-blue-400" />
-                  Tu Plan de Acción
-                </h3>
-                <div className="space-y-6">
-                  {/* Próximos Videos */}
-                  <div>
-                    <h4 className="text-xl font-semibold text-blue-300 mb-3">Próximos Videos Sugeridos:</h4>
-                    {result.strategy.planAccion.proximosVideos.map((video, i) => (
-                      <div key={i} className="bg-white/5 rounded-lg p-4 mb-3">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">
-                            {i + 1}
-                          </div>
-                          <div className="flex-1">
-                            <h5 className="text-white font-semibold mb-1">{video.titulo}</h5>
-                            <p className="text-purple-200 text-sm mb-2">{video.concepto}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {video.keywords.map((kw, j) => (
-                                <span key={j} className="px-2 py-0.5 bg-blue-500/30 rounded text-xs text-white">
-                                  {kw}
-                                </span>
-                              ))}
+              {/* Tus Videos Analizados (ESTO SIGUE FUNCIONANDO) */}
+              {result.userData?.videos && result.userData.videos.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20"
+                >
+                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                    <Video className="w-6 h-6 text-purple-400" />
+                    Tus Videos Analizados ({result.userData.videos.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {result.userData.videos.map((video) => (
+                      <motion.a
+                        key={video.id}
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        className="bg-gray-800/50 rounded-xl overflow-hidden border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer group"
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative aspect-video overflow-hidden">
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        {/* Content */}
+                        <div className="p-4">
+                          <h4 className="text-white font-semibold text-sm line-clamp-2 mb-2 group-hover:text-purple-300 transition-colors">
+                            {video.title}
+                          </h4>
+                          <p className="text-gray-400 text-xs line-clamp-2 mb-3">
+                            {video.description || 'Sin descripción'}
+                          </p>
+                          {/* Stats */}
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <Eye className="w-3.5 h-3.5 text-purple-400" />
+                              <span>{formatCompactNumber(video.views)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <ThumbsUp className="w-3.5 h-3.5 text-pink-400" />
+                              <span>{formatCompactNumber(video.likes)}</span>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.a>
                     ))}
                   </div>
+                </motion.div>
+              )}
 
-                  {/* Checklist */}
-                  <div>
-                    <h4 className="text-xl font-semibold text-blue-300 mb-3">Checklist de Implementación:</h4>
-                    <div className="space-y-2">
-                      {result.strategy.planAccion.checklist.map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 text-white">
-                          <input type="checkbox" className="w-5 h-5 rounded" />
-                          <span>{item}</span>
+              {/* Videos Virales de la Competencia (ESTO SIGUE FUNCIONANDO) */}
+              {result.viralVideos && result.viralVideos.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-lg rounded-2xl p-6 border border-orange-500/30"
+                >
+                  <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-orange-400" />
+                    Videos Virales de la Competencia ({result.viralVideos.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {result.viralVideos.map((video) => (
+                      <motion.a
+                        key={video.id}
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        className="bg-gray-800/50 rounded-xl overflow-hidden border border-orange-500/20 hover:border-orange-500/40 transition-all cursor-pointer group"
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative aspect-video overflow-hidden">
+                          <img
+                            src={video.thumbnail}
+                            alt={video.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <div className="absolute top-2 right-2 bg-orange-500/90 text-white text-xs font-bold px-2 py-1 rounded">
+                            🔥 Viral
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                        {/* Content */}
+                        <div className="p-4">
+                          <h4 className="text-white font-semibold text-sm line-clamp-2 mb-2 group-hover:text-orange-300 transition-colors">
+                            {video.title}
+                          </h4>
+                          <p className="text-gray-400 text-xs mb-2 line-clamp-2">
+                            {video.description || 'Sin descripción'}
+                          </p>
+                          <p className="text-gray-500 text-xs mb-3 line-clamp-1">
+                            {video.channelTitle}
+                          </p>
+                          {/* Stats */}
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <Eye className="w-3.5 h-3.5 text-orange-400" />
+                              <span>{formatCompactNumber(video.views)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <ThumbsUp className="w-3.5 h-3.5 text-red-400" />
+                              <span>{formatCompactNumber(video.likes)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.a>
+                    ))}
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              )}
 
-              {/* Mensaje Motivacional */}
-              <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-lg rounded-2xl p-6 border border-pink-500/30 text-center">
-                <Sparkles className="w-12 h-12 text-pink-400 mx-auto mb-4" />
-                <p className="text-xl text-white font-semibold italic">
-                  {result.strategy.mensajeMotivacional}
-                </p>
-              </div>
-
-              {/* Download Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleDownloadPDF}
-                className="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              {/* ============================================================= */}
+              {/* 💡 ¡AQUÍ ESTÁ EL BLOQUE CORREGIDO! 💡                          */}
+              {/* Se movió el 'className' a un 'div' padre                    */}
+              {/* ============================================================= */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-10 border border-white/20"
               >
-                <Download className="w-5 h-5" />
-                Descargar Reporte Completo (PDF)
-              </motion.button>
+                {/* Ponemos los estilos de 'prose' en el 'div' que envuelve al 
+                  componente <ReactMarkdown>, en lugar de en el componente mismo.
+                */}
+                <div
+                  className="prose prose-invert max-w-none 
+                             prose-headings:text-purple-300 prose-headings:font-bold
+                             prose-h3:text-2xl prose-h3:mb-4
+                             prose-h3:border-b prose-h3:border-purple-500/30 prose-h3:pb-2
+                             prose-strong:text-pink-400
+                             prose-ul:list-disc prose-ul:ml-5
+                             prose-li:text-white/90 prose-li:my-1
+                             prose-p:text-white/90 prose-p:text-base
+                             prose-a:text-orange-400 prose-a:hover:text-orange-300
+                             prose-code:bg-purple-500/20 prose-code:px-2 prose-code:py-1 prose-code:rounded-md prose-code:text-sm
+                             prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-white/70"
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {result.strategy}
+                  </ReactMarkdown>
+                </div>
+              </motion.div>
+
+              {/* 🚫 BOTÓN DE PDF ELIMINADO 🚫 */}
+
             </motion.div>
           )}
         </AnimatePresence>
