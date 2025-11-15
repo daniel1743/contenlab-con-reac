@@ -3,6 +3,7 @@
  *
  * Componente que muestra 4 videos emergentes de YouTube sobre un tema
  * con análisis profundo de Gemini AI desplegable
+ * 🔒 Sistema de desbloqueo premium (50 créditos)
  */
 
 import React, { useState } from 'react';
@@ -21,18 +22,71 @@ import {
   LightBulbIcon,
   RocketLaunchIcon,
   ChartBarIcon,
-  ClockIcon
+  ClockIcon,
+  LockClosedIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline';
+import { SparklesIcon as SparklesSolidIcon } from '@heroicons/react/24/solid';
 import { formatDuration, formatCompactNumber } from '@/services/emergingVideosService';
+import { consumeCredits } from '@/services/creditService';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useToast } from '@/components/ui/use-toast';
+
+const UNLOCK_COST = 50; // Costo en créditos para desbloquear
 
 const EmergingVideosSection = ({ videos, isLoading, topic }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [expandedVideos, setExpandedVideos] = useState({});
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   const toggleExpanded = (videoId) => {
     setExpandedVideos(prev => ({
       ...prev,
       [videoId]: !prev[videoId]
     }));
+  };
+
+  const handleUnlock = async () => {
+    if (!user) {
+      toast({
+        title: 'Inicia sesión',
+        description: 'Necesitas una cuenta para desbloquear esta sección',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUnlocking(true);
+
+    try {
+      const result = await consumeCredits(user.id, 'emerging_videos_analysis');
+
+      if (result.success) {
+        setIsUnlocked(true);
+        toast({
+          title: '✅ ¡Videos Desbloqueados!',
+          description: `Ahora puedes ver los 4 videos emergentes y sus análisis profundos`,
+          duration: 5000
+        });
+      } else {
+        toast({
+          title: '❌ Créditos Insuficientes',
+          description: result.error || `Necesitas ${UNLOCK_COST} créditos para desbloquear esta sección`,
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error desbloqueando videos emergentes:', error);
+      toast({
+        title: '❌ Error',
+        description: 'No se pudo desbloquear. Intenta de nuevo.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUnlocking(false);
+    }
   };
 
   if (isLoading) {
@@ -78,18 +132,128 @@ const EmergingVideosSection = ({ videos, isLoading, topic }) => {
     );
   }
 
+  // Obtener nombre del usuario para personalizar mensaje
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || 'Creador';
+
   return (
     <Card className="glass-effect border-purple-500/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FireIcon className="w-5 h-5 text-orange-400 stroke-[2]" />
           Videos Emergentes Recientes
+          {!isUnlocked && (
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500/20 to-yellow-500/20 px-3 py-1 text-xs font-bold text-orange-300 border border-orange-500/30">
+              <LockClosedIcon className="w-3.5 h-3.5" />
+              Premium
+            </span>
+          )}
         </CardTitle>
         <CardDescription>
-          4 videos que están ganando tracción sobre "{topic}" • Analizados con IA
+          {isUnlocked
+            ? `4 videos que están ganando tracción sobre "${topic}" • Analizados con IA`
+            : `Descubre cómo los nuevos creadores están dominando "${topic}"`
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Estado Bloqueado - Mensaje Persuasivo */}
+        {!isUnlocked && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-xl border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 via-purple-500/10 to-pink-500/10 p-8"
+          >
+            {/* Efecto de brillo animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+
+            <div className="relative z-10 text-center space-y-6">
+              {/* Icono principal */}
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500/20 blur-2xl rounded-full" />
+                  <div className="relative bg-gradient-to-br from-orange-500 to-yellow-500 p-4 rounded-2xl">
+                    <SparklesSolidIcon className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mensaje principal */}
+              <div className="space-y-3">
+                <h3 className="text-2xl font-bold text-white">
+                  {userName}, descubre las técnicas que están funcionando <span className="text-orange-400">AHORA</span>
+                </h3>
+                <p className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                  Los nuevos creadores están dominando <span className="font-semibold text-orange-300">"{topic}"</span> con estrategias que probablemente no conoces.
+                  Accede a un análisis profundo de <span className="font-bold text-white">4 videos emergentes</span> con IA y descubre:
+                </p>
+              </div>
+
+              {/* Beneficios en grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
+                <div className="flex items-start gap-3 bg-slate-900/50 rounded-lg p-4 border border-orange-500/20">
+                  <FireIcon className="w-5 h-5 text-orange-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-white text-sm">Qué los hace virales</p>
+                    <p className="text-xs text-gray-400">Análisis del factor principal de éxito</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-slate-900/50 rounded-lg p-4 border border-purple-500/20">
+                  <LightBulbIcon className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-white text-sm">Estrategias replicables</p>
+                    <p className="text-xs text-gray-400">Pasos exactos que puedes copiar</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-slate-900/50 rounded-lg p-4 border border-blue-500/20">
+                  <RocketLaunchIcon className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-white text-sm">Tu oportunidad única</p>
+                    <p className="text-xs text-gray-400">Cómo capitalizar esta tendencia</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-slate-900/50 rounded-lg p-4 border border-green-500/20">
+                  <BoltIcon className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-white text-sm">Acción inmediata</p>
+                    <p className="text-xs text-gray-400">Qué hacer HOY para aprovechar</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón de desbloqueo */}
+              <div className="pt-4">
+                <Button
+                  onClick={handleUnlock}
+                  disabled={isUnlocking}
+                  size="lg"
+                  className="relative overflow-hidden bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-bold px-8 py-6 text-lg shadow-xl shadow-orange-500/25 border-0 group"
+                >
+                  {isUnlocking ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Desbloqueando...
+                    </>
+                  ) : (
+                    <>
+                      <LockClosedIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                      Desbloquear Análisis Completo
+                      <span className="ml-3 inline-flex items-center gap-1 bg-white/20 rounded-full px-3 py-1 text-sm">
+                        <BoltIcon className="w-4 h-4" />
+                        {UNLOCK_COST} créditos
+                      </span>
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-gray-500 mt-3">
+                  Análisis con IA • Insights accionables • Estrategias probadas
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Estado Desbloqueado - Grid de Videos */}
+        {isUnlocked && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {videos.map((video, index) => {
             const isExpanded = expandedVideos[video.id];
@@ -392,6 +556,7 @@ const EmergingVideosSection = ({ videos, isLoading, topic }) => {
             );
           })}
         </div>
+        )}
       </CardContent>
     </Card>
   );
