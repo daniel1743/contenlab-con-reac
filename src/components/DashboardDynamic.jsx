@@ -90,6 +90,8 @@ import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfograph
 import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import { exportCreatorReport, exportSeoReport } from '@/utils/reportExporter';
 import { searchViralPosts } from '@/services/redditService';
+import EmergingVideosSection from '@/components/EmergingVideosSection';
+import { searchAndAnalyzeEmergingVideos } from '@/services/emergingVideosService';
 
 ChartJS.register(
   CategoryScale,
@@ -579,6 +581,10 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
   const [coachContext, setCoachContext] = useState(null);
+
+  // 🎬 Estado para videos emergentes
+  const [emergingVideos, setEmergingVideos] = useState([]);
+  const [isLoadingEmergingVideos, setIsLoadingEmergingVideos] = useState(false);
 
   // 🆕 FUNCIÓN PARA ANALIZAR CREADOR AL HACER HOVER
   const handleCreatorHover = useCallback(async (creator, topic) => {
@@ -1243,6 +1249,24 @@ const DashboardDynamic = ({ onSectionChange }) => {
         // 🔺 Reddit - Conversaciones y tendencias emergentes
         searchViralPosts(searchTopic, ['all'], 800)
       ]);
+
+      // 🎬 BUSCAR Y ANALIZAR VIDEOS EMERGENTES (en paralelo independiente)
+      setIsLoadingEmergingVideos(true);
+      searchAndAnalyzeEmergingVideos(searchTopic, 4)
+        .then(result => {
+          if (result.success && result.videos) {
+            setEmergingVideos(result.videos);
+          } else {
+            setEmergingVideos([]);
+          }
+        })
+        .catch(error => {
+          console.error('Error cargando videos emergentes:', error);
+          setEmergingVideos([]);
+        })
+        .finally(() => {
+          setIsLoadingEmergingVideos(false);
+        });
 
       // 🆕 Guardar datos de las nuevas APIs SIEMPRE (aunque getAllTrending falle)
       setYoutubeData({
@@ -2275,66 +2299,12 @@ const DashboardDynamic = ({ onSectionChange }) => {
               />
             </div>
 
-            {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Gráfico de línea - Rendimiento semanal */}
-              <Card className="lg:col-span-2 glass-effect border-purple-500/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <SignalIcon className="w-5 h-5 text-purple-400 stroke-[2]" />
-                    Rendimiento Semanal del Tema
-                  </CardTitle>
-                  <CardDescription>
-                    Visualizaciones y engagement de los últimos 7 días
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-72">
-                  {weeklyChartData && (
-                    <div className="relative h-full">
-                      <Line
-                        className="!h-full !w-full"
-                        data={weeklyChartData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          animation: false,
-                          plugins: {
-                            legend: { labels: { color: '#fff' } }
-                          },
-                          scales: {
-                            y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
-                            x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Gráfico de dona - Plataformas */}
-              <Card className="glass-effect border-purple-500/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <GlobeAltIcon className="w-5 h-5 text-blue-400 stroke-[2]" />
-                    Distribución por Plataforma
-                  </CardTitle>
-                  <CardDescription>
-                    Dónde está el contenido
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-72 flex items-center justify-center">
-                  {platformChartData && (
-                    <Doughnut
-                      className="!h-full !w-full"
-                      data={platformChartData}
-                      options={platformChartOptions}
-                      plugins={donutLabelPlugin ? [donutLabelPlugin] : undefined}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/* 🎬 VIDEOS EMERGENTES RECIENTES - Reemplaza los gráficos */}
+            <EmergingVideosSection
+              videos={emergingVideos}
+              isLoading={isLoadingEmergingVideos}
+              topic={nichemMetrics.topic}
+            />
 
             {(nichemMetrics?.highlightVideos || []).length > 0 && (
               <Card className="glass-effect border-purple-500/20">

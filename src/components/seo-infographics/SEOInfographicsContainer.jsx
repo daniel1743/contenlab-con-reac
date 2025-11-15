@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './seo-infographics.css';
+import { searchYouTubeVideos, getVideoStatistics } from '@/services/youtubeService';
+import { generateContent } from '@/services/geminiService';
 
 // Sample data
 const SAMPLE_DATA = {
@@ -838,15 +840,209 @@ function PuzzleInfographic({ data }) {
   );
 }
 
+// Video Card Component with AI Analysis
+function VideoAnalysisCard({ video, analysis, loading }) {
+  const formatCompactNumber = (value) => {
+    if (!value || value === 0) return '0';
+    const num = typeof value === 'string' ? parseInt(value) : value;
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
+
+  return (
+    <div className="seo-video-card" style={{
+      background: 'var(--color-surface)',
+      borderRadius: '12px',
+      padding: '20px',
+      border: '1px solid var(--color-border)',
+      marginBottom: '24px'
+    }}>
+      {/* Video Thumbnail and Info */}
+      <a
+        href={`https://www.youtube.com/watch?v=${video.videoId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: 'none', color: 'inherit' }}
+      >
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+          <img
+            src={video.thumbnail}
+            alt={video.title}
+            style={{
+              width: '200px',
+              height: '112px',
+              objectFit: 'cover',
+              borderRadius: '8px',
+              flexShrink: 0
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <h4 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: 'var(--color-text)',
+              marginBottom: '8px',
+              lineHeight: '1.4'
+            }}>
+              {video.title}
+            </h4>
+            <p style={{
+              fontSize: '14px',
+              color: 'var(--color-text-secondary)',
+              marginBottom: '8px'
+            }}>
+              {video.channelTitle}
+            </p>
+            <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+              <span>👁️ {formatCompactNumber(video.views)} vistas</span>
+              <span>👍 {formatCompactNumber(video.likes)} likes</span>
+              <span>💬 {formatCompactNumber(video.comments)} comentarios</span>
+            </div>
+          </div>
+        </div>
+      </a>
+
+      {/* AI Analysis */}
+      <div style={{
+        background: 'var(--color-bg-1)',
+        borderRadius: '8px',
+        padding: '16px',
+        border: '1px solid var(--color-border)'
+      }}>
+        <h5 style={{
+          fontSize: '14px',
+          fontWeight: '600',
+          color: 'var(--color-primary)',
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          🤖 Análisis Profundo con IA
+        </h5>
+        {loading ? (
+          <div style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+            Analizando contenido...
+          </div>
+        ) : analysis ? (
+          <div style={{
+            color: 'var(--color-text)',
+            fontSize: '14px',
+            lineHeight: '1.6',
+            whiteSpace: 'pre-wrap'
+          }}>
+            {analysis}
+          </div>
+        ) : (
+          <div style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+            No hay análisis disponible
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Main Container Component
 export default function SEOInfographicsContainer() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
+  const [relatedVideos, setRelatedVideos] = useState([]);
+  const [videoAnalyses, setVideoAnalyses] = useState({});
+  const [analyzingVideos, setAnalyzingVideos] = useState({});
 
-  const handleGenerate = (domain, period) => {
+  // Función para analizar un video con Gemini
+  const analyzeVideoWithAI = async (video, domain) => {
+    const videoId = video.videoId;
+    setAnalyzingVideos(prev => ({ ...prev, [videoId]: true }));
+
+    try {
+      const prompt = `Analiza este video de YouTube relacionado con el dominio "${domain}":
+
+Título: ${video.title}
+Canal: ${video.channelTitle}
+Descripción: ${video.description || 'Sin descripción disponible'}
+Vistas: ${video.views}
+Likes: ${video.likes}
+Comentarios: ${video.comments}
+
+Proporciona un análisis profundo en español que incluya:
+1. **Evolución del contenido**: ¿Cómo está evolucionando este tipo de contenido? ¿Qué tendencias muestra?
+2. **Estrategias identificadas**: ¿Qué técnicas o estrategias está usando el creador que están funcionando?
+3. **Oportunidades para el usuario**: Basándote en este video y el dominio "${domain}", ¿qué puede hacer el usuario para crear contenido similar o mejor?
+4. **Insights clave**: ¿Qué elementos específicos hacen que este contenido sea relevante o exitoso?
+
+Sé específico, accionable y profesional. Máximo 300 palabras.`;
+
+      const analysis = await generateContent(prompt, 'Eres un experto analista de contenido digital y estratega de SEO. Proporciona análisis profundos y accionables.');
+
+      setVideoAnalyses(prev => ({ ...prev, [videoId]: analysis }));
+    } catch (error) {
+      console.error('Error analizando video:', error);
+      setVideoAnalyses(prev => ({
+        ...prev,
+        [videoId]: 'Error al generar análisis. Por favor intenta nuevamente.'
+      }));
+    } finally {
+      setAnalyzingVideos(prev => ({ ...prev, [videoId]: false }));
+    }
+  };
+
+  // Función para buscar videos relacionados
+  const fetchRelatedVideos = async (domain) => {
+    try {
+      // Buscar videos relacionados con el dominio/tema
+      const searchQuery = domain.replace(/\.(com|io|net|org|cl|co|mx|ar|es)/g, '').trim();
+      const searchResults = await searchYouTubeVideos(searchQuery, 4);
+
+      if (!searchResults.items || searchResults.items.length === 0) {
+        setRelatedVideos([]);
+        return;
+      }
+
+      // Obtener IDs de videos para estadísticas
+      const videoIds = searchResults.items.map(item => item.id.videoId);
+      const statsData = await getVideoStatistics(videoIds);
+
+      // Combinar datos de búsqueda con estadísticas
+      const videosWithStats = searchResults.items.map((item, index) => {
+        const stats = statsData.items[index]?.statistics || {};
+        return {
+          videoId: item.id.videoId,
+          title: item.snippet.title,
+          description: item.snippet.description,
+          channelTitle: item.snippet.channelTitle,
+          thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+          publishedAt: item.snippet.publishedAt,
+          views: parseInt(stats.viewCount || 0),
+          likes: parseInt(stats.likeCount || 0),
+          comments: parseInt(stats.commentCount || 0)
+        };
+      });
+
+      setRelatedVideos(videosWithStats);
+
+      // Analizar cada video con IA
+      videosWithStats.forEach((video) => {
+        analyzeVideoWithAI(video, domain);
+      });
+    } catch (error) {
+      console.error('Error buscando videos relacionados:', error);
+      setRelatedVideos([]);
+    }
+  };
+
+  const handleGenerate = async (domain, period) => {
     setLoading(true);
+    setRelatedVideos([]);
+    setVideoAnalyses({});
+    setAnalyzingVideos({});
 
-    // Simulate API call
+    // Buscar videos relacionados
+    await fetchRelatedVideos(domain);
+
+    // Simulate API call para infografías
     setTimeout(() => {
       let rawData;
       if (domain.includes('tienda') || domain.includes('ecommerce')) {
@@ -872,6 +1068,35 @@ export default function SEOInfographicsContainer() {
       <InputForm onGenerate={handleGenerate} loading={loading} />
 
       {loading && <LoadingSpinner />}
+
+      {/* Videos Relacionados con Análisis IA */}
+      {relatedVideos.length > 0 && (
+        <div style={{ marginTop: '32px', marginBottom: '32px' }}>
+          <h3 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: 'var(--color-text)',
+            marginBottom: '20px'
+          }}>
+            📹 Videos Relacionados - Análisis de Evolución de Contenido
+          </h3>
+          <p style={{
+            fontSize: '14px',
+            color: 'var(--color-text-secondary)',
+            marginBottom: '24px'
+          }}>
+            Estos 4 videos recientes de YouTube están relacionados con tu dominio. La IA analiza cómo evoluciona este contenido y qué puedes hacer.
+          </p>
+          {relatedVideos.map((video) => (
+            <VideoAnalysisCard
+              key={video.videoId}
+              video={video}
+              analysis={videoAnalyses[video.videoId]}
+              loading={analyzingVideos[video.videoId]}
+            />
+          ))}
+        </div>
+      )}
 
       {data && !loading && (
         <div className="seo-infographics-grid">
