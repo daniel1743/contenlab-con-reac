@@ -86,12 +86,13 @@ import {
 import { getTrendingTopicsByKeyword, getTopHeadlines } from '@/services/newsApiService';
 import { analyzeTrendingBatch } from '@/services/geminiSEOAnalysisService';
 import { analyzeYouTubeHighlightVideo } from '@/services/videoAnalysisService';
-import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer';
+// import SEOInfographicsContainer from '@/components/seo-infographics/SEOInfographicsContainer'; // 🔮 PROYECCIÓN FUTURA
 import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import { exportCreatorReport, exportSeoReport } from '@/utils/reportExporter';
 import { searchViralPosts } from '@/services/redditService';
 import EmergingVideosSection from '@/components/EmergingVideosSection';
 import { searchAndAnalyzeEmergingVideos } from '@/services/emergingVideosService';
+import StrategicPromptGenerator from '@/components/StrategicPromptGenerator'; // 🎯 NUEVO: Generador de Prompts
 
 ChartJS.register(
   CategoryScale,
@@ -2635,10 +2636,27 @@ const DashboardDynamic = ({ onSectionChange }) => {
               </CardContent>
             </Card>
 
-            {/* SEO Infografías Premium */}
-            <div className="glass-effect border-purple-500/30 rounded-3xl overflow-hidden">
+            {/* 🔮 PROYECCIÓN FUTURA - SEO Infografías Premium */}
+            {/* Sistema automático de generación de infografías basadas en datos SEO */}
+            {/* <div className="glass-effect border-purple-500/30 rounded-3xl overflow-hidden">
               <SEOInfographicsContainer />
-            </div>
+            </div> */}
+
+            {/* 🎯 GENERADOR DE PROMPTS ESTRATÉGICOS */}
+            <StrategicPromptGenerator
+              marketData={{
+                topic: nichemMetrics.topic,
+                trendScore: nichemMetrics.trendScore,
+                weeklyGrowth: nichemMetrics.weeklyGrowth,
+                keywords: youtubeData?.keywords?.keywords || [],
+                topVideos: nichemMetrics?.highlightVideos || [],
+                seoInsights: expertInsights?.[0]?.content || null,
+                aiAdvice: expertInsights?.[1]?.content || null,
+                sentiment: twitterData?.sentiment?.overall || null,
+                hashtags: twitterData?.hashtags?.trending?.slice(0, 5) || []
+              }}
+              topic={nichemMetrics.topic}
+            />
 
             {/* Crecimiento Semanal */}
             <Card className="glass-effect border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
