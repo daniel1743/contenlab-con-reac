@@ -4,6 +4,7 @@ import { stripJsonCodeFences } from '@/utils/jsonUtils';
 
 // Configuración del proveedor
 const GEMINI_PROVIDER_CODE = 'creovision-gp5';
+const GEMINI_MODEL_ID = 'deepseek-chat'; // Modelo usado (DeepSeek/Qwen wrapper)
 
 // Función base para generar contenido usando DeepSeek/Qwen
 const generateContent = async (prompt, systemPrompt = null) => {

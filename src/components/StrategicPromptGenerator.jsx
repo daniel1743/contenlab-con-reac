@@ -289,38 +289,39 @@ const StrategicPromptGenerator = ({ marketData, topic }) => {
               <SparklesSolidIcon className="w-6 h-6 text-yellow-400" />
               ¡Prompt Copiado!
             </DialogTitle>
-            <DialogDescription className="text-gray-300 space-y-4 pt-4">
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 space-y-3">
-                <p className="font-semibold text-white">Sigue estos pasos:</p>
-                <ol className="space-y-2 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">1</span>
-                    <span>Ve al <span className="font-bold text-purple-300">Centro Creativo</span></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">2</span>
-                    <span>Haz click en <span className="font-bold text-purple-300">"Generar Guión Viral"</span></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">3</span>
-                    <span><span className="font-bold text-purple-300">Pega este prompt</span> en el campo de descripción</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">4</span>
-                    <span>¡Genera tu guión viral! 🚀</span>
-                  </li>
-                </ol>
-              </div>
-
-              <Button
-                onClick={() => setShowInstructionsModal(false)}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
-              >
-                <ArrowRightIcon className="w-4 h-4 mr-2" />
-                Entendido, vamos al Centro Creativo
-              </Button>
-            </DialogDescription>
           </DialogHeader>
+
+          <div className="text-gray-300 space-y-4 pt-4">
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 space-y-3">
+              <p className="font-semibold text-white">Sigue estos pasos:</p>
+              <ol className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">1</span>
+                  <span>Ve al <span className="font-bold text-purple-300">Centro Creativo</span></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">2</span>
+                  <span>Haz click en <span className="font-bold text-purple-300">"Generar Guión Viral"</span></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">3</span>
+                  <span><span className="font-bold text-purple-300">Pega este prompt</span> en el campo de descripción</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-500 text-white text-xs font-bold shrink-0">4</span>
+                  <span>¡Genera tu guión viral! 🚀</span>
+                </li>
+              </ol>
+            </div>
+
+            <Button
+              onClick={() => setShowInstructionsModal(false)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
+            >
+              <ArrowRightIcon className="w-4 h-4 mr-2" />
+              Entendido, vamos al Centro Creativo
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

@@ -82,6 +82,21 @@ export async function searchViralPosts(keyword, subreddits = ['all'], minUpvotes
     });
 
     if (!response.ok) {
+      // Si el endpoint no existe (404), retornar datos vacíos silenciosamente
+      if (response.status === 404) {
+        console.warn('⚠️ Reddit API endpoint no disponible (404). Retornando datos vacíos.');
+        return {
+          success: false,
+          data: {
+            viralPosts: [],
+            totalFound: 0,
+            avgEngagementRate: 0,
+            topComments: [],
+            insights: []
+          }
+        };
+      }
+
       const error = await response.json();
       throw new Error(error.message || 'Error buscando posts virales');
     }
