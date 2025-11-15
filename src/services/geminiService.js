@@ -1486,3 +1486,18 @@ Powered by CreoVision Intelligence.
 
   return await generateContent(prompt);
 };
+
+// ==========================================
+// 🔧 EXPORTACIONES AUXILIARES
+// ==========================================
+
+/**
+ * Alias de generateContent para compatibilidad con otros servicios
+ * Función genérica para analizar con Gemini/DeepSeek
+ */
+export const analyzeWithGemini = generateContent;
+
+/**
+ * Exportar generateContent para uso directo
+ */
+export { generateContent };
