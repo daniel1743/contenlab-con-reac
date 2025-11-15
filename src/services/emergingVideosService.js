@@ -5,8 +5,10 @@
  * con análisis profundo usando Gemini AI
  */
 
-import { youtube } from '@/lib/youtubeApi';
 import { analyzeWithGemini } from '@/services/geminiService';
+
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+const YOUTUBE_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
 /**
  * Buscar videos recientes y emergentes sobre un tema
@@ -26,21 +28,17 @@ export const searchEmergingVideos = async (topic, maxResults = 4) => {
     const publishedAfter = thirtyDaysAgo.toISOString();
 
     // Buscar videos en YouTube ordenados por relevancia y fecha
-    const searchResponse = await youtube.search.list({
-      part: 'snippet',
-      q: topic,
-      type: 'video',
-      maxResults: maxResults * 2, // Pedir el doble para filtrar mejores resultados
-      order: 'date', // Ordenar por fecha (más recientes primero)
-      publishedAfter: publishedAfter,
-      relevanceLanguage: 'es',
-      regionCode: 'US',
-      safeSearch: 'moderate',
-      videoDefinition: 'any',
-      videoDuration: 'any'
-    });
+    const searchUrl = `${YOUTUBE_BASE_URL}/search?part=snippet&q=${encodeURIComponent(topic)}&type=video&maxResults=${maxResults * 2}&order=date&publishedAfter=${publishedAfter}&relevanceLanguage=es&regionCode=US&safeSearch=moderate&key=${YOUTUBE_API_KEY}`;
 
-    if (!searchResponse.data.items || searchResponse.data.items.length === 0) {
+    const searchResponse = await fetch(searchUrl);
+
+    if (!searchResponse.ok) {
+      throw new Error(`YouTube API error: ${searchResponse.status}`);
+    }
+
+    const searchData = await searchResponse.json();
+
+    if (!searchData.items || searchData.items.length === 0) {
       return {
         success: true,
         videos: [],
@@ -49,16 +47,21 @@ export const searchEmergingVideos = async (topic, maxResults = 4) => {
     }
 
     // Extraer IDs de videos
-    const videoIds = searchResponse.data.items.map(item => item.id.videoId).join(',');
+    const videoIds = searchData.items.map(item => item.id.videoId).join(',');
 
     // Obtener estadísticas detalladas de los videos
-    const videosResponse = await youtube.videos.list({
-      part: 'statistics,contentDetails,snippet',
-      id: videoIds
-    });
+    const videosUrl = `${YOUTUBE_BASE_URL}/videos?part=statistics,contentDetails,snippet&id=${videoIds}&key=${YOUTUBE_API_KEY}`;
+
+    const videosResponse = await fetch(videosUrl);
+
+    if (!videosResponse.ok) {
+      throw new Error(`YouTube API error: ${videosResponse.status}`);
+    }
+
+    const videosData = await videosResponse.json();
 
     // Procesar y formatear los videos
-    const videos = videosResponse.data.items.map((video, index) => {
+    const videos = videosData.items.map((video, index) => {
       const snippet = video.snippet;
       const statistics = video.statistics;
       const contentDetails = video.contentDetails;
