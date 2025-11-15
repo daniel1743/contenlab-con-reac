@@ -19,6 +19,7 @@ const Dashboard = lazy(() => import('@/components/DashboardDynamic'));
 const GrowthDashboard = lazy(() => import('@/components/GrowthDashboard'));
 const Tools = lazy(() => import('@/components/Tools'));
 const Calendar = lazy(() => import('@/components/Calendar'));
+const ContentPlanner = lazy(() => import('@/components/ContentPlanner'));
 const ContentLibrary = lazy(() => import('@/components/ContentLibrary'));
 const Settings = lazy(() => import('@/components/Settings'));
 // const FakeNotifications = lazy(() => import('@/components/FakeNotifications'));
@@ -271,11 +272,13 @@ function App() {
                     }
                   /> */}
 
+                  {/* 📅 CONTENT PLANNER - Planificador de Contenido */}
+                  {/* Reemplaza el calendario con sistema de planificación estratégica */}
                   <Route
                     path="/calendar"
                     element={
                       <ProtectedRoute>
-                        <Calendar />
+                        <ContentPlanner />
                       </ProtectedRoute>
                     }
                   />

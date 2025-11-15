@@ -133,7 +133,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false }, // 🆕 TENDENCIAS
     // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
     // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
-    { id: 'calendar', label: 'Calendario', icon: CalendarIcon, authRequired: true },
+    { id: 'calendar', label: 'Planificador', icon: CalendarIcon, authRequired: true }, // 📅 Content Planner
     { id: 'library', label: 'Historial de Contenido', icon: FolderOpenIcon, authRequired: true },
     // COMENTADO TEMPORALMENTE - Chat sin backend funcional
     // { id: 'chat', label: 'Chat IA', icon: ChatBubbleLeftRightIcon, authRequired: true },
@@ -189,7 +189,7 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     } else if (item.id === 'creo-strategy') {
       import('@/components/strategy/CreoStrategy');
     } else if (item.id === 'calendar') {
-      import('@/components/Calendar');
+      import('@/components/ContentPlanner'); // 📅 Preload Content Planner
     } else if (item.id === 'library') {
       import('@/components/ContentLibrary');
     }

@@ -1021,7 +1021,7 @@ const handleCopy = useCallback(() => {
           setShowFeedbackRating(true);
         }, 3000);
 
-        const CREDIT_COST = 20;
+        const CREDIT_COST = 40;
         const creditResult = await consumeCredits(user.id, CREDIT_COST, 'viral_script', 'Generación de guion viral');
 
         if (creditResult.success) {

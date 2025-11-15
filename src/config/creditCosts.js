@@ -50,8 +50,8 @@ export const CREDIT_COSTS = {
   // Generación de Hashtags (25 créditos)
   HASHTAG_GENERATION: 25, // Gemini AI | $0.01 real
 
-  // Guión Viral Básico (20 créditos)
-  VIRAL_SCRIPT_BASIC: 20, // DeepSeek/QWEN | $0.008 real
+  // Guión Viral Básico (40 créditos)
+  VIRAL_SCRIPT_BASIC: 40, // DeepSeek/QWEN | $0.008 real
 
   // ============================================
   // ⚡ FEATURES BÁSICAS (Bajo costo - uso frecuente)
@@ -196,7 +196,7 @@ export const SUBSCRIPTION_PLANS = {
 export const INSUFFICIENT_CREDITS_MESSAGES = {
   GROWTH_DASHBOARD: 'Growth Dashboard requiere 380 créditos. Esta es nuestra feature premium con análisis completo de YouTube, tendencias y proyecciones de crecimiento.',
   COMPETITOR_ANALYSIS: 'El Análisis de Competencia requiere 200 créditos. Obtendrás insights profundos de tus competidores directos.',
-  VIRAL_SCRIPT_BASIC: 'Generar un guión viral cuesta 20 créditos. Recibirás un script optimizado para maximizar engagement.',
+  VIRAL_SCRIPT_BASIC: 'Generar un guión viral cuesta 40 créditos. Recibirás un script optimizado para maximizar engagement.',
   DEFAULT: 'Esta acción requiere {credits} créditos. Upgrade tu plan para continuar creando contenido viral.'
 };
 
