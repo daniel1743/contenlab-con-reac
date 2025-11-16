@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCog, Mail, User, Globe, Youtube, Instagram, Twitter, Upload, Save, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import SEOHead from '@/components/SEOHead';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -159,15 +160,17 @@ const Profile = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <h1 className="text-4xl font-bold text-gradient">Configurar Perfil</h1>
-        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          Personaliza tu perfil y configura tu identidad de creador
+    <>
+      <SEOHead page="profile" />
+      <div className="space-y-8 max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4"
+        >
+          <h1 className="text-4xl font-bold text-gradient">Configurar Perfil</h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Personaliza tu perfil y configura tu identidad de creador
         </p>
       </motion.div>
 
@@ -460,7 +463,8 @@ const Profile = () => {
           Guardar Cambios
         </Button>
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 };
 

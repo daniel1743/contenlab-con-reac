@@ -36,6 +36,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import SEOHead from '@/components/SEOHead';
 
 const Calendar = () => {
   const { user } = useAuth();
@@ -766,12 +767,14 @@ const Calendar = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
+    <>
+      <SEOHead page="calendar" />
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4"
       >
         <h1 className="text-4xl font-bold text-gradient">Calendario de Publicaciones</h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
@@ -1635,7 +1638,8 @@ const Calendar = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 };
 

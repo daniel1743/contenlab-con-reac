@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import SEOHead from '@/components/SEOHead';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -160,10 +161,12 @@ const Settings = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+    <>
+      <SEOHead page="settings" />
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
@@ -634,7 +637,8 @@ const Settings = () => {
           </TabsContent>
         </Tabs>
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 };
 

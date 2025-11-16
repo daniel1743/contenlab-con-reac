@@ -131,7 +131,110 @@ export const pageMetadata = {
       'suscripción creadores contenido',
       'herramientas premium youtube'
     ],
-    canonical: '/#pricing'
+    canonical: '/pricing'
+  },
+
+  features: {
+    title: 'Funcionalidades | Suite Completa para Creadores - CreoVision',
+    description: 'Descubre todas las herramientas de CreoVision: generador de guiones con IA, análisis de tendencias, calendario de contenido, biblioteca multimedia y más.',
+    keywords: [
+      'funcionalidades creovision',
+      'herramientas para creadores',
+      'suite creador contenido',
+      'análisis de tendencias',
+      'generador de guiones IA',
+      'calendario de contenido',
+      'biblioteca multimedia'
+    ],
+    canonical: '/features'
+  },
+
+  testimonials: {
+    title: 'Testimonios | Lo que Dicen Nuestros Creadores - CreoVision',
+    description: 'Lee testimonios reales de creadores de contenido que han multiplicado sus vistas y engagement usando CreoVision. Casos de éxito verificados.',
+    keywords: [
+      'testimonios creovision',
+      'opiniones creadores',
+      'casos de éxito',
+      'reseñas creovision',
+      'experiencias usuarios'
+    ],
+    canonical: '/testimonials'
+  },
+
+  calendar: {
+    title: 'Calendario de Contenido - CreoVision',
+    description: 'Planifica y organiza tu contenido con nuestro calendario inteligente. Programa publicaciones para TikTok, YouTube, Instagram y más plataformas.',
+    keywords: [
+      'calendario de contenido',
+      'planificador publicaciones',
+      'calendario editorial',
+      'programar contenido redes sociales'
+    ],
+    canonical: '/calendar',
+    noindex: true // Página privada, requiere login
+  },
+
+  history: {
+    title: 'Mis Forjados | Historial de Contenido - CreoVision',
+    description: 'Revisa todo el contenido que has generado con CreoVision. Analiza métricas, duplica ideas exitosas y gestiona tu biblioteca de contenido.',
+    keywords: [
+      'historial de contenido',
+      'contenido generado',
+      'biblioteca de videos',
+      'métricas de contenido'
+    ],
+    canonical: '/history',
+    noindex: true // Página privada, requiere login
+  },
+
+  profile: {
+    title: 'Mi Perfil - CreoVision',
+    description: 'Gestiona tu perfil de creador, estadísticas personales, configuración de cuenta y preferencias de contenido.',
+    keywords: [
+      'perfil de creador',
+      'configuración cuenta',
+      'estadísticas personales'
+    ],
+    canonical: '/profile',
+    noindex: true // Página privada, requiere login
+  },
+
+  notifications: {
+    title: 'Notificaciones - CreoVision',
+    description: 'Mantente al día con las últimas actualizaciones, tendencias y alertas de rendimiento de tu contenido.',
+    keywords: [
+      'notificaciones',
+      'alertas de contenido',
+      'actualizaciones'
+    ],
+    canonical: '/notifications',
+    noindex: true // Página privada, requiere login
+  },
+
+  settings: {
+    title: 'Configuración - CreoVision',
+    description: 'Personaliza tu experiencia en CreoVision. Ajusta preferencias, gestiona suscripción y conecta tus cuentas de redes sociales.',
+    keywords: [
+      'configuración',
+      'ajustes de cuenta',
+      'preferencias'
+    ],
+    canonical: '/settings',
+    noindex: true // Página privada, requiere login
+  },
+
+  library: {
+    title: 'Biblioteca de Contenido - CreoVision',
+    description: 'Accede a tu biblioteca completa de contenido generado. Organiza, busca y reutiliza tus mejores creaciones.',
+    keywords: [
+      'biblioteca de contenido',
+      'archivos de videos',
+      'contenido guardado',
+      'gestión de archivos'
+    ],
+    canonical: '/library',
+    noindex: true // Página privada, requiere login
   }
 };
 

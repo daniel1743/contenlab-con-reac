@@ -6,9 +6,22 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, User, Target, MessageCircle, Sparkles, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
+import {
+  XMarkIcon,
+  CheckIcon,
+  UserIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowTrendingUpIcon,
+  CurrencyDollarIcon,
+  FireIcon,
+  AcademicCapIcon,
+  UserGroupIcon,
+  SparklesIcon,
+  BookmarkIcon,
+  FlagIcon
+} from '@heroicons/react/24/outline';
 
 const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPersonalityUpdate }) => {
   const { toast } = useToast();
@@ -29,14 +42,14 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Available goals
+  // Available goals with Heroicons
   const availableGoals = [
-    { id: 'engagement', label: 'Aumentar Engagement', icon: '💬' },
-    { id: 'growth', label: 'Crecer Audiencia', icon: '📈' },
-    { id: 'sales', label: 'Generar Ventas', icon: '💰' },
-    { id: 'brand', label: 'Construir Marca', icon: '🎯' },
-    { id: 'education', label: 'Educar Audiencia', icon: '🎓' },
-    { id: 'community', label: 'Crear Comunidad', icon: '👥' }
+    { id: 'engagement', label: 'Aumentar Engagement', icon: ChatBubbleLeftRightIcon, color: 'text-purple-400' },
+    { id: 'growth', label: 'Crecer Audiencia', icon: ArrowTrendingUpIcon, color: 'text-green-400' },
+    { id: 'sales', label: 'Generar Ventas', icon: CurrencyDollarIcon, color: 'text-yellow-400' },
+    { id: 'brand', label: 'Construir Marca', icon: FireIcon, color: 'text-orange-400' },
+    { id: 'education', label: 'Educar Audiencia', icon: AcademicCapIcon, color: 'text-blue-400' },
+    { id: 'community', label: 'Crear Comunidad', icon: UserGroupIcon, color: 'text-pink-400' }
   ];
 
   // Get user ID and load preferences
@@ -187,7 +200,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
           <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-purple-500/30 bg-gray-900/80 backdrop-blur-xl">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg">
-                <Sparkles className="w-6 h-6 text-white" />
+                <SparklesIcon className="w-6 h-6 text-white stroke-[2]" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">Personalización Plus</h2>
@@ -198,7 +211,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
               onClick={() => onOpenChange(false)}
               className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-800 hover:text-white"
             >
-              <X className="w-6 h-6" />
+              <XMarkIcon className="w-6 h-6 stroke-[2]" />
             </button>
           </div>
 
@@ -216,7 +229,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
                 {/* Info */}
                 <div className="p-4 border border-purple-500/30 rounded-lg bg-purple-900/10">
                   <div className="flex items-start gap-3">
-                    <Sparkles className="w-5 h-5 text-purple-400 mt-0.5" />
+                    <SparklesIcon className="w-5 h-5 text-purple-400 mt-0.5 stroke-[2]" />
                     <div>
                       <h4 className="mb-1 font-semibold text-purple-300">Personalización Inteligente</h4>
                       <p className="text-sm text-gray-400">
@@ -230,7 +243,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
-                      <User className="w-4 h-4 text-purple-400" />
+                      <UserIcon className="w-4 h-4 text-purple-400 stroke-[2]" />
                       Nombre de Marca / Canal *
                     </label>
                     <input
@@ -244,7 +257,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
 
                   <div>
                     <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
-                      <Target className="w-4 h-4 text-purple-400" />
+                      <FlagIcon className="w-4 h-4 text-purple-400 stroke-[2]" />
                       Nicho / Industria *
                     </label>
                     <input
@@ -260,7 +273,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
                 {/* Target Audience */}
                 <div>
                   <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
-                    <Target className="w-4 h-4 text-purple-400" />
+                    <UserGroupIcon className="w-4 h-4 text-blue-400 stroke-[2]" />
                     Audiencia Objetivo *
                   </label>
                   <textarea
@@ -294,7 +307,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
 
                   <div>
                     <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
-                      <MessageCircle className="w-4 h-4 text-purple-400" />
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 text-purple-400 stroke-[2]" />
                       Tono de Comunicación *
                     </label>
                     <select
@@ -329,9 +342,9 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
                         }`}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <span className="text-2xl">{goal.icon}</span>
+                          <goal.icon className={`w-6 h-6 ${goal.color} stroke-[2]`} />
                           {goals.includes(goal.id) && (
-                            <Check className="w-5 h-5 text-purple-400" />
+                            <CheckIcon className="w-5 h-5 text-green-400 stroke-[2.5]" />
                           )}
                         </div>
                         <p className={`text-sm font-medium ${
@@ -365,7 +378,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
                 {brandName && niche && targetAudience && goals.length > 0 && (
                   <div className="p-5 border border-green-500/30 rounded-xl bg-green-900/10">
                     <h4 className="flex items-center gap-2 mb-3 text-lg font-bold text-white">
-                      <Check className="w-5 h-5 text-green-400" />
+                      <CheckIcon className="w-5 h-5 text-green-400 stroke-[2.5]" />
                       Resumen de tu Personalización
                     </h4>
                     <div className="space-y-2 text-sm">
@@ -395,7 +408,7 @@ const PersonalizationPlusModal = ({ open, onOpenChange, userPersonality, onPerso
                     </>
                   ) : (
                     <>
-                      <Save className="w-5 h-5" />
+                      <BookmarkIcon className="w-5 h-5 stroke-[2]" />
                       Guardar Preferencias
                     </>
                   )}

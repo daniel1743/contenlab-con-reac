@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { History as HistoryIcon, Eye, Heart, Share2, Calendar, TrendingUp, Download, Copy, Trash2, Filter } from 'lucide-react';
+import SEOHead from '@/components/SEOHead';
 
 const History = () => {
   const [filterPlatform, setFilterPlatform] = useState('all');
@@ -122,17 +123,19 @@ const History = () => {
   const totalContent = contentHistory.length;
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <h1 className="text-4xl font-bold text-gradient">Mis Forjados</h1>
-        <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          Historial completo de todo el contenido que has generado con CreoVision
-        </p>
-      </motion.div>
+    <>
+      <SEOHead page="history" />
+      <div className="space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4"
+        >
+          <h1 className="text-4xl font-bold text-gradient">Mis Forjados</h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Historial completo de todo el contenido que has generado con CreoVision
+          </p>
+        </motion.div>
 
       {/* Stats Overview */}
       <motion.div
@@ -294,7 +297,8 @@ const History = () => {
           </motion.div>
         ))}
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -18,9 +18,33 @@
        ======================================== -->
   <url>
     <loc>https://creovision.io/tools</loc>
-    <lastmod>2025-11-03</lastmod>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+  </url>
+
+  <!-- ========================================
+       PÁGINAS PÚBLICAS INDEXABLES
+       ======================================== -->
+  <url>
+    <loc>https://creovision.io/features</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://creovision.io/testimonials</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://creovision.io/pricing</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- ========================================
@@ -87,25 +111,29 @@
 
 <!--
   ========================================
-  📋 NOTAS IMPORTANTES - ACTUALIZADO 2025-11-03
+  📋 NOTAS IMPORTANTES - ACTUALIZADO 2025-01-15
   ========================================
 
   ✅ CAMBIOS REALIZADOS:
-  - Eliminadas URLs con hash (#) que Google no puede indexar
-  - Actualizadas a URLs reales sin hash (React Router)
-  - Removidas secciones que ya no existen (#thumbnail-editor, #pricing, #features, #testimonials)
-  - Estas secciones están dentro del landing page, no son rutas separadas
+  - Agregadas páginas públicas: /features, /testimonials, /pricing
+  - Actualizadas fechas lastmod a 2025-01-15
+  - URLs sin hash (#) para correcta indexación
+  - Meta tags SEO agregados a todos los componentes
 
   🎯 ESTRATEGIA ACTUAL:
 
   1. PÁGINAS PÚBLICAS INDEXABLES:
      ✅ / (landing) - Prioridad 1.0 (máxima)
      ✅ /tools - Prioridad 0.9 (permite demo, muy importante para conversión)
+     ✅ /features - Prioridad 0.8 (funcionalidades completas)
+     ✅ /pricing - Prioridad 0.8 (conversión de planes)
+     ✅ /testimonials - Prioridad 0.7 (prueba social)
 
-  2. PÁGINAS PROTEGIDAS (Incluidas pero con contenido limitado para Google):
+  2. PÁGINAS PROTEGIDAS (Incluidas pero con noindex):
      - /dashboard, /calendar, /library, /settings, /profile, /badges, /history, /notifications
-     - Google verá la página de login/redirect, no el contenido privado
-     - Útil para que Google conozca la estructura de la app
+     - Tienen meta tag noindex para evitar indexación
+     - Google respetará la directiva noindex
+     - Incluidas en sitemap solo para conocimiento de estructura
 
   3. PÁGINAS NO INCLUIDAS (Por robots.txt):
      - /api/* - Backend endpoints
@@ -118,7 +146,8 @@
 
   1.0 = Landing page (entrada principal)
   0.9 = Tools (página de conversión principal)
-  0.7 = Dashboard (hub central para usuarios)
+  0.8 = Features, Pricing (páginas clave de marketing)
+  0.7 = Testimonials, Dashboard (prueba social y hub)
   0.6 = Calendar, Library (funcionalidades importantes)
   0.5 = Profile, Badges, History (funcionalidades secundarias)
   0.4 = Settings, Notifications (utilidades)

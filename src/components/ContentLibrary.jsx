@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import SEOHead from '@/components/SEOHead';
 
 const ContentLibrary = ({ onSubscriptionClick }) => {
   const { toast } = useToast();
@@ -283,10 +284,12 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+    <>
+      <SEOHead page="library" />
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
@@ -722,7 +725,8 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
           </Dialog>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 };
 

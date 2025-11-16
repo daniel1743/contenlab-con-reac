@@ -357,7 +357,7 @@ export const toolCategories = [
         id: 'personalization-plus',
         title: 'Personalización Plus',
         description: 'Ajustes avanzados de IA y preferencias',
-        icon: Cog6ToothIcon,
+        icon: SparklesIcon,
         creditCost: CREDIT_COSTS.PERSONALIZATION_PLUS,
         estimatedTime: '2 min',
         badges: [TOOL_BADGES.PREMIUM],

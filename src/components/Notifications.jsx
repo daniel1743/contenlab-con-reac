@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Check, Trash2, TrendingUp, Award, MessageSquare, DollarSign, Clock, Star, Settings } from 'lucide-react';
+import SEOHead from '@/components/SEOHead';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([
@@ -99,10 +100,12 @@ const Notifications = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+    <>
+      <SEOHead page="notifications" />
+      <div className="space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
         <h1 className="text-4xl font-bold text-gradient">Notificaciones</h1>
@@ -244,7 +247,8 @@ const Notifications = () => {
           })
         )}
       </motion.div>
-    </div>
+          </div>
+    </>
   );
 };
 

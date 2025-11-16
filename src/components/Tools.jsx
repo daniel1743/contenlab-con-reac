@@ -55,7 +55,11 @@ import {
   PaperAirplaneIcon,
   PaperAirplaneIcon as Send,
   AcademicCapIcon,
-  AcademicCapIcon as GraduationCap
+  AcademicCapIcon as GraduationCap,
+  DocumentTextIcon,
+  LightBulbIcon,
+  DevicePhoneMobileIcon,
+  StarIcon as StarOutline
 } from '@heroicons/react/24/outline';
 
 import {
@@ -1830,7 +1834,7 @@ const handleCopy = useCallback(() => {
                 aria-disabled={isFreePlan}
                 className={`border-purple-500/30 text-purple-400 hover:bg-purple-500/10 ${isFreePlan ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
-                <Cog6ToothIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                <SparklesSolidIcon className="w-4 h-4 mr-2" />
                 {showAdvancedSettings ? 'Ocultar Ajustes Avanzados' : isFreePlan ? 'Personalizacion Avanzada (Solo Pro)' : 'Personalización Plus'}
                 {!showAdvancedSettings && !isFreePlan && (
                   <span className="ml-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/40 rounded-full px-2 py-0.5 text-xs font-semibold text-yellow-300">
@@ -1862,8 +1866,9 @@ const handleCopy = useCallback(() => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. Objetivo Emocional */}
                 <div className="space-y-2">
-                  <Label htmlFor="emotional-objective" className="text-sm text-gray-300">
-                    💡 Objetivo Emocional
+                  <Label htmlFor="emotional-objective" className="text-sm text-gray-300 flex items-center gap-2">
+                    <LightBulbIcon className="w-4 h-4 text-yellow-400 stroke-[2]" />
+                    Objetivo Emocional
                   </Label>
                   <select
                     id="emotional-objective"
@@ -1883,8 +1888,9 @@ const handleCopy = useCallback(() => {
 
                 {/* 2. Nivel de Profundidad */}
                 <div className="space-y-2">
-                  <Label htmlFor="depth-level" className="text-sm text-gray-300">
-                    📊 Nivel de Profundidad
+                  <Label htmlFor="depth-level" className="text-sm text-gray-300 flex items-center gap-2">
+                    <ChartBarIcon className="w-4 h-4 text-purple-400 stroke-[2]" />
+                    Nivel de Profundidad
                   </Label>
                   <select
                     id="depth-level"
@@ -1902,8 +1908,9 @@ const handleCopy = useCallback(() => {
 
                 {/* 3. Tipo de Audiencia */}
                 <div className="space-y-2">
-                  <Label htmlFor="audience-type" className="text-sm text-gray-300">
-                    👥 Tipo de Audiencia
+                  <Label htmlFor="audience-type" className="text-sm text-gray-300 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-blue-400 stroke-[2]" />
+                    Tipo de Audiencia
                   </Label>
                   <Input
                     id="audience-type"
@@ -1936,8 +1943,9 @@ const handleCopy = useCallback(() => {
 
                 {/* 5. Valores de Marca */}
                 <div className="space-y-2">
-                  <Label htmlFor="brand-values" className="text-sm text-gray-300">
-                    ⭐ Valores / Mensaje Central
+                  <Label htmlFor="brand-values" className="text-sm text-gray-300 flex items-center gap-2">
+                    <StarOutline className="w-4 h-4 text-yellow-400 stroke-[2]" />
+                    Valores / Mensaje Central
                   </Label>
                   <Input
                     id="brand-values"
@@ -1950,8 +1958,9 @@ const handleCopy = useCallback(() => {
 
                 {/* 6. Contexto de Uso */}
                 <div className="space-y-2">
-                  <Label htmlFor="usage-context" className="text-sm text-gray-300">
-                    📱 Contexto de Uso
+                  <Label htmlFor="usage-context" className="text-sm text-gray-300 flex items-center gap-2">
+                    <DevicePhoneMobileIcon className="w-4 h-4 text-blue-400 stroke-[2]" />
+                    Contexto de Uso
                   </Label>
                   <select
                     id="usage-context"
@@ -2016,14 +2025,17 @@ const handleCopy = useCallback(() => {
               {/* Tabs para las 3 versiones - REORDENADAS */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" id="content-tabs">
                 <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 glass-effect h-auto p-2">
-                  <TabsTrigger value="limpio" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap">
-                    📝 <span className="hidden sm:inline">Guión Limpio (Text-to-Speech)</span><span className="sm:hidden">Guión Limpio</span>
+                  <TabsTrigger value="limpio" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap flex items-center gap-1.5">
+                    <DocumentTextIcon className="w-4 h-4 text-green-400 stroke-[2]" />
+                    <span className="hidden sm:inline">Guión Limpio (Text-to-Speech)</span><span className="sm:hidden">Guión Limpio</span>
                   </TabsTrigger>
-                  <TabsTrigger value="sugerencias" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap">
-                    💡 <span className="hidden sm:inline">Sugerencias Prácticas</span><span className="sm:hidden">Sugerencias</span>
+                  <TabsTrigger value="sugerencias" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap flex items-center gap-1.5">
+                    <LightBulbIcon className="w-4 h-4 text-yellow-400 stroke-[2]" />
+                    <span className="hidden sm:inline">Sugerencias Prácticas</span><span className="sm:hidden">Sugerencias</span>
                   </TabsTrigger>
-                  <TabsTrigger value="analisis" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap">
-                    📊 <span className="hidden sm:inline">Análisis Estratégico</span><span className="sm:hidden">Análisis</span>
+                  <TabsTrigger value="analisis" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap flex items-center gap-1.5">
+                    <ChartBarIcon className="w-4 h-4 text-purple-400 stroke-[2]" />
+                    <span className="hidden sm:inline">Análisis Estratégico</span><span className="sm:hidden">Análisis</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -2032,8 +2044,9 @@ const handleCopy = useCallback(() => {
                   <Card className="glass-effect border-green-500/20">
                     <CardHeader>
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-white flex items-center">
-                          📝 Guión Listo para Narración
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <DocumentTextIcon className="w-5 h-5 text-green-400 stroke-[2]" />
+                          Guión Listo para Narración
                         </CardTitle>
                         <div className="flex gap-2 flex-wrap">
                           <ShareButton
@@ -2114,8 +2127,9 @@ const handleCopy = useCallback(() => {
                   <Card className="glass-effect border-blue-500/20">
                     <CardHeader>
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-white flex items-center">
-                          💡 Sugerencias y Recursos Prácticos
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <LightBulbIcon className="w-5 h-5 text-yellow-400 stroke-[2]" />
+                          Sugerencias y Recursos Prácticos
                         </CardTitle>
                         <Button
                           onClick={() => {
@@ -2164,8 +2178,9 @@ const handleCopy = useCallback(() => {
                   <Card className="glass-effect border-purple-500/20">
                     <CardHeader>
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-white flex items-center">
-                          📊 Análisis Estratégico Completo
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <ChartBarIcon className="w-5 h-5 text-purple-400 stroke-[2]" />
+                          Análisis Estratégico Completo
                         </CardTitle>
                         <Button
                           onClick={() => {
@@ -2306,9 +2321,9 @@ const handleCopy = useCallback(() => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="glass-effect border-purple-500/20">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <ChartBarIcon className="w-5 h-5 mr-2 text-blue-400 stroke-[2]"/>
-                📈 Tendencias del Tema (CreoVision IA)
+              <CardTitle className="text-white flex items-center gap-2">
+                <ArrowTrendingUpIcon className="w-5 h-5 text-green-400 stroke-[2]"/>
+                Tendencias del Tema (CreoVision IA)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2325,9 +2340,9 @@ const handleCopy = useCallback(() => {
 
           <Card className="glass-effect border-pink-500/20">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <ArrowTrendingUpIcon className="w-5 h-5 mr-2 text-pink-400 stroke-[2]"/>
-                📊 Análisis de Engagement: {contentTopic || 'Tu Tema'}
+              <CardTitle className="text-white flex items-center gap-2">
+                <ChartBarIcon className="w-5 h-5 text-pink-400 stroke-[2]"/>
+                Análisis de Engagement: {contentTopic || 'Tu Tema'}
               </CardTitle>
               <CardDescription className="text-gray-400">
                 Cómo está interactuando tu audiencia con este contenido

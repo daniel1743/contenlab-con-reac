@@ -1,5 +1,5 @@
 # robots.txt para CreoVision - Estrategia SEO 2025
-# Ultima actualizacion: 2025-11-03
+# Ultima actualizacion: 2025-01-15
 
 # ========================================
 # REGLAS PARA TODOS LOS BOTS
@@ -7,6 +7,9 @@
 User-agent: *
 Allow: /
 Allow: /tools
+Allow: /features
+Allow: /testimonials
+Allow: /pricing
 
 # ========================================
 # RUTAS BLOQUEADAS (Privadas)
@@ -24,6 +27,8 @@ Disallow: /calendar/
 Disallow: /inbox/
 Disallow: /library/
 Disallow: /mi-perfil/
+Disallow: /history/
+Disallow: /notifications/
 Disallow: /*.json$
 Disallow: /dist/
 Disallow: /src/
