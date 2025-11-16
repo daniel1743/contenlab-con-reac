@@ -15,6 +15,10 @@ export const AuthProvider = ({ children }) => {
 
   const fetchProfile = useCallback(async (userId) => {
     if (!userId) return null;
+
+    console.log('[SupabaseAuthContext] Fetching profile for user:', userId);
+    const startTime = performance.now();
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -22,31 +26,52 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .maybeSingle(); // Usar maybeSingle en lugar de single para permitir 0 filas
 
+      const duration = performance.now() - startTime;
+      console.log(`[SupabaseAuthContext] Profile fetch completed in ${duration.toFixed(0)}ms`);
+
       if (error) {
+        console.error('[SupabaseAuthContext] Error fetching profile:', error);
         throw error;
       }
 
       if (data) {
+        console.log('[SupabaseAuthContext] Profile found:', data.id);
         return data;
+      } else {
+        console.log('[SupabaseAuthContext] No profile found, will use defaults');
       }
     } catch (error) {
-      console.error('Error fetching profile:', error.message);
+      console.error('[SupabaseAuthContext] Profile fetch failed:', error.message);
     }
     return null;
   }, []);
 
   const handleSession = useCallback(async (currentSession) => {
+    console.log('[SupabaseAuthContext] handleSession called, has session:', !!currentSession);
+    const startTime = performance.now();
+
     setSession(currentSession);
     const currentUser = currentSession?.user ?? null;
     setUser(currentUser);
 
     if (currentUser) {
-      const userProfile = await fetchProfile(currentUser.id);
-      setProfile(userProfile);
+      console.log('[SupabaseAuthContext] User authenticated:', currentUser.email);
+
+      // Optimización: establecer loading en false ANTES de fetchProfile
+      // para que la UI se actualice inmediatamente
+      setLoading(false);
+
+      // Fetch profile en background (no bloquea UI)
+      fetchProfile(currentUser.id).then(userProfile => {
+        setProfile(userProfile);
+        const duration = performance.now() - startTime;
+        console.log(`[SupabaseAuthContext] Total handleSession time: ${duration.toFixed(0)}ms`);
+      });
     } else {
+      console.log('[SupabaseAuthContext] No user, clearing session');
       setProfile(null);
+      setLoading(false);
     }
-    setLoading(false);
   }, [fetchProfile]);
 
   useEffect(() => {
@@ -86,6 +111,7 @@ export const AuthProvider = ({ children }) => {
           if (code) {
             console.log('[SupabaseAuthContext] Processing OAuth callback with code');
             console.log('[SupabaseAuthContext] Full redirect URL enviada a Supabase:', window.location.href);
+            const oauthStartTime = performance.now();
 
             try {
               // Intercambiar el código por una sesión - USAR URL COMPLETA
@@ -106,7 +132,8 @@ export const AuthProvider = ({ children }) => {
 
                 await handleSession(null);
               } else {
-                console.log('[SupabaseAuthContext] OAuth successful, session created');
+                const exchangeDuration = performance.now() - oauthStartTime;
+                console.log(`[SupabaseAuthContext] OAuth successful in ${exchangeDuration.toFixed(0)}ms`);
 
                 // Forzar la actualización de la sesión local para mayor estabilidad
                 await supabase.auth.setSession({
