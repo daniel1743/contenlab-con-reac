@@ -2201,7 +2201,7 @@ const DashboardDynamic = ({ onSectionChange }) => {
             <p className="text-lg text-gray-400 mt-2">
               {currentTopic
                 ? `Análisis del tema: "${currentTopic}"`
-                : 'Busca un tema para ver métricas en tiempo real'}
+                : 'Nuestra herramienta más potente: analiza tendencias y videos en tiempo real con motor GP-5, accede a bases de datos SEO y genera prompts estratégicos completos'}
             </p>
           </div>
         </div>

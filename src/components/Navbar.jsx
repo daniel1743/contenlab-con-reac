@@ -28,7 +28,9 @@ import {
   FireIcon,
   RocketLaunchIcon,
   TicketIcon,
-  LightBulbIcon
+  LightBulbIcon,
+  ChevronDownIcon,
+  CubeTransparentIcon
 } from '@heroicons/react/24/outline';
 
 import {
@@ -124,19 +126,16 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
   // Navegación actualizada con nuevas secciones
   const navigationItems = [
     { id: 'landing', label: 'Inicio', icon: HomeIcon },
-    { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
-    // 🔮 PROYECCIÓN FUTURA - Growth Dashboard
-    // Dashboard avanzado con métricas de crecimiento, análisis de competencia y proyecciones
-    // { id: 'growth-dashboard', label: 'Growth Dashboard', icon: RocketLaunchIcon, authRequired: true, badge: '380', premium: true },
-    { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
-    { id: 'creo-strategy', label: 'Creo Strategy', icon: LightBulbIcon, authRequired: true, badge: 'NEW' }, // 🆕 CREO STRATEGY
-    { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false }, // 🆕 TENDENCIAS
-    // COMENTADO TEMPORALMENTE - Inbox/Mensajes sin sistema de mensajería backend
-    // { id: 'inbox', label: 'Mensajes', icon: InboxIcon, authRequired: true },
-    { id: 'calendar', label: 'Planificador', icon: CalendarIcon, authRequired: true }, // 📅 Content Planner
+    { id: 'tendencias', label: 'Tendencias', icon: FireIcon, authRequired: false },
+    { id: 'calendar', label: 'Planificador', icon: CalendarIcon, authRequired: true },
     { id: 'library', label: 'Historial de Contenido', icon: FolderOpenIcon, authRequired: true },
-    // COMENTADO TEMPORALMENTE - Chat sin backend funcional
-    // { id: 'chat', label: 'Chat IA', icon: ChatBubbleLeftRightIcon, authRequired: true },
+  ];
+
+  // Items del menú desplegable "Centro Creo"
+  const centroCreoItems = [
+    { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
+    { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
+    { id: 'creo-strategy', label: 'Creo Strategy', icon: LightBulbIcon, authRequired: true, badge: 'NEW' },
   ];
 
   // Lógica de navegación modificada
@@ -179,21 +178,15 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
     if (item.id === 'dashboard') {
       triggerIntelligenceHint();
       import('@/components/DashboardDynamic');
-    }
-    // 🔮 PROYECCIÓN FUTURA - Growth Dashboard comentado
-    // else if (item.id === 'growth-dashboard') {
-    //   import('@/components/GrowthDashboard');
-    // }
-    else if (item.id === 'tools') {
+    } else if (item.id === 'tools') {
       import('@/components/Tools');
     } else if (item.id === 'creo-strategy') {
       import('@/components/strategy/CreoStrategy');
     } else if (item.id === 'calendar') {
-      import('@/components/ContentPlanner'); // 📅 Preload Content Planner
+      import('@/components/ContentPlanner');
     } else if (item.id === 'library') {
       import('@/components/ContentLibrary');
     }
-    // Preload de otros componentes según necesidad
   };
 
   const handleLogout = async () => {
@@ -263,17 +256,17 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             </div>
           </motion.div>
 
-          <div className="hidden md:flex items-center space-x-1 lg:space-x-2 ml-8">
-            {navigationItems.map((item) => { // Renderiza todos los items
+          <div className="hidden md:flex items-center space-x-1 lg:space-x-3 ml-8">
+            {/* Botón Inicio */}
+            {navigationItems.slice(0, 1).map((item) => {
               const Icon = item.icon;
-              const highlightIntelligence = item.id === 'dashboard' && showIntelligenceHint;
               return (
                 <motion.button
                   key={item.id}
-                  type="button" // ✅ evita reload inesperado
-                  onClick={() => handleNavClick(item)} // Pasa el ítem completo
-                  onMouseEnter={() => handleNavHover(item)} // ⚡ Preload al hover
-                  className={`flex items-center space-x-1.5 px-2 lg:px-2.5 py-1.5 rounded-lg transition-all ${
+                  type="button"
+                  onClick={() => handleNavClick(item)}
+                  onMouseEnter={() => handleNavHover(item)}
+                  className={`flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 rounded-lg transition-all ${
                     activeSection === item.id
                       ? 'bg-purple-600/20 text-purple-300'
                       : 'text-gray-300 hover:text-white hover:bg-white/5'
@@ -281,20 +274,92 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <span className={`relative flex ${highlightIntelligence ? 'intelligence-glow-icon' : ''}`}>
-                    <Icon className="w-3.5 h-3.5" />
-                    {highlightIntelligence && (
-                      <span className="intelligence-hint">
-                        Estudia un tema y ve como lo trata tu competencia
-                      </span>
-                    )}
-                  </span>
+                  <Icon className="w-3.5 h-3.5 stroke-[2]" />
                   <span className="text-xs font-medium">{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-1 px-1 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
-                      {item.badge}
-                    </span>
-                  )}
+                </motion.button>
+              );
+            })}
+
+            {/* Menú desplegable "Centro Creo" - SEGUNDA POSICIÓN */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <motion.button
+                  type="button"
+                  className={`flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 rounded-lg transition-all ${
+                    centroCreoItems.some(item => item.id === activeSection)
+                      ? 'bg-purple-600/20 text-purple-300'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  }`}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <CubeTransparentIcon className="w-3.5 h-3.5 stroke-[2]" />
+                  <span className="text-xs font-medium">Centro Creo</span>
+                  <ChevronDownIcon className="w-3 h-3 stroke-[2]" />
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 glass-effect border-purple-500/20" align="start">
+                {centroCreoItems.map((item, index) => {
+                  const Icon = item.icon;
+                  const highlightIntelligence = item.id === 'dashboard' && showIntelligenceHint;
+
+                  // Colores neón para cada opción
+                  const hoverColors = [
+                    'hover:text-purple-400',  // CreoVision Intelligence (morado)
+                    'hover:text-green-400',   // Centro Creativo (verde)
+                    'hover:text-yellow-400'   // Creo Strategy (amarillo)
+                  ];
+
+                  return (
+                    <DropdownMenuItem
+                      key={item.id}
+                      onClick={() => handleNavClick(item)}
+                      onMouseEnter={() => handleNavHover(item)}
+                      className={`cursor-pointer py-2 group ${
+                        activeSection === item.id ? 'bg-purple-600/10' : ''
+                      }`}
+                    >
+                      <div className="flex items-center w-full">
+                        <span className={`relative flex ${highlightIntelligence ? 'intelligence-glow-icon' : ''}`}>
+                          <Icon className={`w-4 h-4 mr-2 stroke-[2] transition-colors duration-200 ${hoverColors[index]}`} />
+                          {highlightIntelligence && (
+                            <span className="intelligence-hint">
+                              Nuestra herramienta más potente: busca tendencias, analiza videos relacionados con tu tema en tiempo real con nuestro motor GP-5, accede a bases de datos SEO y genera prompts estratégicos para ejecutar tu plan completo
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-xs font-medium flex-1">{item.label}</span>
+                        {item.badge && (
+                          <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Resto de navegación (Tendencias, Planificador, Historial) */}
+            {navigationItems.slice(1).map((item) => {
+              const Icon = item.icon;
+              return (
+                <motion.button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleNavClick(item)}
+                  onMouseEnter={() => handleNavHover(item)}
+                  className={`flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 rounded-lg transition-all ${
+                    activeSection === item.id
+                      ? 'bg-purple-600/20 text-purple-300'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                  }`}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <Icon className="w-3.5 h-3.5 stroke-[2]" />
+                  <span className="text-xs font-medium">{item.label}</span>
                 </motion.button>
               );
             })}
@@ -474,29 +539,87 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
             transition={{ duration: 0.3 }}
           >
             <div className="py-3 space-y-1.5 px-3">
-              {navigationItems.map((item) => { // Renderiza todos los items en el menú móvil
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleNavClick(item)}
-                      className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg transition-all ${
-                        activeSection === item.id
-                          ? 'bg-purple-600/20 text-purple-300'
-                          : 'text-gray-300 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-xs font-medium">{item.label}</span>
-                      {item.badge && (
-                        <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              {/* Botón Inicio (primero) */}
+              {navigationItems.slice(0, 1).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavClick(item)}
+                    className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg transition-all ${
+                      activeSection === item.id
+                        ? 'bg-purple-600/20 text-purple-300'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0 stroke-[2]" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+
+              {/* Sección "Centro Creo" (segundo) */}
+              <div className="pt-2 pb-1">
+                <div className="flex items-center space-x-2 px-3 py-1.5">
+                  <CubeTransparentIcon className="w-3.5 h-3.5 text-purple-400 stroke-[2]" />
+                  <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Centro Creo</span>
+                </div>
+              </div>
+
+              {/* Items del Centro Creo */}
+              {centroCreoItems.map((item, index) => {
+                const Icon = item.icon;
+
+                // Colores neón para cada opción (mismo orden que desktop)
+                const hoverIconColors = [
+                  'group-hover:text-purple-400',  // CreoVision Intelligence (morado)
+                  'group-hover:text-green-400',   // Centro Creativo (verde)
+                  'group-hover:text-yellow-400'   // Creo Strategy (amarillo)
+                ];
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavClick(item)}
+                    className={`w-full flex items-center space-x-2.5 px-3 py-2 pl-6 rounded-lg transition-all group ${
+                      activeSection === item.id
+                        ? 'bg-purple-600/20 text-purple-300'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors duration-200 ${hoverIconColors[index]}`} />
+                    <span className="text-xs font-medium flex-1">{item.label}</span>
+                    {item.badge && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+
+              {/* Resto de navegación (Tendencias, Planificador, Historial) */}
+              {navigationItems.slice(1).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavClick(item)}
+                    className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg transition-all ${
+                      activeSection === item.id
+                        ? 'bg-purple-600/20 text-purple-300'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0 stroke-[2]" />
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+
               {!isAuthenticated && (
                  <Button
                    onClick={() => {

@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
+  console.log('[SupabaseAuthContext] AuthProvider MONTADO');
   const { toast } = useToast();
 
   const [user, setUser] = useState(null);
@@ -49,26 +50,94 @@ export const AuthProvider = ({ children }) => {
   }, [fetchProfile]);
 
   useEffect(() => {
+    console.log('[SupabaseAuthContext] useEffect INICIADO - URL:', window.location.href);
+
     const processAuth = async () => {
       try {
+        // ✅ NUEVO: Manejar OAuth callback y errores
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
-          const hasAuthParams = url.searchParams.get('code') || url.searchParams.get('access_token');
+          console.log('[SupabaseAuthContext] Procesando URL, params:', url.search);
 
-          if (hasAuthParams) {
-            const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+          // Detectar errores de OAuth en la URL
+          const error = url.searchParams.get('error');
+          const errorDescription = url.searchParams.get('error_description');
 
-            if (error) {
-              console.error('[SupabaseAuthContext] Error processing OAuth callback:', error);
-            } else {
-              await handleSession(data.session);
-            }
+          if (error) {
+            console.error('[SupabaseAuthContext] OAuth error in URL:', error, errorDescription);
 
-            const cleanUrl = `${url.origin}${url.pathname}${url.hash || ''}`;
+            // Limpiar URL
+            const cleanUrl = `${url.origin}${url.pathname}`;
             window.history.replaceState({}, document.title, cleanUrl);
+
+            // Mostrar error al usuario
+            toast({
+              variant: "destructive",
+              title: "Error de Autenticación con Google",
+              description: errorDescription?.replace(/\+/g, ' ') || "No se pudo completar el inicio de sesión. Intenta nuevamente."
+            });
+
+            await handleSession(null);
+            return;
+          }
+
+          const code = url.searchParams.get('code');
+
+          if (code) {
+            console.log('[SupabaseAuthContext] Processing OAuth callback with code');
+
+            try {
+              // Intercambiar el código por una sesión
+              const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+              if (exchangeError) {
+                console.error('[SupabaseAuthContext] Error exchanging code for session:', exchangeError);
+
+                // Limpiar URL
+                const cleanUrl = `${url.origin}${url.pathname}`;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                toast({
+                  variant: "destructive",
+                  title: "Error al Conectar con Google",
+                  description: "El código de autenticación expiró o es inválido. Por favor, intenta iniciar sesión nuevamente."
+                });
+
+                await handleSession(null);
+              } else {
+                console.log('[SupabaseAuthContext] OAuth successful, session created');
+                await handleSession(data.session);
+
+                // Limpiar URL sin recargar
+                const cleanUrl = `${url.origin}${url.pathname}`;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                toast({
+                  title: "¡Bienvenido!",
+                  description: "Has iniciado sesión con Google correctamente."
+                });
+
+                return; // Salir temprano ya que tenemos sesión
+              }
+            } catch (exchangeErr) {
+              console.error('[SupabaseAuthContext] Exception during code exchange:', exchangeErr);
+
+              // Limpiar URL
+              const cleanUrl = `${url.origin}${url.pathname}`;
+              window.history.replaceState({}, document.title, cleanUrl);
+
+              toast({
+                variant: "destructive",
+                title: "Error Inesperado",
+                description: "Ocurrió un error al procesar la autenticación. Intenta nuevamente."
+              });
+
+              await handleSession(null);
+            }
           }
         }
 
+        // Obtener sesión existente
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('[SupabaseAuthContext] Error getting session:', error);
@@ -99,7 +168,7 @@ export const AuthProvider = ({ children }) => {
         subscription.unsubscribe();
       }
     };
-  }, [handleSession]);
+  }, [handleSession, toast]);
 
   const signUp = useCallback(async (email, password, options) => {
     const { error } = await supabase.auth.signUp({

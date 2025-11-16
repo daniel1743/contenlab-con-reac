@@ -88,22 +88,34 @@ const AuthModal = ({ isOpen, onClose }) => {
   // 🆕 Auth con Google OAuth
   const handleSocialAuth = async (provider) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/mi-perfil`,
-        skipBrowserRedirect: false
-      }
-    });
-    if (error) {
-      toast({ variant: "destructive", title: 'Error de Autenticación', description: error.message });
-    } else {
-      toast({
-        title: 'Redirigiendo a Google...',
-        description: 'Serás redirigido a la página de autenticación de Google.'
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          skipBrowserRedirect: false
+        }
       });
+      if (error) {
+        console.error('OAuth error:', error);
+        toast({ variant: "destructive", title: 'Error de Autenticación', description: error.message });
+        setIsLoading(false);
+      } else {
+        console.log('OAuth initiated successfully:', data);
+        toast({
+          title: 'Redirigiendo a Google...',
+          description: 'Serás redirigido a la página de autenticación de Google.'
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected error during OAuth:', err);
+      toast({
+        variant: "destructive",
+        title: 'Error Inesperado',
+        description: 'Ocurrió un error al intentar conectar con Google. Intenta nuevamente.'
+      });
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   // 🆕 Enviar Magic Link al email
