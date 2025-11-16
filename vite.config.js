@@ -215,7 +215,7 @@ export default defineConfig({
 		minify: 'terser',
 		terserOptions: {
 			compress: {
-				drop_console: true,
+				drop_console: false, // Mantener console.log para debug de OAuth
 				drop_debugger: true
 			}
 		},
@@ -229,6 +229,10 @@ export default defineConfig({
 				'@babel/types'
 			],
 			output: {
+				// Cache busting: agregar hash a los nombres de archivo
+				entryFileNames: 'assets/[name]-[hash].js',
+				chunkFileNames: 'assets/[name]-[hash].js',
+				assetFileNames: 'assets/[name]-[hash].[ext]',
 				manualChunks: {
 					'react-vendor': ['react', 'react-dom'],
 					'animation': ['framer-motion'],
