@@ -85,10 +85,11 @@ export const AuthProvider = ({ children }) => {
 
           if (code) {
             console.log('[SupabaseAuthContext] Processing OAuth callback with code');
+            console.log('[SupabaseAuthContext] Full redirect URL enviada a Supabase:', window.location.href);
 
             try {
-              // Intercambiar el código por una sesión
-              const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+              // Intercambiar el código por una sesión - USAR URL COMPLETA
+              const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
 
               if (exchangeError) {
                 console.error('[SupabaseAuthContext] Error exchanging code for session:', exchangeError);
@@ -106,6 +107,13 @@ export const AuthProvider = ({ children }) => {
                 await handleSession(null);
               } else {
                 console.log('[SupabaseAuthContext] OAuth successful, session created');
+
+                // Forzar la actualización de la sesión local para mayor estabilidad
+                await supabase.auth.setSession({
+                  access_token: data.session.access_token,
+                  refresh_token: data.session.refresh_token,
+                });
+
                 await handleSession(data.session);
 
                 // Limpiar URL sin recargar
