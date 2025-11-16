@@ -134,8 +134,21 @@ export async function getUserCredits(userId) {
       throw error;
     }
 
+    // Si no hay créditos, retornar valores por defecto
+    if (!credits) {
+      console.log('[creditService] No credits found for user, returning defaults');
+      return {
+        monthly_credits: 0,
+        bonus_credits: 0,
+        total_credits: 0,
+        monthly_credits_assigned: 100,
+        last_monthly_reset: new Date().toISOString()
+      };
+    }
+
     // Verificar si necesita reset mensual
-    const daysSinceReset = (Date.now() - new Date(credits.last_monthly_reset).getTime()) / (1000 * 60 * 60 * 24);
+    const lastReset = credits.last_monthly_reset ? new Date(credits.last_monthly_reset) : new Date();
+    const daysSinceReset = (Date.now() - lastReset.getTime()) / (1000 * 60 * 60 * 24);
 
     if (daysSinceReset >= 30) {
       // Reset automático
