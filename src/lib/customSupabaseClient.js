@@ -12,9 +12,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    // En localhost usar implicit (sin PKCE) para evitar flow_state_not_found
-    // En producción usar pkce para mayor seguridad
-    flowType: isLocalhost ? 'implicit' : 'pkce',
-    debug: isLocalhost // Activar debug en localhost
+    // TEMPORAL: Usar implicit en todos los ambientes hasta resolver PKCE
+    // TODO: Investigar por qué PKCE verifier se pierde en producción
+    flowType: 'implicit',
+    debug: true // Debug en todos los ambientes temporalmente
   }
 });
