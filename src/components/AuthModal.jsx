@@ -88,11 +88,20 @@ const AuthModal = ({ isOpen, onClose }) => {
   // 🆕 Auth con Google OAuth
   const handleSocialAuth = async (provider) => {
     setIsLoading(true);
+
+    // Detectar si estamos en localhost y forzar redirect correcto
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const redirectUrl = isLocalhost
+      ? 'http://localhost:5173/'
+      : `${window.location.origin}/`;
+
+    console.log('[AuthModal] OAuth redirectTo:', redirectUrl);
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: redirectUrl,
           skipBrowserRedirect: false
         }
       });
