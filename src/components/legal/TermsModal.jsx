@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-const TermsModal = ({ open, onAccept }) => {
+const TermsModal = ({ open, onAccept, onClose }) => {
   const scrollRef = useRef(null);
   const [hasScrolledToEnd, setHasScrolledToEnd] = useState(false);
 
@@ -26,9 +26,15 @@ const TermsModal = ({ open, onAccept }) => {
     }
   };
 
+  const handleOpenChange = (isOpen) => {
+    if (!isOpen && onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-hidden bg-gray-900 border border-purple-500/30 text-white [&_[data-radix-dialog-close]]:hidden flex flex-col">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-hidden bg-gray-900 border border-purple-500/30 text-white flex flex-col">
         <DialogHeader className="space-y-2 flex-shrink-0 px-2 sm:px-0">
           <DialogTitle className="text-3xl font-semibold text-purple-200">
             Términos y Condiciones de Servicio – CreoVision

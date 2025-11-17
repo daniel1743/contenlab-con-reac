@@ -84,7 +84,7 @@ const CreoStrategy = () => {
 
     const interval = setInterval(() => {
       setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
-    }, 1800);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [loading]);

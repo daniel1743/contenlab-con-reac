@@ -414,10 +414,15 @@ const WeeklyTrends = () => {
       });
 
       // 🚀 Fallback response instructivo según nuevo formato
+      const safeTitle = typeof trend?.title === 'string' && trend.title.trim().length > 0
+        ? trend.title
+        : 'Tendencia seleccionada';
+      const titleWords = safeTitle.split(' ').filter(Boolean);
+
       setAiResponse(`---
 ## 📌 TENDENCIA DESBLOQUEADA
 
-**"${trend.title}"** (Fuente: ${selectedCategory.toUpperCase()})
+**"${safeTitle}"** (Fuente: ${selectedCategory.toUpperCase()})
 
 Desbloqueaste esta tendencia específica de ${selectedCategory.toUpperCase()}. Es relevante para tu nicho de **${userNiche}** en **${userPlatform}** porque está captando atención AHORA y aún no está saturada en tu tipo de contenido.
 
@@ -435,15 +440,15 @@ Esta tendencia aprovecha un momento de alta búsqueda en ${selectedCategory.toUp
 ## 🔍 ANÁLISIS SEO Y KEYWORDS
 
 **Keywords principales:**
-- ${trend.title.split(' ').slice(0, 3).join(' ')} - Alta prioridad
-- ${userNiche} ${trend.title.split(' ')[0]} - Media prioridad
-- ${userPlatform} ${trend.title.split(' ')[1] || trend.title.split(' ')[0]} - Complementaria
+- ${titleWords.slice(0, 3).join(' ') || safeTitle} - Alta prioridad
+- ${userNiche} ${titleWords[0] || safeTitle} - Media prioridad
+- ${userPlatform} ${titleWords[1] || titleWords[0] || safeTitle} - Complementaria
 
 **Hashtags estratégicos:**
-${trend.tag || `#${userNiche.replace(/\s+/g, '')} #${selectedCategory} #ContenidoViral #${userPlatform}`}
+${trend?.tag || `#${userNiche.replace(/\s+/g, '')} #${selectedCategory} #ContenidoViral #${userPlatform}`}
 
 **Long-tail keywords:**
-"cómo ${trend.title.toLowerCase()}", "${trend.title.toLowerCase()} tutorial", "${trend.title.toLowerCase()} para ${userNiche}"
+"cómo ${safeTitle.toLowerCase()}", "${safeTitle.toLowerCase()} tutorial", "${safeTitle.toLowerCase()} para ${userNiche}"
 
 ---
 ## 🎬 ADAPTACIÓN A TU ESTILO "${userStyle}"
@@ -460,7 +465,7 @@ ${trend.tag || `#${userNiche.replace(/\s+/g, '')} #${selectedCategory} #Contenid
 **Formato óptimo para ${userPlatform}:**
 - Duración: ${userPlatform === 'YouTube' ? '8-12 minutos (long-form)' : userPlatform === 'TikTok' ? '45-60 segundos (short-form)' : '60-90 segundos (short-medium)'}
 - Estructura: Hook (3s) → Desarrollo con valor → CTA claro
-- Hook perfecto: Abre con una pregunta o cifra impactante relacionada con "${trend.title}"
+- Hook perfecto: Abre con una pregunta o cifra impactante relacionada con "${safeTitle}"
 
 ---
 ## 📈 PLAN DE EJECUCIÓN (PRÓXIMAS 72H)
@@ -482,7 +487,7 @@ Para convertir esta estrategia en guión listo para grabar:
 
 1. Ve a **"Genera tu Guión"** en el menú principal
 2. Selecciona plataforma: **${userPlatform}**
-3. Ingresa tema: **"${trend.title}"** (o variante adaptada a tu nicho)
+3. Ingresa tema: **"${safeTitle}"** (o variante adaptada a tu nicho)
 4. CreoVision armará el script completo con tu tono **${userStyle}**, estructura optimizada, y las keywords SEO integradas
 
 **Otras herramientas útiles:**

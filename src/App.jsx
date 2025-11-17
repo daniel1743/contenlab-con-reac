@@ -28,7 +28,7 @@ const Badges = lazy(() => import('@/components/Badges'));
 const History = lazy(() => import('@/components/History'));
 const Profile = lazy(() => import('@/components/Profile'));
 const Notifications = lazy(() => import('@/components/Notifications'));
-const Onboarding = lazy(() => import('@/components/Onboarding'));
+const Onboarding = lazy(() => import('@/components/OnboardingConversational'));
 const TermsModal = lazy(() => import('@/components/legal/TermsModal'));
 const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
@@ -423,7 +423,7 @@ function App() {
             />
           )}
 
-          {/* 🚀 ONBOARDING PROFESIONAL - 3 FASES */}
+          {/* 🚀 ONBOARDING CONVERSACIONAL - EXPRESS MODE (40 seg) */}
           {showOnboarding && (
             <Onboarding
               onComplete={(profile) => {
@@ -454,6 +454,9 @@ function App() {
                 if (typeof window !== 'undefined' && termsStorageKey) {
                   window.localStorage.setItem(termsStorageKey, new Date().toISOString());
                 }
+                setShowTermsModal(false);
+              }}
+              onClose={() => {
                 setShowTermsModal(false);
               }}
             />
