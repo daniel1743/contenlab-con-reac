@@ -172,14 +172,10 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // Obtener sesión existente
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('[SupabaseAuthContext] Error getting session:', error);
-          await handleSession(null);
-          return;
-        }
-        await handleSession(currentSession);
+        // Con detectSessionInUrl: true y implicit flow, NO llamar getSession() directamente
+        // Supabase maneja automáticamente el hash fragment (#access_token=...)
+        // Solo necesitamos esperar el evento onAuthStateChange
+        console.log('[SupabaseAuthContext] Waiting for auto session detection...');
       } catch (error) {
         console.error('[SupabaseAuthContext] Failed to fetch session:', error);
         await handleSession(null);
