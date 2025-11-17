@@ -717,7 +717,7 @@ Para convertir esta estrategia en guión listo para grabar:
         {/* Info de desbloqueo */}
         <Card className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-500/30">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3 flex-1">
                 <Sparkles className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -732,13 +732,15 @@ Para convertir esta estrategia en guión listo para grabar:
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={handleUnlockAll}
-                className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:opacity-90 flex items-center gap-2 whitespace-nowrap"
-              >
-                <Crown className="w-4 h-4" />
-                Desbloquear Todas ({currentUnlockAllCost} 💎)
-              </Button>
+              <div className="w-full lg:w-auto">
+                <Button
+                  onClick={handleUnlockAll}
+                  className="w-full justify-center bg-gradient-to-r from-yellow-600 to-orange-600 hover:opacity-90 flex items-center gap-2 whitespace-nowrap"
+                >
+                  <Crown className="w-4 h-4" />
+                  Desbloquear Todas ({currentUnlockAllCost} 💎)
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

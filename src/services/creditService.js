@@ -138,11 +138,16 @@ export async function getUserCredits(userId) {
     if (!credits) {
       console.log('[creditService] No credits found for user, returning defaults');
       return {
-        monthly_credits: 0,
-        bonus_credits: 0,
-        total_credits: 0,
-        monthly_credits_assigned: 100,
-        last_monthly_reset: new Date().toISOString()
+        success: true,
+        credits: {
+          monthly: 0,
+          purchased: 0,
+          bonus: 0,
+          total: 0
+        },
+        plan: 'free',
+        daysSinceReset: 0,
+        daysUntilReset: 30
       };
     }
 
@@ -256,7 +261,7 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
     // 💡 CORRECCIÓN 1: El parámetro se llama 'p_feature_id', no 'p_feature'
     const { data, error } = await supabase.rpc('consume_credits', {
       p_user_id: userId,
-      p_feature_id: featureId // <-- CORREGIDO
+      p_feature: featureId
     });
 
     console.log('📡 Respuesta RPC:', { data, error });
