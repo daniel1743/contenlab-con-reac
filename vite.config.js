@@ -211,7 +211,8 @@ export default defineConfig({
 		},
 	},
 	build: {
-		target: 'es2015',
+		// Supabase necesita async/await nativo para que los stack guards funcionen.
+		target: 'es2017',
 		minify: 'terser',
 		terserOptions: {
 			compress: {

@@ -106,124 +106,21 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
-          // ✅ NUEVO: Manejar implicit flow (#access_token en hash)
-          // Con flowType: 'implicit', Google redirige con #access_token=...&refresh_token=...
-          if (window.location.hash) {
-            console.log('[SupabaseAuthContext] Detectado hash fragment (implicit flow)');
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = hashParams.get('access_token');
-            const refreshToken = hashParams.get('refresh_token');
-
-            if (accessToken && refreshToken) {
-              console.log('[SupabaseAuthContext] Procesando tokens de implicit flow');
-              const oauthStartTime = performance.now();
-
-              try {
-                // Establecer sesión manualmente con los tokens del hash
-                const { data, error: sessionError } = await supabase.auth.setSession({
-                  access_token: accessToken,
-                  refresh_token: refreshToken
-                });
-
-                if (sessionError) {
-                  console.error('[SupabaseAuthContext] Error setting session from hash:', sessionError);
-
-                  toast({
-                    variant: "destructive",
-                    title: "Error al Establecer Sesión",
-                    description: "Los tokens de autenticación son inválidos. Intenta nuevamente."
-                  });
-
-                  await handleSession(null);
-                } else {
-                  const exchangeDuration = performance.now() - oauthStartTime;
-                  console.log(`[SupabaseAuthContext] Implicit OAuth successful in ${exchangeDuration.toFixed(0)}ms`);
-
-                  await handleSession(data.session);
-
-                  // Limpiar hash de la URL
-                  const cleanUrl = `${url.origin}${url.pathname}`;
-                  window.history.replaceState({}, document.title, cleanUrl);
-
-                  toast({
-                    title: "¡Bienvenido!",
-                    description: "Has iniciado sesión con Google correctamente."
-                  });
-
-                  return; // Salir temprano
-                }
-              } catch (err) {
-                console.error('[SupabaseAuthContext] Exception setting session from hash:', err);
-
-                toast({
-                  variant: "destructive",
-                  title: "Error Inesperado",
-                  description: "Ocurrió un error al procesar la autenticación. Intenta nuevamente."
-                });
-
-                await handleSession(null);
-              }
-            }
-          }
-
-          // Manejar PKCE flow (si lo usáramos en el futuro)
+          // ✅ PKCE flow: Con detectSessionInUrl: true, Supabase procesa automáticamente el callback
+          // El código OAuth en la URL será manejado automáticamente por Supabase
           const code = url.searchParams.get('code');
           if (code) {
-            console.log('[SupabaseAuthContext] Processing OAuth callback with code (PKCE)');
-            console.log('[SupabaseAuthContext] Full redirect URL enviada a Supabase:', window.location.href);
-            const oauthStartTime = performance.now();
+            console.log('[SupabaseAuthContext] Detectado código OAuth (PKCE), Supabase lo procesará automáticamente');
+            // Supabase procesará el código automáticamente gracias a detectSessionInUrl: true
+            // El onAuthStateChange se disparará cuando la sesión esté lista
+            // No necesitamos hacer nada más aquí
+          }
 
-            try {
-              const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-
-              if (exchangeError) {
-                console.error('[SupabaseAuthContext] Error exchanging code for session:', exchangeError);
-
-                const cleanUrl = `${url.origin}${url.pathname}`;
-                window.history.replaceState({}, document.title, cleanUrl);
-
-                toast({
-                  variant: "destructive",
-                  title: "Error al Conectar con Google",
-                  description: "El código de autenticación expiró o es inválido. Por favor, intenta iniciar sesión nuevamente."
-                });
-
-                await handleSession(null);
-              } else {
-                const exchangeDuration = performance.now() - oauthStartTime;
-                console.log(`[SupabaseAuthContext] PKCE OAuth successful in ${exchangeDuration.toFixed(0)}ms`);
-
-                await supabase.auth.setSession({
-                  access_token: data.session.access_token,
-                  refresh_token: data.session.refresh_token,
-                });
-
-                await handleSession(data.session);
-
-                const cleanUrl = `${url.origin}${url.pathname}`;
-                window.history.replaceState({}, document.title, cleanUrl);
-
-                toast({
-                  title: "¡Bienvenido!",
-                  description: "Has iniciado sesión con Google correctamente."
-                });
-
-                return;
-              }
-            } catch (exchangeErr) {
-              console.error('[SupabaseAuthContext] Exception during code exchange:', exchangeErr);
-
-              const cleanUrl = `${url.origin}${url.pathname}`;
-              window.history.replaceState({}, document.title, cleanUrl);
-
-              toast({
-                variant: "destructive",
-                title: "Error Inesperado",
-                description: "Ocurrió un error al procesar la autenticación. Intenta nuevamente."
-              });
-
-              await handleSession(null);
-            }
+          // Limpiar hash fragment si existe (de sesiones anteriores con implicit flow)
+          if (window.location.hash && !code) {
+            console.log('[SupabaseAuthContext] Limpiando hash fragment antiguo (implicit flow)');
+            const cleanUrl = `${url.origin}${url.pathname}${url.search}`;
+            window.history.replaceState({}, document.title, cleanUrl);
           }
         }
 
