@@ -133,9 +133,34 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
 
   // Items del menú desplegable "Centro Creo"
   const centroCreoItems = [
-    { id: 'dashboard', label: 'CreoVision Intelligence', icon: ChartBarIcon, authRequired: true },
-    { id: 'tools', label: 'Centro Creativo', icon: WrenchScrewdriverIcon, authRequired: true },
-    { id: 'creo-strategy', label: 'Creo Strategy', icon: LightBulbIcon, authRequired: true, badge: 'NEW' },
+    {
+      id: 'dashboard',
+      label: 'CreoVision Intelligence',
+      description: 'Analítica predictiva + IA GP-5 en un solo panel',
+      icon: ChartBarIcon,
+      authRequired: true,
+      gradient: 'from-purple-600/20 via-blue-600/10 to-indigo-600/20',
+      accent: 'text-purple-300'
+    },
+    {
+      id: 'tools',
+      label: 'Centro Creativo',
+      description: 'Suite de generadores virales y herramientas de contenido',
+      icon: WrenchScrewdriverIcon,
+      authRequired: true,
+      gradient: 'from-emerald-500/20 via-cyan-500/10 to-teal-500/20',
+      accent: 'text-emerald-300'
+    },
+    {
+      id: 'creo-strategy',
+      label: 'Creo Strategy',
+      description: 'Benchmark contra 6 virales + plan táctico accionable',
+      icon: LightBulbIcon,
+      authRequired: true,
+      badge: 'NEW',
+      gradient: 'from-amber-500/20 via-orange-500/10 to-pink-500/20',
+      accent: 'text-amber-300'
+    },
   ];
 
   // Lógica de navegación modificada
@@ -298,46 +323,59 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                   <ChevronDownIcon className="w-3 h-3 stroke-[2]" />
                 </motion.button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 glass-effect border-purple-500/20" align="start">
-                {centroCreoItems.map((item, index) => {
-                  const Icon = item.icon;
-                  const highlightIntelligence = item.id === 'dashboard' && showIntelligenceHint;
+              <DropdownMenuContent
+                className="w-[320px] border-purple-500/10 bg-transparent shadow-none p-0"
+                align="start"
+              >
+                <div className="flex flex-col gap-3 p-3">
+                  {centroCreoItems.map((item) => {
+                    const Icon = item.icon;
+                    const highlightIntelligence = item.id === 'dashboard' && showIntelligenceHint;
 
-                  // Colores neón para cada opción
-                  const hoverColors = [
-                    'hover:text-purple-400',  // CreoVision Intelligence (morado)
-                    'hover:text-green-400',   // Centro Creativo (verde)
-                    'hover:text-yellow-400'   // Creo Strategy (amarillo)
-                  ];
-
-                  return (
-                    <DropdownMenuItem
-                      key={item.id}
-                      onClick={() => handleNavClick(item)}
-                      onMouseEnter={() => handleNavHover(item)}
-                      className={`cursor-pointer py-2 group ${
-                        activeSection === item.id ? 'bg-purple-600/10' : ''
-                      }`}
-                    >
-                      <div className="flex items-center w-full">
-                        <span className={`relative flex ${highlightIntelligence ? 'intelligence-glow-icon' : ''}`}>
-                          <Icon className={`w-4 h-4 mr-2 stroke-[2] transition-colors duration-200 ${hoverColors[index]}`} />
-                          {highlightIntelligence && (
-                            <span className="intelligence-hint">
-                              Nuestra herramienta más potente: busca tendencias, analiza videos relacionados con tu tema en tiempo real con nuestro motor GP-5, accede a bases de datos SEO y genera prompts estratégicos para ejecutar tu plan completo
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-xs font-medium flex-1">{item.label}</span>
-                        {item.badge && (
-                          <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
-                            {item.badge}
+                    return (
+                      <DropdownMenuItem
+                        key={item.id}
+                        asChild
+                        className="p-0 focus:bg-transparent focus-within:bg-transparent"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleNavClick(item)}
+                          onMouseEnter={() => handleNavHover(item)}
+                          className={`w-full rounded-2xl border px-4 py-3 text-left transition-all flex items-start gap-3 ${
+                            activeSection === item.id
+                              ? 'ring-1 ring-purple-400/30'
+                              : 'hover:ring-1 hover:ring-white/20'
+                          } bg-gradient-to-r ${item.gradient} border-white/10 backdrop-blur`}
+                        >
+                          <span
+                            className={`relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 ${highlightIntelligence ? 'intelligence-glow-icon' : ''}`}
+                          >
+                            <Icon className={`w-5 h-5 ${item.accent}`} />
+                            {highlightIntelligence && (
+                              <span className="intelligence-hint">
+                                Nuestra herramienta más potente: busca tendencias, analiza videos relacionados con tu tema en tiempo real con nuestro motor GP-5, accede a bases de datos SEO y genera prompts estratégicos para ejecutar tu plan completo
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-white">{item.label}</span>
+                              {item.badge && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/30 text-purple-100 rounded border border-purple-500/40">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-gray-200/80 leading-snug mt-1">
+                              {item.description}
+                            </p>
+                          </div>
+                        </button>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -568,37 +606,38 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
               </div>
 
               {/* Items del Centro Creo */}
-              {centroCreoItems.map((item, index) => {
-                const Icon = item.icon;
-
-                // Colores neón para cada opción (mismo orden que desktop)
-                const hoverIconColors = [
-                  'group-hover:text-purple-400',  // CreoVision Intelligence (morado)
-                  'group-hover:text-green-400',   // Centro Creativo (verde)
-                  'group-hover:text-yellow-400'   // Creo Strategy (amarillo)
-                ];
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleNavClick(item)}
-                    className={`w-full flex items-center space-x-2.5 px-3 py-2 pl-6 rounded-lg transition-all group ${
-                      activeSection === item.id
-                        ? 'bg-purple-600/20 text-purple-300'
-                        : 'text-gray-300 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 flex-shrink-0 stroke-[2] transition-colors duration-200 ${hoverIconColors[index]}`} />
-                    <span className="text-xs font-medium flex-1">{item.label}</span>
-                    {item.badge && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">
-                        {item.badge}
+              <div className="grid grid-cols-1 gap-2">
+                {centroCreoItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleNavClick(item)}
+                      className={`w-full rounded-xl border px-3 py-3 text-left transition-all flex items-start gap-3 bg-gradient-to-r ${item.gradient} border-white/5 ${
+                        activeSection === item.id ? 'ring-1 ring-purple-400/30' : 'hover:ring-1 hover:ring-white/20'
+                      }`}
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
+                        <Icon className={`w-4 h-4 ${item.accent}`} />
                       </span>
-                    )}
-                  </button>
-                );
-              })}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-white">{item.label}</span>
+                          {item.badge && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/30 text-purple-100 rounded border border-purple-500/40">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-200/80 leading-snug mt-0.5">
+                          {item.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Resto de navegación (Tendencias, Planificador, Historial) */}
               {navigationItems.slice(1).map((item) => {

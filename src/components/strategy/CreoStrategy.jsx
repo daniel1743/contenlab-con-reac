@@ -181,17 +181,31 @@ const CreoStrategy = () => {
 
           {/* Analyze Button */}
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: loading ? 1 : 1.02 }}
+            whileTap={{ scale: loading ? 1 : 0.98 }}
             onClick={handleAnalyze}
             disabled={loading}
             className="w-full mt-6 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Analizando tu canal y videos virales...
-              </span>
+              <div className="flex flex-col items-center text-sm leading-tight gap-1 py-1">
+                <span className="flex items-center gap-2 text-base font-semibold">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Ejecutando análisis CreoVision GP-5...
+                </span>
+                <span className="text-xs text-purple-100/90 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Motores de CreoVision sincronizando métricas en vivo
+                </span>
+                <span className="text-xs text-purple-100/80 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  Evaluando canales virales y benchmark competitivo
+                </span>
+                <span className="text-xs text-purple-100/70 flex items-center gap-1">
+                  <Lightbulb className="w-3 h-3" />
+                  Preparando plan táctico accionable para tu nicho
+                </span>
+              </div>
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <TrendingUp className="w-5 h-5" />
