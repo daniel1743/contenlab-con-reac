@@ -106,21 +106,79 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
-          const code = url.searchParams.get('code');
+          // ✅ NUEVO: Manejar implicit flow (#access_token en hash)
+          // Con flowType: 'implicit', Google redirige con #access_token=...&refresh_token=...
+          if (window.location.hash) {
+            console.log('[SupabaseAuthContext] Detectado hash fragment (implicit flow)');
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
 
+            if (accessToken && refreshToken) {
+              console.log('[SupabaseAuthContext] Procesando tokens de implicit flow');
+              const oauthStartTime = performance.now();
+
+              try {
+                // Establecer sesión manualmente con los tokens del hash
+                const { data, error: sessionError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken
+                });
+
+                if (sessionError) {
+                  console.error('[SupabaseAuthContext] Error setting session from hash:', sessionError);
+
+                  toast({
+                    variant: "destructive",
+                    title: "Error al Establecer Sesión",
+                    description: "Los tokens de autenticación son inválidos. Intenta nuevamente."
+                  });
+
+                  await handleSession(null);
+                } else {
+                  const exchangeDuration = performance.now() - oauthStartTime;
+                  console.log(`[SupabaseAuthContext] Implicit OAuth successful in ${exchangeDuration.toFixed(0)}ms`);
+
+                  await handleSession(data.session);
+
+                  // Limpiar hash de la URL
+                  const cleanUrl = `${url.origin}${url.pathname}`;
+                  window.history.replaceState({}, document.title, cleanUrl);
+
+                  toast({
+                    title: "¡Bienvenido!",
+                    description: "Has iniciado sesión con Google correctamente."
+                  });
+
+                  return; // Salir temprano
+                }
+              } catch (err) {
+                console.error('[SupabaseAuthContext] Exception setting session from hash:', err);
+
+                toast({
+                  variant: "destructive",
+                  title: "Error Inesperado",
+                  description: "Ocurrió un error al procesar la autenticación. Intenta nuevamente."
+                });
+
+                await handleSession(null);
+              }
+            }
+          }
+
+          // Manejar PKCE flow (si lo usáramos en el futuro)
+          const code = url.searchParams.get('code');
           if (code) {
-            console.log('[SupabaseAuthContext] Processing OAuth callback with code');
+            console.log('[SupabaseAuthContext] Processing OAuth callback with code (PKCE)');
             console.log('[SupabaseAuthContext] Full redirect URL enviada a Supabase:', window.location.href);
             const oauthStartTime = performance.now();
 
             try {
-              // Intercambiar el código por una sesión - USAR URL COMPLETA
               const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
 
               if (exchangeError) {
                 console.error('[SupabaseAuthContext] Error exchanging code for session:', exchangeError);
 
-                // Limpiar URL
                 const cleanUrl = `${url.origin}${url.pathname}`;
                 window.history.replaceState({}, document.title, cleanUrl);
 
@@ -133,9 +191,8 @@ export const AuthProvider = ({ children }) => {
                 await handleSession(null);
               } else {
                 const exchangeDuration = performance.now() - oauthStartTime;
-                console.log(`[SupabaseAuthContext] OAuth successful in ${exchangeDuration.toFixed(0)}ms`);
+                console.log(`[SupabaseAuthContext] PKCE OAuth successful in ${exchangeDuration.toFixed(0)}ms`);
 
-                // Forzar la actualización de la sesión local para mayor estabilidad
                 await supabase.auth.setSession({
                   access_token: data.session.access_token,
                   refresh_token: data.session.refresh_token,
@@ -143,7 +200,6 @@ export const AuthProvider = ({ children }) => {
 
                 await handleSession(data.session);
 
-                // Limpiar URL sin recargar
                 const cleanUrl = `${url.origin}${url.pathname}`;
                 window.history.replaceState({}, document.title, cleanUrl);
 
@@ -152,12 +208,11 @@ export const AuthProvider = ({ children }) => {
                   description: "Has iniciado sesión con Google correctamente."
                 });
 
-                return; // Salir temprano ya que tenemos sesión
+                return;
               }
             } catch (exchangeErr) {
               console.error('[SupabaseAuthContext] Exception during code exchange:', exchangeErr);
 
-              // Limpiar URL
               const cleanUrl = `${url.origin}${url.pathname}`;
               window.history.replaceState({}, document.title, cleanUrl);
 
@@ -172,10 +227,16 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // Con detectSessionInUrl: true y implicit flow, NO llamar getSession() directamente
-        // Supabase maneja automáticamente el hash fragment (#access_token=...)
-        // Solo necesitamos esperar el evento onAuthStateChange
-        console.log('[SupabaseAuthContext] Waiting for auto session detection...');
+        // Si no hay OAuth callback, intentar recuperar sesión existente
+        console.log('[SupabaseAuthContext] Verificando sesión existente...');
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          console.log('[SupabaseAuthContext] Sesión existente encontrada');
+          await handleSession(existingSession);
+        } else {
+          console.log('[SupabaseAuthContext] No hay sesión activa');
+          await handleSession(null);
+        }
       } catch (error) {
         console.error('[SupabaseAuthContext] Failed to fetch session:', error);
         await handleSession(null);

@@ -11,10 +11,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    // TEMPORAL: Usar implicit en todos los ambientes hasta resolver PKCE
-    // TODO: Investigar por qué PKCE verifier se pierde en producción
+    // CRÍTICO: detectSessionInUrl: false con implicit flow
+    // detectSessionInUrl + implicit causa error "Please use #_useSession()"
+    // Manejaremos manualmente el hash en SupabaseAuthContext
+    detectSessionInUrl: false,
     flowType: 'implicit',
-    debug: true // Debug en todos los ambientes temporalmente
+    debug: true
   }
 });
