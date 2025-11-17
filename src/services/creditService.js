@@ -326,7 +326,7 @@ async function consumeCreditsFallback(userId, amount, featureId, description = n
     console.log('🔄 Usando fallback para consumir créditos:', { userId, amount, featureId });
 
     // 1. Obtener créditos actuales del usuario
-    const { data: userCredits, error: getError } = await supabase
+    let { data: userCredits, error: getError } = await supabase
       .from('user_credits')
       .select('*')
       .eq('user_id', userId)

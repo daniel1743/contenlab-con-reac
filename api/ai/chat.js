@@ -156,11 +156,84 @@ export default async function handler(req, res) {
       systemPrompt,
       feature_slug = 'ai_assistant',
       capture_interaction = false, // Por defecto NO capturar (compatibilidad)
+      // 🚀 NUEVO: Personalización de análisis base
+      action, // 'personalize' para personalización rápida
+      baseAnalysis,
+      userName,
+      channelName,
+      userNiche,
+      userPlatform,
     } = req.body;
 
+    // 🚀 RUTA RÁPIDA: Personalización de análisis base
+    if (action === 'personalize' && baseAnalysis && userName) {
+      const personalizationPrompt = `Toma este análisis de tendencia y personalízalo para ${userName}${channelName ? ` (canal: ${channelName})` : ''}.
+
+ANÁLISIS BASE:
+${baseAnalysis}
+
+INSTRUCCIONES:
+1. Reemplaza referencias genéricas con el nombre "${userName}"
+2. ${channelName ? `Menciona su canal "${channelName}" donde sea relevante` : 'Usa un tono personal'}
+3. ${userNiche ? `Adapta ejemplos al nicho "${userNiche}"` : 'Mantén los ejemplos relevantes'}
+4. ${userPlatform ? `Enfócate en estrategias para ${userPlatform}` : 'Mantén las estrategias generales'}
+5. MANTÉN la estructura, emojis y formato original
+6. NO agregues contenido nuevo, solo personaliza el existente
+7. Máximo ${Math.floor(baseAnalysis.length * 1.1)} caracteres
+
+Devuelve SOLO el análisis personalizado, sin introducción ni explicaciones.`;
+
+      const personalizedMessages = [{ role: 'user', content: personalizationPrompt }];
+      const useProvider = provider || 'qwen';
+      const useModel = model || 'qwen-turbo';
+
+      let apiUrl, apiKey;
+      if (useProvider === 'qwen' && QWEN_API_KEY) {
+        apiUrl = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+        apiKey = QWEN_API_KEY;
+      } else if (DEEPSEEK_API_KEY) {
+        apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+        apiKey = DEEPSEEK_API_KEY;
+      } else {
+        return res.status(500).json({ error: 'No AI provider configured' });
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: useModel,
+          messages: personalizedMessages,
+          temperature: 0.3,
+          max_tokens: 800,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const personalizedContent = data.choices[0]?.message?.content || '';
+
+      return res.status(200).json({
+        content: personalizedContent,
+        provider: useProvider,
+        model: useModel,
+        cached: true,
+        personalized: true,
+        message: 'Análisis personalizado en tiempo récord'
+      });
+    }
+
+    // 🔄 RUTA NORMAL: Chat estándar
     if (!provider || !messages || !Array.isArray(messages)) {
-      return res.status(400).json({ 
-        error: 'provider, messages (array) required' 
+      return res.status(400).json({
+        error: 'provider, messages (array) required'
       });
     }
 

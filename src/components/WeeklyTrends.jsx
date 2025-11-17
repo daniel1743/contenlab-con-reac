@@ -233,19 +233,21 @@ const WeeklyTrends = () => {
             ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
             : '';
 
-          const personalizationResponse = await fetch(`${apiBaseUrl}/api/ai/personalize-trend`, {
+          const personalizationResponse = await fetch(`${apiBaseUrl}/api/ai/chat`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               ...(authToken && { 'Authorization': `Bearer ${authToken}` })
             },
             body: JSON.stringify({
+              action: 'personalize',
               baseAnalysis: cachedAnalysis.analysis?.analysis || cachedAnalysis.analysis,
               userName: displayName,
               channelName: userPlatform === 'YouTube' ? profileData?.youtubeChannel : null,
               userNiche,
               userPlatform,
-              provider: 'qwen'
+              provider: 'qwen',
+              messages: [] // Requerido pero no usado en modo personalize
             })
           });
 
