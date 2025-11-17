@@ -118,6 +118,7 @@ async function classifyIntent(prompt) {
  * Endpoint unificado para llamadas a APIs de IA
  * Maneja DeepSeek, QWEN y Gemini de forma segura
  * Soporta captura de interacciones opcional
+ * Soporta streaming de respuestas para UX mejorada
  */
 export default async function handler(req, res) {
   // Configurar CORS headers

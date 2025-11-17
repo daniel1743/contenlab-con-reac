@@ -501,7 +501,7 @@ export const buildTrendAnalysisPrompts = ({
 
   // Construir contexto de análisis base si existe
   const baseAnalysisContext = cachedAnalysis && !cachedAnalysis.personalized
-    ? `\n\n📊 ANÁLISIS BASE PREVIO (para referencia):\nKeywords: ${cachedAnalysis.keywords?.join(', ') || 'N/A'}\nHashtags: ${cachedAnalysis.hashtags?.join(' ') || 'N/A'}\nViralidad: ${cachedAnalysis.virality_score}/10\nSaturación: ${cachedAnalysis.saturation_level || 'N/A'}\n\n**Usa estos datos pero genera análisis COMPLETAMENTE NUEVO y personalizado.**`
+    ? `\n\n📊 ANÁLISIS BASE PREVIO (para referencia):\nKeywords: ${Array.isArray(cachedAnalysis.keywords) ? cachedAnalysis.keywords.join(', ') : (cachedAnalysis.keywords || 'N/A')}\nHashtags: ${Array.isArray(cachedAnalysis.hashtags) ? cachedAnalysis.hashtags.join(' ') : (cachedAnalysis.hashtags || 'N/A')}\nViralidad: ${cachedAnalysis.virality_score}/10\nSaturación: ${cachedAnalysis.saturation_level || 'N/A'}\n\n**Usa estos datos pero genera análisis COMPLETAMENTE NUEVO y personalizado.**`
     : '';
 
   const systemPrompt = `${CREO_TREND_ANALYSIS_PROMPT}

@@ -34,6 +34,7 @@ import AIFeedbackWidget from '@/components/AIFeedbackWidget';
 import { CREO_SYSTEM_PROMPT, CREO_CONTEXT_BUILDER, buildTrendAnalysisPrompts } from '@/config/creoPersonality';
 import { getMemories, saveMemory, buildMemoryContext } from '@/services/memoryService';
 import { getCachedAnalysis, saveAnalysisCache, extractAnalysisMetadata } from '@/services/analysisCacheService';
+import TrendAnalysisLoader from './TrendAnalysisLoader';
 
 const UNLOCK_COST = 20; // Créditos para desbloquear una tarjeta individual
 const UNLOCK_ALL_COST_STANDARD = 80; // 4 tarjetas × 20 créditos (YouTube, Twitter, News)
@@ -52,6 +53,7 @@ const WeeklyTrends = () => {
   const [selectedTrend, setSelectedTrend] = useState(null);
   const [aiResponse, setAiResponse] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [analysisType, setAnalysisType] = useState('full'); // 'full' o 'personalize'
   const [interactionId, setInteractionId] = useState(null);
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [persistentMemories, setPersistentMemories] = useState([]);
@@ -183,6 +185,7 @@ const WeeklyTrends = () => {
     setSelectedTrend(trend);
     setAiModalOpen(true);
     setIsAiThinking(true);
+    setAnalysisType('full'); // Indicar que es análisis completo por defecto
     setAiResponse('');
 
     // Determinar plataforma y nicho del usuario
@@ -205,24 +208,79 @@ const WeeklyTrends = () => {
         setIsAiThinking(false);
 
         toast({
-          title: '⚡ Análisis desde caché',
-          description: 'Análisis personalizado cargado instantáneamente',
+          title: '⚡ Análisis instantáneo',
+          description: 'Cargado desde tu historial personal',
           duration: 2000
         });
 
         return; // No llamar a IA
       } else {
-        // Existe análisis base pero no personalizado - adaptar formato
-        console.log('📊 Análisis base encontrado, adaptando formato...');
+        // 🚀 OPTIMIZACIÓN: Existe análisis base → personalizar rápido (3s en lugar de 2min)
+        console.log('⚡ Análisis base encontrado, personalizando SUPER RÁPIDO...');
+
+        setAnalysisType('personalize'); // Indicar que es personalización rápida
+        setIsAiThinking(true);
 
         toast({
-          title: '⚡ Optimización rápida',
-          description: 'Adaptando análisis base a tu perfil',
-          duration: 2000
+          title: '⚡ Personalización rápida',
+          description: 'Adaptando análisis a tu perfil en segundos...',
+          duration: 3000
         });
 
-        // CONTINUAR con llamada a IA pero usar análisis base como contexto
-        // (se implementa abajo)
+        try {
+          const authToken = session?.access_token || null;
+          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+            ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
+            : '';
+
+          const personalizationResponse = await fetch(`${apiBaseUrl}/api/ai/personalize-trend`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+            },
+            body: JSON.stringify({
+              baseAnalysis: cachedAnalysis.analysis?.analysis || cachedAnalysis.analysis,
+              userName: displayName,
+              channelName: userPlatform === 'YouTube' ? profileData?.youtubeChannel : null,
+              userNiche,
+              userPlatform,
+              provider: 'qwen'
+            })
+          });
+
+          if (!personalizationResponse.ok) {
+            throw new Error('Personalización falló, usando análisis completo...');
+          }
+
+          const personalizedData = await personalizationResponse.json();
+
+          if (personalizedData.content) {
+            console.log('✅ Personalización rápida completada en ~3 segundos');
+            setAiResponse(personalizedData.content);
+            setIsAiThinking(false);
+
+            toast({
+              title: '✅ Análisis personalizado',
+              description: 'Adaptado a tu canal en tiempo récord',
+              duration: 2000
+            });
+
+            // Guardar versión personalizada en cache para futuras consultas
+            await saveAnalysisCache(
+              trend.id,
+              selectedCategory,
+              user.id,
+              personalizedData.content,
+              true // personalized = true
+            );
+
+            return; // ¡Listo! No necesita análisis completo
+          }
+        } catch (personalizationError) {
+          console.warn('⚠️ Personalización rápida falló, usando análisis completo:', personalizationError);
+          // Si falla la personalización rápida, continuar con análisis completo abajo
+        }
       }
     }
 
@@ -266,11 +324,11 @@ const WeeklyTrends = () => {
           },
           body: JSON.stringify({
             provider: 'qwen',
-            model: 'qwen-plus',
+            model: 'qwen-turbo', // ← Modelo más rápido
             systemPrompt: fullSystemPrompt,
             messages: [{ role: 'user', content: userPrompt }],
             temperature: 0.7,
-            maxTokens: 2500,
+            maxTokens: 1200, // ← REDUCIDO: ~900 palabras (suficiente y 2x más rápido)
             feature_slug: 'weekly_trends_analysis',
             session_id: sessionId,
             capture_interaction: true
@@ -295,7 +353,7 @@ const WeeklyTrends = () => {
             systemPrompt: fullSystemPrompt,
             messages: [{ role: 'user', content: userPrompt }],
             temperature: 0.7,
-            maxTokens: 2500,
+            maxTokens: 1200, // ← REDUCIDO para fallback también
             feature_slug: 'weekly_trends_analysis',
             session_id: sessionId,
             capture_interaction: true
@@ -868,15 +926,10 @@ Para convertir esta estrategia en guión listo para grabar:
 
                 <CardContent className="pt-6">
                   {isAiThinking ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <RefreshCw className="w-12 h-12 text-purple-500 animate-spin mb-4" />
-                      <p className="text-gray-400 text-center">
-                        Creo está analizando la tendencia...
-                      </p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Generando análisis SEO, estrategia y adaptación personalizada
-                      </p>
-                    </div>
+                    <TrendAnalysisLoader
+                      isVisible={isAiThinking}
+                      analysisType={analysisType}
+                    />
                   ) : (
                     <>
                       <div className="prose prose-invert max-w-none">
