@@ -25,7 +25,8 @@ const InteractiveTooltipTour = ({
   tourKey = 'default_tour',
   tooltips = [],
   onComplete,
-  autoStartDelay = 1000
+  autoStartDelay = 1000,
+  children
 }) => {
   const [isActive, setIsActive] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null);
@@ -148,7 +149,7 @@ const InteractiveTooltipTour = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-none z-40"
+          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-none z-[35]"
         />
       )}
 
@@ -162,7 +163,7 @@ const InteractiveTooltipTour = ({
           seenTooltips
         }}
       >
-        {/* Los tooltips se renderizarán mediante TooltipTarget */}
+        {children}
       </TooltipContext.Provider>
     </>
   );
@@ -255,7 +256,7 @@ export const TooltipTarget = ({
             exit={{ opacity: 0, scale: 0.9 }}
             className={`
               absolute ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}
-              left-1/2 -translate-x-1/2 z-50 w-72
+              left-1/2 -translate-x-1/2 z-[36] w-72
             `}
           >
             <div className="bg-gradient-to-br from-gray-900 via-purple-900/40 to-gray-900 border-2 border-purple-500/50 rounded-xl shadow-2xl p-4">

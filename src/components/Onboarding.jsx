@@ -181,11 +181,14 @@ const Onboarding = ({ onComplete, onSkip }) => {
 
   return (
     <div
-      ref={modalScrollRef}
-      className="fixed inset-0 z-50 flex justify-center items-start p-4 bg-black/90 backdrop-blur-lg overflow-y-auto"
+      className="fixed inset-0 z-[100] flex justify-center items-start p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+      style={{ overscrollBehavior: 'contain' }}
     >
-      <div className="w-full max-w-4xl my-8">
-        <Card className="glass-effect border-purple-500/30 shadow-2xl">
+      <div
+        ref={modalScrollRef}
+        className="w-full max-w-4xl my-8 relative z-[101]"
+      >
+        <Card className="glass-effect border-purple-500/30 shadow-2xl bg-gray-900/95">
           {/* 🎯 HEADER CON PROGRESO */}
           <CardHeader className="border-b border-purple-500/20 pb-6">
             <div className="flex items-center justify-between mb-4">
@@ -227,7 +230,7 @@ const Onboarding = ({ onComplete, onSkip }) => {
           </CardHeader>
 
           {/* 📝 CONTENIDO DE LA FASE ACTUAL */}
-          <CardContent className="p-6">
+          <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
             <div className="min-h-[400px]">
               {renderStep()}
             </div>
