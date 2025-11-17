@@ -8,7 +8,7 @@
        ======================================== -->
   <url>
     <loc>https://creovision.io/</loc>
-    <lastmod>2025-11-03</lastmod>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -48,64 +48,57 @@
   </url>
 
   <!-- ========================================
-       PÁGINAS PROTEGIDAS (Solo Usuarios Registrados)
-       Nota: Incluidas para que Google las conozca, pero no podrá indexar contenido privado
+       PÁGINAS PÚBLICAS ADICIONALES
        ======================================== -->
   <url>
-    <loc>https://creovision.io/dashboard</loc>
-    <lastmod>2025-11-03</lastmod>
+    <loc>https://creovision.io/tendencias</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://creovision.io/calendar</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://creovision.io/terminos</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://creovision.io/library</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://creovision.io/privacidad</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
-  <url>
-    <loc>https://creovision.io/settings</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-
-  <url>
-    <loc>https://creovision.io/profile</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://creovision.io/badges</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://creovision.io/history</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <url>
-    <loc>https://creovision.io/notifications</loc>
-    <lastmod>2025-11-03</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.4</priority>
-  </url>
+  <!-- ========================================
+       ⚠️ IMPORTANTE: PÁGINAS PROTEGIDAS REMOVIDAS
+       ========================================
+       Las siguientes páginas NO deben estar en el sitemap porque:
+       1. Requieren autenticación (redirigen a /)
+       2. Tienen meta tag noindex
+       3. Están bloqueadas en robots.txt
+       4. Google no debe intentar indexarlas
+       
+       Páginas removidas del sitemap:
+       - /dashboard (privada)
+       - /calendar (privada)
+       - /library (privada)
+       - /settings (privada)
+       - /profile (privada)
+       - /badges (privada)
+       - /history (privada)
+       - /notifications (privada)
+       - /miniaturas (privada)
+       - /creo-strategy (privada)
+       - /mi-perfil (privada)
+       
+       Estas páginas seguirán siendo accesibles para usuarios autenticados,
+       pero Google no las rastreará ni indexará gracias a:
+       - Meta tags noindex en cada página
+       - robots.txt bloqueando estas rutas
+       - ProtectedRoute sirviendo HTML inicial con noindex antes de redirect
+       ======================================== -->
 
 </urlset>
 
@@ -114,26 +107,33 @@
   📋 NOTAS IMPORTANTES - ACTUALIZADO 2025-01-15
   ========================================
 
-  ✅ CAMBIOS REALIZADOS:
-  - Agregadas páginas públicas: /features, /testimonials, /pricing
+  ✅ CAMBIOS REALIZADOS (2025-01-15):
+  - Agregadas páginas públicas: /features, /testimonials, /pricing, /tendencias
+  - REMOVIDAS todas las páginas protegidas del sitemap (causaban errores de indexación)
   - Actualizadas fechas lastmod a 2025-01-15
   - URLs sin hash (#) para correcta indexación
   - Meta tags SEO agregados a todos los componentes
+  - ProtectedRoute mejorado para servir HTML inicial con noindex
 
   🎯 ESTRATEGIA ACTUAL:
 
-  1. PÁGINAS PÚBLICAS INDEXABLES:
+  1. PÁGINAS PÚBLICAS INDEXABLES (Solo estas en sitemap):
      ✅ / (landing) - Prioridad 1.0 (máxima)
      ✅ /tools - Prioridad 0.9 (permite demo, muy importante para conversión)
      ✅ /features - Prioridad 0.8 (funcionalidades completas)
      ✅ /pricing - Prioridad 0.8 (conversión de planes)
      ✅ /testimonials - Prioridad 0.7 (prueba social)
+     ✅ /tendencias - Prioridad 0.8 (contenido público de tendencias)
+     ✅ /terminos - Prioridad 0.3 (legal)
+     ✅ /privacidad - Prioridad 0.3 (legal)
 
-  2. PÁGINAS PROTEGIDAS (Incluidas pero con noindex):
-     - /dashboard, /calendar, /library, /settings, /profile, /badges, /history, /notifications
+  2. PÁGINAS PROTEGIDAS (REMOVIDAS del sitemap):
+     - /dashboard, /calendar, /library, /settings, /profile, /badges, /history, /notifications, /miniaturas
+     - NO están en el sitemap (correcto)
      - Tienen meta tag noindex para evitar indexación
-     - Google respetará la directiva noindex
-     - Incluidas en sitemap solo para conocimiento de estructura
+     - Están bloqueadas en robots.txt
+     - ProtectedRoute sirve HTML inicial con noindex antes de redirect
+     - Google NO intentará indexarlas
 
   3. PÁGINAS NO INCLUIDAS (Por robots.txt):
      - /api/* - Backend endpoints

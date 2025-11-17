@@ -235,6 +235,34 @@ export const pageMetadata = {
     ],
     canonical: '/library',
     noindex: true // Página privada, requiere login
+  },
+
+  badges: {
+    title: 'Insignias y Logros - CreoVision',
+    description: 'Desbloquea insignias y logros mientras usas CreoVision. Gana recompensas por tu actividad y crecimiento como creador.',
+    keywords: [
+      'insignias creovision',
+      'logros creadores',
+      'gamificación',
+      'recompensas creadores'
+    ],
+    canonical: '/badges',
+    noindex: true // Página privada, requiere login
+  },
+
+  miniaturas: {
+    title: 'Editor de Miniaturas Profesional - CreoVision',
+    description: 'Crea miniaturas que vendan en 60 segundos con nuestro editor profesional. IA integrada, plantillas pre-hechas y exportación optimizada.',
+    keywords: [
+      'editor de miniaturas youtube',
+      'crear thumbnails profesionales',
+      'diseño de miniaturas',
+      'remover fondo con IA',
+      'editor online gratuito',
+      'miniaturas para youtube'
+    ],
+    canonical: '/miniaturas',
+    noindex: true // Página privada, requiere login
   }
 };
 

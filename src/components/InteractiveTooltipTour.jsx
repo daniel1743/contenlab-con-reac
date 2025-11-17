@@ -185,7 +185,9 @@ export const TooltipTarget = ({
 }) => {
   const context = React.useContext(TooltipContext);
   const [isHovered, setIsHovered] = useState(false);
+  const [isTooltipHovered, setIsTooltipHovered] = useState(false);
   const [hasBeenSeen, setHasBeenSeen] = useState(false);
+  const closeTimeoutRef = React.useRef(null);
 
   if (!context || !context.isActive) {
     // Si el tour no está activo, solo renderizar children normalmente
@@ -196,6 +198,11 @@ export const TooltipTarget = ({
 
   const handleMouseEnter = () => {
     if (!hasBeenSeen && !seenTooltips.has(id)) {
+      // Cancelar cualquier timeout pendiente
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
       setIsHovered(true);
       setActiveTooltip(id);
     }
@@ -203,12 +210,29 @@ export const TooltipTarget = ({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    if (!hasBeenSeen) {
-      // Dar un pequeño delay antes de cerrar
-      setTimeout(() => {
-        if (!hasBeenSeen) {
+    // Solo cerrar si tampoco está sobre el tooltip
+    if (!isTooltipHovered && !hasBeenSeen) {
+      closeTimeoutRef.current = setTimeout(() => {
+        if (!isTooltipHovered && !hasBeenSeen) {
           setActiveTooltip(null);
         }
+      }, 500);
+    }
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setIsTooltipHovered(true);
+  };
+
+  const handleTooltipMouseLeave = () => {
+    setIsTooltipHovered(false);
+    if (!isHovered && !hasBeenSeen) {
+      closeTimeoutRef.current = setTimeout(() => {
+        setActiveTooltip(null);
       }, 300);
     }
   };
@@ -217,9 +241,22 @@ export const TooltipTarget = ({
     setHasBeenSeen(true);
     handleTooltipSeen(id);
     setActiveTooltip(null);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
   };
 
-  const showTooltip = isHovered && activeTooltip === id;
+  // Limpiar timeout al desmontar
+  React.useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const showTooltip = (isHovered || isTooltipHovered) && activeTooltip === id;
   const wasSeen = seenTooltips.has(id) || hasBeenSeen;
 
   return (
@@ -254,6 +291,8 @@ export const TooltipTarget = ({
             initial={{ opacity: 0, scale: 0.9, y: position === 'bottom' ? -10 : 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
+            onMouseEnter={handleTooltipMouseEnter}
+            onMouseLeave={handleTooltipMouseLeave}
             className={`
               absolute ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}
               left-1/2 -translate-x-1/2 z-[36] w-72

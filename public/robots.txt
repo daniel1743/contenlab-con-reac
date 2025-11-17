@@ -29,6 +29,8 @@ Disallow: /library/
 Disallow: /mi-perfil/
 Disallow: /history/
 Disallow: /notifications/
+Disallow: /badges/
+Disallow: /miniaturas/
 Disallow: /*.json$
 Disallow: /dist/
 Disallow: /src/

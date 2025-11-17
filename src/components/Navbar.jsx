@@ -30,7 +30,8 @@ import {
   TicketIcon,
   LightBulbIcon,
   ChevronDownIcon,
-  CubeTransparentIcon
+  CubeTransparentIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
 
 import {
@@ -152,6 +153,16 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       accent: 'text-emerald-300'
     },
     {
+      id: 'miniaturas',
+      label: 'Editor de Miniaturas',
+      description: 'Crea miniaturas que vendan en 60 segundos con IA integrada',
+      icon: PhotoIcon,
+      authRequired: true,
+      badge: '🚀',
+      gradient: 'from-pink-500/20 via-rose-500/10 to-red-500/20',
+      accent: 'text-pink-300'
+    },
+    {
       id: 'creo-strategy',
       label: 'Creo Strategy',
       description: 'Benchmark contra 6 virales + plan táctico accionable',
@@ -211,6 +222,8 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       import('@/components/ContentPlanner');
     } else if (item.id === 'library') {
       import('@/components/ContentLibrary');
+    } else if (item.id === 'miniaturas') {
+      import('@/components/thumbnail-editor/ThumbnailEditor');
     }
   };
 

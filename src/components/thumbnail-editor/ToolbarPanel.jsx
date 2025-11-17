@@ -13,7 +13,9 @@ const ToolbarPanel = ({
   canvas,
   addLayer,
   applyTemplate,
+  applyFullTemplate,
   templates,
+  templateCategories,
   backgroundColor,
   setBackgroundColor,
   handleImageUpload,
@@ -92,20 +94,52 @@ const ToolbarPanel = ({
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
-          <h3 className="text-sm font-semibold text-white">Tamaños Predefinidos</h3>
-          <div className="space-y-2">
-            {templates.map((template) => (
-              <Button
-                key={template.name}
-                onClick={() => applyTemplate(template)}
-                className="w-full justify-between glass-effect border-purple-500/20 hover:bg-purple-500/10 text-left"
-                variant="outline"
-              >
-                <span>{template.name}</span>
-                <span className="text-xs text-gray-400">{template.width}×{template.height}</span>
-              </Button>
-            ))}
+          {/* Tamaños de plataforma */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-white">Tamaños por Plataforma</h3>
+            <div className="space-y-2">
+              {templates && templates.map((template) => (
+                <Button
+                  key={template.name}
+                  onClick={() => applyTemplate(template)}
+                  className="w-full justify-between glass-effect border-purple-500/20 hover:bg-purple-500/10 text-left"
+                  variant="outline"
+                >
+                  <span className="text-xs">{template.name}</span>
+                  <span className="text-xs text-gray-400">{template.width}×{template.height}</span>
+                </Button>
+              ))}
+            </div>
           </div>
+
+          {/* Plantillas pre-hechas con categorías */}
+          {templateCategories && (
+            <div className="space-y-4 pt-4 border-t border-purple-500/20">
+              <h3 className="text-sm font-semibold text-white">Plantillas Pre-hechas</h3>
+              {Object.entries(templateCategories).map(([category, templates]) => (
+                <div key={category} className="space-y-2">
+                  <h4 className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
+                    {category === 'gaming' ? '🎮 Gaming' :
+                     category === 'finanzas' ? '💰 Finanzas' :
+                     category === 'trueCrime' ? '🔍 True Crime' :
+                     category === 'reacciones' ? '😱 Reacciones' :
+                     category === 'viral' ? '🔥 Viral' :
+                     category === 'antesDespues' ? '⚖️ Antes/Después' : category}
+                  </h4>
+                  {templates.map((template) => (
+                    <Button
+                      key={template.name}
+                      onClick={() => applyFullTemplate(template)}
+                      className="w-full justify-start glass-effect border-purple-500/20 hover:bg-purple-500/10 text-left text-xs"
+                      variant="outline"
+                    >
+                      <span>{template.name}</span>
+                    </Button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="canvas">

@@ -36,6 +36,7 @@ const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'
 const WeeklyTrends = lazy(() => import('@/components/WeeklyTrends'));
 const CreatorProfile = lazy(() => import('@/components/CreatorProfile'));
 const CreoStrategy = lazy(() => import('@/components/strategy/CreoStrategy'));
+const ThumbnailEditor = lazy(() => import('@/components/thumbnail-editor/ThumbnailEditor'));
 const TermsOfServicePage = lazy(() => import('@/components/legal/TermsOfServicePage'));
 const PrivacyPolicyPage = lazy(() => import('@/components/legal/PrivacyPolicyPage'));
 
@@ -108,7 +109,7 @@ function App() {
   
   // Secciones que requieren autenticación obligatoria
   const protectedSections = useMemo(() =>
-    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications'], // chat comentado temporalmente
+    ['dashboard', 'calendar', /* 'chat', */ 'inbox', 'library', 'settings', 'badges', 'history', 'profile', 'notifications', 'miniaturas'], // chat comentado temporalmente
     []
   );
 
@@ -159,20 +160,59 @@ function App() {
   };
 
   // Componente para proteger rutas que requieren autenticación
-  const ProtectedRoute = ({ children }) => {
+  const ProtectedRoute = ({ children, pageName }) => {
     // ⚡ OPTIMIZACIÓN: Mostrar contenido parcial mientras carga (mejor UX)
     if (loading) {
       return (
+        <>
+          {/* Servir meta tags noindex mientras carga para SEO */}
+          {pageName && <SEOHead page={pageName} />}
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-400">Cargando...</p>
           </div>
         </div>
+        </>
       );
     }
-    if (!isAuthenticated) return <Navigate to="/" replace />;
-    return children;
+    
+    // Si no está autenticado, servir HTML inicial con noindex antes de redirigir
+    // Esto evita que Google detecte redirects y mejora la indexación
+    if (!isAuthenticated) {
+      // Componente interno para manejar el redirect después de montar
+      const RedirectComponent = () => {
+        useEffect(() => {
+          const timer = setTimeout(() => {
+            navigate('/', { replace: true });
+          }, 100);
+          return () => clearTimeout(timer);
+        }, []);
+        
+        return (
+          <>
+            {/* Meta tags noindex para que Google no intente indexar */}
+            {pageName && <SEOHead page={pageName} />}
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-400">Redirigiendo...</p>
+              </div>
+            </div>
+          </>
+        );
+      };
+      
+      return <RedirectComponent />;
+    }
+    
+    return (
+      <>
+        {/* Meta tags para usuarios autenticados */}
+        {pageName && <SEOHead page={pageName} />}
+        {children}
+      </>
+    );
   };
 
   // Componente para rutas que permiten demo mode
@@ -255,7 +295,7 @@ function App() {
                   <Route
                     path="/dashboard"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="dashboard">
                         <Dashboard onSectionChange={handleSectionChange} />
                       </ProtectedRoute>
                     }
@@ -266,7 +306,7 @@ function App() {
                   {/* <Route
                     path="/growth-dashboard"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="dashboard">
                         <GrowthDashboard />
                       </ProtectedRoute>
                     }
@@ -277,7 +317,7 @@ function App() {
                   <Route
                     path="/calendar"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="calendar">
                         <ContentPlanner />
                       </ProtectedRoute>
                     }
@@ -286,7 +326,7 @@ function App() {
                   <Route
                     path="/library"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="library">
                         <ContentLibrary onSubscriptionClick={() => setShowSubscriptionModal(true)} />
                       </ProtectedRoute>
                     }
@@ -295,7 +335,7 @@ function App() {
                   <Route
                     path="/settings"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="settings">
                         <Settings />
                       </ProtectedRoute>
                     }
@@ -304,7 +344,7 @@ function App() {
                   <Route
                     path="/badges"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="badges">
                         <Badges />
                       </ProtectedRoute>
                     }
@@ -313,7 +353,7 @@ function App() {
                   <Route
                     path="/history"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="history">
                         <History />
                       </ProtectedRoute>
                     }
@@ -322,7 +362,7 @@ function App() {
                   <Route
                     path="/profile"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="profile">
                         <Profile />
                       </ProtectedRoute>
                     }
@@ -331,7 +371,7 @@ function App() {
                   <Route
                     path="/notifications"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="notifications">
                         <Notifications />
                       </ProtectedRoute>
                     }
@@ -367,7 +407,7 @@ function App() {
                   <Route
                     path="/mi-perfil"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="profile">
                         <CreatorProfile />
                       </ProtectedRoute>
                     }
@@ -377,8 +417,18 @@ function App() {
                   <Route
                     path="/creo-strategy"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute pageName="dashboard">
                         <CreoStrategy />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Ruta de Editor de Miniaturas */}
+                  <Route
+                    path="/miniaturas"
+                    element={
+                      <ProtectedRoute pageName="miniaturas">
+                        <ThumbnailEditor onBack={() => navigate('/tools')} />
                       </ProtectedRoute>
                     }
                   />

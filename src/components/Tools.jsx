@@ -1640,8 +1640,10 @@ const handleCopy = useCallback(() => {
         setShowSEOCoachModal(true);
       },
       'video-analysis': () => setShowVideoAnalysisModal(true),
-      'comments-analysis': () => setShowCommentsAnalysisModal(true),
-      'thumbnail-analysis': () => setShowThumbnailAnalysisModal(true),
+      'comment-analysis': () => setShowCommentsAnalysisModal(true),
+      'comments-analysis': () => setShowCommentsAnalysisModal(true), // Alias
+      'thumbnail-ai': () => setShowThumbnailAnalysisModal(true),
+      'thumbnail-analysis': () => setShowThumbnailAnalysisModal(true), // Alias
 
       // NUEVAS GENERACIONES (PHASE 3)
       'thread-composer': () => setShowThreadComposerModal(true),

@@ -10,8 +10,25 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 
-const EditorHeader = ({ onBack, onExport, canUndo, canRedo, onUndo, onRedo }) => {
+const EditorHeader = ({ onBack, onExport, onExportTikTok, onExportInstagram, canUndo, canRedo, onUndo, onRedo }) => {
   const { toast } = useToast();
+  const [showExportMenu, setShowExportMenu] = React.useState(false);
+  const exportMenuRef = React.useRef(null);
+
+  // Cerrar menú al hacer clic fuera
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
 
   const handleNotImplemented = () => {
     toast({
@@ -49,10 +66,50 @@ const EditorHeader = ({ onBack, onExport, canUndo, canRedo, onUndo, onRedo }) =>
             <BookmarkIcon className="w-4 h-4 mr-2 stroke-[2]" />
             Guardar
           </Button>
-          <Button onClick={onExport} className="gradient-primary hover:opacity-90">
-            <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
-            Exportar
-          </Button>
+          <div className="relative" ref={exportMenuRef}>
+            <Button 
+              onClick={() => setShowExportMenu(!showExportMenu)} 
+              className="gradient-primary hover:opacity-90"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
+              Exportar
+            </Button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-48 glass-effect border border-purple-500/20 rounded-lg shadow-lg z-50 overflow-hidden">
+                <button
+                  onClick={() => {
+                    onExport();
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-purple-500/20 text-sm text-white"
+                >
+                  📺 YouTube (1280×720)
+                </button>
+                {onExportTikTok && (
+                  <button
+                    onClick={() => {
+                      onExportTikTok();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-purple-500/20 text-sm text-white"
+                  >
+                    🎵 TikTok (1080×1920)
+                  </button>
+                )}
+                {onExportInstagram && (
+                  <button
+                    onClick={() => {
+                      onExportInstagram();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-purple-500/20 text-sm text-white"
+                  >
+                    📷 Instagram (1080×1080)
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
