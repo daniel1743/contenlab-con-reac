@@ -5,7 +5,7 @@
  * Compara el canal del usuario con videos virales de la misma temática
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { executeCreoStrategy } from '@/services/creoStrategyService';
 import { consumeCredits } from '@/services/creditService';
@@ -40,6 +40,33 @@ const formatCompactNumber = (value) => {
   return num.toString();
 };
 
+const LOADING_MESSAGES = [
+  {
+    title: 'Ejecutando análisis CreoVision GP-5…',
+    subtitle: 'Motores sincronizando métricas en vivo'
+  },
+  {
+    title: 'Indexando tus últimas 24 horas de rendimiento…',
+    subtitle: 'Normalizando datos reales de tu canal'
+  },
+  {
+    title: 'Evaluando canales virales y benchmark competitivo…',
+    subtitle: 'Comparando tu canal contra 6 videos líderes'
+  },
+  {
+    title: 'Interpretando ganadores reales en tu nicho…',
+    subtitle: 'Desmenuzando miniaturas, títulos y hooks'
+  },
+  {
+    title: 'Preparando plan táctico accionable…',
+    subtitle: 'Convirtiendo los hallazgos en próximos pasos'
+  },
+  {
+    title: 'Afinando recomendaciones personalizadas…',
+    subtitle: 'Adaptando la estrategia a tu estilo y audiencia'
+  }
+];
+
 const CreoStrategy = () => {
   const { user } = useAuth();
   const [channelUrl, setChannelUrl] = useState('');
@@ -47,6 +74,20 @@ const CreoStrategy = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingMessageIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleAnalyze = async () => {
     if (!channelUrl || !selectedTheme) {
@@ -134,6 +175,35 @@ const CreoStrategy = () => {
           </p>
         </motion.div>
 
+        {/* Professional Disclaimer */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 backdrop-blur-lg rounded-xl p-6 border-2 border-amber-500/30 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-amber-100 mb-2">
+                  Análisis Profesional con Crítica Constructiva
+                </h3>
+                <p className="text-amber-50/90 text-sm leading-relaxed mb-3">
+                  Este panel está diseñado para identificar áreas de mejora de manera directa y honesta.
+                  <span className="font-semibold text-amber-100"> CreoVision no evitará señalar prácticas mejorables</span> en tu estrategia de contenido.
+                </p>
+                <p className="text-amber-50/90 text-sm leading-relaxed">
+                  El objetivo es ayudarte a transformar hábitos poco efectivos en prácticas profesionales que impulsen el crecimiento de tu canal.
+                  La retroalimentación será directa, constructiva y orientada a resultados.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Input Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -188,23 +258,28 @@ const CreoStrategy = () => {
             className="w-full mt-6 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <div className="flex flex-col items-center text-sm leading-tight gap-1 py-1">
-                <span className="flex items-center gap-2 text-base font-semibold">
+              <div className="flex flex-col items-center text-sm leading-tight gap-1 py-1 overflow-hidden">
+                <motion.span
+                  key={`title-${loadingMessageIndex}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-2 text-base font-semibold"
+                >
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Ejecutando análisis CreoVision GP-5...
-                </span>
-                <span className="text-xs text-purple-100/90 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Motores de CreoVision sincronizando métricas en vivo
-                </span>
-                <span className="text-xs text-purple-100/80 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  Evaluando canales virales y benchmark competitivo
-                </span>
-                <span className="text-xs text-purple-100/70 flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" />
-                  Preparando plan táctico accionable para tu nicho
-                </span>
+                  {LOADING_MESSAGES[loadingMessageIndex].title}
+                </motion.span>
+                <motion.span
+                  key={`subtitle-${loadingMessageIndex}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-xs text-purple-100/80"
+                >
+                  {LOADING_MESSAGES[loadingMessageIndex].subtitle}
+                </motion.span>
               </div>
             ) : (
               <span className="flex items-center justify-center gap-2">
