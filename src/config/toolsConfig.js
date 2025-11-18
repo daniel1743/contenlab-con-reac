@@ -392,25 +392,26 @@ export const premiumTools = [
     tab: 'analytics',
     isActive: true
   },
-  {
-    id: 'virality-predictor',
-    title: 'Predictor de Viralidad',
-    description: 'Predice el potencial viral con Reddit + YouTube + IA',
-    icon: FireIcon,
-    creditCost: CREDIT_COSTS.VIRALITY_PREDICTOR,
-    estimatedTime: '8 min',
-    badges: [TOOL_BADGES.PREMIUM],
-    features: [
-      'Análisis Reddit API exclusivo',
-      'YouTube Data API',
-      'QWEN AI predictions',
-      'Gemini AI recommendations',
-      'Score de viralidad 0-100'
-    ],
-    action: 'navigateToPremiumTools',
-    tab: 'virality',
-    isActive: true
-  },
+  // ❌ DESHABILITADO TEMPORALMENTE - NO FUNCIONAL
+  // {
+  //   id: 'virality-predictor',
+  //   title: 'Predictor de Viralidad',
+  //   description: 'Predice el potencial viral con Reddit + YouTube + IA',
+  //   icon: FireIcon,
+  //   creditCost: CREDIT_COSTS.VIRALITY_PREDICTOR,
+  //   estimatedTime: '8 min',
+  //   badges: [TOOL_BADGES.PREMIUM],
+  //   features: [
+  //     'Análisis Reddit API exclusivo',
+  //     'YouTube Data API',
+  //     'QWEN AI predictions',
+  //     'Gemini AI recommendations',
+  //     'Score de viralidad 0-100'
+  //   ],
+  //   action: 'navigateToPremiumTools',
+  //   tab: 'virality',
+  //   isActive: false
+  // },
   {
     id: 'my-channel-analysis',
     title: 'Análisis Completo de Mi Canal',

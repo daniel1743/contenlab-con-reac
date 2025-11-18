@@ -133,8 +133,8 @@ import {
 } from '@/services/creditService';
 
 // 🎓 IMPORT DE ASESOR DE CONTENIDO
-// 🚀 IMPORT DE PREDICTOR DE VIRALIDAD
-import ViralityPredictor from '@/components/ViralityPredictor';
+// ❌ PREDICTOR DE VIRALIDAD DESHABILITADO TEMPORALMENTE (NO FUNCIONAL)
+// import ViralityPredictor from '@/components/ViralityPredictor';
 import { createContentAdvisor } from '@/services/contentAdvisorService';
 
 // 🎯 IMPORT DE PROMPT WIZARD
@@ -2222,8 +2222,8 @@ const handleCopy = useCallback(() => {
       </Card>
       )}
 
-      {/* Predicción de Viralidad */}
-      {isViralityUnlocked ? (
+      {/* ❌ PREDICCIÓN DE VIRALIDAD - DESHABILITADO TEMPORALMENTE (NO FUNCIONAL) */}
+      {/* {isViralityUnlocked ? (
         <ViralityPredictor />
       ) : (
         <Card className="glass-effect border-purple-500/20">
@@ -2316,7 +2316,7 @@ const handleCopy = useCallback(() => {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* 🆕 TARJETAS CON DATOS REALES DE GEMINI */}
       {generatedContent && (
