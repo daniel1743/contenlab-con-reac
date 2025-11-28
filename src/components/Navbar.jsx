@@ -30,8 +30,8 @@ import {
   TicketIcon,
   LightBulbIcon,
   ChevronDownIcon,
-  CubeTransparentIcon,
-  PhotoIcon
+  CubeTransparentIcon
+  // PhotoIcon // COMENTADO - Editor de Miniaturas deshabilitado temporalmente
 } from '@heroicons/react/24/outline';
 
 import {
@@ -152,16 +152,17 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       gradient: 'from-emerald-500/20 via-cyan-500/10 to-teal-500/20',
       accent: 'text-emerald-300'
     },
-    {
-      id: 'miniaturas',
-      label: 'Editor de Miniaturas',
-      description: 'Crea miniaturas que vendan en 60 segundos con IA integrada',
-      icon: PhotoIcon,
-      authRequired: true,
-      badge: '🚀',
-      gradient: 'from-pink-500/20 via-rose-500/10 to-red-500/20',
-      accent: 'text-pink-300'
-    },
+    // COMENTADO TEMPORALMENTE - Editor de Miniaturas
+    // {
+    //   id: 'miniaturas',
+    //   label: 'Editor de Miniaturas',
+    //   description: 'Crea miniaturas que vendan en 60 segundos con IA integrada',
+    //   icon: PhotoIcon,
+    //   authRequired: true,
+    //   badge: '🚀',
+    //   gradient: 'from-pink-500/20 via-rose-500/10 to-red-500/20',
+    //   accent: 'text-pink-300'
+    // },
     {
       id: 'creo-strategy',
       label: 'Creo Strategy',
@@ -222,9 +223,11 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
       import('@/components/ContentPlanner');
     } else if (item.id === 'library') {
       import('@/components/ContentLibrary');
-    } else if (item.id === 'miniaturas') {
-      import('@/components/thumbnail-editor/ThumbnailEditor');
     }
+    // COMENTADO TEMPORALMENTE - Editor de Miniaturas
+    // else if (item.id === 'miniaturas') {
+    //   import('@/components/thumbnail-editor/ThumbnailEditor');
+    // }
   };
 
   const handleLogout = async () => {

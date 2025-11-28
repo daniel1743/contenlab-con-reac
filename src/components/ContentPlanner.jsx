@@ -23,6 +23,7 @@ import {
   Plus,
   Calendar as CalendarIcon,
   CheckCircle2,
+  CheckCircle,
   Circle,
   Edit2,
   Trash2,
@@ -35,9 +36,11 @@ import {
   Image as ImageIcon,
   X,
   MousePointer2,
-  TrendingUp
+  TrendingUp,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
-import InteractiveTooltipTour, { TooltipTarget } from './InteractiveTooltipTour';
+import GuidedTour from './GuidedTour';
 
 const ContentPlanner = () => {
   const { user } = useAuth();
@@ -225,11 +228,77 @@ const ContentPlanner = () => {
 
   const days = getDaysInMonth(currentDate);
 
+  // 🎯 Pasos del tour guiado
+  const tourSteps = [
+    {
+      title: '¡Bienvenido al Planificador de Contenido!',
+      description: 'Organiza y da seguimiento a todo tu contenido en un solo lugar. Vamos a mostrarte las funciones principales.',
+      icon: CalendarIcon,
+      tips: [
+        'Puedes saltar este tour en cualquier momento',
+        'Solo se mostrará la primera vez que visites el planificador'
+      ]
+    },
+    {
+      title: 'Estadísticas de tu contenido',
+      description: 'En la parte superior verás tarjetas con estadísticas importantes: contenido de esta semana, ideas guardadas, contenido en proceso, publicado y atrasado.',
+      icon: TrendingUp,
+      tips: [
+        'Estas estadísticas se actualizan en tiempo real',
+        'Te ayudan a mantener el control de tu producción'
+      ]
+    },
+    {
+      title: 'Vista de calendario',
+      description: 'Haz clic en cualquier día para planificar contenido. Los días con publicaciones mostrarán chips de colores según su estado.',
+      icon: CalendarIcon,
+      tips: [
+        'Verde: Ideas',
+        'Azul: En proceso',
+        'Morado: Publicado',
+        'Rojo: Atrasado'
+      ]
+    },
+    {
+      title: 'Navegación del calendario',
+      description: 'Usa las flechas para navegar entre meses. Puedes planificar contenido a futuro o revisar el historial.',
+      icon: ChevronRight,
+      tips: [
+        'Planifica con anticipación para mantener consistencia',
+        'Revisa meses anteriores para análisis de rendimiento'
+      ]
+    },
+    {
+      title: 'Crear contenido planificado',
+      description: 'Al hacer clic en un día, se abrirá un modal donde podrás agregar detalles: título, descripción, categoría, estado y prioridad.',
+      icon: Lightbulb,
+      tips: [
+        'Puedes usar plantillas para ahorrar tiempo',
+        'Agrega checklists para no olvidar ningún paso'
+      ]
+    },
+    {
+      title: 'Estados del contenido',
+      description: 'Organiza tu contenido por estados: Idea (verde), En Proceso (azul), Publicado (morado), o Atrasado (rojo).',
+      icon: CheckCircle,
+      tips: [
+        'Actualiza los estados conforme avances',
+        'Los estados te ayudan a priorizar tu trabajo'
+      ]
+    },
+    {
+      title: '¡Listo para empezar!',
+      description: 'Ya conoces las funciones básicas del planificador. Comienza a organizar tu contenido y mantén una producción constante.',
+      icon: CheckCircle,
+      tips: [
+        'Puedes reactivar este tour desde configuración',
+        '¡Empieza planificando tu próximo contenido!'
+      ]
+    }
+  ];
+
   return (
-    <InteractiveTooltipTour
-      tourKey="content_planner_tour"
-      autoStartDelay={1500}
-    >
+    <>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 py-8 px-4">
         <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -253,117 +322,69 @@ const ContentPlanner = () => {
           {/* Stats Cards */}
           {stats && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <TooltipTarget
-                id="stats_this_week"
-                title="Contenido de esta semana"
-                description="Cantidad de publicaciones planificadas para los próximos 7 días. Te ayuda a mantener un ritmo constante de contenido."
-                icon={CalendarIcon}
-                position="bottom"
-              >
+              
                 <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
                   <div className="text-2xl font-bold text-white">{stats.thisWeek}</div>
                   <div className="text-sm text-gray-400">Esta Semana</div>
                 </div>
-              </TooltipTarget>
+              
 
-              <TooltipTarget
-                id="stats_ideas"
-                title="Ideas guardadas"
-                description="Conceptos que aún no has desarrollado. Son tu banco de inspiración para futuros contenidos."
-                icon={Lightbulb}
-                position="bottom"
-              >
+              
                 <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
                   <div className="text-2xl font-bold text-blue-400">{stats.byStatus.idea}</div>
                   <div className="text-sm text-gray-400">Ideas</div>
                 </div>
-              </TooltipTarget>
+              
 
-              <TooltipTarget
-                id="stats_in_progress"
-                title="Contenido en proceso"
-                description="Videos/posts que están siendo guionados, grabados o editados. Revisa su progreso regularmente."
-                icon={TrendingUp}
-                position="bottom"
-              >
+              
                 <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
                   <div className="text-2xl font-bold text-purple-400">{stats.byStatus.scripted + stats.byStatus.recorded}</div>
                   <div className="text-sm text-gray-400">En Proceso</div>
                 </div>
-              </TooltipTarget>
+              
 
-              <TooltipTarget
-                id="stats_published"
-                title="Contenido publicado"
-                description="Total de publicaciones completadas y lanzadas. ¡Celebra cada logro!"
-                icon={CheckCircle2}
-                position="bottom"
-              >
+              
                 <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
                   <div className="text-2xl font-bold text-green-400">{stats.byStatus.published}</div>
                   <div className="text-sm text-gray-400">Publicados</div>
                 </div>
-              </TooltipTarget>
+              
 
-              <TooltipTarget
-                id="stats_overdue"
-                title="Contenido atrasado"
-                description="Publicaciones cuya fecha planificada ya pasó. Prioriza completar estas primero."
-                icon={Flame}
-                position="bottom"
-              >
+              
                 <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-red-700">
                   <div className="text-2xl font-bold text-red-400">{stats.overdue}</div>
                   <div className="text-sm text-gray-400">Atrasados</div>
                 </div>
-              </TooltipTarget>
+              
             </div>
           )}
         </motion.div>
 
         {/* Calendar Navigation */}
-        <TooltipTarget
-          id="calendar_view"
-          title="Vista de calendario"
-          description="Haz clic en cualquier día para planificar contenido. Los días con publicaciones mostrarán chips de colores según su estado."
-          icon={CalendarIcon}
-          position="bottom"
-        >
+        
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <TooltipTarget
-                id="calendar_prev_month"
-                title="Mes anterior"
-                description="Navega a meses anteriores para revisar o planificar contenido pasado."
-                icon={ChevronLeft}
-                position="bottom"
-              >
+              
                 <button
                   onClick={handlePrevMonth}
                   className="p-2 hover:bg-white/10 rounded-lg transition"
                 >
                   <ChevronLeft className="w-6 h-6 text-white" />
                 </button>
-              </TooltipTarget>
+              
 
               <h2 className="text-2xl font-bold text-white">
                 {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
               </h2>
 
-              <TooltipTarget
-                id="calendar_next_month"
-                title="Mes siguiente"
-                description="Avanza a meses futuros para planificar contenido a largo plazo."
-                icon={ChevronRight}
-                position="bottom"
-              >
+              
                 <button
                   onClick={handleNextMonth}
                   className="p-2 hover:bg-white/10 rounded-lg transition"
                 >
                   <ChevronRight className="w-6 h-6 text-white" />
                 </button>
-              </TooltipTarget>
+              
             </div>
 
           {/* Calendar Grid */}
@@ -424,7 +445,7 @@ const ContentPlanner = () => {
             </div>
           </div>
         </div>
-        </TooltipTarget>
+        
 
         {/* Modal */}
         <AnimatePresence>
@@ -597,7 +618,15 @@ const ContentPlanner = () => {
         </AnimatePresence>
         </div>
       </div>
-    </InteractiveTooltipTour>
+
+      {/* 🎯 Tour Guiado */}
+      <GuidedTour
+        tourKey="content_planner_tour"
+        steps={tourSteps}
+        autoStart={true}
+        startDelay={1500}
+      />
+    </>
   );
 };
 
