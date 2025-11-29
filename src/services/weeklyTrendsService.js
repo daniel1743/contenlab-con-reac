@@ -15,8 +15,8 @@ import { getRedditTrendingPosts } from './redditService';
 // ==========================================
 
 const NEWSAPI_KEY = import.meta.env.VITE_NEWS_API_KEY || '';
-const CACHE_DURATION_DAYS = 3; // Renovar cada 3 días (YouTube, Twitter)
-const CACHE_DURATION_HOURS_48 = 48; // 48 horas para News y Reddit
+const CACHE_DURATION_DAYS = 7; // Renovar cada semana (7 días) para todas las plataformas
+const CACHE_DURATION_HOURS_48 = 48; // 48 horas para News y Reddit (deprecated, ahora usan 7 días)
 
 // ==========================================
 // 📰 NEWSAPI - NOTICIAS TRENDING
@@ -377,28 +377,62 @@ function ensureRedditTrendCount(trends, desiredCount = 6) {
  * @param {string} trendType - Tipo de tendencia (youtube, twitter, news, reddit)
  * @returns {boolean} Si el caché es válido
  */
-function isCacheValid(lastUpdate, trendType) {
+/**
+ * Obtener el ID de la semana actual (formato: YYYY-WW)
+ * Usa el formato ISO 8601 para semanas
+ */
+function getCurrentWeekId() {
+  const now = new Date();
+  const year = now.getFullYear();
+  
+  // Calcular semana ISO (semana 1 es la primera semana con al menos 4 días en el año)
+  const startOfYear = new Date(year, 0, 1);
+  const daysSinceStart = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+  const dayOfWeek = startOfYear.getDay() || 7; // Domingo = 7
+  const weekNumber = Math.ceil((daysSinceStart + dayOfWeek) / 7);
+  
+  // Ajustar para semanas que cruzan el año
+  let adjustedYear = year;
+  let adjustedWeek = weekNumber;
+  
+  if (weekNumber > 52) {
+    adjustedYear = year + 1;
+    adjustedWeek = 1;
+  } else if (weekNumber < 1) {
+    adjustedYear = year - 1;
+    // Calcular semana del año anterior
+    const prevYearStart = new Date(adjustedYear, 0, 1);
+    const prevYearDayOfWeek = prevYearStart.getDay() || 7;
+    const daysInPrevYear = Math.floor((now - prevYearStart) / (24 * 60 * 60 * 1000));
+    adjustedWeek = Math.ceil((daysInPrevYear + prevYearDayOfWeek) / 7);
+  }
+  
+  return `${adjustedYear}-${String(adjustedWeek).padStart(2, '0')}`;
+}
+
+function isCacheValid(lastUpdate, trendType, weekId) {
   if (!lastUpdate) return false;
 
   const now = new Date();
   const lastUpdateDate = new Date(lastUpdate);
+  const currentWeekId = getCurrentWeekId();
 
-  // News y Reddit usan caché de 48 horas
-  if (trendType === 'news' || trendType === 'reddit') {
-    const hoursDiff = (now - lastUpdateDate) / (1000 * 60 * 60);
-    const isValid = hoursDiff < CACHE_DURATION_HOURS_48;
-
-    if (isValid) {
-      const hoursRemaining = CACHE_DURATION_HOURS_48 - hoursDiff;
-      console.log(`📦 Caché de ${trendType} válido. Expira en ${hoursRemaining.toFixed(1)}h`);
-    }
-
-    return isValid;
+  // Verificar si el caché pertenece a la semana actual
+  if (weekId && weekId !== currentWeekId) {
+    console.log(`📅 Caché de ${trendType} es de una semana anterior (${weekId} vs ${currentWeekId})`);
+    return false;
   }
 
-  // YouTube y Twitter usan caché de 3 días
+  // Todas las plataformas usan caché de 7 días (semanal)
   const daysDiff = (now - lastUpdateDate) / (1000 * 60 * 60 * 24);
-  return daysDiff < CACHE_DURATION_DAYS;
+  const isValid = daysDiff < CACHE_DURATION_DAYS;
+
+  if (isValid) {
+    const daysRemaining = CACHE_DURATION_DAYS - daysDiff;
+    console.log(`📦 Caché de ${trendType} válido. Expira en ${daysRemaining.toFixed(1)} días`);
+  }
+
+  return isValid;
 }
 
 /**
@@ -409,17 +443,13 @@ function isCacheValid(lastUpdate, trendType) {
  */
 async function saveTrendsToCache(type, trends) {
   try {
-    // Calcular duración del caché según el tipo
-    let expirationTime;
-    if (type === 'news' || type === 'reddit') {
-      // 48 horas para News y Reddit
-      expirationTime = Date.now() + (CACHE_DURATION_HOURS_48 * 60 * 60 * 1000);
-      console.log(`💾 Guardando caché de ${type} (válido por 48 horas)`);
-    } else {
-      // 3 días para YouTube y Twitter
-      expirationTime = Date.now() + (CACHE_DURATION_DAYS * 24 * 60 * 60 * 1000);
-      console.log(`💾 Guardando caché de ${type} (válido por 3 días)`);
-    }
+    const currentWeekId = getCurrentWeekId();
+    // Todas las plataformas usan caché de 7 días (semanal)
+    const expirationTime = Date.now() + (CACHE_DURATION_DAYS * 24 * 60 * 60 * 1000);
+    console.log(`💾 Guardando caché de ${type} (semana ${currentWeekId}, válido por 7 días)`);
+
+    // Limpiar desbloqueos antiguos cuando se actualiza el caché
+    await cleanOldUnlockedTrends();
 
     const { error } = await supabase
       .from('weekly_trends_cache')
@@ -427,7 +457,8 @@ async function saveTrendsToCache(type, trends) {
         trend_type: type,
         trends_data: trends,
         updated_at: new Date().toISOString(),
-        expires_at: new Date(expirationTime).toISOString()
+        expires_at: new Date(expirationTime).toISOString(),
+        week_id: currentWeekId
       }, {
         onConflict: 'trend_type'
       });
@@ -437,11 +468,27 @@ async function saveTrendsToCache(type, trends) {
       return false;
     }
 
-    console.log(`✅ Caché de ${type} guardado exitosamente`);
+    console.log(`✅ Caché de ${type} guardado exitosamente (semana ${currentWeekId})`);
     return true;
   } catch (error) {
     console.error('❌ Error in saveTrendsToCache:', error);
     return false;
+  }
+}
+
+/**
+ * Limpiar desbloqueos de semanas anteriores
+ */
+async function cleanOldUnlockedTrends() {
+  try {
+    const { error } = await supabase.rpc('clean_old_unlocked_trends');
+    if (error) {
+      console.warn('⚠️ Error limpiando desbloqueos antiguos:', error);
+    } else {
+      console.log('🧹 Desbloqueos de semanas anteriores limpiados');
+    }
+  } catch (error) {
+    console.warn('⚠️ Error en cleanOldUnlockedTrends:', error);
   }
 }
 
@@ -462,14 +509,13 @@ async function getTrendsFromCache(type) {
       return null;
     }
 
-    // Verificar si el caché es válido (con validación específica por tipo)
-    if (!isCacheValid(data.updated_at, type)) {
-      const cacheType = (type === 'news' || type === 'reddit') ? '48h' : '3 días';
-      console.log(`⏰ Caché expirado para ${type} (duración: ${cacheType}), obteniendo nuevos datos...`);
+    // Verificar si el caché es válido (incluyendo verificación de semana)
+    if (!isCacheValid(data.updated_at, type, data.week_id)) {
+      console.log(`⏰ Caché expirado o de semana anterior para ${type}, obteniendo nuevos datos...`);
       return null;
     }
 
-    console.log(`✅ Usando caché de ${type}`);
+    console.log(`✅ Usando caché de ${type} (semana ${data.week_id || 'N/A'})`);
     return data.trends_data;
   } catch (error) {
     console.error('❌ Error getting trends from cache:', error);
@@ -593,13 +639,16 @@ export async function getWeeklyTrends(forceRefresh = false) {
  */
 export async function unlockTrendCard(userId, trendType, trendId) {
   try {
-    // Verificar si ya está desbloqueada
+    const currentWeekId = getCurrentWeekId();
+
+    // Verificar si ya está desbloqueada en la semana actual
     const { data: existingUnlock } = await supabase
       .from('unlocked_trends')
       .select('*')
       .eq('user_id', userId)
       .eq('trend_type', trendType)
       .eq('trend_id', trendId)
+      .eq('week_id', currentWeekId)
       .single();
 
     if (existingUnlock) {
@@ -610,13 +659,14 @@ export async function unlockTrendCard(userId, trendType, trendId) {
       };
     }
 
-    // Registrar desbloqueo
+    // Registrar desbloqueo con week_id
     const { error } = await supabase
       .from('unlocked_trends')
       .insert({
         user_id: userId,
         trend_type: trendType,
         trend_id: trendId,
+        week_id: currentWeekId,
         unlocked_at: new Date().toISOString()
       });
 
@@ -643,10 +693,14 @@ export async function unlockTrendCard(userId, trendType, trendId) {
  */
 export async function getUnlockedTrends(userId) {
   try {
+    const currentWeekId = getCurrentWeekId();
+
+    // Solo obtener desbloqueos de la semana actual
     const { data, error } = await supabase
       .from('unlocked_trends')
       .select('trend_id, trend_type')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('week_id', currentWeekId);
 
     if (error) throw error;
 

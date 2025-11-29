@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Lock,
   Unlock,
@@ -131,11 +133,15 @@ const WeeklyTrends = () => {
     }
   };
 
-  const loadTrends = async () => {
+  const loadTrends = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      const data = await getWeeklyTrends();
+      const data = await getWeeklyTrends(forceRefresh);
       setTrends(data);
+      // Si se forzó la actualización, limpiar desbloqueos locales (solo quedarán los de la semana actual)
+      if (forceRefresh && user) {
+        await loadUnlockedTrends();
+      }
     } catch (error) {
       console.error('Error loading trends:', error);
       toast({
@@ -143,6 +149,8 @@ const WeeklyTrends = () => {
         description: 'No se pudieron cargar las tendencias. Intenta de nuevo.',
         variant: 'destructive'
       });
+    } finally {
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -160,12 +168,27 @@ const WeeklyTrends = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadTrends();
-    setRefreshing(false);
-    toast({
-      title: '✅ Tendencias actualizadas',
-      description: 'Se cargaron las últimas tendencias de la semana.'
-    });
+    try {
+      // Forzar actualización de tendencias (esto limpiará desbloqueos antiguos automáticamente)
+      await loadTrends(true);
+      // Recargar desbloqueos (solo los de la semana actual)
+      if (user) {
+        await loadUnlockedTrends();
+      }
+      toast({
+        title: '✅ Tendencias actualizadas',
+        description: 'Se cargaron las últimas tendencias de la semana. Solo la primera tarjeta queda desbloqueada.'
+      });
+    } catch (error) {
+      console.error('Error refreshing trends:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron actualizar las tendencias.',
+        variant: 'destructive'
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleAnalyzeWithAI = async (trend) => {
@@ -790,7 +813,7 @@ Para convertir esta estrategia en guión listo para grabar:
                   <p className="text-gray-300 text-sm mt-1">
                     La <strong>primera tarjeta</strong> de cada categoría es <strong className="text-green-400">GRATIS</strong>.
                     Las demás requieren <strong className="text-purple-400">{UNLOCK_COST} créditos</strong> cada una.
-                    Las tendencias se actualizan automáticamente cada 3 días.
+                    Las tendencias se actualizan automáticamente cada <strong>semana</strong>. Al renovarse, solo la primera tarjeta queda desbloqueada.
                   </p>
                   <p className="text-sm mt-2 text-purple-300">
                     💡 <strong>Ahorra {(UNLOCK_COST * currentLockedCount) - currentUnlockAllCost} créditos</strong> desbloqueando las {currentLockedCount} restantes por solo <strong>{currentUnlockAllCost} créditos</strong>
@@ -935,8 +958,30 @@ Para convertir esta estrategia en guión listo para grabar:
                   ) : (
                     <>
                       <div className="prose prose-invert max-w-none">
-                        <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
+                        <div className="text-gray-300 leading-relaxed">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                            h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-purple-400 mt-8 mb-4 first:mt-0" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-xl font-bold text-indigo-400 mt-6 mb-3" {...props} />,
+                            h4: ({node, ...props}) => <h4 className="text-lg font-semibold text-cyan-400 mt-4 mb-2" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-4 text-gray-300 leading-relaxed" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                            em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 space-y-2 text-gray-300" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 space-y-2 text-gray-300" {...props} />,
+                            li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
+                            code: ({node, inline, ...props}) => 
+                              inline ? (
+                                <code className="bg-gray-800 px-1.5 py-0.5 rounded text-purple-300 text-sm" {...props} />
+                              ) : (
+                                <code className="block bg-gray-800 p-3 rounded text-purple-300 text-sm overflow-x-auto" {...props} />
+                              ),
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-400 my-4" {...props} />,
+                          }}
+                        >
                           {aiResponse}
+                        </ReactMarkdown>
                         </div>
 
                         <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">

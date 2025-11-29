@@ -31,6 +31,31 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// Función para limpiar markdown y convertir a HTML limpio
+const cleanMarkdown = (text) => {
+  if (!text) return '';
+  
+  // Convertir markdown a texto limpio
+  return text
+    // Eliminar encabezados markdown (##, ###, etc.) pero mantener el texto
+    .replace(/^#{1,6}\s+/gm, '')
+    // Convertir negritas **texto** a texto normal
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    // Convertir negritas __texto__ a texto normal
+    .replace(/__(.*?)__/g, '$1')
+    // Convertir cursivas *texto* a texto normal
+    .replace(/\*(.*?)\*/g, '$1')
+    // Convertir cursivas _texto_ a texto normal
+    .replace(/_(.*?)_/g, '$1')
+    // Eliminar enlaces markdown pero mantener el texto [texto](url) -> texto
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+    // Eliminar código inline `código` pero mantener el texto
+    .replace(/`([^`]+)`/g, '$1')
+    // Limpiar múltiples espacios en blanco
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 // Función para formatear números grandes
 const formatCompactNumber = (value) => {
   if (!value || value === 0) return '0';
@@ -473,20 +498,30 @@ const CreoStrategy = () => {
                 {/* Ponemos los estilos de 'prose' en el 'div' que envuelve al 
                   componente <ReactMarkdown>, en lugar de en el componente mismo.
                 */}
-                <div
-                  className="prose prose-invert max-w-none 
-                             prose-headings:text-purple-300 prose-headings:font-bold
-                             prose-h3:text-2xl prose-h3:mb-4
-                             prose-h3:border-b prose-h3:border-purple-500/30 prose-h3:pb-2
-                             prose-strong:text-pink-400
-                             prose-ul:list-disc prose-ul:ml-5
-                             prose-li:text-white/90 prose-li:my-1
-                             prose-p:text-white/90 prose-p:text-base
-                             prose-a:text-orange-400 prose-a:hover:text-orange-300
-                             prose-code:bg-purple-500/20 prose-code:px-2 prose-code:py-1 prose-code:rounded-md prose-code:text-sm
-                             prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-white/70"
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <div className="space-y-6 text-white">
+                  {/* Renderizar markdown correctamente sin mostrar símbolos */}
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    className="text-base leading-relaxed prose prose-invert max-w-none"
+                    components={{
+                      h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-purple-300 mt-8 mb-4 pb-2 border-b border-purple-500/30 first:mt-0" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-xl font-bold text-indigo-400 mt-6 mb-3" {...props} />,
+                      h4: ({node, ...props}) => <h4 className="text-lg font-semibold text-pink-400 mt-5 mb-2" {...props} />,
+                      p: ({node, ...props}) => <p className="mb-4 text-white/90 leading-relaxed" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                      em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 space-y-2 text-white/90" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 space-y-2 text-white/90" {...props} />,
+                      li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
+                      code: ({node, inline, ...props}) => 
+                        inline ? (
+                          <code className="bg-gray-800 px-1.5 py-0.5 rounded text-purple-300 text-sm" {...props} />
+                        ) : (
+                          <code className="block bg-gray-800 p-3 rounded text-purple-300 text-sm overflow-x-auto" {...props} />
+                        ),
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-300 my-4" {...props} />,
+                    }}
+                  >
                     {result.strategy}
                   </ReactMarkdown>
                 </div>

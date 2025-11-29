@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
 import { StarRating } from '@/components/FeedbackWidget';
 import ShareButton from '@/components/ShareButton';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 // Heroicons imports for professional iconography
 import {
   SparklesIcon,
@@ -2206,9 +2208,30 @@ const handleCopy = useCallback(() => {
                     </CardHeader>
                     <CardContent>
                       <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
-                        <pre className="whitespace-pre-wrap text-sm text-gray-200 font-sans">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          className="text-sm text-gray-200 font-sans prose prose-invert max-w-none"
+                          components={{
+                            h2: ({node, ...props}) => <h2 className="text-xl font-bold text-purple-400 mt-6 mb-3 first:mt-0" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-lg font-bold text-indigo-400 mt-5 mb-2" {...props} />,
+                            h4: ({node, ...props}) => <h4 className="text-base font-semibold text-cyan-400 mt-4 mb-2" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 text-gray-200 leading-relaxed" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                            em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1 text-gray-200" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1 text-gray-200" {...props} />,
+                            li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
+                            code: ({node, inline, ...props}) => 
+                              inline ? (
+                                <code className="bg-gray-800 px-1.5 py-0.5 rounded text-purple-300 text-xs" {...props} />
+                              ) : (
+                                <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
+                              ),
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-3 italic text-gray-300 my-3" {...props} />,
+                          }}
+                        >
                           {contentAnalisis || generatedContent}
-                        </pre>
+                        </ReactMarkdown>
                       </div>
                     </CardContent>
                   </Card>
