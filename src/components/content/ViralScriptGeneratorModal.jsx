@@ -12,11 +12,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Copy, Check, Download, Film, Loader2 } from 'lucide-react';
 import { generateViralScript } from '@/services/geminiService';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { checkFirstUse } from '@/services/firstUseService';
+import { consumeCredits } from '@/services/creditService';
+import FirstUseModal from '@/components/onboarding/FirstUseModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Form states
   const [theme, setTheme] = useState('');
@@ -33,6 +38,11 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedSuggestions, setCopiedSuggestions] = useState(false);
 
+  // 🎁 FASE 1: Primer uso modal
+  const [showFirstUseModal, setShowFirstUseModal] = useState(false);
+  const [firstUseInfo, setFirstUseInfo] = useState(null);
+  const [pendingGeneration, setPendingGeneration] = useState(false);
+
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
@@ -41,8 +51,29 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
       setDuration('short');
       setTopic('');
       setGeneratedContent(null);
+      setShowFirstUseModal(false);
+      setFirstUseInfo(null);
+      setPendingGeneration(false);
     }
   }, [open]);
+
+  // 🎁 FASE 1: Verificar primer uso cuando se abre el modal
+  useEffect(() => {
+    if (open && user) {
+      checkFirstUseForViralScript();
+    }
+  }, [open, user]);
+
+  const checkFirstUseForViralScript = async () => {
+    if (!user) return;
+    
+    try {
+      const info = await checkFirstUse(user.id, 'viral-script');
+      setFirstUseInfo(info);
+    } catch (error) {
+      console.error('Error checking first use:', error);
+    }
+  };
 
   // Parse the generated content into 3 sections
   const parseGeneratedContent = (rawContent) => {
@@ -77,16 +108,81 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
       return;
     }
 
+    // 🎁 FASE 1: Verificar si es primer uso y mostrar modal
+    if (user && firstUseInfo?.isFirstUse && firstUseInfo?.eligible) {
+      setShowFirstUseModal(true);
+      setPendingGeneration(true);
+      return;
+    }
+
+    // Si no es primer uso, proceder directamente
+    await executeGeneration();
+  };
+
+  // 🎁 FASE 1: Confirmar primer uso y proceder
+  const handleConfirmFirstUse = async () => {
+    setShowFirstUseModal(false);
+    await executeGeneration();
+  };
+
+  const executeGeneration = async () => {
+    if (!user) {
+      toast({
+        title: 'Debes iniciar sesión',
+        description: 'Necesitas una cuenta para generar guiones',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
+      // Consumir créditos (el servicio aplicará el descuento automáticamente)
+      // Usar el slug correcto que se mapea en creditCosts.js
+      const creditResult = await consumeCredits(user.id, 'viral_script_basic');
+      
+      if (!creditResult.success) {
+        toast({
+          title: 'Créditos insuficientes',
+          description: creditResult.message || 'No tienes suficientes créditos para esta acción',
+          variant: 'destructive'
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      // Mostrar mensaje si fue primer uso
+      if (creditResult.firstUse) {
+        toast({
+          title: '🎉 ¡Primer uso gratis!',
+          description: `Has ahorrado ${creditResult.savings} créditos. Créditos restantes: ${creditResult.remaining}`,
+          duration: 5000
+        });
+      }
+
       // Generar guion con Gemini
-      // TODO: Implementar consumo de créditos con sistema de la aplicación
       const result = await generateViralScript(theme, style, duration, topic, userPersonality);
 
       // Parsear las 3 secciones
       const parsed = parseGeneratedContent(result);
       setGeneratedContent(parsed);
+
+      // 🎁 FASE 2: Otorgar bonus por primer contenido
+      try {
+        const { grantFirstContentBonus } = await import('@/services/bonusService');
+        const bonusResult = await grantFirstContentBonus(user.id, 'viral_script');
+        if (bonusResult.success && !bonusResult.alreadyGranted) {
+          toast({
+            title: '🎉 ¡Primer contenido creado!',
+            description: `Has recibido ${bonusResult.credits} créditos adicionales`,
+            duration: 5000
+          });
+        }
+      } catch (error) {
+        console.warn('Error granting first content bonus:', error);
+        // No es crítico, continuar
+      }
 
       toast({
         title: '¡Guion generado!',
@@ -149,8 +245,18 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
   if (!open) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <>
+      {/* 🎁 FASE 1: Modal de primer uso gratis */}
+      <FirstUseModal
+        open={showFirstUseModal}
+        onOpenChange={setShowFirstUseModal}
+        onConfirm={handleConfirmFirstUse}
+        featureName="Generador de Guiones Virales"
+        originalCost={firstUseInfo?.originalCost || 40}
+      />
+
+      <AnimatePresence>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -302,30 +408,31 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
                     </div>
                   </div>
                   <div className="p-4 overflow-auto text-sm text-gray-300 bg-gray-900 rounded-lg max-h-64">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      className="prose prose-invert max-w-none text-sm"
-                      components={{
-                        h2: ({node, ...props}) => <h2 className="text-lg font-bold text-purple-400 mt-4 mb-2 first:mt-0" {...props} />,
-                        h3: ({node, ...props}) => <h3 className="text-base font-bold text-indigo-400 mt-3 mb-2" {...props} />,
-                        h4: ({node, ...props}) => <h4 className="text-sm font-semibold text-cyan-400 mt-3 mb-1" {...props} />,
-                        p: ({node, ...props}) => <p className="mb-2 text-gray-300 leading-relaxed text-sm" {...props} />,
-                        strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                        em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
-                        ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                        ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                        li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
-                        code: ({node, inline, ...props}) => 
-                          inline ? (
-                            <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 text-xs" {...props} />
-                          ) : (
-                            <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
-                          ),
-                        blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-2 italic text-gray-300 my-2" {...props} />,
-                      }}
-                    >
-                      {generatedContent.analysis}
-                    </ReactMarkdown>
+                    <div className="prose prose-invert max-w-none text-sm">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h2: ({node, ...props}) => <h2 className="text-lg font-bold text-purple-400 mt-4 mb-2 first:mt-0" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-base font-bold text-indigo-400 mt-3 mb-2" {...props} />,
+                          h4: ({node, ...props}) => <h4 className="text-sm font-semibold text-cyan-400 mt-3 mb-1" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-2 text-gray-300 leading-relaxed text-sm" {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                          em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
+                          li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
+                          code: ({node, inline, ...props}) => 
+                            inline ? (
+                              <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 text-xs" {...props} />
+                            ) : (
+                              <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
+                            ),
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-2 italic text-gray-300 my-2" {...props} />,
+                        }}
+                      >
+                        {generatedContent.analysis}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
 
@@ -375,30 +482,31 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
                     </div>
                   </div>
                   <div className="p-4 overflow-auto text-sm text-gray-300 bg-gray-900 rounded-lg max-h-64">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      className="prose prose-invert max-w-none text-sm"
-                      components={{
-                        h2: ({node, ...props}) => <h2 className="text-lg font-bold text-purple-400 mt-4 mb-2 first:mt-0" {...props} />,
-                        h3: ({node, ...props}) => <h3 className="text-base font-bold text-indigo-400 mt-3 mb-2" {...props} />,
-                        h4: ({node, ...props}) => <h4 className="text-sm font-semibold text-cyan-400 mt-3 mb-1" {...props} />,
-                        p: ({node, ...props}) => <p className="mb-2 text-gray-300 leading-relaxed text-sm" {...props} />,
-                        strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                        em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
-                        ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                        ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                        li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
-                        code: ({node, inline, ...props}) => 
-                          inline ? (
-                            <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 text-xs" {...props} />
-                          ) : (
-                            <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
-                          ),
-                        blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-2 italic text-gray-300 my-2" {...props} />,
-                      }}
-                    >
-                      {generatedContent.suggestions}
-                    </ReactMarkdown>
+                    <div className="prose prose-invert max-w-none text-sm">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h2: ({node, ...props}) => <h2 className="text-lg font-bold text-purple-400 mt-4 mb-2 first:mt-0" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-base font-bold text-indigo-400 mt-3 mb-2" {...props} />,
+                          h4: ({node, ...props}) => <h4 className="text-sm font-semibold text-cyan-400 mt-3 mb-1" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-2 text-gray-300 leading-relaxed text-sm" {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+                          em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
+                          li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
+                          code: ({node, inline, ...props}) => 
+                            inline ? (
+                              <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 text-xs" {...props} />
+                            ) : (
+                              <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
+                            ),
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-2 italic text-gray-300 my-2" {...props} />,
+                        }}
+                      >
+                        {generatedContent.suggestions}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
 
@@ -415,6 +523,7 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
         </motion.div>
       </div>
     </AnimatePresence>
+    </>
   );
 };
 

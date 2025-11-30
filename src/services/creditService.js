@@ -11,6 +11,8 @@
  */
 
 import { supabase } from '@/lib/customSupabaseClient';
+import { checkFirstUse, recordFirstUse } from './firstUseService';
+import { checkDay2Discount } from './dailyRewardsService';
 
 // ==========================================
 // 📊 CONSTANTES
@@ -100,36 +102,44 @@ export async function getUserCredits(userId) {
 
     // Si no existe, crear con créditos iniciales
     if (error && error.code === 'PGRST116') {
+      // 🎁 FASE 1: Otorgar bonus de bienvenida usando el servicio
+      const { grantWelcomeBonus } = await import('@/services/bonusService');
+      const bonusResult = await grantWelcomeBonus(userId);
+      
       const { data: newCredits, error: insertError } = await supabase
         .from('user_credits')
-        .insert({
-          user_id: userId,
-          monthly_credits: 100, // Free plan default
-          monthly_credits_assigned: 100,
-          subscription_plan: 'free',
-          bonus_credits: 50 // Bonus de bienvenida
-        })
         .select()
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (insertError) {
-        console.error('Error creating user credits:', insertError);
+      if (insertError && insertError.code !== 'PGRST116') {
+        console.error('Error getting user credits after bonus:', insertError);
         throw insertError;
       }
 
-      credits = newCredits;
+      // Si el bonus se otorgó, usar esos créditos; si no, crear con valores por defecto
+      if (newCredits) {
+        credits = newCredits;
+      } else {
+        const { data: createdCredits, error: createError } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: userId,
+            monthly_credits: 100, // Free plan default
+            monthly_credits_assigned: 100,
+            subscription_plan: 'free',
+            bonus_credits: bonusResult.success ? 50 : 0 // Bonus de bienvenida si se otorgó
+          })
+          .select()
+          .single();
 
-      // Registrar transacción de bonus de bienvenida
-      await supabase.from('credit_transactions').insert({
-        user_id: userId,
-        type: 'bonus',
-        amount: 50,
-        description: '🎁 Bonus de bienvenida',
-        balance_after_monthly: credits.monthly_credits,
-        balance_after_purchased: credits.purchased_credits,
-        balance_after_bonus: credits.bonus_credits,
-        balance_after_total: credits.total_credits
-      });
+        if (createError) {
+          console.error('Error creating user credits:', createError);
+          throw createError;
+        }
+
+        credits = createdCredits;
+      }
     } else if (error) {
       throw error;
     }
@@ -255,6 +265,30 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
       featureId = feature || 'unknown';
     }
 
+    // 🎁 FASE 2: Verificar descuentos (primer uso y día 2)
+    let firstUseInfo = null;
+    let day2Discount = null;
+    let actualAmountToCharge = amount;
+    
+    if (featureId && typeof featureOrAmount === 'string') {
+      // Verificar primer uso gratis
+      firstUseInfo = await checkFirstUse(userId, featureId);
+      
+      if (firstUseInfo.isFirstUse && firstUseInfo.eligible) {
+        actualAmountToCharge = firstUseInfo.discountedCost;
+        console.log(`🎁 Primer uso detectado para ${featureId}: ${amount} → ${actualAmountToCharge} créditos (ahorro: ${firstUseInfo.savings})`);
+      } else {
+        // Si no es primer uso, verificar descuento del día 2
+        day2Discount = await checkDay2Discount(userId, featureId);
+        
+        if (day2Discount.eligible) {
+          const discountAmount = Math.floor(amount * day2Discount.discount);
+          actualAmountToCharge = amount - discountAmount;
+          console.log(`🎁 Descuento Día 2 para ${featureId}: ${amount} → ${actualAmountToCharge} créditos (ahorro: ${discountAmount})`);
+        }
+      }
+    }
+
     // Llamar función SQL que maneja la lógica de consumo
     console.log('🔍 Llamando a RPC consume_credits con:', { userId, featureId });
     
@@ -269,7 +303,20 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
     // Si la función RPC no existe (404), usar fallback
     if (error && (error.code === 'PGRST202' || error.message?.includes('Could not find'))) {
       console.warn('⚠️ Function consume_credits not found, using fallback');
-      return await consumeCreditsFallback(userId, amount, featureId, description);
+      const result = await consumeCreditsFallback(userId, actualAmountToCharge, featureId, description);
+      
+      // 🎁 Registrar primer uso si fue exitoso
+      if (result.success && firstUseInfo?.isFirstUse) {
+        await recordFirstUse(userId, featureId);
+      }
+      
+      return {
+        ...result,
+        firstUse: firstUseInfo?.isFirstUse || false,
+        day2Discount: day2Discount?.eligible || false,
+        savings: firstUseInfo?.savings || (day2Discount?.eligible ? Math.floor(amount * day2Discount.discount) : 0),
+        originalCost: amount
+      };
     }
 
     if (error) {
@@ -288,14 +335,24 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
       };
     }
 
+    // 🎁 Registrar primer uso si fue exitoso y es primer uso
+    if (firstUseInfo?.isFirstUse && featureId) {
+      await recordFirstUse(userId, featureId);
+      console.log(`✅ Primer uso registrado para ${featureId}`);
+    }
+
     // Obtener nuevo balance
     const newBalance = await getUserCredits(userId);
 
     return {
       success: true,
-      consumed: data?.consumed || amount,
+      consumed: data?.consumed || actualAmountToCharge,
       remaining: newBalance.credits.total,
-      breakdown: newBalance.credits
+      breakdown: newBalance.credits,
+      firstUse: firstUseInfo?.isFirstUse || false,
+      day2Discount: day2Discount?.eligible || false,
+      savings: firstUseInfo?.savings || (day2Discount?.eligible ? Math.floor(amount * day2Discount.discount) : 0),
+      originalCost: amount
     };
   } catch (error) {
     console.error('❌ Error consuming credits:', error);
@@ -580,6 +637,55 @@ export async function addCredits(userId, type, amount, transactionType, descript
  */
 export async function grantBonus(userId, amount, reason) {
   return addCredits(userId, 'bonus', amount, 'bonus', `🎁 ${reason}`);
+}
+
+/**
+ * 🎁 FASE 1: Otorgar créditos de bienvenida al registrarse
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+export async function grantWelcomeCredits(userId) {
+  try {
+    if (!userId) {
+      return {
+        success: false,
+        error: 'User ID is required'
+      };
+    }
+
+    // Verificar si ya recibió créditos de bienvenida
+    const { data: existing } = await supabase
+      .from('credit_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('transaction_type', 'bonus')
+      .eq('description', '🎁 Créditos de bienvenida')
+      .maybeSingle();
+
+    if (existing) {
+      console.log('User already received welcome credits');
+      return {
+        success: true,
+        alreadyGranted: true,
+        message: 'Welcome credits already granted'
+      };
+    }
+
+    // Otorgar 50 créditos de bienvenida
+    const result = await grantBonus(userId, 50, 'Créditos de bienvenida');
+    
+    if (result.success) {
+      console.log(`✅ Welcome credits granted to user ${userId}: 50 créditos`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error granting welcome credits:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }
 
 /**

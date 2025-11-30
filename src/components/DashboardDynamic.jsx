@@ -69,6 +69,8 @@ import {
 } from 'chart.js';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
+import { getUserCredits } from '@/services/creditService';
 import { getAllTrending } from '@/services/trendingContentService';
 import { generateExpertAdvisoryInsights, analyzeTopCreator } from '@/services/geminiService';
 import { consumeCredits } from '@/services/creditService';
@@ -427,6 +429,76 @@ const DashboardDynamic = ({ onSectionChange }) => {
   const [isVideoAnalysisLoading, setIsVideoAnalysisLoading] = useState(false);
   const [videoAnalysis, setVideoAnalysis] = useState({});
   const [videoAnalysisError, setVideoAnalysisError] = useState(null);
+
+  // 🎁 FASE 1: Banner de bienvenida
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  const [userCredits, setUserCredits] = useState(0);
+
+  // 🎁 FASE 1: Cargar créditos y mostrar banner para usuarios nuevos
+  // 🎁 FASE 2: Verificar y otorgar recompensas diarias
+  useEffect(() => {
+    if (user) {
+      loadUserCredits();
+      // Mostrar banner si no se ha cerrado antes (localStorage)
+      const bannerDismissed = localStorage.getItem(`welcome_banner_dismissed_${user.id}`);
+      if (!bannerDismissed) {
+        setShowWelcomeBanner(true);
+      }
+      
+      // 🎁 FASE 2: Verificar recompensas diarias automáticamente
+      checkDailyRewards();
+    }
+  }, [user]);
+
+  const checkDailyRewards = async () => {
+    if (!user) return;
+    
+    try {
+      const { checkAndGrantRewards } = await import('@/services/dailyRewardsService');
+      const rewards = await checkAndGrantRewards(user.id);
+      
+      if (rewards.granted.length > 0) {
+        rewards.granted.forEach(reward => {
+          toast({
+            title: '🎉 ¡Recompensa desbloqueada!',
+            description: reward.description || `Has recibido ${reward.credits} créditos`,
+            duration: 6000
+          });
+        });
+        // Recargar créditos
+        await loadUserCredits();
+      }
+    } catch (error) {
+      console.warn('Error checking daily rewards:', error);
+      // No es crítico
+    }
+  };
+
+  const loadUserCredits = async () => {
+    if (!user) return;
+    try {
+      const creditsData = await getUserCredits(user.id);
+      if (creditsData.success) {
+        setUserCredits(creditsData.credits.total);
+      }
+    } catch (error) {
+      console.error('Error loading user credits:', error);
+    }
+  };
+
+  const handleDismissBanner = () => {
+    setShowWelcomeBanner(false);
+    if (user) {
+      localStorage.setItem(`welcome_banner_dismissed_${user.id}`, 'true');
+    }
+  };
+
+  const handleExploreTools = () => {
+    if (onSectionChange) {
+      onSectionChange('tools');
+    }
+    handleDismissBanner();
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined' || !highlightUnlockStorageKey) {
@@ -2186,6 +2258,14 @@ const DashboardDynamic = ({ onSectionChange }) => {
 
   return (
     <div className="space-y-6">
+      {/* 🎁 FASE 1: Banner de bienvenida */}
+      {showWelcomeBanner && user && (
+        <WelcomeBanner
+          credits={userCredits || 50}
+          onDismiss={handleDismissBanner}
+        />
+      )}
+
       {/* Header con búsqueda */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

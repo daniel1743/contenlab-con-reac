@@ -268,6 +268,28 @@ export default function CreatorProfile() {
 
       if (error) throw error;
 
+      // 🎁 FASE 2: Verificar si el perfil está completo y otorgar bonus
+      const isProfileComplete = profileData.display_name && 
+                                profileData.bio && 
+                                (profileData.youtube_channel || profileData.instagram_handle || profileData.tiktok_handle);
+      
+      if (isProfileComplete) {
+        try {
+          const { grantProfileCompleteBonus } = await import('@/services/bonusService');
+          const bonusResult = await grantProfileCompleteBonus(user.id);
+          if (bonusResult.success && !bonusResult.alreadyGranted) {
+            toast({
+              title: '🎁 Perfil completo',
+              description: `Has recibido ${bonusResult.credits} créditos adicionales`,
+              duration: 5000
+            });
+          }
+        } catch (error) {
+          console.warn('Error granting profile complete bonus:', error);
+          // No es crítico, continuar
+        }
+      }
+
       toast({
         title: '✅ Guardado',
         description: 'Perfil actualizado correctamente'

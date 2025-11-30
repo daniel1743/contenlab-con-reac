@@ -151,8 +151,6 @@ const WeeklyTrends = () => {
       });
     } finally {
       setLoading(false);
-    } finally {
-      setLoading(false);
     }
   };
 

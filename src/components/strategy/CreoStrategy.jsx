@@ -500,10 +500,10 @@ const CreoStrategy = () => {
                 */}
                 <div className="space-y-6 text-white">
                   {/* Renderizar markdown correctamente sin mostrar símbolos */}
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    className="text-base leading-relaxed prose prose-invert max-w-none"
-                    components={{
+                  <div className="text-base leading-relaxed prose prose-invert max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
                       h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-purple-300 mt-8 mb-4 pb-2 border-b border-purple-500/30 first:mt-0" {...props} />,
                       h3: ({node, ...props}) => <h3 className="text-xl font-bold text-indigo-400 mt-6 mb-3" {...props} />,
                       h4: ({node, ...props}) => <h4 className="text-lg font-semibold text-pink-400 mt-5 mb-2" {...props} />,
@@ -524,6 +524,7 @@ const CreoStrategy = () => {
                   >
                     {result.strategy}
                   </ReactMarkdown>
+                  </div>
                 </div>
               </motion.div>
 

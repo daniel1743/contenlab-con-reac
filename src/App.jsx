@@ -39,6 +39,14 @@ const CreoStrategy = lazy(() => import('@/components/strategy/CreoStrategy'));
 const ThumbnailEditor = lazy(() => import('@/components/thumbnail-editor/ThumbnailEditor'));
 const TermsOfServicePage = lazy(() => import('@/components/legal/TermsOfServicePage'));
 const PrivacyPolicyPage = lazy(() => import('@/components/legal/PrivacyPolicyPage'));
+const PaymentSuccess = lazy(() => import('@/components/payment/PaymentSuccess'));
+const PaymentFailure = lazy(() => import('@/components/payment/PaymentFailure'));
+const PaymentPending = lazy(() => import('@/components/payment/PaymentPending'));
+const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard'));
+const WebhookInbox = lazy(() => import('@/components/admin/WebhookInbox'));
+const AdminNotifications = lazy(() => import('@/components/admin/AdminNotifications'));
+const SupportTickets = lazy(() => import('@/components/admin/SupportTickets'));
+const SupportTicketModal = lazy(() => import('@/components/SupportTicketModal'));
 
 function App() {
   const { session, loading, user } = useAuth();
@@ -50,6 +58,7 @@ function App() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const [hasDemoAccess, setHasDemoAccess] = useState(false);
+  const [showSupportTicketModal, setShowSupportTicketModal] = useState(false);
   const isAuthenticated = !!session;
   const termsStorageKey = user ? `creovision_terms_accept_v1_${user.id}` : null;
 
@@ -106,6 +115,16 @@ function App() {
       setShowTermsModal(false);
     }
   }, [user, loading, termsStorageKey, cookiesAccepted]);
+
+  // 🎫 Listener para abrir modal de ticket de soporte
+  useEffect(() => {
+    const handleOpenSupportTicket = () => {
+      setShowSupportTicketModal(true);
+    };
+
+    window.addEventListener('openSupportTicket', handleOpenSupportTicket);
+    return () => window.removeEventListener('openSupportTicket', handleOpenSupportTicket);
+  }, []);
   
   // Secciones que requieren autenticación obligatoria
   const protectedSections = useMemo(() =>
@@ -439,6 +458,45 @@ function App() {
                   <Route path="/terms" element={<Navigate to="/terminos" replace />} />
                   <Route path="/privacy" element={<Navigate to="/privacidad" replace />} />
 
+                  {/* Rutas de resultado de pago (públicas) */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/payment/failure" element={<PaymentFailure />} />
+                  <Route path="/payment/pending" element={<PaymentPending />} />
+
+                  {/* Rutas de Admin Panel (protegidas) */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute pageName="admin-dashboard">
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/webhooks"
+                    element={
+                      <ProtectedRoute pageName="admin-webhooks">
+                        <WebhookInbox />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/notifications"
+                    element={
+                      <ProtectedRoute pageName="admin-notifications">
+                        <AdminNotifications />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/tickets"
+                    element={
+                      <ProtectedRoute pageName="admin-tickets">
+                        <SupportTickets />
+                      </ProtectedRoute>
+                    }
+                  />
+
                   {/* Rutas comentadas/eliminadas - Redirect a home para evitar 404 */}
                   <Route path="/chat" element={<Navigate to="/" replace />} />
                   <Route path="/inbox" element={<Navigate to="/" replace />} />
@@ -509,6 +567,14 @@ function App() {
               onClose={() => {
                 setShowTermsModal(false);
               }}
+            />
+          )}
+
+          {/* 🎫 Modal de Ticket de Soporte */}
+          {showSupportTicketModal && (
+            <SupportTicketModal
+              open={showSupportTicketModal}
+              onOpenChange={setShowSupportTicketModal}
             />
           )}
         </Suspense>

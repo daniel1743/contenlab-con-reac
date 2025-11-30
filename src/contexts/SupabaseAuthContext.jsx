@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { grantWelcomeBonus } from '@/services/bonusService';
 
 const AuthContext = createContext(undefined);
 
@@ -146,6 +147,44 @@ export const AuthProvider = ({ children }) => {
       async (event, newSession) => {
         try {
           await handleSession(newSession);
+          
+          // 🎁 FASE 1: Otorgar créditos de bienvenida al registrarse
+          if (event === 'SIGNED_UP' && newSession?.user) {
+            console.log('[SupabaseAuthContext] New user signed up, granting welcome bonus');
+            try {
+              const result = await grantWelcomeBonus(newSession.user.id);
+              if (result.success && !result.alreadyGranted) {
+                console.log('[SupabaseAuthContext] Welcome bonus granted successfully');
+                toast({
+                  title: '🎉 ¡Bienvenido!',
+                  description: 'Has recibido 50 créditos gratis para comenzar',
+                  duration: 5000
+                });
+              }
+            } catch (error) {
+              console.error('[SupabaseAuthContext] Error granting welcome bonus:', error);
+              // No mostrar error al usuario, es un bonus
+            }
+          }
+
+          // 🎁 FASE 2: Otorgar bonus por verificación de email
+          if (event === 'TOKEN_REFRESHED' && newSession?.user?.email_confirmed_at) {
+            console.log('[SupabaseAuthContext] Email verified, checking for bonus');
+            try {
+              const { grantEmailVerificationBonus } = await import('@/services/bonusService');
+              const result = await grantEmailVerificationBonus(newSession.user.id);
+              if (result.success && !result.alreadyGranted) {
+                console.log('[SupabaseAuthContext] Email verification bonus granted');
+                toast({
+                  title: '📧 Email verificado',
+                  description: `Has recibido ${result.credits} créditos adicionales`,
+                  duration: 5000
+                });
+              }
+            } catch (error) {
+              console.error('[SupabaseAuthContext] Error granting email verification bonus:', error);
+            }
+          }
         } catch (error) {
           console.error('[SupabaseAuthContext] Error in auth state change:', error);
         }

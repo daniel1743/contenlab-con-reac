@@ -142,6 +142,32 @@ async function handlePaymentEvent(data, action) {
               console.error('[webhooks/mercadopago] Error adding credits', creditsError);
             } else {
               console.log(`[webhooks/mercadopago] ✅ Créditos agregados: ${planData.total_credits} para usuario ${userId}`);
+              
+              // 🛡️ ADMIN PANEL: Actualizar webhook a processed y crear notificación
+              try {
+                await supabaseAdmin
+                  .from('system_webhooks')
+                  .update({
+                    status: 'processed',
+                    processed_at: new Date().toISOString(),
+                    payment_id: payment.id.toString()
+                  })
+                  .eq('source', 'mercadopago')
+                  .eq('payload->>id', payment.id.toString())
+                  .limit(1);
+
+                // Crear notificación admin
+                await supabaseAdmin.rpc('create_admin_notification', {
+                  p_title: '💰 Pago Exitoso - MercadoPago',
+                  p_message: `Nuevo pago recibido: ${payment.currency_id} ${payment.transaction_amount} - Usuario: ${userId}`,
+                  p_type: 'payment_success',
+                  p_source: 'mercadopago',
+                  p_severity: 'success',
+                  p_metadata: { payment_id: payment.id, user_id: userId, plan_id: planId }
+                });
+              } catch (notifError) {
+                console.warn('[webhooks/mercadopago] Error creating notification:', notifError);
+              }
             }
           }
         }
@@ -150,6 +176,20 @@ async function handlePaymentEvent(data, action) {
     } else if (action === 'payment.updated' && payment.status === 'rejected') {
       // Pago rechazado
       console.log(`[webhooks/mercadopago] ❌ Pago rechazado: ${paymentId}`);
+      
+      // 🛡️ ADMIN PANEL: Crear notificación de error
+      try {
+        await supabaseAdmin.rpc('create_admin_notification', {
+          p_title: '❌ Pago Fallido - MercadoPago',
+          p_message: `Pago rechazado: ${payment.status_detail || 'Razón desconocida'} - Payment ID: ${paymentId}`,
+          p_type: 'payment_error',
+          p_source: 'mercadopago',
+          p_severity: 'error',
+          p_metadata: { payment_id: paymentId, user_id: userId, error: payment.status_detail }
+        });
+      } catch (notifError) {
+        console.warn('[webhooks/mercadopago] Error creating error notification:', notifError);
+      }
 
       if (supabaseAdmin) {
         await supabaseAdmin
@@ -286,6 +326,36 @@ export default async function handler(req, res) {
     const { type, data, action } = req.body;
 
     console.log('[webhooks/mercadopago] 🔔 Webhook recibido:', { type, action, dataId: data?.id });
+
+    // 🛡️ ADMIN PANEL: Guardar webhook en system_webhooks antes de procesar
+    try {
+      const ipAddress = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
+      const signature = req.headers['x-signature'] || req.headers['x-mercadopago-signature'] || null;
+      
+      const headers = {};
+      Object.keys(req.headers).forEach(key => {
+        headers[key] = req.headers[key];
+      });
+
+      await supabaseAdmin
+        .from('system_webhooks')
+        .insert({
+          source: 'mercadopago',
+          event_type: `${type}.${action}` || type,
+          payload: req.body,
+          status: 'received',
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          signature: signature,
+          headers: headers
+        });
+      
+      console.log('[webhooks/mercadopago] ✅ Webhook guardado en system_webhooks');
+    } catch (webhookError) {
+      console.error('[webhooks/mercadopago] ⚠️ Error guardando en system_webhooks:', webhookError);
+      // No fallar el webhook por esto, continuar procesamiento
+    }
 
     // PROCESAR SEGÚN TIPO DE EVENTO
     if (type === 'payment') {

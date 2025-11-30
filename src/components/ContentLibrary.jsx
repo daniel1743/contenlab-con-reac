@@ -40,164 +40,8 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
   const userPlan = 'free'; // 'free' o 'premium'
   const historyLimit = userPlan === 'premium' ? 20 : 5;
 
-  // Datos de ejemplo de historial de generaciones (ordenados por fecha reciente)
-  const [forgedContent, setForgedContent] = useState([
-    {
-      id: 1,
-      title: 'Cómo Ganar Dinero con TikTok en 2025',
-      topic: 'Monetización',
-      platform: 'TikTok',
-      createdAt: '2025-01-15 14:23',
-      type: 'viral_script',
-      locked: false,
-      preview: 'Descubre las 5 estrategias probadas para monetizar tu cuenta de TikTok desde cero...',
-      data: {
-        hook: '¿Sabías que puedes ganar $5000 al mes con TikTok sin mostrar tu cara?',
-        script: 'Hoy te voy a revelar las 5 estrategias exactas que use para generar ingresos pasivos...',
-        hashtags: ['#tiktokmoney', '#monetizacion', '#dinerofacil', '#emprendimiento', '#sidehustle'],
-        bestTime: '18:00 - 21:00',
-        engagement: '85% retención estimada',
-        duration: '45-60 segundos'
-      }
-    },
-    {
-      id: 2,
-      title: 'Auditoría: Mi Canal de Cocina',
-      topic: 'Análisis de Contenido',
-      platform: 'YouTube',
-      createdAt: '2025-01-14 09:15',
-      type: 'content_audit',
-      locked: false,
-      preview: 'Análisis completo de tu canal con 3 insights críticos y plan de acción...',
-      data: {
-        insights: [
-          'Tus thumbnails tienen bajo CTR (2.1% vs 4.5% promedio)',
-          'Los primeros 8 segundos pierden 60% de audiencia',
-          'Títulos demasiado genéricos, falta curiosidad'
-        ],
-        actions: [
-          'Rediseña thumbnails con contraste alto y texto grande',
-          'Crea hook explosivo en los primeros 3 segundos',
-          'Usa fórmulas de títulos virales: "Secreto", "Nadie te cuenta", "Error"'
-        ],
-        score: 62,
-        potential: '+180% alcance estimado'
-      }
-    },
-    {
-      id: 3,
-      title: 'Ideas Virales para Instagram Reels',
-      topic: 'Ideas de Contenido',
-      platform: 'Instagram',
-      createdAt: '2025-01-13 16:42',
-      type: 'idea_generation',
-      locked: false,
-      preview: '10 conceptos de Reels con alta probabilidad de viralidad en tu nicho...',
-      data: {
-        ideas: [
-          '3 errores que cometes al editar Reels (todos los hacemos)',
-          'POV: Cuando descubres este truco de edición',
-          'El algoritmo odia esto... pero funciona',
-          'Antes vs Después de usar esta técnica',
-          'Lo que nadie te dice sobre crecer en Instagram'
-        ],
-        trends: ['Transiciones rápidas', 'Audio trending: "Aesthetic"', 'Texto en pantalla'],
-        viralProbability: '78%'
-      }
-    },
-    {
-      id: 4,
-      title: 'Estrategia de Crecimiento Q1 2025',
-      topic: 'Planificación',
-      platform: 'Multi-plataforma',
-      createdAt: '2025-01-12 11:30',
-      type: 'strategy',
-      locked: false,
-      preview: 'Plan de 90 días para alcanzar 50k seguidores con contenido orgánico...',
-      data: {
-        goals: ['50k seguidores', '1M impresiones/mes', '10% engagement rate'],
-        tactics: [
-          'Publicar 3x/día en horarios pico',
-          'Colaborar con 5 creadores de tu nicho',
-          'Lanzar serie semanal "Detrás de cámaras"'
-        ],
-        budget: '$0 (100% orgánico)',
-        timeline: '90 días'
-      }
-    },
-    {
-      id: 5,
-      title: 'SEO para YouTube: Tutorial Completo',
-      topic: 'Optimización',
-      platform: 'YouTube',
-      createdAt: '2025-01-11 08:20',
-      type: 'seo_optimization',
-      locked: false,
-      preview: 'Keywords de alto volumen y baja competencia + optimización de metadatos...',
-      data: {
-        keywords: ['tutorial youtube 2025', 'como hacer videos virales', 'edicion de video gratis'],
-        titleFormula: 'Keyword + Beneficio + Urgencia',
-        description: 'Plantilla optimizada con timestamps y enlaces estratégicos',
-        tags: ['#youtube', '#tutorial', '#seo', '#videoviral', '#contenido']
-      }
-    },
-    // TARJETAS BLOQUEADAS PARA FREE (id > 5)
-    {
-      id: 6,
-      title: 'Análisis de Competencia: Top 10 Creadores',
-      topic: 'Inteligencia Competitiva',
-      platform: 'TikTok',
-      createdAt: '2025-01-10 19:45',
-      type: 'competitive_analysis',
-      locked: true,
-      preview: 'Descubre qué estrategias usan los líderes de tu nicho para dominar...',
-      data: null
-    },
-    {
-      id: 7,
-      title: 'Script para Video de Ventas',
-      topic: 'Conversión',
-      platform: 'YouTube',
-      createdAt: '2025-01-09 14:10',
-      type: 'sales_script',
-      locked: true,
-      preview: 'Guion persuasivo para convertir espectadores en clientes (CTR 12%)...',
-      data: null
-    },
-    {
-      id: 8,
-      title: 'Calendario de Contenido: Febrero 2025',
-      topic: 'Planificación',
-      platform: 'Multi-plataforma',
-      createdAt: '2025-01-08 10:05',
-      type: 'content_calendar',
-      locked: true,
-      preview: '28 ideas de contenido listas para publicar + horarios óptimos...',
-      data: null
-    },
-    {
-      id: 9,
-      title: 'Hooks Virales: 50 Fórmulas Probadas',
-      topic: 'Copywriting',
-      platform: 'Multi-plataforma',
-      createdAt: '2025-01-07 16:30',
-      type: 'hook_library',
-      locked: true,
-      preview: 'Biblioteca de primeros segundos que generan +80% retención...',
-      data: null
-    },
-    {
-      id: 10,
-      title: 'Optimización de Thumbnails con IA',
-      topic: 'Diseño',
-      platform: 'YouTube',
-      createdAt: '2025-01-06 12:15',
-      type: 'thumbnail_optimization',
-      locked: true,
-      preview: 'A/B testing automatizado de miniaturas para maximizar CTR...',
-      data: null
-    }
-  ]);
+  // Historial de generaciones (inicialmente vacío hasta que el usuario comience a crear contenido)
+  const [forgedContent, setForgedContent] = useState([]);
 
   const filteredContent = useMemo(() => {
     return forgedContent.filter(item =>
@@ -344,8 +188,8 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
         </Card>
       </motion.div>
 
-      {/* Plan Limit Warning */}
-      {userPlan === 'free' && stats.locked > 0 && (
+      {/* Plan Limit Warning - Solo mostrar si hay contenido bloqueado */}
+      {userPlan === 'free' && stats.locked > 0 && forgedContent.length > 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -512,13 +356,65 @@ const ContentLibrary = ({ onSubscriptionClick }) => {
             })}
           </div>
         ) : (
-          <Card className="glass-effect border-purple-500/20 min-h-[400px] flex items-center justify-center">
-            <CardContent className="text-center">
-              <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-400 opacity-30" />
-              <h3 className="text-xl font-semibold text-white mb-2">No hay contenido aún</h3>
-              <p className="text-gray-400">Comienza a crear contenido para ver tu historial aquí</p>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="glass-effect border-purple-500/20 min-h-[500px] flex items-center justify-center">
+              <CardContent className="text-center max-w-md mx-auto py-12">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="mb-6"
+                >
+                  <div className="w-24 h-24 mx-auto bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Sparkles className="w-12 h-12 text-purple-400" />
+                  </div>
+                </motion.div>
+                
+                <motion.h3
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl font-bold text-white mb-3"
+                >
+                  Tu historial está vacío
+                </motion.h3>
+                
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-gray-400 mb-6 leading-relaxed"
+                >
+                  Comienza a crear contenido con CreoVision y verás tu historial completo aquí. 
+                  Cada guion, estrategia y análisis que generes se guardará automáticamente.
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    <span>Genera guiones virales</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                    <Target className="w-4 h-4 text-blue-400" />
+                    <span>Realiza auditorías de canal</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                    <TrendingUp className="w-4 h-4 text-green-400" />
+                    <span>Crea estrategias de crecimiento</span>
+                  </div>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
       </motion.div>
 

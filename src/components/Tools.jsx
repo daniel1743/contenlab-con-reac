@@ -1266,7 +1266,8 @@ const handleCopy = useCallback(() => {
       setGeneratedHashtags(formattedHashtags);
 
       // 💎 CONSUMIR CRÉDITOS DESPUÉS DE GENERACIÓN EXITOSA
-      const creditResult = await consumeCredits(user.id, COST, 'hashtag_generator', 'Generación de hashtags');
+      // Usar el slug correcto que se mapea en creditCosts.js
+      const creditResult = await consumeCredits(user.id, 'hashtag_generation');
 
       if (creditResult.success) {
         console.log(`💎 ${COST} créditos consumidos. Restantes: ${creditResult.remaining}`);
@@ -2208,10 +2209,10 @@ const handleCopy = useCallback(() => {
                     </CardHeader>
                     <CardContent>
                       <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          className="text-sm text-gray-200 font-sans prose prose-invert max-w-none"
-                          components={{
+                        <div className="text-sm text-gray-200 font-sans prose prose-invert max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
                             h2: ({node, ...props}) => <h2 className="text-xl font-bold text-purple-400 mt-6 mb-3 first:mt-0" {...props} />,
                             h3: ({node, ...props}) => <h3 className="text-lg font-bold text-indigo-400 mt-5 mb-2" {...props} />,
                             h4: ({node, ...props}) => <h4 className="text-base font-semibold text-cyan-400 mt-4 mb-2" {...props} />,
@@ -2232,6 +2233,7 @@ const handleCopy = useCallback(() => {
                         >
                           {contentAnalisis || generatedContent}
                         </ReactMarkdown>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

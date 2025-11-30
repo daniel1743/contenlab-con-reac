@@ -545,6 +545,17 @@ const Navbar = ({ isAuthenticated, onAuthClick, activeSection, onSectionChange, 
                       <span className="text-[11px]">Mis Notificaciones</span>
                     </DropdownMenuItem>
 
+                    {/* Soporte / Crear Ticket */}
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('openSupportTicket'));
+                      }} 
+                      className="dropdown-menu-item cursor-pointer py-1.5"
+                    >
+                      <TicketIcon className="mr-1.5 h-3.5 w-3.5 stroke-[2]" />
+                      <span className="text-[11px]">Soporte / Crear Ticket</span>
+                    </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
 
                     {/* Cerrar Portal (Cerrar Sesión) */}
