@@ -8,6 +8,7 @@ import PWALoadingScreen from '@/components/PWALoadingScreen';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import SEOHead from '@/components/SEOHead';
 import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
+import ErrorBoundary from '@/components/ErrorBoundary';
 // import AIConciergeBubble from '@/components/AIConciergeBubble'; // VERSIÓN ANTIGUA
 import AIConciergeBubble from '@/components/AIConciergeBubbleV2'; // VERSIÓN CON GEMINI + SUPABASE
 import CreoCoachBubble from '@/components/CreoCoachBubble'; // NUEVO: Coach proactivo con DeepSeek
@@ -304,6 +305,7 @@ function App() {
                     element={
                       <LandingPage
                         onAuthClick={() => setShowAuthModal(true)}
+                        onSubscriptionClick={() => setShowSubscriptionModal(true)}
                         onSectionChange={handleSectionChange}
                         onStartDemo={startDemoExperience}
                       />
@@ -521,14 +523,16 @@ function App() {
           )}
 
           {showSubscriptionModal && (
-            <SubscriptionModal
-              isOpen={showSubscriptionModal}
-              onClose={() => setShowSubscriptionModal(false)}
-              onAuthClick={() => {
-                setShowSubscriptionModal(false);
-                setShowAuthModal(true);
-              }}
-            />
+            <ErrorBoundary>
+              <SubscriptionModal
+                isOpen={showSubscriptionModal}
+                onClose={() => setShowSubscriptionModal(false)}
+                onAuthClick={() => {
+                  setShowSubscriptionModal(false);
+                  setShowAuthModal(true);
+                }}
+              />
+            </ErrorBoundary>
           )}
 
           {/* 🚀 ONBOARDING CONVERSACIONAL - EXPRESS MODE (40 seg) */}

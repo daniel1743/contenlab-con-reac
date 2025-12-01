@@ -164,7 +164,7 @@ const PaymentCheckout = ({
       if (result.success) {
         toast({
           title: '✅ Redirigiendo al checkout...',
-          description: 'Serás redirigido a MercadoPago para completar el pago.',
+          description: 'Serás redirigido al checkout seguro para completar el pago.',
         });
         // La redirección se maneja automáticamente en el servicio
       } else {
@@ -176,7 +176,7 @@ const PaymentCheckout = ({
 
       if (error.message.includes('no está configurado')) {
         toast({
-          title: '⚠️ MercadoPago no configurado',
+          title: '⚠️ Sistema de pagos no configurado',
           description: 'Por favor intenta con PayPal o contacta al administrador.',
           variant: 'destructive',
           duration: 6000
@@ -258,7 +258,7 @@ const PaymentCheckout = ({
                 : 'border-purple-500/20 hover:bg-purple-500/10'
               }
             >
-              💳 MercadoPago
+              💳 Tarjeta de Crédito/Débito
             </Button>
             <Button
               onClick={() => setSelectedProvider('paypal')}
@@ -278,7 +278,7 @@ const PaymentCheckout = ({
       <div className="flex items-center gap-3 text-sm text-gray-400 px-4">
         <Shield className="w-5 h-5 text-green-400" />
         <span>
-          Pago seguro procesado por {selectedProvider === 'paypal' ? 'PayPal' : 'MercadoPago'}
+          Pago seguro procesado de forma encriptada
         </span>
       </div>
 
@@ -298,7 +298,7 @@ const PaymentCheckout = ({
             ) : (
               <>
                 <CreditCard className="w-5 h-5 mr-2" />
-                Pagar con MercadoPago
+                Pagar Ahora
               </>
             )}
           </Button>

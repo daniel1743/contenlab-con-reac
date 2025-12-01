@@ -117,17 +117,21 @@ export const SUBSCRIPTION_PLANS = {
     slug: 'starter',
     name: 'Starter',
     credits: 1000,
-    price_usd: 6,
-    price_clp: 5400,
+    price_usd: 10,
+    price_clp: 9000,
     rollover_limit: 500,
     is_popular: false, // NO es popular
     features: [
       '1000 créditos/mes',
-      'Rollover hasta 500 créditos',
-      '2 Growth Dashboard',
-      '50 guiones virales',
-      '40 packs de hashtags',
-      'Soporte prioritario'
+      'Todas las herramientas básicas sin restricción',
+      '1 Análisis de Competencia por semana',
+      'Dashboard semi-completo',
+      'SEO Coach limitado (10 usos mensuales)',
+      'Tendencias Avanzadas Lite',
+      'Planificador de Contenidos Lite',
+      '1 plantilla mensual de contenido',
+      'Historial por 7 días',
+      '20% descuento en herramientas premium'
     ]
   },
 
@@ -135,18 +139,23 @@ export const SUBSCRIPTION_PLANS = {
     slug: 'pro',
     name: 'Pro',
     credits: 3000,
-    price_usd: 15,
-    price_clp: 13500,
+    price_usd: 25,
+    price_clp: 22500,
     rollover_limit: 1500,
     is_popular: true, // ⭐ SOLO ESTE ES TRUE
     features: [
       '3000 créditos/mes',
-      'Rollover hasta 1500 créditos',
-      '7 Growth Dashboard',
-      '10 análisis competencia',
-      '150 guiones virales',
-      'Prioridad en soporte',
-      'Acceso early features'
+      'Todas las herramientas desbloqueadas',
+      'Tendencias Avanzadas completas',
+      '8 Análisis de Competencia al mes',
+      'Growth Dashboard completo',
+      'SEO Coach sin límite',
+      'Generador de Contenido para Carruseles',
+      'Plantillas PRO de scripts largos',
+      'Planificador semanal automatizado',
+      'Historial completo 30 días',
+      '30% descuento en herramientas premium',
+      'Herramientas exclusivas PRO'
     ]
   },
 
@@ -154,18 +163,23 @@ export const SUBSCRIPTION_PLANS = {
     slug: 'premium',
     name: 'Premium',
     credits: 8000,
-    price_usd: 30,
-    price_clp: 27000,
+    price_usd: 50,
+    price_clp: 45000,
     rollover_limit: 4000,
     is_popular: false, // NO es popular
     features: [
       '8000 créditos/mes',
-      'Rollover hasta 4000 créditos',
-      '21 Growth Dashboard',
-      '40 análisis competencia',
-      '400 guiones virales',
-      'Soporte 24/7',
-      'Onboarding 1-on-1'
+      'TODAS las herramientas sin límite',
+      'IA Interface (asistente 24/7 personalizado)',
+      'Tendencias VIP (predicción 7 días)',
+      'Análisis competencia ilimitado',
+      'Growth Dashboard Avanzado',
+      'Matriz de Contenidos mensual',
+      'Coach IA de Contenido (conversación)',
+      'Acceso anticipado a nuevas herramientas',
+      'Historial 90 días',
+      '40% descuento permanente en créditos',
+      'Prioridad en servidores'
     ]
   },
 

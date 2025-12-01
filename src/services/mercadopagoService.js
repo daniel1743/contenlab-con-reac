@@ -13,42 +13,65 @@ export const PLANS = {
     name: 'Free',
     price: 0,
     currency: 'USD',
+    credits: 150,
     features: [
-      '5 generaciones de contenido/mes',
-      'Acceso limitado al dashboard',
-      'Plantillas básicas',
-      'Soporte por email'
+      '150 créditos/mes',
+      '2 herramientas básicas',
+      'Límite de 3 usos por herramienta',
+      '1 uso gratis en herramientas de baja intensidad',
+      'Acceso parcial a dashboard',
+      'Tendencias Públicas básicas'
+    ]
+  },
+  STARTER: {
+    id: 'starter',
+    name: 'Starter',
+    price: 10.00,
+    currency: 'USD',
+    credits: 1000,
+    features: [
+      '1000 créditos/mes',
+      'Todas las herramientas básicas sin restricción',
+      '1 Análisis de Competencia por semana',
+      'Dashboard semi-completo',
+      'SEO Coach limitado (10 usos mensuales)',
+      'Tendencias Avanzadas Lite',
+      '20% descuento en herramientas premium'
     ]
   },
   PRO: {
     id: 'pro',
     name: 'Pro',
-    price: 15.00,
+    price: 25.00,
     currency: 'USD',
+    credits: 3000,
     features: [
-      '50 generaciones de contenido/mes',
-      'Dashboard completo y métricas en tiempo real',
-      'Todas las plantillas y prompts premium',
-      'Análisis de tendencias multicanal',
-      'Soporte prioritario en 24 h'
+      '3000 créditos/mes',
+      'Todas las herramientas desbloqueadas',
+      'Tendencias Avanzadas completas',
+      '8 Análisis de Competencia al mes',
+      'Growth Dashboard completo',
+      'SEO Coach sin límite',
+      '30% descuento en herramientas premium',
+      'Herramientas exclusivas PRO'
     ]
   },
   PREMIUM: {
     id: 'premium',
     name: 'Premium',
-    price: 25.00,
+    price: 50.00,
     currency: 'USD',
+    credits: 8000,
     features: [
-      'Generador de contenido viral (20 peticiones/día)',
-      'Personalización de narración/guion avanzada',
-      'Auditoría integral de contenido y SEO',
-      'Dashboard interactivo ilimitado',
-      'Inteligencia competitiva (análisis de top videos)',
-      'Optimizador SEO (títulos + hashtags)',
-      'Estrategia Pro (monetización + embudos)',
-      'Calendario de publicación colaborativo',
-      'Biblioteca de contenido ilimitada',
-      'Soporte 24/7 prioritario'
+      '8000 créditos/mes',
+      'TODAS las herramientas sin límite',
+      'IA Interface (asistente 24/7)',
+      'Tendencias VIP (predicción 7 días)',
+      'Análisis competencia ilimitado',
+      'Growth Dashboard Avanzado',
+      'Coach IA de Contenido',
+      '40% descuento permanente en créditos',
+      'Prioridad en servidores'
     ]
   }
 };
@@ -101,6 +124,18 @@ export const createPaymentPreference = async (planId, userData, authToken = null
     throw new Error('Plan inválido o gratuito');
   }
 
+  // Construir URLs de retorno de forma robusta
+  const getOrigin = () => {
+    if (typeof window !== 'undefined' && window.location.origin) {
+      return window.location.origin;
+    }
+    // Fallback para casos donde window.location no esté disponible
+    return 'https://creovision.io';
+  };
+
+  const origin = getOrigin();
+  console.log('[mercadopagoService] Origin detectado:', origin);
+
   const preferenceData = {
     planId: planKey.toLowerCase(),
     items: [
@@ -121,12 +156,12 @@ export const createPaymentPreference = async (planId, userData, authToken = null
       }
     },
     back_urls: {
-      success: `${window.location.origin}/payment/success`,
-      failure: `${window.location.origin}/payment/failure`,
-      pending: `${window.location.origin}/payment/pending`
+      success: `${origin}/payment/success`,
+      failure: `${origin}/payment/failure`,
+      pending: `${origin}/payment/pending`
     },
     auto_return: 'approved',
-    notification_url: `${window.location.origin}/api/webhooks/mercadopago`, // Tu webhook
+    notification_url: `${origin}/api/webhooks/mercadopago`, // Tu webhook
     statement_descriptor: 'CREOVISION',
     external_reference: `${userData.userId}_${planId}_${Date.now()}`,
     metadata: {
@@ -165,7 +200,17 @@ export const createPaymentPreference = async (planId, userData, authToken = null
 
   } catch (error) {
     console.error('Error creando preferencia:', error);
-    throw error;
+    
+    // Extraer detalles del error de forma segura
+    const errorMessage = error?.message || 'Error desconocido';
+    const errorDetails = error?.details || error?.error || '';
+    
+    // Crear un error más descriptivo sin causar crashes
+    const enhancedError = new Error(errorMessage);
+    enhancedError.details = errorDetails;
+    enhancedError.originalError = error;
+    
+    throw enhancedError;
   }
 };
 

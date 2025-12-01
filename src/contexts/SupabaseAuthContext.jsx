@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { grantWelcomeBonus } from '@/services/bonusService';
@@ -6,8 +6,18 @@ import { grantWelcomeBonus } from '@/services/bonusService';
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-  console.log('[SupabaseAuthContext] AuthProvider MONTADO');
+  // Solo log en desarrollo y una vez
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[SupabaseAuthContext] AuthProvider MONTADO');
+  }
   const { toast } = useToast();
+  const toastRef = useRef(toast);
+  const initializedRef = useRef(false);
+
+  // Actualizar ref cuando toast cambia
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -47,6 +57,8 @@ export const AuthProvider = ({ children }) => {
     return null;
   }, []);
 
+  const handleSessionRef = useRef(null);
+  
   const handleSession = useCallback(async (currentSession) => {
     console.log('[SupabaseAuthContext] handleSession called, has session:', !!currentSession);
     const startTime = performance.now();
@@ -75,7 +87,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, [fetchProfile]);
 
+  // Mantener referencia actualizada
+  handleSessionRef.current = handleSession;
+
   useEffect(() => {
+    // Prevenir múltiples inicializaciones
+    if (initializedRef.current) {
+      console.log('[SupabaseAuthContext] Ya inicializado, saltando...');
+      return;
+    }
+    initializedRef.current = true;
+
     console.log('[SupabaseAuthContext] useEffect INICIADO - URL:', window.location.href);
 
     const processAuth = async () => {
@@ -97,13 +119,15 @@ export const AuthProvider = ({ children }) => {
             window.history.replaceState({}, document.title, cleanUrl);
 
             // Mostrar error al usuario
-            toast({
+            toastRef.current({
               variant: "destructive",
               title: "Error de Autenticación con Google",
               description: errorDescription?.replace(/\+/g, ' ') || "No se pudo completar el inicio de sesión. Intenta nuevamente."
             });
 
-            await handleSession(null);
+            if (handleSessionRef.current) {
+              await handleSessionRef.current(null);
+            }
             return;
           }
 
@@ -130,14 +154,20 @@ export const AuthProvider = ({ children }) => {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         if (existingSession) {
           console.log('[SupabaseAuthContext] Sesión existente encontrada');
-          await handleSession(existingSession);
+          if (handleSessionRef.current) {
+            await handleSessionRef.current(existingSession);
+          }
         } else {
           console.log('[SupabaseAuthContext] No hay sesión activa');
-          await handleSession(null);
+          if (handleSessionRef.current) {
+            await handleSessionRef.current(null);
+          }
         }
       } catch (error) {
         console.error('[SupabaseAuthContext] Failed to fetch session:', error);
-        await handleSession(null);
+        if (handleSessionRef.current) {
+          await handleSessionRef.current(null);
+        }
       }
     };
 
@@ -146,7 +176,9 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         try {
-          await handleSession(newSession);
+          if (handleSessionRef.current) {
+            await handleSessionRef.current(newSession);
+          }
           
           // 🎁 FASE 1: Otorgar créditos de bienvenida al registrarse
           if (event === 'SIGNED_UP' && newSession?.user) {
@@ -155,7 +187,7 @@ export const AuthProvider = ({ children }) => {
               const result = await grantWelcomeBonus(newSession.user.id);
               if (result.success && !result.alreadyGranted) {
                 console.log('[SupabaseAuthContext] Welcome bonus granted successfully');
-                toast({
+                toastRef.current({
                   title: '🎉 ¡Bienvenido!',
                   description: 'Has recibido 50 créditos gratis para comenzar',
                   duration: 5000
@@ -175,7 +207,7 @@ export const AuthProvider = ({ children }) => {
               const result = await grantEmailVerificationBonus(newSession.user.id);
               if (result.success && !result.alreadyGranted) {
                 console.log('[SupabaseAuthContext] Email verification bonus granted');
-                toast({
+                toastRef.current({
                   title: '📧 Email verificado',
                   description: `Has recibido ${result.credits} créditos adicionales`,
                   duration: 5000
@@ -192,11 +224,15 @@ export const AuthProvider = ({ children }) => {
     );
 
     return () => {
+      // Cleanup: desuscribirse del listener de auth
       if (subscription) {
         subscription.unsubscribe();
       }
+      // NO resetear initializedRef aquí porque puede causar problemas
+      // si el componente se desmonta y remonta rápidamente
     };
-  }, [handleSession, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencias vacías - solo ejecutar una vez al montar
 
   const signUp = useCallback(async (email, password, options) => {
     const { error } = await supabase.auth.signUp({

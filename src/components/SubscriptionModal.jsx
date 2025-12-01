@@ -8,60 +8,109 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import MercadoPagoCheckout from '@/components/MercadoPagoCheckout';
 
 const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
-  const { user } = useAuth();
+  // Obtener usuario de forma segura
+  const authContext = useAuth();
+  const user = authContext?.user || null;
+  
   const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   const plans = [
     {
       name: "FREE",
       price: 0,
-      credits: 100,
+      credits: 150,
       features: [
-        "100 créditos mensuales",
-        "Acceso a herramientas básicas",
-        "Soporte por email"
+        "150 créditos mensuales",
+        "2 herramientas básicas",
+        "Límite de 3 usos por herramienta",
+        "1 uso gratis en herramientas de baja intensidad",
+        "Acceso parcial a dashboard",
+        "Tendencias Públicas básicas"
       ],
       highlight: false
     },
     {
-      name: "PRO",
-      price: 15,
+      name: "STARTER",
+      price: 10,
       credits: 1000,
       features: [
         "1,000 créditos mensuales",
-        "Puede comprar créditos adicionales (20% OFF)",
-        "Créditos comprados NO expiran",
-        "Descarga sin marca de agua",
-        "Prioridad en generación",
-        "Soporte prioritario"
+        "Todas las herramientas básicas sin restricción",
+        "1 Análisis de Competencia por semana",
+        "Dashboard semi-completo",
+        "SEO Coach limitado (10 usos mensuales)",
+        "Tendencias Avanzadas Lite",
+        "20% descuento en herramientas premium"
+      ],
+      highlight: false,
+      popular: false
+    },
+    {
+      name: "PRO",
+      price: 25,
+      credits: 3000,
+      features: [
+        "3,000 créditos mensuales",
+        "Todas las herramientas desbloqueadas",
+        "Tendencias Avanzadas completas",
+        "8 Análisis de Competencia al mes",
+        "Growth Dashboard completo",
+        "SEO Coach sin límite",
+        "30% descuento en herramientas premium",
+        "Herramientas exclusivas PRO"
       ],
       highlight: false,
       popular: true
     },
     {
       name: "PREMIUM",
-      price: 25,
-      credits: 2500,
+      price: 50,
+      credits: 8000,
       features: [
-        "2,500 créditos mensuales",
-        "Puede comprar créditos adicionales (30% OFF)",
-        "Créditos comprados NO expiran",
-        "Acceso al Asesor Premium IA",
-        "Analytics avanzado",
-        "API Access (próximamente)",
-        "Soporte 24/7"
+        "8,000 créditos mensuales",
+        "TODAS las herramientas sin límite",
+        "IA Interface (asistente 24/7)",
+        "Tendencias VIP (predicción 7 días)",
+        "Análisis competencia ilimitado",
+        "Growth Dashboard Avanzado",
+        "Coach IA de Contenido",
+        "40% descuento permanente en créditos",
+        "Prioridad en servidores"
       ],
-      highlight: true
+      highlight: true,
+      popular: false
     }
   ];
 
-  const handleSubscribeClick = () => {
+  const handleSubscribeClick = (plan) => {
     if (!user) {
-      // Si no está autenticado, mostrar modal de login
-      onAuthClick();
+      // Si no está autenticado, cerrar este modal y abrir el de login
+      // Guardar el plan seleccionado para después de autenticarse
+      if (plan) {
+        localStorage.setItem('pendingSubscriptionPlan', plan.name);
+      }
+      handleClose();
+      if (onAuthClick) {
+        // Pequeño delay para que el modal se cierre suavemente
+        setTimeout(() => {
+          onAuthClick();
+        }, 200);
+      }
     } else {
-      // Si está autenticado, mostrar el checkout de pago
+      // Si está autenticado, guardar el plan seleccionado y mostrar el checkout
+      setSelectedPlan(plan);
       setShowCheckout(true);
+    }
+  };
+
+  const handleLoginFromModal = () => {
+    // Cerrar modal de suscripción y abrir login
+    handleClose();
+    if (onAuthClick) {
+      setTimeout(() => {
+        onAuthClick();
+      }, 200);
     }
   };
 
@@ -104,9 +153,13 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                   </DialogDescription>
                 </DialogHeader>
 
-                {/* Grid de planes */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-                  {plans.map((plan, index) => (
+                {/* Grid de planes - Mostrar todos los planes disponibles */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-8">
+                  {plans.map((plan, index) => {
+                    // Prevenir errores si plan es undefined
+                    if (!plan) return null;
+                    
+                    return (
                     <motion.div
                       key={plan.name}
                       initial={{ opacity: 0, y: 20 }}
@@ -146,7 +199,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
 
                       {plan.price > 0 && (
                         <Button
-                          onClick={handleSubscribeClick}
+                          onClick={() => handleSubscribeClick(plan)}
                           className={`w-full ${
                             plan.highlight
                               ? 'gradient-primary hover:opacity-90'
@@ -154,7 +207,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                           }`}
                         >
                           {plan.highlight && <Crown className="w-4 h-4 mr-2" />}
-                          Seleccionar {plan.name}
+                          {user ? `Seleccionar ${plan.name}` : 'Iniciar Sesión para Suscribirse'}
                         </Button>
                       )}
 
@@ -168,7 +221,8 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                         </Button>
                       )}
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="text-center">
@@ -176,13 +230,18 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                     💎 Créditos mensuales se resetean cada mes • Los créditos comprados NO expiran
                   </p>
                   {!user && (
-                    <Button
-                      onClick={onAuthClick}
-                      variant="outline"
-                      className="border-purple-400/50 hover:bg-purple-500/10 text-white"
-                    >
-                      Ya tengo cuenta
-                    </Button>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-400 mb-2">
+                        Necesitas iniciar sesión para suscribirte
+                      </p>
+                      <Button
+                        onClick={handleLoginFromModal}
+                        variant="outline"
+                        className="border-purple-400/50 hover:bg-purple-500/10 text-white"
+                      >
+                        Iniciar Sesión o Registrarse
+                      </Button>
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -210,12 +269,12 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                 <DialogHeader className="mb-6">
                   <DialogTitle className="text-2xl font-bold text-gradient">Finalizar Suscripción</DialogTitle>
                   <DialogDescription className="text-gray-300">
-                    Completa tu pago de forma segura con Mercado Pago
+                    Completa tu pago de forma segura con tarjeta
                   </DialogDescription>
                 </DialogHeader>
 
                 <MercadoPagoCheckout
-                  planId="PREMIUM"
+                  planId={selectedPlan?.name || 'PREMIUM'}
                   onClose={handleClose}
                 />
               </div>

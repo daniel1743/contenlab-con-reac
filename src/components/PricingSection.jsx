@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-const PricingSection = ({ onAuthClick }) => {
+const PricingSection = ({ onAuthClick, onSubscriptionClick }) => {
     const { toast } = useToast();
 
     const [selectedPlan, setSelectedPlan] = useState('PRO'); // Plan seleccionado inicialmente
@@ -16,56 +16,67 @@ const PricingSection = ({ onAuthClick }) => {
             price: '$0',
             period: '/mes',
             description: 'Para probar sin miedo, sin tarjeta y sin compromisos.',
-            credits: '150 créditos útiles / mes',
+            credits: '150 créditos / mes',
             features: [
-                '1 análisis rápido de canal',
-                '1 guion mejorado por IA',
-                'Tendencias básicas (YouTube y TikTok)',
-                'Lector de últimos 5 videos con insights',
-                'Exportación de datos sin límites',
-                'Cancelación en 1 clic',
-                'Multi-IA propietaria con 6 enfoques complementarios'
+                '2 herramientas básicas',
+                'Límite de 3 usos por herramienta',
+                '1 uso gratis en cualquier herramienta de baja intensidad',
+                'Acceso parcial a dashboard',
+                'Acceso al Generador de Guiones (limitado)',
+                'Acceso a Títulos Virales (limitado)',
+                'Acceso a Hashtags (limitado)',
+                'Acceso a Tendencias Públicas básicas',
+                'No acceso a herramientas premium',
+                'No acceso a historial completo',
+                'No acceso a análisis avanzados'
             ],
             cta: 'Probar sin costo',
             isFeatured: false,
         },
         {
-            id: 'BASIC',
-            name: 'BASIC',
-            price: '$5',
+            id: 'STARTER',
+            name: 'STARTER',
+            price: '$10',
             period: '/mes',
-            description: 'Para creadores pequeños que necesitan constancia real.',
-            credits: '600 créditos / mes',
+            description: 'Ideal para creadores que publican varias veces por semana.',
+            credits: '1,000 créditos / mes',
             features: [
-                'Todos los generadores de contenido',
-                'Growth Dashboard básico',
-                'Tendencias + nichos sugeridos',
-                'Planner semanal',
-                'Multi-IA completa (motores CreoVision)',
-                'Exportación libre',
-                'Soporte estándar'
+                'Todas las herramientas básicas sin restricción',
+                '1 Análisis de Competencia por semana',
+                'Dashboard semi-completo',
+                'SEO Coach limitado (10 usos mensuales)',
+                'Tendencias Avanzadas Lite',
+                'Planificador de Contenidos Lite',
+                'Acceso a 1 plantilla mensual de contenido',
+                'Guardado de historial por 7 días',
+                '20% descuento en Scripts Avanzados',
+                '20% descuento en Growth Dashboard Lite',
+                '20% descuento en Deep Coaching'
             ],
-            cta: 'Elegir BASIC',
+            cta: 'Elegir STARTER',
             isFeatured: false,
         },
         {
             id: 'PRO',
             name: 'PRO',
-            price: '$12',
+            price: '$25',
             period: '/mes',
-            description: 'Plan estrella: precio justo + funcionalidades premium.',
-            credits: '1,500 créditos / mes',
+            description: 'Ideal para creadores activos, agencias pequeñas, tiktokers y youtubers constantes.',
+            credits: '3,000 créditos / mes',
             features: [
-                'Growth Dashboard completo',
-                'A/B testing de títulos y miniaturas',
-                'SEO Keyword Research',
-                'Competencia YouTube (análisis avanzado)',
-                'Tendencias multi-plataforma + Reddit',
-                'Recomendaciones estratégicas por IA',
-                'Calendario de contenido',
-                'Multi-IA optimizada por costo (CreoVision)',
-                'Exportación ilimitada',
-                'Soporte con prioridad'
+                '🔥 Todas las herramientas desbloqueadas',
+                '🔥 Acceso completo a Tendencias Avanzadas (YouTube, TikTok, Instagram)',
+                '🔥 8 Análisis de Competencia al mes',
+                '🔥 Growth Dashboard completo',
+                '🔥 SEO Coach sin límite',
+                '🔥 Generador de Contenido para Carruseles',
+                '🔥 Plantillas PRO de scripts largos',
+                '🔥 Planificador semanal automatizado',
+                '🔥 Historial completo 30 días',
+                '🔥 30% descuento en herramientas premium adicionales',
+                '🔥 Análisis Profundo de Nicho (exclusivo)',
+                '🔥 Anti-Bloqueos de Ideas (AI Content Boost) (exclusivo)',
+                '🔥 Guiones largos premium (bases de 3 minutos) (exclusivo)'
             ],
             cta: 'Elegir PRO',
             isFeatured: true,
@@ -73,19 +84,22 @@ const PricingSection = ({ onAuthClick }) => {
         {
             id: 'PREMIUM',
             name: 'PREMIUM',
-            price: '$25',
+            price: '$50',
             period: '/mes',
-            description: 'Para creadores serios, agencias pequeñas y power users.',
-            credits: '4,000 créditos / mes',
+            description: 'Ideal para agencias + creadores grandes + negocios de contenido.',
+            credits: '8,000 créditos / mes',
             features: [
-                'Predictor de viralidad',
-                'Análisis de audiencia avanzado',
-                'Command Center completo',
-                'Competencia multi-plataforma (YouTube, TikTok, Instagram)',
-                'Automatizaciones IA',
-                'Reportes detallados mensuales',
-                'Acceso prioritario a nuevas funciones',
-                'Soporte premium 24h'
+                '🟣 TODAS las herramientas sin límite',
+                '🟣 Acceso a IA Interface (tu asistente 24/7 personalizado)',
+                '🟣 Tendencias VIP (con predicción 7 días)',
+                '🟣 Análisis profundo competencia ilimitado',
+                '🟣 Growth Dashboard Avanzado (con insights de crecimiento)',
+                '🟣 Matriz de Contenidos mensual',
+                '🟣 Coach IA de Contenido (modo conversación)',
+                '🟣 Acceso anticipado a nuevas herramientas',
+                '🟣 Guardado de historial 90 días',
+                '🟣 Créditos con 40% descuento permanente',
+                '🟣 Prioridad en servidores'
             ],
             cta: 'Elegir PREMIUM',
             isFeatured: false,
@@ -104,14 +118,24 @@ const PricingSection = ({ onAuthClick }) => {
         setSelectedPlan(plan.id);
 
         if (plan.id === 'FREE') {
-            onAuthClick();
+            if (onAuthClick) {
+                onAuthClick();
+            }
             return;
         }
 
-        toast({
-            title: 'Pasarela de pago en construcción',
-            description: `Pronto podrás suscribirte al plan ${plan.name}. Gracias por tu interés.`,
-        });
+        // Si hay un handler de suscripción, abrir el modal de pago
+        if (onSubscriptionClick) {
+            console.log('[PricingSection] Abriendo modal de suscripción para plan:', plan.name);
+            onSubscriptionClick();
+        } else {
+            console.warn('[PricingSection] No hay handler onSubscriptionClick, mostrando toast');
+            // Fallback: mostrar toast si no hay handler (para compatibilidad)
+            toast({
+                title: 'Pasarela de pago en construcción',
+                description: `Pronto podrás suscribirte al plan ${plan.name}. Gracias por tu interés.`,
+            });
+        }
     };
 
     const containerVariants = {
@@ -218,7 +242,7 @@ const PricingSection = ({ onAuthClick }) => {
                                         {plan.features.map((feature) => (
                                             <li key={feature} className="flex items-center">
                                                 <CheckCircle2 className={`w-5 h-5 mr-3 flex-shrink-0 transition-colors duration-200 ${shouldHighlight ? 'text-purple-400' : 'text-green-400'}`} />
-                                                <span className="text-gray-300">{feature}</span>
+                                                <span className="text-gray-300 text-sm">{feature}</span>
                                             </li>
                                         ))}
                                     </ul>

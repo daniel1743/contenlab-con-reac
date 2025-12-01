@@ -42,7 +42,7 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
       if (result.success) {
         toast({
           title: '✅ Redirigiendo al checkout...',
-          description: 'Serás redirigido a Mercado Pago para completar el pago.',
+          description: 'Serás redirigido al procesador de pagos para completar tu compra.',
         });
         // La redirección se maneja automáticamente en el servicio
       } else {
@@ -50,32 +50,46 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
       }
 
     } catch (error) {
+      // Prevenir que el error cause un reinicio de la aplicación
       console.error('Error al procesar el pago:', error);
+      
+      // Asegurar que siempre se restaure el estado de procesamiento
+      setIsProcessing(false);
+
+      // Extraer mensaje de error de forma segura
+      const errorMessage = error?.message || error?.toString() || 'Error desconocido';
+      const errorDetails = error?.details || error?.error || '';
 
       // Verificar si es error de configuración
-      if (error.message.includes('no está configurado')) {
+      if (errorMessage.includes('no está configurado') || errorDetails.includes('no está configurado')) {
         toast({
-          title: '⚠️ Mercado Pago no configurado',
+          title: '⚠️ Sistema de pagos no configurado',
           description: 'Por favor contacta al administrador para configurar los pagos.',
           variant: 'destructive',
           duration: 6000
         });
-      } else if (error.message.includes('backend')) {
+      } else if (errorMessage.includes('backend') || errorMessage.includes('500')) {
         toast({
-          title: '🔧 Backend no disponible',
+          title: '🔧 Servidor no disponible',
           description: 'El servidor de pagos no está disponible. Intenta más tarde.',
+          variant: 'destructive',
+          duration: 6000
+        });
+      } else if (errorDetails.includes('back_urls.success')) {
+        toast({
+          title: '⚠️ Error de configuración',
+          description: 'Hay un problema con la configuración de pagos. Por favor contacta al soporte.',
           variant: 'destructive',
           duration: 6000
         });
       } else {
         toast({
           title: 'Error al procesar el pago',
-          description: error.message || 'Hubo un problema. Por favor intenta de nuevo.',
-          variant: 'destructive'
+          description: errorMessage || 'Hubo un problema. Por favor intenta de nuevo.',
+          variant: 'destructive',
+          duration: 5000
         });
       }
-
-      setIsProcessing(false);
     }
   };
 
@@ -109,7 +123,7 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
       {/* Security Info */}
       <div className="flex items-center gap-3 text-sm text-gray-400 px-4">
         <Shield className="w-5 h-5 text-green-400" />
-        <span>Pago seguro procesado por Mercado Pago</span>
+        <span>Pago seguro procesado de forma encriptada</span>
       </div>
 
       {/* Payment Button */}
@@ -127,7 +141,7 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
           ) : (
             <>
               <CreditCard className="w-5 h-5 mr-2" />
-              Pagar con Mercado Pago
+              Pagar Ahora
             </>
           )}
         </Button>
@@ -162,8 +176,8 @@ const MercadoPagoCheckout = ({ planId = 'PREMIUM', onClose }) => {
       <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-sm text-gray-300">
         <p className="font-semibold text-blue-300 mb-1">💡 ¿Cómo funciona?</p>
         <ol className="list-decimal list-inside space-y-1 text-xs">
-          <li>Haz clic en "Pagar con Mercado Pago"</li>
-          <li>Serás redirigido al checkout seguro de Mercado Pago</li>
+          <li>Haz clic en "Pagar Ahora"</li>
+          <li>Serás redirigido a un checkout seguro</li>
           <li>Completa tus datos y elige tu método de pago</li>
           <li>Una vez aprobado, tu plan se activará automáticamente</li>
         </ol>

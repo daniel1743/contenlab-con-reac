@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     const {
       items,
       payer,
-      back_urls,
+      back_urls: backUrlsFromBody,
       notification_url,
       external_reference,
       metadata = {},
@@ -44,6 +44,19 @@ export default async function handler(req, res) {
       amount,
       currency = 'USD'
     } = req.body ?? {};
+
+    console.log('[create-preference] Request body recibido:', {
+      hasItems: !!items,
+      hasBackUrls: !!backUrlsFromBody,
+      backUrls: backUrlsFromBody,
+      planId,
+      amount,
+      headers: {
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        host: req.headers.host
+      }
+    });
 
     if (!MERCADOPAGO_ACCESS_TOKEN) {
       return res.status(500).json({ error: 'MercadoPago no configurado' });
@@ -97,6 +110,49 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Items requeridos' });
     }
 
+    // Determinar la URL base de forma robusta
+    const getBaseUrl = () => {
+      // 1. Intentar desde headers (producción)
+      if (req.headers.origin) {
+        return req.headers.origin;
+      }
+      // 2. Intentar desde referer
+      if (req.headers.referer) {
+        try {
+          const url = new URL(req.headers.referer);
+          return `${url.protocol}//${url.host}`;
+        } catch (e) {
+          console.warn('[create-preference] Error parsing referer:', e);
+        }
+      }
+      // 3. Fallback a variable de entorno o URL por defecto
+      return process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NEXT_PUBLIC_SITE_URL 
+        ? process.env.NEXT_PUBLIC_SITE_URL
+        : 'https://creovision.io';
+    };
+
+    const baseUrl = getBaseUrl();
+    console.log('[create-preference] Base URL determinada:', baseUrl);
+
+    // Construir URLs de retorno de forma explícita
+    // Prioridad: 1) back_urls del body, 2) Variables de entorno, 3) Construcción automática
+    const successUrl = backUrlsFromBody?.success || PAYMENT_RETURN_SUCCESS_URL || `${baseUrl}/payment/success`;
+    const failureUrl = backUrlsFromBody?.failure || PAYMENT_RETURN_FAILURE_URL || `${baseUrl}/payment/failure`;
+    const pendingUrl = backUrlsFromBody?.pending || PAYMENT_RETURN_PENDING_URL || `${baseUrl}/payment/pending`;
+
+    // Validar que successUrl esté definido (requerido por auto_return)
+    if (!successUrl || successUrl.trim() === '') {
+      console.error('[create-preference] ERROR: successUrl no está definido');
+      return res.status(500).json({ 
+        error: 'Error procesando pago',
+        details: 'back_urls.success must be defined when using auto_return'
+      });
+    }
+
+    console.log('[create-preference] URLs de retorno:', { successUrl, failureUrl, pendingUrl });
+
     // 3. Este es el payload que YA TENÍAS. Es correcto.
     const preferencePayload = {
       items: preferenceItems,
@@ -104,14 +160,17 @@ export default async function handler(req, res) {
         email: user.email,
         name: user.user_metadata?.full_name
       } : {}),
-      back_urls: back_urls || {
-        success: PAYMENT_RETURN_SUCCESS_URL ?? `${req.headers.origin || 'https://creovision.io'}/payment/success`,
-        failure: PAYMENT_RETURN_FAILURE_URL ?? `${req.headers.origin || 'https://creovision.io'}/payment/failure`,
-        pending: PAYMENT_RETURN_PENDING_URL ?? `${req.headers.origin || 'https://creovision.io'}/payment/pending`
+      // Asegurar que back_urls siempre tenga success definido cuando se usa auto_return
+      // MercadoPago requiere que back_urls.success esté definido cuando auto_return está activo
+      back_urls: {
+        success: successUrl,
+        failure: failureUrl,
+        pending: pendingUrl
       },
+      // auto_return requiere que back_urls.success esté definido (ya lo garantizamos arriba)
       auto_return: 'approved',
       external_reference: external_reference || (user ? `${user.id}:${planId ?? 'custom'}:${Date.now()}` : `custom:${Date.now()}`),
-      notification_url: notification_url || `${req.headers.origin || 'https://creovision.io'}/api/webhooks/mercadopago`,
+      notification_url: notification_url || `${baseUrl}/api/webhooks/mercadopago`,
       metadata: {
         ...(user ? { user_id: user.id } : {}),
         ...(planId ? { plan_id: planId } : {}),
@@ -121,6 +180,16 @@ export default async function handler(req, res) {
 
     // 4. Crear la preferencia con la sintaxis v2
     const preference = new Preference(client);
+    
+    // Log del payload antes de enviarlo (sin datos sensibles)
+    console.log('[create-preference] Payload a enviar a MercadoPago:', {
+      items: preferencePayload.items,
+      hasPayer: !!preferencePayload.payer,
+      back_urls: preferencePayload.back_urls,
+      auto_return: preferencePayload.auto_return,
+      hasNotificationUrl: !!preferencePayload.notification_url,
+      external_reference: preferencePayload.external_reference
+    });
     
     // El SDK v2 espera el payload dentro de un objeto "body"
     const result = await preference.create({ body: preferencePayload });

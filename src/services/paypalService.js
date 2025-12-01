@@ -24,39 +24,55 @@ export const PAYPAL_PLANS = {
     currency: 'USD',
     features: SUBSCRIPTION_PLANS.FREE
   },
-  PRO: {
-    id: 'pro',
-    name: 'PRO',
-    price: 15.00,
+  STARTER: {
+    id: 'starter',
+    name: 'STARTER',
+    price: 10.00,
     currency: 'USD',
     monthlyCredits: 1000,
     features: [
       '1,000 créditos mensuales',
-      'Dashboard completo y métricas en tiempo real',
-      'Todas las plantillas y prompts premium',
-      'Análisis de tendencias multicanal',
-      'Soporte prioritario en 24h',
-      'Compra de paquetes de créditos con 20% descuento'
+      'Todas las herramientas básicas sin restricción',
+      '1 Análisis de Competencia por semana',
+      'Dashboard semi-completo',
+      'SEO Coach limitado (10 usos mensuales)',
+      'Tendencias Avanzadas Lite',
+      '20% descuento en herramientas premium'
+    ]
+  },
+  PRO: {
+    id: 'pro',
+    name: 'PRO',
+    price: 25.00,
+    currency: 'USD',
+    monthlyCredits: 3000,
+    features: [
+      '3,000 créditos mensuales',
+      'Todas las herramientas desbloqueadas',
+      'Tendencias Avanzadas completas',
+      '8 Análisis de Competencia al mes',
+      'Growth Dashboard completo',
+      'SEO Coach sin límite',
+      '30% descuento en herramientas premium',
+      'Herramientas exclusivas PRO'
     ]
   },
   PREMIUM: {
     id: 'premium',
     name: 'PREMIUM',
-    price: 25.00,
+    price: 50.00,
     currency: 'USD',
-    monthlyCredits: 2500,
+    monthlyCredits: 8000,
     features: [
-      '2,500 créditos mensuales',
-      'Generador de contenido viral (20 peticiones/día)',
-      'Personalización avanzada de guiones',
-      'Auditoría integral de contenido y SEO',
-      'Dashboard interactivo ilimitado',
-      'Inteligencia competitiva (análisis de videos)',
-      'Optimizador SEO (títulos + hashtags)',
-      'Estrategia Pro (monetización + embudos)',
-      'Calendario de publicación colaborativo',
-      'Biblioteca de contenido ilimitada',
-      'Compra de paquetes con 30% descuento',
+      '8,000 créditos mensuales',
+      'TODAS las herramientas sin límite',
+      'IA Interface (asistente 24/7)',
+      'Tendencias VIP (predicción 7 días)',
+      'Análisis competencia ilimitado',
+      'Growth Dashboard Avanzado',
+      'Coach IA de Contenido',
+      '40% descuento permanente en créditos',
+      'Prioridad en servidores',
       'Soporte 24/7 prioritario'
     ]
   }

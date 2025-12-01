@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 
 
-const LandingPage = ({ onSectionChange, onStartDemo }) => {
+const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscriptionClick }) => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [isVideoCarouselHovered, setIsVideoCarouselHovered] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
@@ -1351,7 +1351,10 @@ const LandingPage = ({ onSectionChange, onStartDemo }) => {
 
 
       {/* Integrar componentes existentes */}
-      <PricingSection />
+      <PricingSection 
+        onAuthClick={onAuthClick}
+        onSubscriptionClick={onSubscriptionClick}
+      />
       <TestimonialsCarousel />
       <BrandsCarousel />
 
