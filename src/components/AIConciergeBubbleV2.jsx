@@ -57,6 +57,7 @@ const AIConciergeBubbleV2 = () => {
   const [cacheStats, setCacheStats] = useState(null);
   const chatContainerRef = useRef(null);
   const messageCountRef = useRef(0);
+  const pendingMessagesRef = useRef(0);
 
   const profileData = useMemo(() => loadStoredProfile(), []);
 
@@ -549,7 +550,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isThinking) return;
+    if (!trimmed) return;
 
     // Validar que hay sesión
     if (!currentSession) {
@@ -590,58 +591,79 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
       return;
     }
 
+    // ✅ PERMITIR ENVÍOS RÁPIDOS: Agregar mensaje inmediatamente y limpiar input
     const optimisticMessages = [
       ...messages,
       { role: 'user', content: trimmed, timestamp: Date.now() }
     ];
     setMessages(optimisticMessages);
-    setInput('');
-    setIsThinking(true);
+    setInput(''); // Limpiar input inmediatamente para permitir siguiente mensaje
     setError('');
 
-    // Guardar mensaje del usuario
-    await saveMessageToSupabase('user', trimmed, true);
-
-    try {
-      const recentMessages = optimisticMessages.slice(-8).map(({ role, content }) => ({
-        role,
-        content
-      }));
-
-      // Crear un string único del historial de conversación para caché
-      const conversationText = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n');
-
-      // Usar caché automático
-      const assistantReply = await withCache(
-        () => callGeminiAPI(recentMessages),
-        conversationText,
-        personaPrompt,
-        'gemini'
-      );
-
-      const finalMessages = [
-        ...optimisticMessages,
-        { role: 'assistant', content: assistantReply, timestamp: Date.now() }
-      ];
-
-      setMessages(finalMessages);
-      messageCountRef.current += 1;
-
-      // Guardar respuesta del asistente
-      await saveMessageToSupabase('assistant', assistantReply, true);
-
-    } catch (err) {
-      console.error('[Creo Chat] Error:', err);
-      setError('⚠️ No pude responder. Intentá de nuevo.');
-
-      const fallbackReply = '¡Ups! 😅 Tuve un problemita técnico. ¿Podés repetir lo que me dijiste?';
-      setMessages([
-        ...optimisticMessages,
-        { role: 'assistant', content: fallbackReply, timestamp: Date.now() }
-      ]);
-    } finally {
-      setIsThinking(false);
+    // Incrementar contador de mensajes pendientes
+    pendingMessagesRef.current += 1;
+    
+    // Mostrar indicador de pensando si es el primer mensaje pendiente
+    if (pendingMessagesRef.current === 1) {
+      setIsThinking(true);
     }
+
+    // Guardar mensaje del usuario (no bloqueante)
+    saveMessageToSupabase('user', trimmed, true).catch(err => {
+      console.error('Error guardando mensaje:', err);
+    });
+
+    // Procesar respuesta en background (no bloquea nuevos envíos)
+    (async () => {
+      try {
+        const recentMessages = optimisticMessages.slice(-8).map(({ role, content }) => ({
+          role,
+          content
+        }));
+
+        // Crear un string único del historial de conversación para caché
+        const conversationText = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n');
+
+        // Usar caché automático
+        const assistantReply = await withCache(
+          () => callGeminiAPI(recentMessages),
+          conversationText,
+          personaPrompt,
+          'gemini'
+        );
+
+        setMessages(prev => {
+          // Agregar respuesta del asistente al final
+          return [...prev, { role: 'assistant', content: assistantReply, timestamp: Date.now() }];
+        });
+        messageCountRef.current += 1;
+
+        // Guardar respuesta del asistente
+        await saveMessageToSupabase('assistant', assistantReply, true);
+
+      } catch (err) {
+        console.error('[Creo Chat] Error:', err);
+        setError('⚠️ No pude responder. Intentá de nuevo.');
+
+        const fallbackReply = '¡Ups! 😅 Tuve un problemita técnico. ¿Podés repetir lo que me dijiste?';
+        setMessages(prev => {
+          // Asegurar que no duplicamos mensajes
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg?.role === 'assistant' && lastMsg?.content === fallbackReply) {
+            return prev;
+          }
+          return [...prev, { role: 'assistant', content: fallbackReply, timestamp: Date.now() }];
+        });
+      } finally {
+        // Decrementar contador de mensajes pendientes
+        pendingMessagesRef.current = Math.max(0, pendingMessagesRef.current - 1);
+        
+        // Solo desactivar thinking si no hay más mensajes pendientes
+        if (pendingMessagesRef.current === 0) {
+          setIsThinking(false);
+        }
+      }
+    })();
   };
 
   const handleKeyDown = (e) => {
@@ -684,31 +706,26 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 50 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-20 left-4 right-4 sm:bottom-24 sm:left-auto sm:right-6 w-auto sm:w-[420px] max-w-full h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
-            style={{
-              left: '1rem',
-              right: '1rem'
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            data-chat-modal
+            className="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[420px] w-[calc(100%-2rem)] h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+            style={{ 
+              willChange: 'auto',
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden'
             }}
           >
             {/* Header con animación gradient */}
             <div className="relative p-6 overflow-hidden">
-              <motion.div
+              <div
                 className="absolute inset-0"
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                  backgroundSize: '200% 200%'
-                }}
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: 'linear'
+                  backgroundSize: '200% 200%',
+                  animation: 'gradientShift 5s ease infinite'
                 }}
               />
 
@@ -796,11 +813,8 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                       : null;
 
                     return (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
+                      <div
+                        key={`${msg.timestamp}-${idx}`}
                         className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} gap-2`}
                       >
                         <div
@@ -828,21 +842,17 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                             />
                           </div>
                         )}
-                      </motion.div>
+                      </div>
                     );
                   })}
 
                   {isThinking && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex justify-start"
-                    >
+                    <div className="flex justify-start">
                       <div className="bg-gray-700 text-gray-100 px-4 py-3 rounded-2xl flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span className="text-sm">Creo está pensando...</span>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
 
                   {error && (
@@ -863,14 +873,17 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                   onKeyDown={handleKeyDown}
                   placeholder="Escribí tu mensaje..."
                   className="flex-1 min-h-[50px] max-h-[100px] bg-gray-800 border-purple-500/30 text-white placeholder:text-gray-500 resize-none"
-                  disabled={isThinking}
                 />
                 <Button
                   onClick={handleSend}
-                  disabled={!input.trim() || isThinking}
-                  className="h-[50px] px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  disabled={!input.trim()}
+                  className="h-[50px] px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                 >
-                  <SendHorizontal className="w-5 h-5" />
+                  {isThinking && messages.length > 0 && messages[messages.length - 1]?.role === 'user' ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <SendHorizontal className="w-5 h-5" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -951,6 +964,15 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
+        }
+        /* Prevenir vibraciones en responsive */
+        @media (max-width: 640px) {
+          [data-chat-modal] {
+            will-change: auto;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+          }
         }
       `}</style>
     </>

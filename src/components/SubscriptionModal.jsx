@@ -80,6 +80,22 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
       ],
       highlight: true,
       popular: false
+    },
+    // ⚠️ PLAN TEMPORAL DE PRUEBA - REMOVER DESPUÉS DE PROBAR
+    {
+      name: "TEST",
+      price: 500,
+      credits: 50000,
+      features: [
+        "50,000 créditos de prueba",
+        "Plan temporal para testing",
+        "⚠️ SOLO PARA PRUEBAS",
+        "Remover después de probar MercadoPago"
+      ],
+      highlight: false,
+      popular: false,
+      isTest: true, // Marca para identificar fácilmente
+      currency: "ARS" // Pesos Argentinos
     }
   ];
 
@@ -154,7 +170,7 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                 </DialogHeader>
 
                 {/* Grid de planes - Mostrar todos los planes disponibles */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 my-8">
                   {plans.map((plan, index) => {
                     // Prevenir errores si plan es undefined
                     if (!plan) return null;
@@ -166,24 +182,37 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
                       className={`relative rounded-xl border-2 p-6 ${
-                        plan.highlight
+                        plan.isTest
+                          ? 'border-yellow-500 bg-gradient-to-br from-yellow-900/40 to-orange-900/40'
+                          : plan.highlight
                           ? 'border-purple-500 bg-gradient-to-br from-purple-900/40 to-pink-900/40'
                           : 'border-gray-700 bg-gray-800/50'
                       }`}
                     >
-                      {plan.popular && (
+                      {plan.isTest && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-600 to-orange-600 px-4 py-1 rounded-full text-xs font-bold animate-pulse">
+                          ⚠️ PRUEBA TEMPORAL
+                        </div>
+                      )}
+                      {plan.popular && !plan.isTest && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 rounded-full text-xs font-bold">
                           MÁS POPULAR
                         </div>
                       )}
 
                       <div className="text-center mb-4">
-                        <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                        <h3 className={`text-2xl font-bold mb-2 ${plan.isTest ? 'text-yellow-400' : 'text-white'}`}>
+                          {plan.name}
+                        </h3>
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-4xl font-bold text-gradient">${plan.price}</span>
-                          <span className="text-gray-400">/mes</span>
+                          <span className={`text-4xl font-bold ${plan.isTest ? 'text-yellow-400' : 'text-gradient'}`}>
+                            ${plan.price}
+                          </span>
+                          <span className="text-gray-400">
+                            {plan.isTest ? ' ARS/mes' : '/mes'}
+                          </span>
                         </div>
-                        <div className="mt-2 text-purple-400 font-semibold">
+                        <div className={`mt-2 font-semibold ${plan.isTest ? 'text-yellow-300' : 'text-purple-400'}`}>
                           💎 {plan.credits.toLocaleString()} créditos/mes
                         </div>
                       </div>
@@ -201,12 +230,15 @@ const SubscriptionModal = ({ isOpen, onClose, onAuthClick }) => {
                         <Button
                           onClick={() => handleSubscribeClick(plan)}
                           className={`w-full ${
-                            plan.highlight
+                            plan.isTest
+                              ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                              : plan.highlight
                               ? 'gradient-primary hover:opacity-90'
                               : 'bg-gray-700 hover:bg-gray-600'
                           }`}
                         >
-                          {plan.highlight && <Crown className="w-4 h-4 mr-2" />}
+                          {plan.highlight && !plan.isTest && <Crown className="w-4 h-4 mr-2" />}
+                          {plan.isTest && <span className="mr-2">🧪</span>}
                           {user ? `Seleccionar ${plan.name}` : 'Iniciar Sesión para Suscribirse'}
                         </Button>
                       )}

@@ -52,44 +52,51 @@ export const siteConfig = {
 // ===== META TAGS POR PÁGINA =====
 export const pageMetadata = {
   landing: {
-    title: 'Suite Automatizada para Crear Videos Virales con IA | TikTok, YouTube y Reels',
-    description: '✨ Suite completa para crear videos virales con IA. Automatiza contenido para TikTok, YouTube y Reels en minutos. Ideal para influencers y creadores. Prueba gratis.',
+    title: 'Cómo Crear Contenido Viral con IA | Generador de Videos para YouTube, TikTok y Reels 2025',
+    description: '🚀 Crea videos virales en minutos con IA. Genera guiones, títulos optimizados y hashtags para YouTube, TikTok e Instagram. Herramienta #1 para creadores que quieren hacer contenido viral sin experiencia. Prueba gratis.',
     keywords: [
-      'suite ia contenido viral',
-      'generador videos tiktok ia',
-      'crear videos con inteligencia artificial',
-      'herramientas para influencers',
-      'plataforma creadores',
-      'guiones automáticos ia',
-      'crear contenido viral con IA',
-      'generador de videos IA',
-      'herramientas IA para influencers',
-      'suite creador contenido IA',
-      'automatizar videos TikTok YouTube',
-      'generador automático de videos para creadores',
-      'suite IA para YouTubers',
-      'plataforma todo-en-uno para contenido viral',
-      'cómo crear videos virales con inteligencia artificial paso a paso',
-      'mejor herramienta para influencers 2025',
-      'suite IA sin experiencia para redes sociales'
+      'cómo crear contenido viral',
+      'generador de contenido viral con IA',
+      'herramienta para hacer videos virales',
+      'crear videos virales YouTube TikTok',
+      'generador de guiones virales IA',
+      'títulos virales para YouTube',
+      'hashtags virales TikTok',
+      'cómo hacer contenido viral 2025',
+      'herramienta IA contenido viral',
+      'generador automático videos virales',
+      'crear contenido viral sin experiencia',
+      'mejor herramienta contenido viral',
+      'suite IA para creadores',
+      'generador de ideas virales',
+      'análisis de tendencias virales',
+      'optimizar videos para viralizar',
+      'estrategias contenido viral',
+      'herramientas creadores contenido viral'
     ],
     canonical: '/'
   },
 
   tools: {
-    title: 'Generador de Contenido Viral con IA - CreoVision',
-    description: 'Genera scripts virales optimizados con inteligencia artificial avanzada. Análisis de SEO, keywords y sugerencias por plataforma en segundos.',
+    title: 'Generador de Contenido Viral con IA | Scripts, Títulos y Hashtags para YouTube y TikTok',
+    description: '✨ Genera contenido viral instantáneo: guiones optimizados, títulos que atraen clicks, hashtags virales y análisis de tendencias. Todo con IA para YouTube, TikTok e Instagram. Empieza gratis.',
     keywords: [
-      'generador de scripts con IA',
-      'contenido viral youtube',
-      'generador de títulos SEO',
-      'keywords para videos',
-      'análisis de tendencias',
-      'generador automático de guiones',
-      'IA para youtube',
-      'herramienta de contenido'
+      'generador de scripts virales',
+      'títulos virales para YouTube',
+      'hashtags virales TikTok',
+      'generador de guiones con IA',
+      'ideas de contenido viral',
+      'análisis de tendencias virales',
+      'optimizar videos para viralizar',
+      'generador de contenido automático',
+      'herramienta IA para YouTube',
+      'crear guiones virales rápido',
+      'keywords para videos virales',
+      'estrategias contenido viral',
+      'generador de ideas virales',
+      'herramienta creadores contenido'
     ],
-    canonical: '/#tools'
+    canonical: '/tools'
   },
 
   // COMENTADO TEMPORALMENTE - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
@@ -118,48 +125,72 @@ export const pageMetadata = {
       'estadísticas youtube',
       'panel de control'
     ],
-    canonical: '/#dashboard',
+    canonical: '/dashboard',
     noindex: true // Página privada, no indexar
   },
 
   pricing: {
-    title: 'Planes y Precios - CreoVision',
-    description: 'Planes flexibles para creadores de contenido. Desde Free hasta Enterprise. Prueba gratis todas las funcionalidades premium.',
+    title: 'Precios y Planes | Herramientas IA para Crear Contenido Viral - CreoVision',
+    description: '💰 Planes desde $0. Crea contenido viral ilimitado con IA. Incluye generador de guiones, análisis de tendencias y optimización SEO. Prueba gratis sin tarjeta.',
     keywords: [
-      'precios creovision',
-      'planes para creadores',
-      'suscripción creadores contenido',
-      'herramientas premium youtube'
+      'precios herramienta contenido viral',
+      'planes creadores contenido IA',
+      'suscripción generador contenido viral',
+      'herramientas premium contenido viral',
+      'precio suite IA creadores',
+      'planes herramientas YouTube TikTok',
+      'costo herramienta contenido viral'
     ],
     canonical: '/pricing'
   },
 
   features: {
-    title: 'Funcionalidades | Suite Completa para Creadores - CreoVision',
-    description: 'Descubre todas las herramientas de CreoVision: generador de guiones con IA, análisis de tendencias, calendario de contenido, biblioteca multimedia y más.',
+    title: 'Herramientas para Crear Contenido Viral | Funcionalidades IA - CreoVision',
+    description: '🎯 Suite completa para crear contenido viral: generador de guiones con IA, análisis de tendencias en tiempo real, títulos optimizados, hashtags virales y más. Todo lo que necesitas para viralizar.',
     keywords: [
-      'funcionalidades creovision',
-      'herramientas para creadores',
-      'suite creador contenido',
-      'análisis de tendencias',
-      'generador de guiones IA',
-      'calendario de contenido',
-      'biblioteca multimedia'
+      'herramientas crear contenido viral',
+      'funcionalidades generador contenido IA',
+      'suite herramientas creadores',
+      'análisis tendencias virales',
+      'generador guiones virales IA',
+      'calendario contenido viral',
+      'optimización SEO videos',
+      'herramientas YouTube TikTok',
+      'suite IA contenido viral',
+      'funciones generador viral'
     ],
     canonical: '/features'
   },
 
   testimonials: {
-    title: 'Testimonios | Lo que Dicen Nuestros Creadores - CreoVision',
-    description: 'Lee testimonios reales de creadores de contenido que han multiplicado sus vistas y engagement usando CreoVision. Casos de éxito verificados.',
+    title: 'Testimonios | Creadores que Viralizaron su Contenido con IA - CreoVision',
+    description: '📈 Casos reales: creadores que multiplicaron sus vistas usando nuestra IA para generar contenido viral. Lee cómo lograron viralizar en YouTube, TikTok e Instagram.',
     keywords: [
-      'testimonios creovision',
-      'opiniones creadores',
-      'casos de éxito',
-      'reseñas creovision',
-      'experiencias usuarios'
+      'testimonios herramienta contenido viral',
+      'casos éxito contenido viral',
+      'creadores que viralizaron',
+      'reseñas generador contenido IA',
+      'experiencias creadores viral',
+      'resultados herramienta viral',
+      'historias éxito contenido viral'
     ],
     canonical: '/testimonials'
+  },
+
+  tendencias: {
+    title: 'Tendencias Virales de la Semana | Qué Contenido Está Viralizando Ahora - CreoVision',
+    description: '🔥 Descubre qué está viralizando ahora en YouTube, TikTok e Instagram. Análisis de tendencias, keywords trending y oportunidades para crear contenido viral esta semana.',
+    keywords: [
+      'tendencias virales esta semana',
+      'qué está viralizando ahora',
+      'tendencias YouTube TikTok',
+      'keywords virales ahora',
+      'contenido trending 2025',
+      'oportunidades contenido viral',
+      'análisis tendencias virales',
+      'qué crear para viralizar'
+    ],
+    canonical: '/tendencias'
   },
 
   calendar: {

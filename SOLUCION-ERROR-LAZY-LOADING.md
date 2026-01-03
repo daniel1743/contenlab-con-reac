@@ -60,3 +60,7 @@ Los archivos ya fueron verificados y no tienen errores de linting.
 **Estado:** ✅ **CORREGIDO** - Cambio aplicado, reiniciar servidor para aplicar
 
 
+
+
+
+

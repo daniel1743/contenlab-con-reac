@@ -73,6 +73,20 @@ export const PLANS = {
       '40% descuento permanente en créditos',
       'Prioridad en servidores'
     ]
+  },
+  // ⚠️ PLAN TEMPORAL DE PRUEBA - REMOVER DESPUÉS DE PROBAR
+  TEST: {
+    id: 'test',
+    name: 'TEST - Prueba $500 ARS',
+    price: 500.00,
+    currency: 'ARS', // Pesos Argentinos
+    credits: 50000,
+    features: [
+      '50,000 créditos de prueba',
+      'Plan temporal para testing',
+      '⚠️ SOLO PARA PRUEBAS',
+      'Remover después de probar MercadoPago'
+    ]
   }
 };
 

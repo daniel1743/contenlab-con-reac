@@ -1,5 +1,8 @@
+# ========================================
 # robots.txt para CreoVision - Estrategia SEO 2025
-# Ultima actualizacion: 2025-01-15
+# Optimizado para contenido viral y posicionamiento
+# Última actualización: 2025-01-15
+# ========================================
 
 # ========================================
 # REGLAS PARA TODOS LOS BOTS
@@ -10,10 +13,12 @@ Allow: /tools
 Allow: /features
 Allow: /testimonials
 Allow: /pricing
+Allow: /tendencias
 
 # ========================================
-# RUTAS BLOQUEADAS (Privadas)
+# RUTAS BLOQUEADAS (Páginas Privadas)
 # ========================================
+# Estas páginas requieren autenticación y NO deben ser indexadas
 Disallow: /api/
 Disallow: /admin/
 Disallow: /dashboard/
@@ -31,21 +36,43 @@ Disallow: /history/
 Disallow: /notifications/
 Disallow: /badges/
 Disallow: /miniaturas/
+Disallow: /creo-strategy/
+
+# ========================================
+# BLOQUEAR ARCHIVOS Y DIRECTORIOS TÉCNICOS
+# ========================================
 Disallow: /*.json$
 Disallow: /dist/
 Disallow: /src/
+Disallow: /node_modules/
 
 # ========================================
 # BLOQUEAR URLs CON HASH (Fragmentos)
 # ========================================
 # Google no debe indexar URLs con hash como páginas separadas
+# Ejemplo: /#tools, /#dashboard, etc.
 Disallow: /*#*
 
 # ========================================
-# REGLAS ESPECIFICAS PARA GOOGLEBOT
+# REGLAS ESPECÍFICAS PARA GOOGLEBOT
 # ========================================
 User-agent: Googlebot
 Allow: /
+Allow: /tools
+Allow: /features
+Allow: /testimonials
+Allow: /pricing
+Allow: /tendencias
+Disallow: /api/
+Disallow: /admin/
+
+# ========================================
+# REGLAS PARA GOOGLEBOT-IMAGE
+# ========================================
+User-agent: Googlebot-Image
+Allow: /
+Allow: /tools
+Allow: /features
 Disallow: /api/
 Disallow: /admin/
 
@@ -54,12 +81,18 @@ Disallow: /admin/
 # ========================================
 User-agent: Bingbot
 Allow: /
+Allow: /tools
+Allow: /features
+Allow: /testimonials
+Allow: /pricing
+Allow: /tendencias
 Disallow: /api/
 Disallow: /admin/
 
 # ========================================
-# BLOQUEAR BOTS MALICIOSOS
+# BLOQUEAR BOTS MALICIOSOS Y SCRAPERS
 # ========================================
+# Estos bots consumen recursos sin aportar valor SEO
 User-agent: AhrefsBot
 Disallow: /
 
@@ -69,14 +102,50 @@ Disallow: /
 User-agent: DotBot
 Disallow: /
 
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
 # ========================================
 # SITEMAP
 # ========================================
+# Sitemap optimizado con metadata SEO y imágenes
 Sitemap: https://creovision.io/sitemap.xml
 
 # ========================================
-# NOTAS DE CONFIGURACION
+# NOTAS DE CONFIGURACIÓN SEO
 # ========================================
-# 1. Mantener este archivo en /public para que Vite lo copie a /dist.
-# 2. Tras cada deploy verificar https://creovision.io/robots.txt.
-# 3. Registrar el sitemap en Google Search Console y Bing Webmaster Tools.
+#
+# ✅ PÁGINAS PÚBLICAS PERMITIDAS (Indexables):
+#    - / (Landing) - Prioridad máxima para SEO
+#    - /tools (Generador de contenido viral)
+#    - /features (Funcionalidades completas)
+#    - /testimonials (Casos de éxito)
+#    - /pricing (Planes y precios)
+#    - /tendencias (Análisis de tendencias virales)
+#    - /terminos (Términos de servicio)
+#    - /privacidad (Política de privacidad)
+#
+# ❌ PÁGINAS PRIVADAS BLOQUEADAS (No indexables):
+#    - /dashboard, /calendar, /library, /settings
+#    - /profile, /history, /notifications, /badges
+#    - /miniaturas, /mi-perfil, /creo-strategy
+#    Estas páginas tienen meta tag noindex y están bloqueadas aquí
+#
+# 🔒 RECURSOS BLOQUEADOS:
+#    - /api/ (Endpoints del backend)
+#    - /admin/ (Panel administrativo)
+#    - Archivos JSON y directorios técnicos
+#
+# 📊 ESTRATEGIA SEO:
+#    - Enfoque en keywords: "contenido viral", "generador IA", "viralizar"
+#    - Prioridad en páginas de conversión (tools, pricing)
+#    - Contenido dinámico en /tendencias (changefreq: daily)
+#
+# 🔄 MANTENIMIENTO:
+#    1. Actualizar cuando agregues nuevas rutas públicas
+#    2. Verificar en producción: https://creovision.io/robots.txt
+#    3. Monitorear en Google Search Console
+#    4. Registrar sitemap en Search Console y Bing Webmaster Tools
