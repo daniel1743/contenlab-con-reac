@@ -101,3 +101,4 @@ dist-ssr
 # 5. git push
 nul
 .vercel
+.env.local.backup

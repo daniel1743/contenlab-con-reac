@@ -1,83 +1,134 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
- * ║  ✨ GEMINI SERVICE - Google Generative AI                       ║
+ * ║  ✨ AI SERVICE - OpenAI GPT-4o-mini (Reemplazo de Gemini)       ║
  * ╠══════════════════════════════════════════════════════════════════╣
- * ║  API: https://makersuite.google.com/app/apikey                  ║
- * ║  Costo: GRATIS hasta 60 requests/minuto                         ║
- * ║  Ventajas: Gratuito, rápido, buena calidad                      ║
- * ║  Rate Limit: 60 RPM gratis, 1000 RPM con billing                ║
+ * ║  NOTA: Este archivo antes usaba Gemini, ahora usa OpenAI        ║
+ * ║  Se mantiene el nombre del archivo por compatibilidad           ║
  * ╚══════════════════════════════════════════════════════════════════╝
- *
- * ✅ YA ESTÁ ACTIVO - Este es tu proveedor principal actual
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
 // ===== CONFIGURACIÓN =====
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-2.0-flash-exp'; // Modelo Gemini 2.0 Flash Experimental
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+// Fallback a DeepSeek si OpenAI falla
+const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
 // ===== VERIFICAR SI ESTÁ CONFIGURADO =====
 const isConfigured = () => {
-  return GEMINI_API_KEY && GEMINI_API_KEY !== 'tu_gemini_key_aqui';
+  return OPENAI_API_KEY && OPENAI_API_KEY.startsWith('sk-');
+};
+
+// ===== LLAMAR A OPENAI =====
+const callOpenAI = async (prompt, options = {}) => {
+  const response = await fetch(OPENAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: options.model || OPENAI_MODEL,
+      messages: [
+        { role: 'user', content: prompt }
+      ],
+      temperature: options.temperature || 0.8,
+      max_tokens: options.maxTokens || 2048
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim();
+};
+
+// ===== LLAMAR A DEEPSEEK (Fallback) =====
+const callDeepSeek = async (prompt, options = {}) => {
+  if (!DEEPSEEK_API_KEY) {
+    throw new Error('DeepSeek API key not configured');
+  }
+
+  const response = await fetch(DEEPSEEK_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'user', content: prompt }
+      ],
+      temperature: options.temperature || 0.8,
+      max_tokens: options.maxTokens || 2048
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `DeepSeek API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim();
 };
 
 // ===== FUNCIÓN PRINCIPAL =====
 /**
- * Genera contenido usando Gemini AI
+ * Genera contenido usando OpenAI (antes Gemini)
  *
- * @param {string} prompt - Prompt para Gemini
+ * @param {string} prompt - Prompt para la IA
  * @param {Object} options - Opciones adicionales
  * @returns {Promise<string>} - Contenido generado
  */
 export const generateContent = async (prompt, options = {}) => {
-  if (!isConfigured()) {
-    throw new Error(
-      'Gemini API not configured. Please add VITE_GEMINI_API_KEY to .env'
-    );
-  }
-
   try {
-    console.log('✨ Llamando a Gemini API...');
+    console.log('✨ Llamando a OpenAI API...');
 
-    const model = genAI.getGenerativeModel({
-      model: options.model || GEMINI_MODEL
-    });
+    if (isConfigured()) {
+      const result = await callOpenAI(prompt, options);
+      console.log('✅ Respuesta recibida de OpenAI');
+      return result;
+    }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    console.log('✅ Respuesta recibida de Gemini');
-    return text;
+    // Si OpenAI no está configurado, intentar DeepSeek
+    console.log('⚠️ OpenAI no configurado, usando DeepSeek...');
+    const result = await callDeepSeek(prompt, options);
+    console.log('✅ Respuesta recibida de DeepSeek');
+    return result;
 
   } catch (error) {
-    console.error('❌ Error calling Gemini API:', error);
+    console.error('❌ Error en IA principal:', error.message);
 
-    // Mensajes de error específicos
-    if (error.message?.includes('API_KEY_INVALID')) {
-      throw new Error('Gemini API key is invalid');
-    }
-    if (error.message?.includes('RATE_LIMIT')) {
-      throw new Error('Gemini rate limit exceeded');
-    }
-    if (error.message?.includes('QUOTA')) {
-      throw new Error('Gemini quota exceeded');
+    // Si OpenAI falló, intentar DeepSeek como fallback
+    if (isConfigured() && DEEPSEEK_API_KEY) {
+      try {
+        console.log('🔄 Intentando fallback con DeepSeek...');
+        const result = await callDeepSeek(prompt, options);
+        console.log('✅ Respuesta recibida de DeepSeek (fallback)');
+        return result;
+      } catch (fallbackError) {
+        console.error('❌ Fallback también falló:', fallbackError.message);
+        throw fallbackError;
+      }
     }
 
     throw error;
   }
 };
 
-// ===== FUNCIONES ESPECIALIZADAS (Compatibilidad con versión anterior) =====
+// ===== FUNCIONES ESPECIALIZADAS =====
 
 /**
  * Generar contenido viral completo con análisis estratégico profesional
- * Sigue las directrices de ACTUALIZAR_DOMINIO.md
  */
 export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null) => {
-  // Construir contexto de personalidad si está disponible
   let personalityContext = '';
   if (creatorPersonality && creatorPersonality.role) {
     const roleLabels = {
@@ -105,7 +156,6 @@ export const generateViralScript = async (theme, style, duration, topic, creator
 `;
   }
 
-  // System Prompt + User Prompt siguiendo las directrices
   const prompt = `
 Eres un CONSULTOR DE ESTRATEGIA DE CONTENIDO, especializado en Marketing Viral y KPIs de Alta Retención (CTR, Watch Time).
 
@@ -145,15 +195,15 @@ Genera 3 opciones de Título y un Guion Revisado que eviten el resumen simple y,
 
 **Opción A (SEO):**
 - Título: [Título enfocado en términos clave de búsqueda]
-- Justificación: Optimización para búsqueda de nicho de alto valor. [Explica qué keywords captura]
+- Justificación: Optimización para búsqueda de nicho de alto valor.
 
 **Opción B (CTR):**
 - Título: [Título emocional con pregunta o gatillo psicológico]
-- Justificación: Maximiza la tasa de clics en las primeras horas críticas. [Explica qué emoción activa]
+- Justificación: Maximiza la tasa de clics en las primeras horas críticas.
 
 **Opción C (Controversia Controlada):**
 - Título: [Título que expone un fallo o genera debate]
-- Justificación: Diseñado para iniciar debate y aumentar el tiempo de retención. [Explica el balance riesgo-credibilidad]
+- Justificación: Diseñado para iniciar debate y aumentar el tiempo de retención.
 
 ---
 
@@ -161,55 +211,34 @@ Genera 3 opciones de Título y un Guion Revisado que eviten el resumen simple y,
 
 **[0-5 seg] HOOK:**
 [Línea que NO solo presenta el tema, sino que expone inmediatamente POR QUÉ es relevante AHORA]
-${personalityContext ? '[Adaptado al tono y estilo del creador]' : ''}
-
-**Análisis del Hook:** [Explica qué técnica de engagement usa]
 
 **[5-35 seg] DESARROLLO (Pivote narrativo):**
-1. Contexto Estratégico: [Por qué este tema es relevante]
-2. Punto Ciego/Error Común: [Lo que otros no cuentan]
-3. Insights Accionables: [Información que el usuario puede aplicar]
-${personalityContext ? '[Coherente con la personalidad del creador]' : ''}
+1. Contexto Estratégico
+2. Punto Ciego/Error Común
+3. Insights Accionables
 
-**Ángulo Narrativo:** [Explica qué hace diferente este guión vs. contenido genérico]
-
-**[35-${duration === 'short' ? '60' : duration === 'medium' ? '180' : '300'} seg] CTA AVANZADO:**
-[Pregunta compleja con dos posibles respuestas que exija que el usuario escriba un párrafo para explicar su postura. EVITAR preguntas binarias sí/no]
-
-**Análisis del CTA:** [Explica por qué maximiza engagement cualificado]
+**CTA AVANZADO:**
+[Pregunta compleja que exija engagement cualificado]
 
 **HASHTAGS JERÁRQUICOS:**
 - Alto Volumen: [2 hashtags con +100K publicaciones]
-- Nicho Específico: [3 hashtags ultra-específicos con 1K-10K publicaciones]
-
-**Análisis de Hashtags:** [Explica cómo esta mezcla asegura vida útil prolongada]
+- Nicho Específico: [3 hashtags ultra-específicos]
 
 ---
 
 #### 3. JUSTIFICACIÓN DE LA METODOLOGÍA
 
-**DEBILIDAD DEL GUION BÁSICO:**
-[Explicación de por qué el resumen simple falla con la audiencia. Identifica el error común que otros creadores cometen]
-
-**SOLUCIÓN APLICADA:**
-[Detalle del cambio de ángulo narrativo y su beneficio en el engagement. Usa terminología de marketing]
-
 **KPIs OPTIMIZADOS:**
-- CTR Esperado: [Estimación]
-- Retención Estimada: [Estimación]
-- Engagement Cualificado: [Estimación]
-
-**DECISIONES ESTRATÉGICAS:**
-1. [Decisión 1 y justificación]
-2. [Decisión 2 y justificación]
-3. [Decisión 3 y justificación]
+- CTR Esperado
+- Retención Estimada
+- Engagement Cualificado
 
 ---
 
 IMPORTANTE: Este no es un guión genérico. Es un DOCUMENTO ESTRATÉGICO que demuestra pensamiento editorial profesional.
 `;
 
-  return await generateContent(prompt);
+  return await generateContent(prompt, { maxTokens: 3000 });
 };
 
 /**
@@ -293,22 +322,21 @@ Responde SOLO con el array JSON válido.
 // ===== INFORMACIÓN DE CONFIGURACIÓN =====
 export const getServiceInfo = () => {
   return {
-    name: 'Gemini',
-    provider: 'Google',
-    model: GEMINI_MODEL,
+    name: 'OpenAI',
+    provider: 'OpenAI',
+    model: OPENAI_MODEL,
     configured: isConfigured(),
     features: [
-      'Generación de texto rápida',
-      'Completamente gratis (60 RPM)',
-      'Multimodal (texto + imagen)',
-      'Contexto extenso (32K tokens)'
+      'Generación de texto de alta calidad',
+      'GPT-4o-mini (económico y rápido)',
+      'Fallback automático a DeepSeek',
+      'Contexto extenso'
     ],
     pricing: {
-      free: 'GRATIS hasta 60 RPM',
-      paid: '$0.000125/1K tokens (con billing)'
+      input: '$0.15/1M tokens',
+      output: '$0.60/1M tokens'
     },
-    rateLimit: '60 RPM (gratis), 1000 RPM (con billing)',
-    documentation: 'https://ai.google.dev/docs'
+    documentation: 'https://platform.openai.com/docs'
   };
 };
 

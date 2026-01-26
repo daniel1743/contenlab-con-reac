@@ -196,19 +196,21 @@ function App() {
         </>
       );
     }
-    
-    // Si no está autenticado, servir HTML inicial con noindex antes de redirigir
-    // Esto evita que Google detecte redirects y mejora la indexación
+
+    // Si no está autenticado, mostrar modal de login y redirigir al landing
     if (!isAuthenticated) {
-      // Componente interno para manejar el redirect después de montar
-      const RedirectComponent = () => {
+      // Componente interno para mostrar modal y redirigir
+      const AuthRequiredComponent = () => {
         useEffect(() => {
+          // Mostrar el modal de autenticación
+          setShowAuthModal(true);
+          // Redirigir al landing después de un breve delay
           const timer = setTimeout(() => {
             navigate('/', { replace: true });
           }, 100);
           return () => clearTimeout(timer);
         }, []);
-        
+
         return (
           <>
             {/* Meta tags noindex para que Google no intente indexar */}
@@ -216,16 +218,16 @@ function App() {
             <div className="min-h-screen flex items-center justify-center bg-gray-900">
               <div className="text-center">
                 <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-400">Redirigiendo...</p>
+                <p className="text-gray-400">Inicia sesión para continuar...</p>
               </div>
             </div>
           </>
         );
       };
-      
-      return <RedirectComponent />;
+
+      return <AuthRequiredComponent />;
     }
-    
+
     return (
       <>
         {/* Meta tags para usuarios autenticados */}
@@ -248,7 +250,14 @@ function App() {
         </div>
       );
     }
-    if (!isAuthenticated && !hasDemoAccess) return <Navigate to="/" replace />;
+    // Si no está autenticado y no tiene acceso demo, mostrar modal y redirigir
+    if (!isAuthenticated && !hasDemoAccess) {
+      // Mostrar el modal de autenticación
+      if (!showAuthModal) {
+        setShowAuthModal(true);
+      }
+      return <Navigate to="/" replace />;
+    }
     return children;
   };
 
@@ -418,11 +427,25 @@ function App() {
                   {/* Ruta pública de reset password */}
                   <Route path="/reset-password" element={<ResetPassword />} />
 
-                  {/* Ruta de análisis de canal de YouTube */}
-                  <Route path="/channel-analysis" element={<ChannelAnalysisPage />} />
+                  {/* Ruta de análisis de canal de YouTube - PROTEGIDA */}
+                  <Route
+                    path="/channel-analysis"
+                    element={
+                      <ProtectedRoute pageName="channel-analysis">
+                        <ChannelAnalysisPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                  {/* Ruta de Tendencias de la Semana */}
-                  <Route path="/tendencias" element={<WeeklyTrends />} />
+                  {/* Ruta de Tendencias de la Semana - PROTEGIDA */}
+                  <Route
+                    path="/tendencias"
+                    element={
+                      <ProtectedRoute pageName="tendencias">
+                        <WeeklyTrends />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Ruta de Perfil de Creador */}
                   <Route

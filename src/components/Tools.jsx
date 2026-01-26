@@ -2444,8 +2444,8 @@ const handleCopy = useCallback(() => {
           <StarRating
             prompt={currentPrompt}
             response={generatedContent}
-            provider="gemini"
-            model="gemini-2.0-flash-exp"
+            provider="openai"
+            model="gpt-4o-mini"
             featureSlug="script_generator"
             showCommentBox={true}
             autoShow={true}

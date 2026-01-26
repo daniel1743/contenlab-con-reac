@@ -12,11 +12,11 @@ import { generateDynamicGreeting } from '@/services/dynamicGreetingService';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
-// Usar Gemini 2.0 Flash Experimental (gratis, rápido, 1M tokens input)
-const GEMINI_MODEL = 'gemini-2.0-flash-exp';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// Usar OpenAI GPT-4o-mini como motor principal
+const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 const loadStoredProfile = () => {
   if (typeof window === 'undefined') return null;
@@ -345,52 +345,47 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
     }
   };
 
-  const callGeminiAPI = async (conversationHistory) => {
+  const callOpenAIAPI = async (conversationHistory) => {
     try {
-      console.log('🤖 Llamando a Gemini API...');
+      console.log('🤖 Llamando a OpenAI API...');
 
       // Verificar que tenemos API key
-      if (!GEMINI_API_KEY) {
-        console.warn('⚠️ GEMINI_API_KEY no está configurada, usando motor alternativo');
+      if (!OPENAI_API_KEY) {
+        console.warn('⚠️ OPENAI_API_KEY no está configurada, usando motor alternativo');
         return await callDeepSeekAPI(conversationHistory);
       }
 
-      const contents = conversationHistory.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      }));
+      // Construir mensajes en formato OpenAI
+      const messages = [
+        { role: 'system', content: personaPrompt },
+        ...conversationHistory.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      ];
 
-      // Agregar el system prompt como primer mensaje del user
-      contents.unshift({
-        role: 'user',
-        parts: [{ text: personaPrompt }]
-      });
-      contents.splice(1, 0, {
-        role: 'model',
-        parts: [{ text: '¡Entendido! Seré tu Coach Creo amigable y motivador. 🚀' }]
-      });
+      console.log('📤 Enviando request a OpenAI con', messages.length, 'mensajes');
 
-      console.log('📤 Enviando request a Gemini con', contents.length, 'mensajes');
-
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const response = await fetch(OPENAI_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
         body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.85,
-            maxOutputTokens: 150,
-            topP: 0.95,
-            topK: 40
-          }
+          model: OPENAI_MODEL,
+          messages,
+          temperature: 0.85,
+          max_tokens: 150,
+          top_p: 0.95
         })
       });
 
-      console.log('📥 Respuesta de Gemini:', response.status, response.statusText);
+      console.log('📥 Respuesta de OpenAI:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Error de Gemini API:', errorData);
+        console.error('❌ Error de OpenAI API:', errorData);
         console.log('🔄 Intentando con motor alternativo...');
         return await callDeepSeekAPI(conversationHistory);
       }
@@ -398,7 +393,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
       const data = await response.json();
       console.log('📦 Respuesta recibida de IA');
 
-      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      const content = data?.choices?.[0]?.message?.content?.trim();
 
       if (!content) {
         console.error('❌ Respuesta vacía');
@@ -626,7 +621,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
 
         // Usar caché automático
         const assistantReply = await withCache(
-          () => callGeminiAPI(recentMessages),
+          () => callOpenAIAPI(recentMessages),
           conversationText,
           personaPrompt,
           'gemini'

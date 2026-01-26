@@ -547,34 +547,37 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
             transition={{ duration: 0.8 }}
             className="space-y-8"
           >
-            {/* Headline narrativo con Typed Text */}
+            {/* Headline SEO Optimizado - Keywords: contenido viral, IA, YouTube, TikTok */}
             <div className="min-h-[200px] md:min-h-[280px] flex items-center justify-center">
               <motion.h1
-                className="text-6xl md:text-8xl font-black leading-tight"
+                className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, delay: 0.2 }}
               >
                 <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent block">
-                  <TypedText texts={['Impulsa tu voz', 'Amplifica tu alcance', 'Transforma tu contenido']} />
+                  Crea Contenido Viral
                 </span>
-                <span className="text-white font-light block mt-4">
-                  con propósito
+                <span className="text-white block mt-2">
+                  con <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Inteligencia Artificial</span>
+                </span>
+                <span className="text-2xl md:text-3xl lg:text-4xl text-gray-400 font-light block mt-4">
+                  para <TypedText texts={['YouTube', 'TikTok', 'Instagram', 'Reels', 'Shorts']} />
                 </span>
               </motion.h1>
             </div>
 
 
-            <motion.p 
+            <motion.p
               className="text-xl md:text-2xl text-gray-300 max-w-5xl mx-auto leading-relaxed font-light"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              CreoVision Premium es más que una suite: es tu aliado creativo para{' '}
-              <span className="text-violet-400 font-semibold">crecer con propósito</span>,{' '}
-              <span className="text-purple-400 font-semibold">analizar con precisión</span> y{' '}
-              <span className="text-pink-400 font-semibold">conectar con impacto</span>.
+              Genera <span className="text-violet-400 font-semibold">guiones virales</span>,{' '}
+              <span className="text-purple-400 font-semibold">títulos que atraen clicks</span> y{' '}
+              <span className="text-pink-400 font-semibold">hashtags optimizados</span> en segundos.
+              La herramienta #1 para creadores de contenido que quieren <span className="text-cyan-400 font-semibold">crecer en redes sociales</span>.
             </motion.p>
 
 
@@ -819,7 +822,7 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
               Corazón CreoVision · Momentum Creativo
             </p>
             <h2 className="text-4xl md:text-5xl font-extrabold text-gradient text-transparent leading-tight mb-6">
-              Donde las ideas se encuentran con la visión.
+              Genera Ideas Virales con Inteligencia Artificial
             </h2>
             <p className="text-lg text-gray-300 mb-8">
               Un manifiesto emocional para reconectar con tu propósito: datos, intuición y presencia escénica
@@ -868,10 +871,10 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-6">
-              ¿Para quién es esto?
+              Para Creadores de Contenido que Quieren Crecer
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Cada creador tiene una voz única. Descubre cómo CreoVision se adapta a tu estilo.
+              YouTubers, TikTokers, Instagramers y streamers usan nuestra IA para crear contenido viral y multiplicar sus seguidores.
             </p>
           </motion.div>
 
@@ -921,10 +924,10 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-6">
-              Tu Caja de Herramientas Creativa
+              Herramientas IA para Crear Videos Virales
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Cada módulo está diseñado para potenciar un aspecto único de tu creatividad.
+              Generador de guiones, títulos SEO, hashtags trending, análisis de competencia y más. Todo con inteligencia artificial.
             </p>
           </motion.div>
 
@@ -1006,10 +1009,10 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent mb-6">
-              Todo lo que Necesitas en un Solo Lugar
+              Suite Completa para YouTube, TikTok e Instagram
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Gestión completa de redes sociales con herramientas profesionales
+              Analiza tendencias, genera contenido viral y optimiza tu estrategia de redes sociales con IA
             </p>
           </motion.div>
 
@@ -1267,10 +1270,10 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
-              De la Idea al Impacto
+              Cómo Funciona Nuestro Generador de Contenido Viral
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-4">
-              Potenciado por <span className="font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">CreoVision AI GP-5</span>, la inteligencia artificial más avanzada del mercado.
+              Nuestra <span className="font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">IA analiza millones de videos virales</span> para ayudarte a crear contenido que funciona en YouTube, TikTok e Instagram.
             </p>
             <div className="flex items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30">
@@ -1379,12 +1382,12 @@ const LandingPage = ({ onSectionChange, onStartDemo, onAuthClick, onSubscription
             />
             
             <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-              ¿Listo para Amplificar tu Voz?
+              Empieza a Crear Contenido Viral Gratis
             </h2>
-            
+
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Únete a la nueva generación de creadores que combinan autenticidad con estrategia, 
-              propósito con resultados.
+              Únete a miles de creadores de YouTube, TikTok e Instagram que ya usan nuestra IA
+              para generar contenido viral y crecer más rápido.
             </p>
             
             <motion.button 

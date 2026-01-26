@@ -10,15 +10,16 @@
 import { captureError, captureMessage } from './errorTracking';
 
 // Configuración de APIs disponibles (prioridad descendente)
+// ACTUALIZADO: Gemini removido, OpenAI agregado como alternativa
 const AI_PROVIDERS = {
   // Para contenido largo y creativo
   LONG_CONTENT: [
     {
-      name: 'gemini',
+      name: 'openai',
       priority: 1,
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      keyEnv: import.meta.env.VITE_GEMINI_API_KEY,
-      model: 'gemini-2.0-flash-exp',
+      endpoint: 'https://api.openai.com/v1/chat/completions',
+      keyEnv: import.meta.env.VITE_OPENAI_API_KEY,
+      model: 'gpt-4o-mini',
       maxTokens: 8192,
     },
     {
@@ -42,8 +43,16 @@ const AI_PROVIDERS = {
   // Para análisis premium estratégico
   PREMIUM_ANALYSIS: [
     {
-      name: 'qwen',
+      name: 'openai',
       priority: 1,
+      endpoint: 'https://api.openai.com/v1/chat/completions',
+      keyEnv: import.meta.env.VITE_OPENAI_API_KEY,
+      model: 'gpt-4o-mini',
+      maxTokens: 8192,
+    },
+    {
+      name: 'qwen',
+      priority: 2,
       endpoint: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
       keyEnv: import.meta.env.VITE_QWEN_API_KEY,
       model: 'qwen-max',
@@ -51,19 +60,11 @@ const AI_PROVIDERS = {
     },
     {
       name: 'deepseek',
-      priority: 2,
+      priority: 3,
       endpoint: 'https://api.deepseek.com/chat/completions',
       keyEnv: import.meta.env.VITE_DEEPSEEK_API_KEY,
       model: 'deepseek-chat',
       maxTokens: 4096,
-    },
-    {
-      name: 'gemini',
-      priority: 3,
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      keyEnv: import.meta.env.VITE_GEMINI_API_KEY,
-      model: 'gemini-2.0-flash-exp',
-      maxTokens: 8192,
     },
   ],
 
@@ -86,11 +87,11 @@ const AI_PROVIDERS = {
       maxTokens: 6000,
     },
     {
-      name: 'gemini',
+      name: 'openai',
       priority: 3,
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      keyEnv: import.meta.env.VITE_GEMINI_API_KEY,
-      model: 'gemini-2.0-flash-exp',
+      endpoint: 'https://api.openai.com/v1/chat/completions',
+      keyEnv: import.meta.env.VITE_OPENAI_API_KEY,
+      model: 'gpt-4o-mini',
       maxTokens: 8192,
     },
   ],
@@ -219,9 +220,8 @@ const generateWithProvider = async ({
 
     try {
       // Construir request según el proveedor
-      if (provider.name === 'gemini') {
-        return await callGemini(provider, prompt, temperature);
-      } else if (provider.name === 'qwen' || provider.name === 'deepseek') {
+      // OpenAI, Qwen y DeepSeek usan formato compatible con OpenAI
+      if (provider.name === 'openai' || provider.name === 'qwen' || provider.name === 'deepseek') {
         return await callOpenAICompatible(provider, prompt, temperature);
       } else {
         throw new Error(`Unknown provider: ${provider.name}`);
