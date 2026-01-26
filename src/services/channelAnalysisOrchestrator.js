@@ -10,12 +10,13 @@
 
 import { useState } from 'react';
 import { analyzeChannel } from './youtubeChannelAnalyzerService';
-import { generateChannelInsights } from './channelInsightsAIService';
+import { generateChannelInsights, generateChannelInsightsWithCompetitors } from './channelInsightsAIService';
 import {
   getChannelAnalysis,
   saveChannelAnalysis,
   checkAnalysisLimit
 } from './channelAnalysisCacheService';
+import { searchViralVideos, detectNicheFromVideos } from './competitorSearchService';
 
 /**
  * Analiza un canal de YouTube con cache inteligente
@@ -72,9 +73,43 @@ export const analyzeChannelWithCache = async (userId, channelUrl, userPlan = 'FR
     console.log('📊 No hay cache - analizando canal...');
     const channelAnalysis = await analyzeChannel(channelUrl, limitCheck.videosAllowed);
 
-    // 5. Generar insights con IA
-    console.log('🤖 Generando insights con Gemini AI...');
-    const insights = await generateChannelInsights(channelAnalysis);
+    // 4.5. Buscar videos de competencia
+    console.log('🔍 Buscando competencia...');
+    let competitorVideos = [];
+    let detectedNiche = 'general';
+
+    try {
+      // Detectar nicho basándose en los videos del usuario
+      detectedNiche = detectNicheFromVideos(channelAnalysis.videos);
+
+      // Recopilar tags de los videos del usuario
+      const userTags = channelAnalysis.videos
+        .flatMap(v => v.tags || [])
+        .slice(0, 10);
+
+      // Buscar 4 videos de competencia
+      competitorVideos = await searchViralVideos(
+        detectedNiche,
+        userTags,
+        channelAnalysis.channel.id,
+        4
+      );
+
+      console.log(`✅ Encontrados ${competitorVideos.length} videos de competencia`);
+    } catch (compError) {
+      console.warn('⚠️ No se pudo buscar competencia:', compError.message);
+      // Continuar sin competencia
+    }
+
+    // 5. Generar insights con IA (incluye competencia si está disponible)
+    console.log('🤖 Generando insights con IA...');
+    const insights = competitorVideos.length > 0
+      ? await generateChannelInsightsWithCompetitors(channelAnalysis, competitorVideos, detectedNiche)
+      : await generateChannelInsights(channelAnalysis);
+
+    // Agregar competencia a los insights
+    insights.competitorVideos = competitorVideos;
+    insights.detectedNiche = detectedNiche;
 
     // 6. Guardar en cache
     console.log('💾 Guardando en cache...');
@@ -184,8 +219,14 @@ export const integrateWithDashboard = async (userId, channelUrl, userPlan, skipL
         thumbnailAnalysis: result.insights.thumbnailAnalysis,
         titleAnalysis: result.insights.titleAnalysis,
         engagement: result.insights.engagementAnalysis,
-        nextSteps: result.insights.nextSteps
+        nextSteps: result.insights.nextSteps,
+        // Análisis de competencia
+        competitorAnalysis: result.insights.competitorAnalysis || null
       },
+
+      // Videos de competencia (para mostrar en el Dashboard)
+      competitorVideos: result.insights.competitorVideos || [],
+      detectedNiche: result.insights.detectedNiche || 'general',
 
       // Metadata
       meta: {

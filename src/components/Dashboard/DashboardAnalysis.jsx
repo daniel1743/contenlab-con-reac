@@ -16,6 +16,7 @@ import ThumbnailEvaluation from './ThumbnailEvaluation';
 import VoiceEditionAnalysis from './VoiceEditionAnalysis';
 import EngagementRetention from './EngagementRetention';
 import TextAnalysis from './TextAnalysis';
+import CompetitorSection from './CompetitorSection';
 import CreoVisionSeal from './CreoVisionSeal';
 import CREOLandingAssistant from '@/components/CREOLandingAssistant';
 
@@ -76,7 +77,7 @@ const DashboardAnalysis = ({ analysisData, onReset, isGuest = false }) => {
     );
   }
 
-  const { channelInfo, videos, metrics, aiInsights, meta } = analysisData;
+  const { channelInfo, videos, metrics, aiInsights, meta, competitorVideos, detectedNiche } = analysisData;
 
   const derivedBestVideo =
     metrics?.bestVideo?.title ||
@@ -144,6 +145,13 @@ const DashboardAnalysis = ({ analysisData, onReset, isGuest = false }) => {
 
         {/* Análisis textual */}
         <TextAnalysis videos={videos} aiInsights={aiInsights} />
+
+        {/* 🏆 Análisis de Competencia */}
+        <CompetitorSection
+          competitorVideos={competitorVideos}
+          competitorAnalysis={aiInsights?.competitorAnalysis}
+          detectedNiche={detectedNiche}
+        />
 
         {/* 🎯 CTA DE CONVERSIÓN (solo para invitados) */}
         {isGuest && (

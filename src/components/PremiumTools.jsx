@@ -1,10 +1,11 @@
 /**
  * 💎 HERRAMIENTAS PREMIUM - CreoVision
  *
- * 3 features de ultra alto valor:
+ * 2 features de ultra alto valor:
  * 1. Analytics Command Center (400 créditos)
- * 2. Predictor de Viralidad (300 créditos)
- * 3. Análisis Completo de Mi Canal (250 créditos)
+ * 2. Análisis Completo de Mi Canal (250 créditos)
+ *
+ * DESHABILITADO: Predictor de Viralidad (Reddit API no funcional)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -255,7 +256,7 @@ export default function PremiumTools() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
               Herramientas Premium
             </h1>
-            <p className="text-gray-400 text-sm">Las 3 herramientas más poderosas de CreoVision</p>
+            <p className="text-gray-400 text-sm">Las 2 herramientas más poderosas de CreoVision</p>
           </div>
         </div>
 
@@ -266,7 +267,7 @@ export default function PremiumTools() {
       </div>
 
       {/* Tabs de selección */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card
           className={`cursor-pointer transition-all ${activeTab === 'analytics' ? 'ring-2 ring-yellow-500 bg-yellow-500/10' : 'hover:bg-gray-800/50'}`}
           onClick={() => setActiveTab('analytics')}
@@ -281,6 +282,7 @@ export default function PremiumTools() {
           </CardHeader>
         </Card>
 
+        {/* DESHABILITADO - Predictor de Viralidad usa Reddit API que no está funcional
         <Card
           className={`cursor-pointer transition-all ${activeTab === 'virality' ? 'ring-2 ring-yellow-500 bg-yellow-500/10' : 'hover:bg-gray-800/50'}`}
           onClick={() => setActiveTab('virality')}
@@ -294,6 +296,7 @@ export default function PremiumTools() {
             <CardDescription>Predice el potencial viral con Reddit + YouTube</CardDescription>
           </CardHeader>
         </Card>
+        */}
 
         <Card
           className={`cursor-pointer transition-all ${activeTab === 'channel' ? 'ring-2 ring-yellow-500 bg-yellow-500/10' : 'hover:bg-gray-800/50'}`}
@@ -321,6 +324,7 @@ export default function PremiumTools() {
           <GrowthDashboard />
         )}
 
+        {/* DESHABILITADO - Predictor de Viralidad usa Reddit API que no está funcional
         {activeTab === 'virality' && (
           <Card>
             <CardHeader>
@@ -385,6 +389,7 @@ export default function PremiumTools() {
             </CardContent>
           </Card>
         )}
+        */}
 
         {activeTab === 'channel' && (
           <Card>

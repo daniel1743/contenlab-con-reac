@@ -493,7 +493,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
         content,
         message_number: messageNumber,
         is_free: isFree,
-        ai_provider: role === 'assistant' ? 'gemini' : null,
+        ai_provider: role === 'assistant' ? 'openai' : null,
         created_at: new Date().toISOString()
       });
 
@@ -624,7 +624,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
           () => callOpenAIAPI(recentMessages),
           conversationText,
           personaPrompt,
-          'gemini'
+          'openai'
         );
 
         setMessages(prev => {
@@ -828,8 +828,8 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                             <QuickFeedback
                               prompt={previousUserMsg.content}
                               response={msg.content}
-                              provider="gemini"
-                              model={GEMINI_MODEL}
+                              provider="openai"
+                              model={OPENAI_MODEL}
                               featureSlug="coach_creo"
                               onFeedbackSaved={(feedbackType) => {
                                 console.log('✅ Feedback guardado:', feedbackType);

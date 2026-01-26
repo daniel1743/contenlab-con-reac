@@ -11,7 +11,8 @@ import { COOKIE_STORAGE_KEY } from '@/components/CookieConsentBanner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 // import AIConciergeBubble from '@/components/AIConciergeBubble'; // VERSIÓN ANTIGUA
 import AIConciergeBubble from '@/components/AIConciergeBubbleV2'; // VERSIÓN CON GEMINI + SUPABASE
-import CreoCoachBubble from '@/components/CreoCoachBubble'; // NUEVO: Coach proactivo con DeepSeek
+// DESHABILITADO - Redundante con AIConciergeBubble, confunde al usuario con 2 burbujas
+// import CreoCoachBubble from '@/components/CreoCoachBubble';
 // import CreoFloatingAssistant from '@/components/CreoFloatingAssistant'; // COMENTADO TEMPORALMENTE
 
 // Lazy load de componentes pesados
@@ -37,7 +38,8 @@ const ChannelAnalysisPage = lazy(() => import('@/components/ChannelAnalysisPage'
 const WeeklyTrends = lazy(() => import('@/components/WeeklyTrends'));
 const CreatorProfile = lazy(() => import('@/components/CreatorProfile'));
 const CreoStrategy = lazy(() => import('@/components/strategy/CreoStrategy'));
-const ThumbnailEditor = lazy(() => import('@/components/thumbnail-editor/ThumbnailEditor'));
+// DESHABILITADO - ThumbnailEditor solo 5% implementado
+// const ThumbnailEditor = lazy(() => import('@/components/thumbnail-editor/ThumbnailEditor'));
 const TermsOfServicePage = lazy(() => import('@/components/legal/TermsOfServicePage'));
 const PrivacyPolicyPage = lazy(() => import('@/components/legal/PrivacyPolicyPage'));
 const PaymentSuccess = lazy(() => import('@/components/payment/PaymentSuccess'));
@@ -427,14 +429,10 @@ function App() {
                   {/* Ruta pública de reset password */}
                   <Route path="/reset-password" element={<ResetPassword />} />
 
-                  {/* Ruta de análisis de canal de YouTube - PROTEGIDA */}
+                  {/* Ruta de análisis de canal de YouTube - PÚBLICA para demo gratuita */}
                   <Route
                     path="/channel-analysis"
-                    element={
-                      <ProtectedRoute pageName="channel-analysis">
-                        <ChannelAnalysisPage />
-                      </ProtectedRoute>
-                    }
+                    element={<ChannelAnalysisPage onAuthClick={() => setShowAuthModal(true)} />}
                   />
 
                   {/* Ruta de Tendencias de la Semana - PROTEGIDA */}
@@ -467,7 +465,7 @@ function App() {
                     }
                   />
 
-                  {/* Ruta de Editor de Miniaturas */}
+                  {/* DESHABILITADO - ThumbnailEditor solo 5% implementado (reemplazar con Canva SDK)
                   <Route
                     path="/miniaturas"
                     element={
@@ -476,6 +474,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  */}
 
                   {/* Rutas legales públicas */}
                   <Route path="/terminos" element={<TermsOfServicePage />} />
@@ -611,7 +610,7 @@ function App() {
           activeSection !== 'growth-dashboard' &&
           activeSection !== 'landing' && <AIConciergeBubble />}
 
-        {/* CREO Coach Proactivo - Solo usuarios registrados */}
+        {/* DESHABILITADO - CreoCoachBubble redundante con AIConciergeBubble
         {isAuthenticated && user && activeSection !== 'landing' && (
           <CreoCoachBubble
             userProfile={{
@@ -622,6 +621,7 @@ function App() {
             }}
           />
         )}
+        */}
 
         {/* Coach Creo - COMENTADO TEMPORALMENTE PARA PRUEBAS */}
         {/* {isAuthenticated && user && (

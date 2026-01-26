@@ -314,3 +314,158 @@ Responde SOLO con un JSON en este formato:
     keywords: ['genial', 'bueno', 'excelente']
   };
 };
+
+/**
+ * Genera insights CON análisis de competencia
+ * @param {Object} channelAnalysis - Datos del canal del usuario
+ * @param {Array} competitorVideos - Videos de la competencia
+ * @param {string} detectedNiche - Nicho detectado
+ * @returns {Promise<Object>} - Insights con comparación
+ */
+export const generateChannelInsightsWithCompetitors = async (channelAnalysis, competitorVideos, detectedNiche) => {
+  console.log('🤖 Generando insights con análisis de competencia...');
+
+  // Si no hay videos de competencia, usar análisis normal
+  if (!competitorVideos || competitorVideos.length === 0) {
+    console.log('⚠️ Sin competencia, usando análisis estándar');
+    return generateChannelInsights(channelAnalysis);
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const prompt = buildCompetitorAnalysisPrompt(channelAnalysis, competitorVideos, detectedNiche);
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    console.log('✅ Insights con competencia generados');
+
+    // Parsear respuesta JSON
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (parseError) {
+      console.warn('⚠️ No se pudo parsear JSON, usando fallback');
+    }
+
+    return generateFallbackInsights(channelAnalysis);
+
+  } catch (error) {
+    console.error('❌ Error generando insights con competencia:', error);
+    return generateFallbackInsights(channelAnalysis);
+  }
+};
+
+/**
+ * Construye prompt con análisis de competencia
+ */
+const buildCompetitorAnalysisPrompt = (data, competitors, niche) => {
+  const { channel, videos, metrics } = data;
+
+  // Encontrar el video de competencia con más vistas
+  const topCompetitor = competitors.reduce((best, current) =>
+    current.views > best.views ? current : best
+  , competitors[0]);
+
+  return `Eres un consultor experto en YouTube que analiza canales y los compara con su competencia.
+
+**CANAL DEL USUARIO:**
+- Nombre: ${channel.title}
+- Suscriptores: ${channel.subscriberCount.toLocaleString()}
+- Nicho detectado: ${niche}
+
+**VIDEOS DEL USUARIO (5 más recientes):**
+${videos.slice(0, 5).map((v, i) => `
+${i + 1}. "${v.title}"
+   - Vistas: ${v.viewCount.toLocaleString()}
+   - Engagement: ${v.engagementRate}%
+`).join('')}
+
+**COMPETENCIA - VIDEOS VIRALES DEL MISMO NICHO:**
+${competitors.map((v, i) => `
+${i + 1}. "${v.title}" - Canal: ${v.channelTitle}
+   - Vistas: ${v.views.toLocaleString()}
+   - Engagement: ${v.engagementRate}%
+`).join('')}
+
+**VIDEO LÍDER DE LA COMPETENCIA:**
+"${topCompetitor.title}" del canal "${topCompetitor.channelTitle}" con ${topCompetitor.views.toLocaleString()} vistas
+
+INSTRUCCIONES:
+1. Analiza el canal del usuario
+2. Compara con la competencia, especialmente con el video líder
+3. Identifica POR QUÉ la competencia tiene más vistas
+4. Da consejos ESPECÍFICOS basados en lo que la competencia hace bien
+
+Responde SOLO con JSON en este formato:
+
+{
+  "overallScore": [0-100],
+  "summary": "[Resumen de 2-3 líneas]",
+  "strengths": ["[Fortaleza 1]", "[Fortaleza 2]", "[Fortaleza 3]"],
+  "improvements": ["[Mejora 1]", "[Mejora 2]", "[Mejora 3]"],
+  "competitorAnalysis": {
+    "topCompetitor": {
+      "channel": "${topCompetitor.channelTitle}",
+      "video": "${topCompetitor.title}",
+      "views": ${topCompetitor.views},
+      "whyItWorks": "[Explicación de por qué este video tiene tantas vistas]"
+    },
+    "keyDifferences": [
+      "[Diferencia clave 1 entre tu canal y la competencia]",
+      "[Diferencia clave 2]",
+      "[Diferencia clave 3]"
+    ],
+    "lessonsToApply": [
+      "[Lección 1 que puedes aplicar de la competencia]",
+      "[Lección 2]",
+      "[Lección 3]"
+    ]
+  },
+  "recommendations": [
+    {
+      "title": "[Título basado en lo que funciona en la competencia]",
+      "description": "[Descripción específica]",
+      "priority": "alta",
+      "impact": "[Impacto esperado]"
+    },
+    {
+      "title": "[Recomendación 2]",
+      "description": "[Descripción]",
+      "priority": "media",
+      "impact": "[Impacto]"
+    },
+    {
+      "title": "[Recomendación 3]",
+      "description": "[Descripción]",
+      "priority": "alta",
+      "impact": "[Impacto]"
+    }
+  ],
+  "thumbnailAnalysis": {
+    "score": [0-100],
+    "feedback": "[Comparación con miniaturas de la competencia]",
+    "suggestions": "[Qué copiar de la competencia]"
+  },
+  "titleAnalysis": {
+    "score": [0-100],
+    "patterns": "[Patrones que usa la competencia y tú no]",
+    "suggestions": "[Fórmulas de títulos que funcionan]"
+  },
+  "engagementAnalysis": {
+    "score": [0-100],
+    "trend": "[creciente/estable/decreciente]",
+    "analysis": "[Comparación de engagement con competencia]"
+  },
+  "nextSteps": [
+    "[Paso 1 basado en el video líder de competencia]",
+    "[Paso 2]",
+    "[Paso 3]"
+  ]
+}
+
+IMPORTANTE: Sé ESPECÍFICO. Menciona títulos y canales reales. No des consejos genéricos.`
+};
