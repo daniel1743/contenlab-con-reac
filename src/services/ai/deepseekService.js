@@ -19,7 +19,7 @@ const QWEN_API_KEY = import.meta.env.VITE_QWEN_API_KEY;
 const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const QWEN_MODEL = 'qwen-turbo';
 
-const MAX_TOKENS = 4000;
+const MAX_TOKENS = 6000;
 const TEMPERATURE = 0.7;
 
 // ===== VERIFICAR SI ESTÁ CONFIGURADO =====

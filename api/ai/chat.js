@@ -7,9 +7,14 @@ import { supabaseAdmin } from '../_utils/supabaseClient.js';
 
 const {
   DEEPSEEK_API_KEY,
+  VITE_DEEPSEEK_API_KEY,
   QWEN_API_KEY,
+  VITE_QWEN_API_KEY,
   GEMINI_API_KEY,
 } = process.env;
+
+const EFFECTIVE_DEEPSEEK_API_KEY = DEEPSEEK_API_KEY || VITE_DEEPSEEK_API_KEY;
+const EFFECTIVE_QWEN_API_KEY = QWEN_API_KEY || VITE_QWEN_API_KEY;
 
 /**
  * Capturar interacción en el sistema de aprendizaje
@@ -188,12 +193,12 @@ Devuelve SOLO el análisis personalizado, sin introducción ni explicaciones.`;
       const useModel = model || 'qwen-turbo';
 
       let apiUrl, apiKey;
-      if (useProvider === 'qwen' && QWEN_API_KEY) {
+      if (useProvider === 'qwen' && EFFECTIVE_QWEN_API_KEY) {
         apiUrl = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-        apiKey = QWEN_API_KEY;
-      } else if (DEEPSEEK_API_KEY) {
+        apiKey = EFFECTIVE_QWEN_API_KEY;
+      } else if (EFFECTIVE_DEEPSEEK_API_KEY) {
         apiUrl = 'https://api.deepseek.com/v1/chat/completions';
-        apiKey = DEEPSEEK_API_KEY;
+        apiKey = EFFECTIVE_DEEPSEEK_API_KEY;
       } else {
         return res.status(500).json({ error: 'No AI provider configured' });
       }
@@ -263,7 +268,7 @@ Devuelve SOLO el análisis personalizado, sin introducción ni explicaciones.`;
     // Llamar a la API correspondiente según el proveedor
     switch (provider.toLowerCase()) {
       case 'deepseek':
-        if (!DEEPSEEK_API_KEY) {
+        if (!EFFECTIVE_DEEPSEEK_API_KEY) {
           return res.status(500).json({ error: 'DeepSeek API key not configured' });
         }
 
@@ -271,7 +276,7 @@ Devuelve SOLO el análisis personalizado, sin introducción ni explicaciones.`;
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Authorization': `Bearer ${EFFECTIVE_DEEPSEEK_API_KEY}`,
           },
           body: JSON.stringify({
             model: model || 'deepseek-chat',
@@ -317,7 +322,7 @@ Devuelve SOLO el análisis personalizado, sin introducción ni explicaciones.`;
         });
 
       case 'qwen':
-        if (!QWEN_API_KEY) {
+        if (!EFFECTIVE_QWEN_API_KEY) {
           return res.status(500).json({ error: 'QWEN API key not configured' });
         }
 
@@ -325,7 +330,7 @@ Devuelve SOLO el análisis personalizado, sin introducción ni explicaciones.`;
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${QWEN_API_KEY}`,
+            'Authorization': `Bearer ${EFFECTIVE_QWEN_API_KEY}`,
           },
           body: JSON.stringify({
             model: model || 'qwen-turbo',

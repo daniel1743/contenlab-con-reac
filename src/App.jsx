@@ -30,7 +30,8 @@ const Badges = lazy(() => import('@/components/Badges'));
 const History = lazy(() => import('@/components/History'));
 const Profile = lazy(() => import('@/components/Profile'));
 const Notifications = lazy(() => import('@/components/Notifications'));
-const Onboarding = lazy(() => import('@/components/OnboardingConversational'));
+// ONBOARDING DESHABILITADO TEMPORALMENTE: el flujo esta danado.
+// const Onboarding = lazy(() => import('@/components/OnboardingConversational'));
 const TermsModal = lazy(() => import('@/components/legal/TermsModal'));
 const CookieConsentBanner = lazy(() => import('@/components/CookieConsentBanner'));
 const ResetPassword = lazy(() => import('@/components/ResetPassword'));
@@ -57,7 +58,8 @@ function App() {
   const location = useLocation();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // ONBOARDING DESHABILITADO TEMPORALMENTE.
+  // const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
   const [hasDemoAccess, setHasDemoAccess] = useState(false);
@@ -78,9 +80,6 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      const creatorProfile = localStorage.getItem('creatorProfile');
-      const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-
       // 🚀 REDIRECT AUTOMÁTICO: Si está autenticado y en landing, redirigir SIEMPRE
       if (location.pathname === '/') {
         // Limpiar cache de landing para usuarios autenticados
@@ -94,15 +93,8 @@ function App() {
           });
         }
 
-        // Si no ha completado onboarding, mostrar onboarding primero
-        if (!creatorProfile && !hasCompletedOnboarding) {
-          const timer = setTimeout(() => {
-            setShowOnboarding(true);
-          }, 1000);
-          return () => clearTimeout(timer);
-        }
-
-        // Si ya completó onboarding, ir directamente a mi-perfil
+        // ONBOARDING DESHABILITADO TEMPORALMENTE: entrar directo sin pedir datos.
+        localStorage.setItem('onboardingCompleted', 'true');
         navigate('/mi-perfil', { replace: true });
       }
     }
@@ -557,7 +549,7 @@ function App() {
             </ErrorBoundary>
           )}
 
-          {/* 🚀 ONBOARDING CONVERSACIONAL - EXPRESS MODE (40 seg) */}
+          {/* 🚀 ONBOARDING CONVERSACIONAL - DESHABILITADO TEMPORALMENTE
           {showOnboarding && (
             <Onboarding
               onComplete={(profile) => {
@@ -573,6 +565,7 @@ function App() {
               }}
             />
           )}
+          */}
 
           {/* FakeNotifications - Solo mostrar si no hay errores de carga */}
           {/* <Suspense fallback={null}>

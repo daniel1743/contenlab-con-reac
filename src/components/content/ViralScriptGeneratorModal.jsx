@@ -9,15 +9,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Copy, Check, Download, Film, Loader2 } from 'lucide-react';
+import { X, Sparkles, Copy, Check, Download, Film, Loader2, Clock, CalendarDays } from 'lucide-react';
 import { generateViralScript } from '@/services/geminiService';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { checkFirstUse } from '@/services/firstUseService';
 import { consumeCredits } from '@/services/creditService';
+import { saveGeneratedContentHistory } from '@/services/generatedContentHistoryService';
 import FirstUseModal from '@/components/onboarding/FirstUseModal';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { contentOptions, contentDurations } from '@/constants/toolsConstants';
 
 const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null }) => {
   const { toast } = useToast();
@@ -26,17 +26,18 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
   // Form states
   const [theme, setTheme] = useState('');
   const [style, setStyle] = useState('');
-  const [duration, setDuration] = useState('short');
+  const [duration, setDuration] = useState('one_min');
+  const [narrativeYear, setNarrativeYear] = useState('');
+  const [channelName, setChannelName] = useState('');
   const [topic, setTopic] = useState('');
+  const currentStyles = contentOptions.find((option) => option.value === theme)?.styles || [];
 
   // Generation states
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState(null);
 
   // Copy states
-  const [copiedAnalysis, setCopiedAnalysis] = useState(false);
   const [copiedScript, setCopiedScript] = useState(false);
-  const [copiedSuggestions, setCopiedSuggestions] = useState(false);
 
   // 🎁 FASE 1: Primer uso modal
   const [showFirstUseModal, setShowFirstUseModal] = useState(false);
@@ -48,14 +49,16 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
     if (open) {
       setTheme('');
       setStyle('');
-      setDuration('short');
+      setDuration('one_min');
+      setNarrativeYear('');
+      setChannelName(userPersonality?.channelName || '');
       setTopic('');
       setGeneratedContent(null);
       setShowFirstUseModal(false);
       setFirstUseInfo(null);
       setPendingGeneration(false);
     }
-  }, [open]);
+  }, [open, userPersonality]);
 
   // 🎁 FASE 1: Verificar primer uso cuando se abre el modal
   useEffect(() => {
@@ -72,28 +75,6 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
       setFirstUseInfo(info);
     } catch (error) {
       console.error('Error checking first use:', error);
-    }
-  };
-
-  // Parse the generated content into 3 sections
-  const parseGeneratedContent = (rawContent) => {
-    try {
-      const analysisMatch = rawContent.match(/---INICIO_ANALISIS---([\s\S]*?)---FIN_ANALISIS---/);
-      const scriptMatch = rawContent.match(/---INICIO_LIMPIO---([\s\S]*?)---FIN_LIMPIO---/);
-      const suggestionsMatch = rawContent.match(/---INICIO_SUGERENCIAS---([\s\S]*?)---FIN_SUGERENCIAS---/);
-
-      return {
-        analysis: analysisMatch ? analysisMatch[1].trim() : 'No se generó análisis',
-        script: scriptMatch ? scriptMatch[1].trim() : 'No se generó guion limpio',
-        suggestions: suggestionsMatch ? suggestionsMatch[1].trim() : 'No se generaron sugerencias'
-      };
-    } catch (error) {
-      console.error('Error parseando contenido:', error);
-      return {
-        analysis: rawContent,
-        script: '',
-        suggestions: ''
-      };
     }
   };
 
@@ -162,11 +143,25 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
       }
 
       // Generar guion con Gemini
-      const result = await generateViralScript(theme, style, duration, topic, userPersonality);
+      const result = await generateViralScript(theme, style, duration, topic, userPersonality, {
+        narrativeYear,
+        channelName
+      });
 
-      // Parsear las 3 secciones
-      const parsed = parseGeneratedContent(result);
-      setGeneratedContent(parsed);
+      setGeneratedContent(result);
+
+      await saveGeneratedContentHistory({
+        userId: user.id,
+        contentType: 'script',
+        topic,
+        theme,
+        style,
+        duration,
+        narrativeYear,
+        platform: 'youtube',
+        content: result,
+        metadata: { channelName }
+      });
 
       // 🎁 FASE 2: Otorgar bonus por primer contenido
       try {
@@ -204,15 +199,9 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
     try {
       await navigator.clipboard.writeText(text);
 
-      if (type === 'analysis') {
-        setCopiedAnalysis(true);
-        setTimeout(() => setCopiedAnalysis(false), 2000);
-      } else if (type === 'script') {
+      if (type === 'script') {
         setCopiedScript(true);
         setTimeout(() => setCopiedScript(false), 2000);
-      } else if (type === 'suggestions') {
-        setCopiedSuggestions(true);
-        setTimeout(() => setCopiedSuggestions(false), 2000);
       }
 
       toast({
@@ -261,17 +250,17 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 border border-purple-500/30 rounded-2xl shadow-2xl"
+          className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden bg-[#0d1220] border border-purple-500/30 rounded-2xl shadow-2xl shadow-purple-950/40"
         >
           {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-purple-500/30 bg-gray-900/80 backdrop-blur-xl">
+          <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-purple-500/30 bg-[#111827]/95 backdrop-blur-xl">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg shadow-lg shadow-purple-900/40">
                 <Film className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">Generador de Guiones Virales</h2>
-                <p className="text-sm text-gray-400">Guion completo con análisis estratégico y recursos</p>
+                <p className="text-sm text-gray-400">Texto limpio, listo para IA de voz</p>
               </div>
             </div>
             <button
@@ -283,10 +272,25 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-88px)]">
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-88px)] bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.16),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.4),rgba(2,6,23,0.35))]">
             {!generatedContent ? (
               /* FORM */
               <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-purple-500/20 bg-slate-950/45 p-4">
+                    <p className="text-xs uppercase text-purple-200/80">Salida</p>
+                    <p className="mt-1 text-sm text-white">Solo guion limpio</p>
+                  </div>
+                  <div className="rounded-lg border border-cyan-500/20 bg-slate-950/45 p-4">
+                    <p className="text-xs uppercase text-cyan-200/80">Maximo</p>
+                    <p className="mt-1 text-sm text-white">10 minutos / 10000 caracteres</p>
+                  </div>
+                  <div className="rounded-lg border border-emerald-500/20 bg-slate-950/45 p-4">
+                    <p className="text-xs uppercase text-emerald-200/80">Voz</p>
+                    <p className="mt-1 text-sm text-white">Pausas con puntuacion</p>
+                  </div>
+                </div>
+
                 {/* Temática */}
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-300">
@@ -294,20 +298,18 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
                   </label>
                   <select
                     value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
+                    onChange={(e) => {
+                      setTheme(e.target.value);
+                      setStyle('');
+                    }}
                     className="w-full px-4 py-3 text-white transition-colors bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50"
                   >
                     <option value="">Selecciona una temática</option>
-                    <option value="true_crime">True Crime (Análisis sociológico)</option>
-                    <option value="terror">Terror (Psicológico)</option>
-                    <option value="tech">Tecnología</option>
-                    <option value="lifestyle">Estilo de Vida</option>
-                    <option value="business">Negocios</option>
-                    <option value="cocina">Cocina</option>
-                    <option value="entertainment">Entretenimiento</option>
-                    <option value="noticias">Noticias</option>
-                    <option value="viaje">Viajes</option>
-                    <option value="ciencia_ficcion">Ciencia Ficción</option>
+                    {contentOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -316,39 +318,74 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
                   <label className="block mb-2 text-sm font-medium text-gray-300">
                     Estilo de presentación *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={style}
                     onChange={(e) => setStyle(e.target.value)}
-                    placeholder="Ej: casual y cercano, profesional y serio, energético y motivador"
-                    className="w-full px-4 py-3 text-white transition-colors bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50"
-                  />
+                    disabled={!theme}
+                    className="w-full px-4 py-3 text-white transition-colors bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 disabled:opacity-60"
+                  >
+                    <option value="">{theme ? 'Selecciona un estilo' : 'Primero elige una tematica'}</option>
+                    {currentStyles.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Duración */}
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                  <div className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
+                    <Clock className="w-4 h-4 text-purple-300" />
                     Duración del video *
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { value: 'short', label: 'Corto (1 min)', emoji: '⚡' },
-                      { value: 'medium', label: 'Medio (5 min)', emoji: '🎯' },
-                      { value: 'long', label: 'Largo (15+ min)', emoji: '🎬' }
-                    ].map((opt) => (
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {contentDurations.map((opt) => (
                       <button
                         key={opt.value}
                         onClick={() => setDuration(opt.value)}
                         className={`p-4 text-center border rounded-lg transition-all ${
                           duration === opt.value
-                            ? 'bg-purple-600 border-purple-500 text-white'
-                            : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-purple-500'
+                            ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/40'
+                            : 'bg-gray-800/90 border-gray-700 text-gray-300 hover:border-purple-500 hover:bg-gray-800'
                         }`}
                       >
-                        <div className="text-2xl mb-1">{opt.emoji}</div>
-                        <div className="text-sm font-medium">{opt.label}</div>
+                        <div className="text-lg font-bold">{opt.minutes}</div>
+                        <div className="text-xs font-medium">{opt.minutes === 1 ? 'minuto' : 'minutos'}</div>
+                        <div className="mt-1 text-[11px] text-gray-300">{opt.targetCharacters} caracteres</div>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-[180px_minmax(0,1fr)] gap-4">
+                  {/* Año de la narración */}
+                  <div>
+                    <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-300">
+                      <CalendarDays className="w-4 h-4 text-purple-300" />
+                      Año
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={narrativeYear}
+                      onChange={(e) => setNarrativeYear(e.target.value.replace(/[^\d]/g, '').slice(0, 4))}
+                      placeholder="Ej: 1998"
+                      className="w-full px-4 py-3 text-white transition-colors bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-300">
+                      Nombre del canal
+                    </label>
+                    <input
+                      type="text"
+                      value={channelName}
+                      onChange={(e) => setChannelName(e.target.value.slice(0, 80))}
+                      placeholder="Ej: Relatos del Abismo"
+                      className="w-full px-4 py-3 text-white transition-colors bg-gray-800 border border-gray-700 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50"
+                    />
                   </div>
                 </div>
 
@@ -388,125 +425,28 @@ const ViralScriptGeneratorModal = ({ open, onOpenChange, userPersonality = null 
             ) : (
               /* RESULTS */
               <div className="space-y-6">
-                {/* Análisis Estratégico */}
-                <div className="p-6 border border-purple-500/30 rounded-xl bg-gray-800/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">📊 Análisis Estratégico</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleCopy(generatedContent.analysis, 'analysis')}
-                        className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-700 hover:text-white"
-                      >
-                        {copiedAnalysis ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
-                      </button>
-                      <button
-                        onClick={() => handleDownload(generatedContent.analysis, 'analisis-estrategico.txt')}
-                        className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-700 hover:text-white"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4 overflow-auto text-sm text-gray-300 bg-gray-900 rounded-lg max-h-64">
-                    <div className="prose prose-invert max-w-none text-sm">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          h2: ({node, ...props}) => <h2 className="text-lg font-bold text-purple-400 mt-4 mb-2 first:mt-0" {...props} />,
-                          h3: ({node, ...props}) => <h3 className="text-base font-bold text-indigo-400 mt-3 mb-2" {...props} />,
-                          h4: ({node, ...props}) => <h4 className="text-sm font-semibold text-cyan-400 mt-3 mb-1" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-2 text-gray-300 leading-relaxed text-sm" {...props} />,
-                          strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                          em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
-                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                          li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
-                          code: ({node, inline, ...props}) => 
-                            inline ? (
-                              <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 text-xs" {...props} />
-                            ) : (
-                              <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
-                            ),
-                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-2 italic text-gray-300 my-2" {...props} />,
-                        }}
-                      >
-                        {generatedContent.analysis}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Guion Limpio */}
                 <div className="p-6 border border-green-500/30 rounded-xl bg-gray-800/50">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">🎬 Guion Limpio (Listo para TTS)</h3>
+                    <h3 className="text-xl font-bold text-white">Guion limpio</h3>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleCopy(generatedContent.script, 'script')}
+                        onClick={() => handleCopy(generatedContent, 'script')}
                         className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-700 hover:text-white"
                       >
                         {copiedScript ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
                       </button>
                       <button
-                        onClick={() => handleDownload(generatedContent.script, 'guion-limpio.txt')}
+                        onClick={() => handleDownload(generatedContent, 'guion-creovision.txt')}
                         className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-700 hover:text-white"
                       >
                         <Download className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
-                  <div className="p-4 overflow-auto text-sm text-gray-300 bg-gray-900 rounded-lg max-h-64">
-                    <div className="whitespace-pre-wrap font-mono text-gray-300 leading-relaxed">
-                      {generatedContent.script}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sugerencias Prácticas */}
-                <div className="p-6 border border-indigo-500/30 rounded-xl bg-gray-800/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">💡 Sugerencias Prácticas</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleCopy(generatedContent.suggestions, 'suggestions')}
-                        className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-700 hover:text-white"
-                      >
-                        {copiedSuggestions ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
-                      </button>
-                      <button
-                        onClick={() => handleDownload(generatedContent.suggestions, 'sugerencias.txt')}
-                        className="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-700 hover:text-white"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4 overflow-auto text-sm text-gray-300 bg-gray-900 rounded-lg max-h-64">
-                    <div className="prose prose-invert max-w-none text-sm">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          h2: ({node, ...props}) => <h2 className="text-lg font-bold text-purple-400 mt-4 mb-2 first:mt-0" {...props} />,
-                          h3: ({node, ...props}) => <h3 className="text-base font-bold text-indigo-400 mt-3 mb-2" {...props} />,
-                          h4: ({node, ...props}) => <h4 className="text-sm font-semibold text-cyan-400 mt-3 mb-1" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-2 text-gray-300 leading-relaxed text-sm" {...props} />,
-                          strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                          em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
-                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-300 text-sm" {...props} />,
-                          li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
-                          code: ({node, inline, ...props}) => 
-                            inline ? (
-                              <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 text-xs" {...props} />
-                            ) : (
-                              <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
-                            ),
-                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-2 italic text-gray-300 my-2" {...props} />,
-                        }}
-                      >
-                        {generatedContent.suggestions}
-                      </ReactMarkdown>
-                    </div>
+                  <div className="p-4 overflow-auto text-sm text-gray-300 bg-gray-900 rounded-lg max-h-[520px]">
+                    <pre className="whitespace-pre-wrap font-mono text-gray-300 leading-relaxed">
+                      {generatedContent}
+                    </pre>
                   </div>
                 </div>
 

@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SendHorizontal, Loader2, X, MessageSquare, Sparkles, RotateCcw } from 'lucide-react';
+import { Loader2, X, Sparkles, RotateCcw, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { CREO_SYSTEM_PROMPT } from '@/config/creoPersonality';
 import { withCache, getCacheStats } from '@/services/aiCacheService';
-import { QuickFeedback } from '@/components/FeedbackWidget';
 import { generateDynamicGreeting } from '@/services/dynamicGreetingService';
+import { saveGeneratedContentHistory } from '@/services/generatedContentHistoryService';
 
 const CHAT_STORAGE_KEY = 'creovision_creo_chat_history';
 const PROFILE_STORAGE_KEY = 'creatorProfile';
@@ -17,6 +17,139 @@ const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
 // Usar OpenAI GPT-4o-mini como motor principal
 const OPENAI_MODEL = 'gpt-4o-mini';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+const PROMPT_BUILDER_STORAGE_KEY = 'creovision_creo_prompt_builder';
+
+const promptBuilderDefaults = {
+  genre: 'terror',
+  terrorType: 'psicologico',
+  sourceType: 'relato de un oyente',
+  protagonists: '3',
+  duration: '10',
+  narrativeYear: '1998',
+  channelName: '',
+  setting: 'casa aislada',
+  realismMode: 'testimonio realista',
+  sensoryLevel: 'sensorial al borde de la locura',
+  endingStyle: 'ambiguo e incomodo',
+  extraDetails: ''
+};
+
+const durationCharacters = {
+  1: 1000,
+  2: 2000,
+  4: 4000,
+  7: 7000,
+  10: 10000
+};
+
+const optionSets = {
+  genre: [
+    { value: 'terror', label: 'Terror' },
+    { value: 'true crime', label: 'True Crime' },
+    { value: 'ciencia ficcion', label: 'Ciencia Ficcion' }
+  ],
+  terrorType: [
+    { value: 'psicologico', label: 'Psicologico' },
+    { value: 'paranormal', label: 'Paranormal' },
+    { value: 'sensorial', label: 'Sensorial' },
+    { value: 'bosque maldito', label: 'Bosque' },
+    { value: 'casa abandonada', label: 'Casa' },
+    { value: 'entidad', label: 'Entidad' }
+  ],
+  sourceType: [
+    { value: 'relato de un oyente', label: 'Oyente' },
+    { value: 'carta de un seguidor', label: 'Carta' },
+    { value: 'experiencia personal narrada en primera persona', label: 'Experiencia' },
+    { value: 'caso contado por un familiar', label: 'Familiar' }
+  ],
+  protagonists: ['1', '2', '3', '4', '5'],
+  duration: ['1', '2', '4', '7', '10'],
+  setting: [
+    { value: 'casa aislada', label: 'Casa aislada' },
+    { value: 'bosque rural', label: 'Bosque rural' },
+    { value: 'pueblo pequeno', label: 'Pueblo' },
+    { value: 'carretera de noche', label: 'Carretera' },
+    { value: 'colegio antiguo', label: 'Colegio' }
+  ],
+  sensoryLevel: [
+    { value: 'sensorial leve', label: 'Sensorial leve' },
+    { value: 'sensorial intenso', label: 'Sensorial intenso' },
+    { value: 'sensorial al borde de la locura', label: 'Borde de locura' },
+    { value: 'seco y documental', label: 'Documental' }
+  ],
+  endingStyle: [
+    { value: 'ambiguo e incomodo', label: 'Ambiguo' },
+    { value: 'cabo suelto', label: 'Cabo suelto' },
+    { value: 'revelacion final sobria', label: 'Revelacion' },
+    { value: 'eco emocional para comentarios', label: 'Eco emocional' }
+  ]
+};
+
+const yamlQuote = (value) => `"${String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+
+const buildAdvancedPromptYaml = (answers) => {
+  const characters = durationCharacters[answers.duration] || 4000;
+  const channelInstruction = answers.channelName
+    ? `Usa exactamente el canal ${answers.channelName}. Mencionalo una sola vez despues del primer hook y agrega un CTA atmosferico al final, sin sonar a anuncio.`
+    : 'No menciones nombre de canal y no agregues CTA de suscripcion.';
+  const narrativeFrameInstruction = answers.channelName
+    ? `Usa marco de canal: el narrador de ${answers.channelName} abre el caso, luego entra el relato principal en primera persona y al final vuelve el narrador de ${answers.channelName} con cierre atmosferico. No uses titulos ni etiquetas.`
+    : 'Usa marco narrativo limpio: una breve voz presentadora abre el caso, luego entra el relato principal en primera persona y al final vuelve la voz presentadora con cierre atmosferico. No uses titulos ni etiquetas.';
+
+  return `prompt_creovision:
+  objetivo: "Crear un prompt avanzado para generar un guion de YouTube listo para IA de voz."
+  parametros:
+    genero: ${yamlQuote(answers.genre)}
+    subgenero: ${yamlQuote(answers.terrorType)}
+    duracion_minutos: ${Number(answers.duration)}
+    caracteres_objetivo: ${characters}
+    ano_narracion: ${yamlQuote(answers.narrativeYear || 'auto')}
+    origen_del_relato: ${yamlQuote(answers.sourceType)}
+    protagonistas: ${Number(answers.protagonists)}
+    escenario: ${yamlQuote(answers.setting)}
+    realismo: ${yamlQuote(answers.realismMode)}
+    intensidad_sensorial: ${yamlQuote(answers.sensoryLevel)}
+    final: ${yamlQuote(answers.endingStyle)}
+    canal: ${yamlQuote(answers.channelName || '')}
+  instrucciones:
+    - "Genera solo texto limpio de narracion, sin YAML, sin markdown y sin etiquetas entre corchetes."
+    - "El primer enunciado debe ser un hook fuerte de 2 a 5 segundos con amenaza, contradiccion, peligro o anomalia concreta."
+    - ${yamlQuote(channelInstruction)}
+    - ${yamlQuote(narrativeFrameInstruction)}
+    - "Presenta el relato como ${answers.sourceType}, con voz humana y memoria imperfecta."
+    - "No sacrifiques retencion por literatura: el texto debe sentirse humano, pero no lento."
+    - "Incluye detalles cotidianos que no parezcan creados solo para avanzar la trama."
+    - "Inserta microtension organica cada 500 a 900 caracteres: duda, objeto fuera de lugar, sonido, recuerdo cortado o contradiccion leve."
+    - "El climax debe pagar la promesa del hook y agregar un giro no totalmente esperado."
+    - "Evita frases genericas como penumbra, susurros, algo no estaba bien, presencia maligna y escalofrio recorrio mi espalda."
+    - "Usa puntos, comas, signos y puntos suspensivos con moderacion para ritmo de voz."
+    - "Conserva claridad para YouTube: cada 60 a 90 segundos debe existir una razon para seguir escuchando."
+    - "Cierra con un eco emocional y un loop mental memorable: frase, numero, objeto, sonido o imagen que quede dando vueltas."
+    - "Si hay canal, el CTA final debe ser una frase natural de narrador; evita ordenes secas como suscribete y activa la campana."
+  prompt_final: |-
+    Escribe un guion de ${answers.genre} para YouTube de aproximadamente ${characters} caracteres.
+    El subgenero es ${answers.terrorType}. El relato debe sentirse como ${answers.sourceType}.
+    La historia ocurre en ${answers.narrativeYear || 'un ano coherente elegido por ti'} y debe sentirse de esa epoca por objetos, lenguaje, tecnologia y ambiente.
+    Hay ${answers.protagonists} protagonista(s) principales y el escenario central es ${answers.setting}.
+    Quiero un tono ${answers.sensoryLevel}, con realismo humano controlado: dudas, pequenos detalles cotidianos, dialogos imperfectos y alguna percepcion dudosa.
+    Fusiona dos capas: escritor humano imperfecto y guion viral para YouTube. No dejes que la humanizacion reduzca el terror, el hook, la microtension, el climax ni el loop final.
+    Separa las voces de forma natural: primero narrador/presentador del canal, despues relato principal del protagonista, y al final vuelve el narrador/presentador. No uses encabezados como intro, narracion o cierre.
+    No cierres todo de forma perfecta; el final debe ser ${answers.endingStyle}.
+    ${channelInstruction}
+    ${narrativeFrameInstruction}
+    ${answers.extraDetails ? `Detalles adicionales del usuario: ${answers.extraDetails}` : 'No agregues explicaciones fuera del guion.'}`;
+};
+
+const loadPromptBuilder = () => {
+  if (typeof window === 'undefined') return promptBuilderDefaults;
+  try {
+    const raw = window.localStorage.getItem(PROMPT_BUILDER_STORAGE_KEY);
+    return raw ? { ...promptBuilderDefaults, ...JSON.parse(raw) } : promptBuilderDefaults;
+  } catch (error) {
+    return promptBuilderDefaults;
+  }
+};
 
 const loadStoredProfile = () => {
   if (typeof window === 'undefined') return null;
@@ -42,6 +175,39 @@ const loadHistory = (key) => {
   }
 };
 
+const normalizeOption = (option) => (
+  typeof option === 'string'
+    ? { value: option, label: option }
+    : option
+);
+
+const PromptChoiceGroup = ({ label, value, options, onChange, compact = false }) => (
+  <div className="space-y-2">
+    <p className="text-xs font-semibold text-gray-300">{label}</p>
+    <div className={`grid gap-2 ${compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+      {options.map((rawOption) => {
+        const option = normalizeOption(rawOption);
+        const active = option.value === value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            className={`min-h-[38px] rounded-xl border px-3 py-2 text-left text-xs font-medium transition ${
+              active
+                ? 'border-purple-400 bg-purple-600 text-white shadow-lg shadow-purple-950/40'
+                : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-purple-500 hover:bg-gray-800/80'
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const AIConciergeBubbleV2 = () => {
   const { user, session } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -55,6 +221,9 @@ const AIConciergeBubbleV2 = () => {
   const [showResetButton, setShowResetButton] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [cacheStats, setCacheStats] = useState(null);
+  const [promptBuilder, setPromptBuilder] = useState(() => loadPromptBuilder());
+  const [generatedPromptYaml, setGeneratedPromptYaml] = useState('');
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const chatContainerRef = useRef(null);
   const messageCountRef = useRef(0);
   const pendingMessagesRef = useRef(0);
@@ -74,6 +243,64 @@ const AIConciergeBubbleV2 = () => {
   }, [user?.id]);
 
   const [messages, setMessages] = useState(() => loadHistory(storageKey));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(PROMPT_BUILDER_STORAGE_KEY, JSON.stringify(promptBuilder));
+    }
+  }, [promptBuilder]);
+
+  const updatePromptBuilder = (field, value) => {
+    setPromptBuilder((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleBuildPrompt = async () => {
+    const yaml = buildAdvancedPromptYaml(promptBuilder);
+    setGeneratedPromptYaml(yaml);
+
+    if (user?.id) {
+      try {
+        await saveGeneratedContentHistory({
+          userId: user.id,
+          contentType: 'prompt-yaml',
+          topic: `Prompt ${promptBuilder.genre} - ${promptBuilder.terrorType}`,
+          theme: promptBuilder.genre,
+          style: promptBuilder.terrorType,
+          duration: `${promptBuilder.duration}_min`,
+          narrativeYear: promptBuilder.narrativeYear,
+          platform: 'youtube',
+          content: yaml,
+          metadata: {
+            source: 'prompt_creo',
+            channelName: promptBuilder.channelName,
+            promptBuilder
+          }
+        });
+      } catch (error) {
+        console.warn('No se pudo guardar el prompt en historial:', error);
+      }
+    }
+  };
+
+  const handleCopyPrompt = async () => {
+    if (!generatedPromptYaml) return;
+    try {
+      await navigator.clipboard.writeText(generatedPromptYaml);
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 1800);
+    } catch (error) {
+      setError('No se pudo copiar el prompt.');
+    }
+  };
+
+  const handleResetPromptBuilder = () => {
+    setPromptBuilder(promptBuilderDefaults);
+    setGeneratedPromptYaml('');
+    setCopiedPrompt(false);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(PROMPT_BUILDER_STORAGE_KEY);
+    }
+  };
 
   // Inicializar sesión de Supabase
   useEffect(() => {
@@ -142,7 +369,11 @@ const AIConciergeBubbleV2 = () => {
       }
     };
 
-    initSession();
+    // El Coach Creo ahora funciona como constructor local de prompts.
+    // La sesion conversacional queda desactivada para no gastar mensajes/API.
+    if (false) {
+      initSession();
+    }
   }, [user?.id]);
 
   const updateSessionStats = (session) => {
@@ -175,6 +406,7 @@ const AIConciergeBubbleV2 = () => {
   }, [messages, storageKey]);
 
   useEffect(() => {
+    return;
     if (!messages.length) {
       // Generar saludo dinámico usando DeepSeek
       generateDynamicGreeting(displayName, false).then(warmIntro => {
@@ -734,15 +966,15 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                     />
                   </div>
                   <div>
-                    <h3 className="text-white font-bold text-lg">Coach Creo</h3>
+                    <h3 className="text-white font-bold text-lg">Prompt Creo</h3>
                     <p className="text-white/80 text-xs flex items-center gap-1">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
-                      En línea ahora
+                      Constructor guiado
                     </p>
                   </div>
                 </div>
 
-                {sessionStats && (
+                {false && sessionStats && (
                   <div className="flex flex-col items-end relative z-10 gap-1">
                     <div className="text-white/90 text-xs font-semibold">
                       {sessionStats.freeMessagesUsed}/8 gratis
@@ -767,15 +999,13 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                 )}
 
                 <div className="flex items-center gap-2">
-                  {showResetButton && (
-                    <button
-                      onClick={handleResetConversation}
-                      className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                      aria-label="Reiniciar conversación"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    onClick={handleResetPromptBuilder}
+                    className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                    aria-label="Reiniciar prompt"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => setIsOpen(false)}
                     className="text-white/80 hover:text-white transition-colors relative z-10"
@@ -787,100 +1017,144 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
               </div>
             </div>
 
-            {/* Chat messages */}
-            <div
-              ref={chatContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50"
-            >
-              {sessionLoading && user?.id ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">Cargando sesión...</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {messages.map((msg, idx) => {
-                    // Obtener el mensaje anterior del usuario para el feedback
-                    const previousUserMsg = msg.role === 'assistant' && idx > 0
-                      ? messages[idx - 1]
-                      : null;
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50">
+              <div className="rounded-2xl border border-purple-500/30 bg-gray-900/70 p-4">
+                <p className="text-sm font-semibold text-white">Construye un prompt avanzado</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Responde con opciones rápidas. Creo generará un YAML para pegarlo en el campo de prompt del generador.
+                </p>
+              </div>
 
-                    return (
-                      <div
-                        key={`${msg.timestamp}-${idx}`}
-                        className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} gap-2`}
-                      >
-                        <div
-                          className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                            msg.role === 'user'
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-gray-700 text-gray-100'
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        </div>
-
-                        {/* Agregar QuickFeedback solo para mensajes del asistente */}
-                        {msg.role === 'assistant' && previousUserMsg && (
-                          <div className="ml-2">
-                            <QuickFeedback
-                              prompt={previousUserMsg.content}
-                              response={msg.content}
-                              provider="openai"
-                              model={OPENAI_MODEL}
-                              featureSlug="coach_creo"
-                              onFeedbackSaved={(feedbackType) => {
-                                console.log('✅ Feedback guardado:', feedbackType);
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {isThinking && (
-                    <div className="flex justify-start">
-                      <div className="bg-gray-700 text-gray-100 px-4 py-3 rounded-2xl flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Creo está pensando...</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div className="text-center text-red-400 text-sm py-2 bg-red-900/20 rounded-lg p-3">
-                      {error}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Input area */}
-            <div className="p-4 bg-gray-900 border-t border-purple-500/30">
-              <div className="flex gap-2">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Escribí tu mensaje..."
-                  className="flex-1 min-h-[50px] max-h-[100px] bg-gray-800 border-purple-500/30 text-white placeholder:text-gray-500 resize-none"
+              <div className="space-y-4">
+                <PromptChoiceGroup
+                  label="¿Qué historia quieres crear?"
+                  value={promptBuilder.genre}
+                  options={optionSets.genre}
+                  onChange={(value) => updatePromptBuilder('genre', value)}
                 />
+
+                <PromptChoiceGroup
+                  label="Tipo de terror o enfoque"
+                  value={promptBuilder.terrorType}
+                  options={optionSets.terrorType}
+                  onChange={(value) => updatePromptBuilder('terrorType', value)}
+                />
+
+                <PromptChoiceGroup
+                  label="Origen del relato"
+                  value={promptBuilder.sourceType}
+                  options={optionSets.sourceType}
+                  onChange={(value) => updatePromptBuilder('sourceType', value)}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <PromptChoiceGroup
+                    label="Personas"
+                    value={promptBuilder.protagonists}
+                    options={optionSets.protagonists}
+                    onChange={(value) => updatePromptBuilder('protagonists', value)}
+                    compact
+                  />
+                  <PromptChoiceGroup
+                    label="Minutos"
+                    value={promptBuilder.duration}
+                    options={optionSets.duration}
+                    onChange={(value) => updatePromptBuilder('duration', value)}
+                    compact
+                  />
+                </div>
+
+                <PromptChoiceGroup
+                  label="Escenario"
+                  value={promptBuilder.setting}
+                  options={optionSets.setting}
+                  onChange={(value) => updatePromptBuilder('setting', value)}
+                />
+
+                <PromptChoiceGroup
+                  label="Nivel sensorial"
+                  value={promptBuilder.sensoryLevel}
+                  options={optionSets.sensoryLevel}
+                  onChange={(value) => updatePromptBuilder('sensoryLevel', value)}
+                />
+
+                <PromptChoiceGroup
+                  label="Tipo de final"
+                  value={promptBuilder.endingStyle}
+                  options={optionSets.endingStyle}
+                  onChange={(value) => updatePromptBuilder('endingStyle', value)}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-gray-300">Año</span>
+                    <input
+                      value={promptBuilder.narrativeYear}
+                      onChange={(e) => updatePromptBuilder('narrativeYear', e.target.value.replace(/[^\d]/g, '').slice(0, 4))}
+                      placeholder="1998"
+                      inputMode="numeric"
+                      className="w-full rounded-xl border border-purple-500/30 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-400"
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-semibold text-gray-300">Canal</span>
+                    <input
+                      value={promptBuilder.channelName}
+                      onChange={(e) => updatePromptBuilder('channelName', e.target.value.slice(0, 80))}
+                      placeholder="Relatos del Abismo"
+                      className="w-full rounded-xl border border-purple-500/30 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-purple-400"
+                    />
+                  </label>
+                </div>
+
+                <label className="space-y-1.5 block">
+                  <span className="text-xs font-semibold text-gray-300">Detalles extra</span>
+                  <Textarea
+                    value={promptBuilder.extraDetails}
+                    onChange={(e) => updatePromptBuilder('extraDetails', e.target.value.slice(0, 600))}
+                    placeholder="Ej: Quiero que parezca una carta enviada por una seguidora, con una radio vieja, lluvia y final ambiguo."
+                    className="min-h-[82px] bg-gray-800 border-purple-500/30 text-white placeholder:text-gray-500 resize-none"
+                  />
+                </label>
+
                 <Button
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className="h-[50px] px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  onClick={handleBuildPrompt}
+                  className="w-full h-11 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700"
                 >
-                  {isThinking && messages.length > 0 && messages[messages.length - 1]?.role === 'user' ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <SendHorizontal className="w-5 h-5" />
-                  )}
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generar prompt YAML
                 </Button>
               </div>
+
+              {generatedPromptYaml && (
+                <div className="rounded-2xl border border-green-500/30 bg-gray-950/70 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Prompt avanzado YAML</p>
+                      <p className="text-xs text-gray-400">Copialo y pegalo en el campo de prompt.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleCopyPrompt}
+                        className="rounded-lg border border-green-500/30 p-2 text-green-200 hover:bg-green-500/10"
+                        title="Copiar prompt"
+                      >
+                        {copiedPrompt ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                      <button
+                        onClick={handleResetPromptBuilder}
+                        className="rounded-lg border border-purple-500/30 p-2 text-purple-200 hover:bg-purple-500/10"
+                        title="Reiniciar prompt"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-black/40 p-3 text-xs leading-relaxed text-gray-100">
+                    {generatedPromptYaml}
+                  </pre>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

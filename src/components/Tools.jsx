@@ -4,12 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
 import { StarRating } from '@/components/FeedbackWidget';
 import ShareButton from '@/components/ShareButton';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 // Heroicons imports for professional iconography
 import {
   SparklesIcon,
@@ -155,6 +152,7 @@ import {
   generateSEOOptimizerCard,
   generateProStrategyCard
 } from '@/services/premiumCardsService';
+import { saveGeneratedContentHistory } from '@/services/generatedContentHistoryService';
 
 // 📋 IMPORT DE CONSTANTES
 import {
@@ -172,17 +170,21 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [selectedTheme, setSelectedTheme] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
+  const [narrativeYear, setNarrativeYear] = useState('');
+  const [channelName, setChannelName] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const profile = JSON.parse(localStorage.getItem('creatorProfile') || '{}');
+      return profile.channelName || '';
+    } catch (error) {
+      return '';
+    }
+  });
   const [contentTopic, setContentTopic] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showFeedbackRating, setShowFeedbackRating] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
-
-  // 🆕 ESTADOS PARA LAS 3 VERSIONES DEL CONTENIDO
-  const [contentAnalisis, setContentAnalisis] = useState('');
-  const [contentLimpio, setContentLimpio] = useState('');
-  const [contentSugerencias, setContentSugerencias] = useState('');
-  const [activeTab, setActiveTab] = useState('limpio');
 
   // 🆕 PERSONALIZACIÓN AVANZADA - Estados
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
@@ -1005,22 +1007,15 @@ const handleCopy = useCallback(() => {
           selectedStyle,
           selectedDuration,
           contentTopic,
-          enrichedProfile
+          enrichedProfile,
+          { narrativeYear, channelName }
         );
 
         console.log('✅ Script generado:', generatedScript);
 
-        const analisisMatch = generatedScript.match(/---INICIO_ANALISIS---([\s\S]*?)---FIN_ANALISIS---/);
-        const limpioMatch = generatedScript.match(/---INICIO_LIMPIO---([\s\S]*?)---FIN_LIMPIO---/);
-        const sugerenciasMatch = generatedScript.match(/---INICIO_SUGERENCIAS---([\s\S]*?)---FIN_SUGERENCIAS---/);
-
-        if (analisisMatch) setContentAnalisis(analisisMatch[1].trim());
-        if (limpioMatch) setContentLimpio(limpioMatch[1].trim());
-        if (sugerenciasMatch) setContentSugerencias(sugerenciasMatch[1].trim());
-
         setGeneratedContent(generatedScript);
 
-        const fullPrompt = `Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Tópico: ${contentTopic}`;
+        const fullPrompt = `Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Año: ${narrativeYear || 'no especificado'}, Canal: ${channelName || 'no especificado'}, Tópico: ${contentTopic}`;
         setCurrentPrompt(fullPrompt);
 
         setTimeout(() => {
@@ -1059,22 +1054,25 @@ const handleCopy = useCallback(() => {
 
         if (user) {
           try {
-            const { error } = await supabase
-              .from('generated_content')
-              .insert({
-                user_id: user.id,
-                theme: selectedTheme,
-                style: selectedStyle,
-                topic: contentTopic,
-                content: generatedScript,
-              });
-            
-            if (!error) {
-              toast({
-                title: '¡También guardado!',
-                description: 'Contenido guardado en tu historial.',
-              });
-            }
+            const historyResult = await saveGeneratedContentHistory({
+              userId: user.id,
+              contentType: 'script',
+              topic: contentTopic,
+              theme: selectedTheme,
+              style: selectedStyle,
+              duration: selectedDuration,
+              narrativeYear,
+              platform: 'youtube',
+              content: generatedScript,
+              metadata: { channelName }
+            });
+
+            toast({
+              title: 'Historial actualizado',
+              description: historyResult.localOnly
+                ? 'Guardado localmente para que no pierdas esta generación.'
+                : 'Contenido guardado en tu historial.',
+            });
           } catch (error) {
             console.error("Error saving generated content:", error);
           }
@@ -1130,19 +1128,12 @@ const handleCopy = useCallback(() => {
         selectedStyle,
         selectedDuration,
         contentTopic,
-        enrichedProfile
+        enrichedProfile,
+        { narrativeYear, channelName }
       );
 
-      const analisisMatch = generatedScript.match(/---INICIO_ANALISIS---([\s\S]*?)---FIN_ANALISIS---/);
-      const limpioMatch = generatedScript.match(/---INICIO_LIMPIO---([\s\S]*?)---FIN_LIMPIO---/);
-      const sugerenciasMatch = generatedScript.match(/---INICIO_SUGERENCIAS---([\s\S]*?)---FIN_SUGERENCIAS---/);
-
-      if (analisisMatch) setContentAnalisis(analisisMatch[1].trim());
-      if (limpioMatch) setContentLimpio(limpioMatch[1].trim());
-      if (sugerenciasMatch) setContentSugerencias(sugerenciasMatch[1].trim());
-
       setGeneratedContent(generatedScript);
-      setCurrentPrompt(`Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Tópico: ${contentTopic}`);
+      setCurrentPrompt(`Tema: ${selectedTheme}, Estilo: ${selectedStyle}, Duración: ${selectedDuration}, Año: ${narrativeYear || 'no especificado'}, Canal: ${channelName || 'no especificado'}, Tópico: ${contentTopic}`);
       setTimeout(() => setShowFeedbackRating(true), 3000);
 
       toast({
@@ -1159,15 +1150,18 @@ const handleCopy = useCallback(() => {
 
       if (user) {
         try {
-          await supabase
-            .from('generated_content')
-            .insert({
-              user_id: user.id,
-              theme: selectedTheme,
-              style: selectedStyle,
-              topic: contentTopic,
-              content: generatedScript,
-            });
+          await saveGeneratedContentHistory({
+            userId: user.id,
+            contentType: 'script',
+            topic: contentTopic,
+            theme: selectedTheme,
+            style: selectedStyle,
+            duration: selectedDuration,
+            narrativeYear,
+            platform: 'youtube',
+            content: generatedScript,
+            metadata: { channelName }
+          });
         } catch (error) {
           console.error('Error guardando contenido generado:', error);
         }
@@ -1182,7 +1176,7 @@ const handleCopy = useCallback(() => {
     } finally {
       setIsGenerating(false);
     }
-  }, [user, isDemoUser, contentTopic, selectedTheme, selectedStyle, selectedDuration, toast, setShowAuthRequiredModal, advancedSettings, creatorPersonality, isUsingProfile, showAdvancedSettings, guardProtectedAction, generateViralScript, generateAllSupplementaryData, supabase, onSubscriptionClick, freeCreditsRemaining]);
+  }, [user, isDemoUser, contentTopic, selectedTheme, selectedStyle, selectedDuration, narrativeYear, channelName, toast, setShowAuthRequiredModal, advancedSettings, creatorPersonality, isUsingProfile, showAdvancedSettings, guardProtectedAction, generateViralScript, generateAllSupplementaryData, onSubscriptionClick, freeCreditsRemaining]);
 
   // Reproducir (libre para todos)
   const handleReplayScript = useCallback(() => {
@@ -1309,8 +1303,8 @@ const handleCopy = useCallback(() => {
     if (wizardData.contentType) {
       // Mapear tipo de contenido a duración
       const durationMap = {
-        'video-corto': '15-60s',
-        'video-largo': '3-5min',
+        'video-corto': 'one_min',
+        'video-largo': 'four_min',
         'post': 'Post',
         'historia': 'Historia',
         'blog': 'Blog'
@@ -1787,22 +1781,47 @@ const handleCopy = useCallback(() => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="topic-input">4. Describe tu Idea o Prompt</Label>
-            <Input
-              id="topic-input"
-              name="topic"
-              placeholder="Ej: El caso de la mansión embrujada, Los mejores destinos de playa..."
-              value={contentTopic}
-              onChange={(e) => setContentTopic(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleGenerateContent();
-                }
-              }}
-              className="glass-effect border-purple-500/20"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_160px_220px] gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="topic-input">4. Describe tu Idea o Prompt</Label>
+              <Input
+                id="topic-input"
+                name="topic"
+                placeholder="Ej: Cuando tenía 17 años cruzaba un bosque para ir a la escuela..."
+                value={contentTopic}
+                onChange={(e) => setContentTopic(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerateContent();
+                  }
+                }}
+                className="glass-effect border-purple-500/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="narrative-year-input">Año</Label>
+              <Input
+                id="narrative-year-input"
+                name="narrativeYear"
+                inputMode="numeric"
+                placeholder="Ej: 1998"
+                value={narrativeYear}
+                onChange={(e) => setNarrativeYear(e.target.value.replace(/[^\d]/g, '').slice(0, 4))}
+                className="glass-effect border-purple-500/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="channel-name-input">Nombre del canal</Label>
+              <Input
+                id="channel-name-input"
+                name="channelName"
+                placeholder="Ej: Relatos del Abismo"
+                value={channelName}
+                onChange={(e) => setChannelName(e.target.value.slice(0, 80))}
+                className="glass-effect border-purple-500/20"
+              />
+            </div>
           </div>
 
           {/* 🆕 BADGE: PERFIL ACTIVO O BOTÓN DE PERSONALIZACIÓN */}
@@ -2024,223 +2043,71 @@ const handleCopy = useCallback(() => {
             </Button>
           </div>
 
-          {/* 🆕 ÁREA DE CONTENIDO GENERADO - 3 PANELES PROFESIONALES */}
+          {/* Área de contenido generado - guion limpio */}
           {generatedContent && (
             <div className="space-y-6 pt-4">
-              {/* Tabs para las 3 versiones - REORDENADAS */}
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" id="content-tabs">
-                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 glass-effect h-auto p-2">
-                  <TabsTrigger value="limpio" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap flex items-center gap-1.5">
-                    <DocumentTextIcon className="w-4 h-4 text-green-400 stroke-[2]" />
-                    <span className="hidden sm:inline">Guión Limpio (Text-to-Speech)</span><span className="sm:hidden">Guión Limpio</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="sugerencias" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap flex items-center gap-1.5">
-                    <LightBulbIcon className="w-4 h-4 text-yellow-400 stroke-[2]" />
-                    <span className="hidden sm:inline">Sugerencias Prácticas</span><span className="sm:hidden">Sugerencias</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="analisis" className="text-xs sm:text-sm whitespace-normal sm:whitespace-nowrap flex items-center gap-1.5">
-                    <ChartBarIcon className="w-4 h-4 text-purple-400 stroke-[2]" />
-                    <span className="hidden sm:inline">Análisis Estratégico</span><span className="sm:hidden">Análisis</span>
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* PANEL 1: GUIÓN LIMPIO PARA TEXT-TO-SPEECH (AHORA PRIMERO) */}
-                <TabsContent value="limpio" className="mt-4">
-                  <Card className="glass-effect border-green-500/20">
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <DocumentTextIcon className="w-5 h-5 text-green-400 stroke-[2]" />
-                          Guión Listo para Narración
-                        </CardTitle>
-                        <div className="flex gap-2 flex-wrap">
-                          <ShareButton
-                            title="Guión generado con CreoVision"
-                            text={contentLimpio}
-                            variant="outline"
-                            size="sm"
-                            className="border-green-500/20 hover:bg-green-500/10"
-                            onShareSuccess={() => {
-                              if (!guardProtectedAction('compartir guión')) {
-                                console.log('Guión compartido exitosamente');
-                              }
-                            }}
-                          />
-                          <Button
-                            onClick={() => {
-                              if (guardProtectedAction('copiar guión limpio')) {
-                                return;
-                              }
-                              navigator.clipboard.writeText(contentLimpio);
-                              toast({title: '✅ Guión copiado', description: 'Listo para pegar en tu app de text-to-speech'});
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="border-green-500/20 hover:bg-green-500/10"
-                          >
-                            <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                            Copiar
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              const element = document.createElement('a');
-                              const file = new Blob([contentLimpio], { type: 'text/plain' });
-                              element.href = URL.createObjectURL(file);
-                              element.download = `guion-limpio-${Date.now()}.txt`;
-                              document.body.appendChild(element);
-                              element.click();
-                              document.body.removeChild(element);
-                              toast({title: '✅ Descargado'});
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="border-green-500/20 hover:bg-green-500/10"
-                          >
-                            <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                            Descargar
-                          </Button>
-                        </div>
-                      </div>
-                      <CardDescription>
-                        Narración fluida sin formato - Lista para copiar y pegar en apps de voz
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
-                        <p className="text-base text-gray-100 leading-relaxed font-sans">
-                          {contentLimpio || 'Generando versión limpia...'}
-                        </p>
-                      </div>
-
-                      {/* BOTÓN CONTINUAR A SUGERENCIAS */}
-                      <div className="flex justify-center mt-6">
-                        <Button
-                          onClick={() => setActiveTab('sugerencias')}
-                          className="gradient-primary hover:opacity-90"
-                          size="lg"
-                        >
-                          Continuar a Sugerencias Prácticas
-                          <ChevronRightIcon className="w-5 h-5 ml-2 stroke-[2]" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* PANEL 2: SUGERENCIAS PRÁCTICAS (AHORA SEGUNDO) */}
-                <TabsContent value="sugerencias" className="mt-4">
-                  <Card className="glass-effect border-blue-500/20">
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <LightBulbIcon className="w-5 h-5 text-yellow-400 stroke-[2]" />
-                          Sugerencias y Recursos Prácticos
-                        </CardTitle>
-                        <Button
-                          onClick={() => {
-                            if (guardProtectedAction('copiar sugerencias prácticas')) {
-                              return;
-                            }
-                            navigator.clipboard.writeText(contentSugerencias);
-                            toast({title: '✅ Sugerencias copiadas'});
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="border-blue-500/20 hover:bg-blue-500/10"
-                        >
-                          <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                          Copiar
-                        </Button>
-                      </div>
-                      <CardDescription>
-                        Recursos gratuitos, editores, música y alertas importantes
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
-                        <pre className="whitespace-pre-wrap text-sm text-gray-200 font-sans">
-                          {contentSugerencias || 'Generando sugerencias...'}
-                        </pre>
-                      </div>
-
-                      {/* BOTÓN CONTINUAR A ANÁLISIS */}
-                      <div className="flex justify-center mt-6">
-                        <Button
-                          onClick={() => setActiveTab('analisis')}
-                          className="gradient-primary hover:opacity-90"
-                          size="lg"
-                        >
-                          Ver Análisis Estratégico Completo
-                          <ChevronRightIcon className="w-5 h-5 ml-2 stroke-[2]" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* PANEL 3: ANÁLISIS ESTRATÉGICO (AHORA TERCERO) */}
-                <TabsContent value="analisis" className="mt-4">
-                  <Card className="glass-effect border-purple-500/20">
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-white flex items-center gap-2">
-                          <ChartBarIcon className="w-5 h-5 text-purple-400 stroke-[2]" />
-                          Análisis Estratégico Completo
-                        </CardTitle>
-                        <Button
-                          onClick={() => {
-                            if (guardProtectedAction('copiar análisis estratégico')) {
-                              return;
-                            }
-                            navigator.clipboard.writeText(contentAnalisis || generatedContent);
-                            toast({title: '✅ Análisis copiado'});
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="border-purple-500/20 hover:bg-purple-500/10"
-                        >
-                          <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
-                          Copiar
-                        </Button>
-                      </div>
-                      <CardDescription>
-                        Incluye análisis inicial, variantes de títulos, justificaciones y KPIs
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-black/30 rounded-lg p-6 max-h-[600px] overflow-y-auto">
-                        <div className="text-sm text-gray-200 font-sans prose prose-invert max-w-none">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                            h2: ({node, ...props}) => <h2 className="text-xl font-bold text-purple-400 mt-6 mb-3 first:mt-0" {...props} />,
-                            h3: ({node, ...props}) => <h3 className="text-lg font-bold text-indigo-400 mt-5 mb-2" {...props} />,
-                            h4: ({node, ...props}) => <h4 className="text-base font-semibold text-cyan-400 mt-4 mb-2" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-3 text-gray-200 leading-relaxed" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                            em: ({node, ...props}) => <em className="italic text-purple-300" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1 text-gray-200" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1 text-gray-200" {...props} />,
-                            li: ({node, ...props}) => <li className="ml-4 mb-1" {...props} />,
-                            code: ({node, inline, ...props}) => 
-                              inline ? (
-                                <code className="bg-gray-800 px-1.5 py-0.5 rounded text-purple-300 text-xs" {...props} />
-                              ) : (
-                                <code className="block bg-gray-800 p-2 rounded text-purple-300 text-xs overflow-x-auto" {...props} />
-                              ),
-                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-3 italic text-gray-300 my-3" {...props} />,
-                          }}
-                        >
-                          {contentAnalisis || generatedContent}
-                        </ReactMarkdown>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-
-              {/* 🔄 BOTÓN MOVIDO - Ahora está después de Tendencias y Engagement */}
+              <Card className="glass-effect border-green-500/20">
+                <CardHeader>
+                  <div className="flex justify-between items-center gap-3 flex-wrap">
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <DocumentTextIcon className="w-5 h-5 text-green-400 stroke-[2]" />
+                      Guion limpio
+                    </CardTitle>
+                    <div className="flex gap-2 flex-wrap">
+                      <ShareButton
+                        title="Guion generado con CreoVision"
+                        text={generatedContent}
+                        variant="outline"
+                        size="sm"
+                        className="border-green-500/20 hover:bg-green-500/10"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (guardProtectedAction('copiar guion')) {
+                            return;
+                          }
+                          navigator.clipboard.writeText(generatedContent);
+                          toast({title: '✅ Guion copiado', description: 'Texto limpio listo para IA de voz.'});
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="border-green-500/20 hover:bg-green-500/10"
+                      >
+                        <ClipboardDocumentIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                        Copiar
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const element = document.createElement('a');
+                          const file = new Blob([generatedContent], { type: 'text/plain' });
+                          element.href = URL.createObjectURL(file);
+                          element.download = `guion-creovision-${Date.now()}.txt`;
+                          document.body.appendChild(element);
+                          element.click();
+                          document.body.removeChild(element);
+                          toast({title: '✅ Guion descargado'});
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="border-green-500/20 hover:bg-green-500/10"
+                      >
+                        <ArrowDownTrayIcon className="w-4 h-4 mr-2 stroke-[2]" />
+                        Descargar
+                      </Button>
+                    </div>
+                  </div>
+                  <CardDescription>
+                    Único resultado generado. Texto limpio, sin etiquetas internas, listo para IA de voz.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-black/30 rounded-lg p-6 max-h-[700px] overflow-y-auto">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-100 font-mono leading-relaxed">
+                      {generatedContent}
+                    </pre>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </CardContent>

@@ -1,6 +1,5 @@
 import { generateContent as deepseekGenerate } from '@/services/ai/deepseekService';
 import { withAiModelCache } from '@/services/aiModelCacheService';
-import { stripJsonCodeFences } from '@/utils/jsonUtils';
 
 // Configuración del proveedor
 const GEMINI_PROVIDER_CODE = 'creovision-gp5';
@@ -13,7 +12,7 @@ const generateContent = async (prompt, systemPrompt = null) => {
 
     const text = await deepseekGenerate(prompt, {
       temperature: 0.7,
-      maxTokens: 4000,
+      maxTokens: 6000,
       systemPrompt: systemPrompt || 'Eres un experto creador de contenido viral para redes sociales en español.'
     });
 
@@ -26,7 +25,9 @@ const generateContent = async (prompt, systemPrompt = null) => {
 };
 
 // 1. Generar contenido viral completo con análisis estratégico profesional
-export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null) => {
+export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null, generationOptions = {}) => {
+  const { narrativeYear = '', channelName = '' } = generationOptions;
+  const effectiveChannelName = (channelName || creatorPersonality?.channelName || '').trim();
 
   // 🎯 DEFINIR ROL PROFESIONAL SEGÚN LA TEMÁTICA
   const systemRolesByTheme = {
@@ -128,17 +129,97 @@ export const generateViralScript = async (theme, style, duration, topic, creator
 `;
   }
 
-  // Convertir duración a minutos para timestamps
+  // Convertir duracion a minutos y caracteres aproximados.
   const durationMap = {
-    'short': 1,      // 1 minuto (60 segundos)
-    'medium': 5,     // 5 minutos (300 segundos)
-    'long': 15       // 15 minutos (900 segundos)
+    one_min: 1,
+    two_min: 2,
+    four_min: 4,
+    seven_min: 7,
+    ten_min: 10,
+    short: 1,
+    medium: 4,
+    long: 10
   };
-  const totalMinutes = durationMap[duration] || 5;
+  const totalMinutes = durationMap[duration] || 4;
+  const targetCharacters = Math.min(totalMinutes * 1000, 10000);
+  const cleanVoiceOutput = (value) => {
+    const cleaned = String(value || '')
+      .trim()
+      .replace(/^```(?:yaml|yml|json|text|txt)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+
+    const yamlMatch = cleaned.match(/^voice_script:\s*\|\s*\n([\s\S]*)$/i);
+    const body = yamlMatch ? yamlMatch[1] : cleaned;
+
+    return body
+      .replace(/^\s{2}/gm, '')
+      .replace(/\[(?:pausa breve|pausa|pausa larga)\]/gi, '...')
+      .replace(/\.{4,}/g, '...')
+      .replace(/[ \t]+\n/g, '\n')
+      .trim();
+  };
+  const humanRealismRules = `
+═══════════════════════════════════════════════════════════════
+MOTOR HIBRIDO: REALISMO HUMANO + RETENCION VIRAL
+═══════════════════════════════════════════════════════════════
+
+Activa realismo humano controlado sin perder fuerza viral. El guion debe sentirse recordado por una persona, no diseñado por una maquina, pero debe estar construido para retener en YouTube.
+
+Regla de fusion:
+- No elijas entre naturalidad y retencion: usa ambos.
+- La humanizacion no puede bajar la tension. Cada escena normal debe esconder una grieta inquietante.
+- No sacrifiques el hook por literatura atmosferica. El primer enunciado debe contener amenaza, contradiccion, peligro o anomalia concreta.
+- Evita aperturas suaves si no prometen peligro inmediato, por ejemplo: "Me desperte con...", "La llave giro...", "Era una noche..." salvo que incluyan una amenaza clara.
+- El texto debe sonar humano, pero no lento. Si una escena se vuelve demasiado contemplativa, introduce una pregunta, objeto fuera de lugar, sonido o contradiccion.
+
+Imperfeccion controlada:
+- Incluye 3 a 6 detalles cotidianos que no parezcan servir a la trama principal: ropa, marcas viejas, comida, una tarea domestica, un objeto barato, una frase familiar, una deuda, una llamada pendiente.
+- Permite 1 o 2 pensamientos incompletos, como si el narrador corrigiera su memoria.
+- Permite una contradiccion leve de percepcion, pero nunca rompas la comprension del espectador.
+- No hagas que todos los objetos vuelvan al final. Algunos detalles pueden quedar sin respuesta.
+
+Dialogo natural:
+- Evita dialogos perfectos que explican la trama.
+- Usa respuestas cortas, dudas, interrupciones y frases incompletas.
+- Los personajes no deben entender todo al instante.
+- Evita que un niño hable como adulto o como recurso expositivo.
+
+Ritmo organico:
+- Rompe el patron de tension al menos 2 veces con momentos aparentemente normales.
+- Alterna frases cortas con frases medianas. No mantengas el mismo compas durante todo el texto.
+- No pongas una revelacion fuerte en cada parrafo. Deja respirar algunas escenas.
+- Usa "..." con moderacion; maximo 18 veces en todo el guion.
+- Inserta microtension organica cada 500 a 900 caracteres: una duda, detalle contradictorio, objeto cambiado de lugar, sonido incomodo, llamada, recuerdo cortado o frase que el narrador no termina.
+- No uses siempre formulas como "pero eso no fue lo peor". Pueden aparecer una vez, no como muletilla.
+
+Memoria subjetiva:
+- El narrador puede dudar de una hora, un color o una frase exacta.
+- El narrador puede admitir vergüenza, negacion, culpa o una decision cobarde.
+- Evita narradores demasiado lucidos. Una persona traumada recuerda por fragmentos.
+
+Final:
+- No cierres todos los cabos.
+- Evita final de autor demasiado perfecto.
+- Deja una incomodidad residual y una pregunta concreta que el espectador pueda comentar.
+- El final debe dejar un loop mental memorable: una frase, numero, objeto, sonido o imagen concreta que pueda quedarse en la cabeza del espectador.
+- No termines solo en tristeza o reflexion. Termina con incomodidad activa.
+
+Climax:
+- El climax debe pagar la promesa del hook y agregar un giro no totalmente esperado.
+- Aumenta el peligro percibido antes del cierre: alguien puede perder algo, quedar marcado, desaparecer, mentir o descubrir que ya estaba involucrado.
+- Para terror, si el relato se siente suave, sube riesgo directo, cercania fisica, perdida de control o amenaza sobre alguien vulnerable sin usar gore.
+
+Control de calidad invisible:
+- Revisa internamente si el guion suena humano, creible y útil para YouTube.
+- Si una frase suena generica, reemplazala por una accion concreta o un detalle cotidiano.
+- Si un simbolo aparece demasiadas veces, reduce su presencia.
+- Antes de entregar, verifica que el resultado no parezca "humano pero poco viral": hook fuerte, microtension, climax, loop final y CTA atmosferico si aplica.
+`;
 
   const prompt = `
 ═══════════════════════════════════════════════════════════════
-🎯 SYSTEM PROMPT (Regla de Oro de la IA)
+SYSTEM PROMPT
 ═══════════════════════════════════════════════════════════════
 
 Eres un ${systemRole.role}.
@@ -152,232 +233,80 @@ ENFOQUE: ${systemRole.approach}
 ${personalityContext}
 
 ═══════════════════════════════════════════════════════════════
-📝 INSTRUCCIÓN DE FORMATO
+DATOS DEL PROYECTO
 ═══════════════════════════════════════════════════════════════
 
-Tu objetivo es generar 3 VERSIONES DISTINTAS del contenido:
-1. VERSIÓN ANALÍTICA (con explicaciones y análisis estratégico)
-2. VERSIÓN LIMPIA (guión listo para text-to-speech, sin formato)
-3. VERSIÓN DE SUGERENCIAS PRÁCTICAS (recomendaciones de recursos y herramientas)
-
-⚠️ IMPORTANTE: El usuario está sin ideas y necesita que le RESUELVAS LA VIDA. Debe poder copiar y pegar directamente. Todo debe estar COMPLETO y LISTO PARA USAR.
-
-═══════════════════════════════════════════════════════════════
-📊 DATOS DEL PROYECTO
-═══════════════════════════════════════════════════════════════
 - Temática: ${theme}
 - Estilo: ${style}
-- Duración: ${duration}
+- Duración exacta: ${totalMinutes} minuto(s)
+- Extensión objetivo: aproximadamente ${targetCharacters} caracteres, sin pasar de 10000 caracteres.
 - Tema específico: ${topic}
+- Año de la narración: ${narrativeYear || 'No especificado. Elige un año coherente con la idea y mantenlo consistente.'}
+- Nombre del canal: ${effectiveChannelName || 'No especificado. No menciones nombre de canal.'}
 
 ═══════════════════════════════════════════════════════════════
-🎯 METODOLOGÍA DE GENERACIÓN PROFESIONAL
+REGLAS INTERNAS DE GENERACION
 ═══════════════════════════════════════════════════════════════
 
-Tu respuesta debe incluir:
+Genera un solo entregable final.
+El entregable es exclusivamente texto limpio de narracion para IA de voz.
+No entregues YAML.
+No escribas voice_script.
+No entregues metadata, retention_plan, production_notes, packaging, quality_check, titulos, subtitulos, notas, analisis ni sugerencias.
+No expliques lo que hiciste.
+No uses markdown ni bloques de codigo.
+No uses timestamps.
+No uses encabezados narrativos.
+No escribas "Parte 1", "Parte 2", "Introduccion", "Hook", "Conclusion" ni nombres de secciones.
+El texto debe estar listo para copiar y pegar en una IA de voz.
+No uses etiquetas entre corchetes como [pausa], [pausa breve] o [pausa larga].
+Marca pausas con puntos suspensivos "...", punto, coma, signos de exclamacion o signos de interrogacion segun corresponda.
+El primer parrafo debe funcionar como hook de 2 a 5 segundos, pero sin etiquetarlo como hook.
+La arquitectura de retencion debe aplicarse dentro de la narracion, no como lista visible.
 
-## 1. ANÁLISIS ESTRATÉGICO INICIAL
-
-### 🔍 Ángulo Único Identificado:
-[Explica POR QUÉ este tema es relevante AHORA. No expliques solo "qué es", sino "por qué importa en este momento específico"]
-[Identifica el punto ciego o error común que la mayoría de creadores ignoran sobre este tema]
-
-### 🎬 Fallos Narrativos a Evitar:
-[Lista 2-3 errores comunes que hacen que el contenido sobre "${topic}" sea genérico]
-
----
-
-## 2. CARTERA DE TÍTULOS OPTIMIZADOS
-
-Genera 3 variantes profesionales con análisis de impacto:
-
-### 📈 Variante A - Optimización CTR (Click-Through Rate):
-**Título:** [Título diseñado para máximo CTR con gatillos emocionales]
-**Justificación:** [Explica qué elemento psicológico activa y por qué funcionará en las primeras 3 horas]
-
-### 🔍 Variante B - Optimización SEO/Búsqueda:
-**Título:** [Título con palabras clave de alto volumen de búsqueda]
-**Justificación:** [Explica qué términos de búsqueda captura y audiencia long-tail que atrae]
-
-### 🔥 Variante C - Retención Algorítmica (Controversia Controlada):
-**Título:** [Título que genera debate pero mantiene credibilidad]
-**Justificación:** [Explica cómo genera engagement sin perder autoridad]
-
-**🎯 Recomendación:** [Indica cuál variante usar según el objetivo del creador]
-
----
-
-## 3. GUIÓN COMPLETO CON TIMESTAMPS (${totalMinutes} minutos)
-
-⚠️ IMPORTANTE: Genera un guión DETALLADO con contenido ESPECÍFICO. El usuario debe poder leerlo directamente en cámara SIN tener que pensar.
-
-### 📺 ESTRUCTURA CON TIEMPOS EXACTOS:
-
-**[0:00 - 0:03] HOOK DE 3 SEGUNDOS (CRÍTICO PARA RETENCIÓN):**
-- **Guión EXACTO (primeros 3 segundos):** [Primera frase ULTRA impactante que engancha INSTANTÁNEAMENTE. MÁXIMO 10-12 palabras. Usa pregunta provocadora, dato impactante o declaración controversial. El espectador NO debe poder hacer scroll]
-- **Análisis del Hook:** [Explica qué gatillo psicológico usa: curiosidad, miedo, controversia, beneficio inmediato]
-
-**[0:03 - 0:15] EXPANSIÓN DEL HOOK:**
-- **Título Sugerido (Alto CTR):** [Título específico ya listo para usar]
-- **Guión exacto:** [Refuerza el hook inicial con contexto mínimo. Expone por qué es relevante AHORA sin revelar toda la información]
-
----
-
-**[0:15 - ${Math.floor(totalMinutes * 0.3 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.3 * 60)}` : `${Math.floor((totalMinutes * 0.3 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.3 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 1: CONTEXTO/SETUP**
-- **Título de Sección:** [Título específico para esta parte]
-- **Guión completo:** [Escribe palabra por palabra el contenido COMPLETO de esta sección. Incluye:
-  • Contexto estratégico
-  • Por qué es relevante ahora
-  • Datos o estadísticas específicas si aplica]
-- **Notas de producción:** [Sugerencias visuales, música, b-roll recomendado]
-
----
-
-**[${Math.floor(totalMinutes * 0.3 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.3 * 60)}` : `${Math.floor((totalMinutes * 0.3 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.3 * 60) % 60)).padStart(2, '0')}`} - ${Math.floor(totalMinutes * 0.7 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.7 * 60)}` : `${Math.floor((totalMinutes * 0.7 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.7 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 2: DESARROLLO CON MINI PICOS DE INTERÉS**
-- **Título de Sección:** [Título específico]
-- **Guión completo:** [Escribe palabra por palabra. IMPORTANTE: Cada 30-45 segundos incluye un MINI PICO DE INTERÉS:
-  • Dato sorprendente o estadística impactante
-  • Giro inesperado en la narrativa
-  • Pregunta retórica que active curiosidad
-  • El punto ciego o error común que otros ignoran
-  • Análisis profundo según tu rol (sociológico, técnico, cultural, etc.)
-  • Ejemplos concretos o casos de estudio
-
-  Marca con [🔥 MINI PICO] cada momento de re-enganche]
-- **Ángulo Único:** [Explica qué hace diferente este contenido]
-
----
-
-**[${Math.floor(totalMinutes * 0.7 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.7 * 60)}` : `${Math.floor((totalMinutes * 0.7 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.7 * 60) % 60)).padStart(2, '0')}`} - ${Math.floor(totalMinutes * 0.9 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.9 * 60)}` : `${Math.floor((totalMinutes * 0.9 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.9 * 60) % 60)).padStart(2, '0')}`}] SECCIÓN 3: RELEVANCIA MODERNA/INSIGHTS**
-- **Título de Sección:** [Título específico]
-- **Guión completo:** [Escribe palabra por palabra. Debe conectar el tema con la actualidad, tendencias 2025, o aplicación práctica]
-- **Insights Accionables:** [Lista 2-3 conclusiones clave que el espectador puede aplicar]
-
----
-
-**[${Math.floor(totalMinutes * 0.9 * 60) < 60 ? `0:${Math.floor(totalMinutes * 0.9 * 60)}` : `${Math.floor((totalMinutes * 0.9 * 60) / 60)}:${String(Math.floor((totalMinutes * 0.9 * 60) % 60)).padStart(2, '0')}`} - ${totalMinutes}:00] CTA Y CIERRE CON LLAMADO A LA ACCIÓN**
-- **Guión del CTA:** [Escribe exactamente la pregunta compleja que generará debate. EVITA preguntas binarias sí/no]
-- **Llamado a la Acción:** [Solicitud específica: suscribirse, comentar, compartir]
-- **Beneficio para la audiencia:** [Explica brevemente qué ganan si interactúan: "para que no te pierdas...", "porque mañana voy a..."]
-
-**🆓 CIERRE VERSIÓN FREE (Genérico):**
-[Frase final memorable y universal que puede usar cualquier creador]
-
-**💎 CIERRE VERSIÓN PREMIUM (Personalizado):**
-[Frase final que incluya el placeholder [NOMBRE_DEL_CANAL] de forma natural. Ejemplo: "Y no te olvides que aquí en [NOMBRE_DEL_CANAL] estamos atentos a [lo que hace el canal]. Te esperamos en el próximo contenido." Debe sonar orgánico y conectar con la esencia del canal]
-
-- **Análisis del CTA:** [Por qué este CTA maximiza engagement cualificado]
-
----
-
-### #️⃣ Hashtags Jerárquicos (Mezcla Estratégica):
-
-**Alto Volumen (Alcance Masivo):**
-[2 hashtags con +100K publicaciones]
-
-**Nicho Específico (Expertos/Long-tail):**
-[3 hashtags ultra-específicos con 1K-10K publicaciones]
-
-**Análisis de Hashtags:** [Explica cómo esta mezcla asegura vida útil prolongada del contenido]
-
----
-
-## 4. PANEL DE OPTIMIZACIÓN - METODOLOGÍA IA
-
-### 📊 KPIs Optimizados:
-- **CTR Esperado:** [Estimación basada en elementos del título]
-- **Retención Estimada:** [Basada en estructura del hook y desarrollo]
-- **Engagement Cualificado:** [Basado en complejidad del CTA]
-
-### 🎯 Decisiones Estratégicas Tomadas:
-1. [Decisión 1 y su justificación con terminología de marketing]
-2. [Decisión 2 y su justificación con terminología de marketing]
-3. [Decisión 3 y su justificación con terminología de marketing]
-
-### ⚠️ Alertas y Recomendaciones:
-[Advertencias sobre qué evitar y recomendaciones adicionales para maximizar resultados]
+Entrada de canal y CTA:
+- El primer enunciado debe ser un hook fuerte. No lo sacrifiques por saludar.
+- Si hay nombre de canal, usa exactamente "${effectiveChannelName || '[nombre del canal]'}". Nunca inventes otro nombre de canal.
+- Si hay nombre de canal, mencionalo una sola vez despues del primer hook, de forma natural.
+- Formato recomendado si encaja: "Bienvenidos a ${effectiveChannelName || '[nombre del canal]'}... esta noche tenemos un relato que nos escribio un oyente..." o una variante equivalente.
+- Si el tema parece testimonio de terror, puedes presentar el caso como carta, relato, experiencia de un oyente, seguidor o suscriptor.
+- Si el tema es true crime, usa entrada sobria: "esta noche revisamos un caso..." sin explotar el dolor de victimas.
+- Debe existir separacion clara entre voz del narrador del canal y relato principal, pero sin encabezados ni etiquetas.
+- Estructura recomendada para historias/testimonios: primer parrafo con hook + presentacion breve del narrador del canal; despues, un salto de parrafo y comienza el relato en primera persona del protagonista; al final, otro salto de parrafo y vuelve el narrador del canal con una reflexion o CTA atmosferico.
+- La voz del canal debe sonar como presentador: "nos llego esta historia", "quien la envio pidio no usar su nombre", "esto fue lo que conto". La narracion principal debe sonar como testimonio vivido.
+- No mezcles demasiado las voces. El protagonista no debe hacer el CTA del canal; el cierre del canal lo hace el narrador/presentador.
+- Si no hay nombre de canal, no hagas CTA de suscripcion ni inventes canal.
+- Si hay nombre de canal, incluye un CTA breve despues del eco emocional, como epilogo atmosferico, no como venta.
+- No uses un cierre seco tipo "suscribete y activa la campana". Integralo con el tono: "Si este relato te dejo una teoria, puedes dejarla abajo; en ${effectiveChannelName || '[nombre del canal]'} seguiremos leyendo los casos que nadie quiere contar de noche."
+- El CTA debe sonar de narrador de canal, no de anuncio: maximo 1 frase breve.
 
 ═══════════════════════════════════════════════════════════════
-
-═══════════════════════════════════════════════════════════════
-📋 FORMATO DE SALIDA (TRES VERSIONES SEPARADAS)
+FORMATO DE SALIDA OBLIGATORIO
 ═══════════════════════════════════════════════════════════════
 
-Debes generar exactamente 3 secciones separadas claramente con estos delimitadores:
+Devuelve SOLO el texto final de la narracion.
+No agregues ninguna clave antes del texto.
+No agregues texto antes ni despues.
+La primera linea debe ser la primera frase del guion.
 
----INICIO_ANALISIS---
+${humanRealismRules}
 
-[Aquí va el análisis estratégico completo con todas las explicaciones, análisis del hook, ángulo narrativo, justificaciones, etc.]
-
----FIN_ANALISIS---
-
----INICIO_LIMPIO---
-
-⚠️ CRÍTICO: Esta es la versión que el usuario LEERÁ DIRECTAMENTE en cámara o pegará en una app de text-to-speech.
-
-REQUISITOS OBLIGATORIOS:
-- SIN títulos, SIN marcadores como "[0:00]", SIN indicadores como "Hook:", "Sección 1:", etc.
-- SOLO narración fluida de principio a fin
-- Debe sonar NATURAL como si fuera una conversación
-- Incluye pausas dramáticas marcadas con "..." donde sea apropiado
-- Transiciones suaves entre secciones (sin decir "ahora pasamos a...")
-- El usuario debe poder leerlo palabra por palabra SIN editar nada
-
-FORMATO:
-Escribe el guión completo como un ÚNICO bloque de texto narrativo que fluya naturalmente desde el hook inicial hasta el CTA final.
-
-Ejemplo de estructura (ADAPTA al tema y estilo solicitado):
-
-"[Hook inicial que enganche] ... [Pausa dramática] [Desarrollo natural conectando ideas] ... [Transición orgánica] [Punto ciego o análisis profundo] ... [Conexión con relevancia actual] [CTA final con pregunta compleja]"
-
----FIN_LIMPIO---
-
----INICIO_SUGERENCIAS---
-
-💡 RECOMENDACIONES PRÁCTICAS PARA "${topic}" (${theme})
-
-⚠️ IMPORTANTE: Estas sugerencias deben ser ESPECÍFICAS para el tema "${topic}" en la categoría ${theme}, NO genéricas.
-
-**📸 RECURSOS VISUALES GRATUITOS (Específicos para este tema):**
-- Recuerda que en Pexels puedes encontrar... [busca términos específicos relacionados con "${topic}"]
-- En Pixabay tienes disponible... [tipo de imágenes/videos que complementen el contenido]
-- Unsplash ofrece... [recursos visuales de alta calidad para este tema específico]
-- Para ${theme === 'true_crime' ? 'True Crime' : theme === 'terror' ? 'Terror' : theme}, también revisa... [recurso especializado]
-
-**🎬 EDITORES Y HERRAMIENTAS GRATUITAS:**
-- Para ${theme} deberás usar... [editor específico recomendado y por qué]
-- ${duration === 'short' ? 'Para videos cortos, CapCut o InShot son ideales porque...' : duration === 'medium' ? 'Para videos medianos, DaVinci Resolve te permite...' : 'Para contenido largo, Premiere Rush o Kdenlive te dan...'}
-- Para efectos visuales de ${theme}: [herramienta específica]
-
-**🎵 MÚSICA Y AUDIO (Crítico para ${theme}):**
-- ⚠️ Recuerda NO usar música con copyright
-- Para ${theme === 'terror' ? 'contenido de terror, busca música ambiental oscura y tensa' : theme === 'true_crime' ? 'True Crime, usa música investigativa y dramática' : theme === 'tech' ? 'tecnología, música electrónica moderna' : `${theme}, música que complemente el tono`}
-- Epidemic Sound tiene biblioteca de ${theme}... [categoría específica]
-- YouTube Audio Library: busca... [términos específicos]
-- Artlist.io (premium) tiene colección especializada en... [género]
-
-**📅 ESTRATEGIA DE PUBLICACIÓN PARA ${theme}:**
-- Mejor día/hora para ${theme}: [días y horarios específicos basados en la categoría]
-- Plataforma principal recomendada: ${theme === 'tech' ? 'YouTube y LinkedIn' : theme === 'true_crime' ? 'YouTube y TikTok' : theme === 'cocina' ? 'Instagram y TikTok' : 'YouTube y redes principales'}
-- Frecuencia recomendada: [basada en la temática]
-
-**💰 RECURSOS PREMIUM (Si tienes presupuesto):**
-- Si cuentas con más recursos, una membresía en... [plataforma específica] te dará... [ventaja concreta]
-- Para ${theme}, ${duration === 'long' ? 'considera Adobe Creative Cloud para producción profesional' : 'Envato Elements te da acceso a...'}
-- Herramientas premium que marcan diferencia: [lista específica]
-
-**⚠️ ALERTAS CRÍTICAS PARA ${theme}:**
-- ⚠️ Recuerda NO... [error #1 específico para esta temática que reduce alcance]
-- ⚠️ Para ${theme} DEBERÁS... [requisito #1 obligatorio para esta categoría]
-- ⚠️ Evita... [práctica común que mata engagement en ${theme}]
-- ⚠️ ${theme === 'true_crime' ? 'Nunca sensacionalices el dolor de las víctimas' : theme === 'noticias' ? 'Verifica SIEMPRE tus fuentes antes de publicar' : theme === 'cocina' ? 'Incluye SIEMPRE las cantidades exactas' : 'Mantén consistencia en tu estilo'}
-
-**🎯 TIP EXTRA PARA ${theme}:**
-[Consejo único y valioso específico para esta categoría que pocos conocen]
-
----FIN_SUGERENCIAS---
-
-IMPORTANTE: Debes generar las TRES secciones completas. No omitas ninguna.
+Reglas críticas para el guion:
+- Debe ser texto narrativo corrido, no esquema.
+- Debe sonar humano, no literario artificial.
+- Debe fusionar estructura fuerte, humanizacion creible y retencion viral. No permitas que una capa destruya la otra.
+- Si el contenido es historia, testimonio, carta o relato de oyente, debe tener marco de canal: presentador abre, protagonista narra, presentador cierra. Hazlo con parrafos naturales, no con titulos.
+- La primera frase debe detener el scroll por amenaza, contradiccion o anomalia; no basta con una frase bonita.
+- Para terror evita explicar demasiado. El miedo debe salir de detalles concretos.
+- Para true crime evita morbo explícito; usa precisión, contexto y respeto.
+- El año indicado debe sentirse en objetos, lenguaje, tecnología y ambiente.
+- Aplica la arquitectura viral: hook inmediato, brecha de curiosidad, apuestas, anomalías crecientes, punto de no retorno y eco emocional.
+- Mantén terror incomodo: cada escena debe aumentar peligro percibido, duda o cercania con la amenaza.
+- Para YouTube, conserva claridad de causa y efecto aunque existan dudas subjetivas. El espectador debe poder seguir la historia sin confundirse.
+- Cada 60 a 90 segundos debe existir una razon narrativa para seguir escuchando, pero no la marques como tecnica.
+- El final debe dejar una frase-memoria concreta, no solo una reflexion triste.
+- Antes de responder, revisa internamente credibilidad, continuidad, consistencia del año y naturalidad, pero no muestres esa revision.
+- Evita estas frases y palabras: penumbra, susurros, escalofrio recorrio mi espalda, algo no estaba bien, presencia maligna, entidad maligna, una sombra oscura, senti que me observaban.
 `;
 
   const { data } = await withAiModelCache({
@@ -385,20 +314,26 @@ IMPORTANTE: Debes generar las TRES secciones completas. No omitas ninguna.
     providerCode: GEMINI_PROVIDER_CODE,
     modelVersion: GEMINI_MODEL_ID,
     requestPayload: {
-      type: 'seo_titles',
-      topic
+      type: 'viral_script_voice_clean_v7',
+      topic,
+      theme,
+      style,
+      duration,
+      narrativeYear,
+      channelName: effectiveChannelName,
+      targetCharacters
     },
     metadata: {
-      promptType: 'seo_titles'
+      promptType: 'viral_script_voice_clean_v7'
     },
     ttlHours: 18,
     fetchFreshData: async () => {
       const raw = await generateContent(prompt);
-      return { raw };
+      return { raw: cleanVoiceOutput(raw) };
     }
   });
 
-  return data?.raw || '';
+  return cleanVoiceOutput(data?.raw || '');
 };
 
 export const generateExpertAdvisoryInsights = async (topic, context = {}) => {

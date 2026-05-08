@@ -34,20 +34,34 @@ export const contentOptions = [
     value: 'true_crime',
     label: '🔍 True Crime',
     styles: [
-      { value: 'fiel_al_caso', label: '📋 Fiel al Caso' },
-      { value: 'fidedigno', label: '✅ Fidedigno' },
-      { value: 'amarillista', label: '📰 Amarillista' },
-      { value: 'grafico', label: '⚠️ Gráfico' }
+      { value: 'documental_sobrio', label: 'Documental sobrio' },
+      { value: 'caso_real_urbano', label: 'Caso real urbano' },
+      { value: 'caso_suburbano', label: 'Caso suburbano' },
+      { value: 'desaparicion', label: 'Desaparicion' },
+      { value: 'caso_frio', label: 'Caso frio' },
+      { value: 'investigacion_policial', label: 'Investigacion policial' },
+      { value: 'testimonio', label: 'Testimonio' },
+      { value: 'psicologico', label: 'Psicologico' },
+      { value: 'cronologia', label: 'Cronologia del caso' },
+      { value: 'misterio_respetuoso', label: 'Misterio respetuoso' }
     ]
   },
   {
     value: 'terror',
     label: '👻 Terror',
     styles: [
-      { value: 'sobrenatural', label: '🔮 Sobrenatural' },
-      { value: 'psicologico', label: '🧠 Psicológico' },
-      { value: 'clasico', label: '🎭 Clásico' },
-      { value: 'slasher', label: '🔪 Slasher' }
+      { value: 'historia_real_urbana', label: 'Historia real urbana' },
+      { value: 'historia_suburbana', label: 'Historia suburbana' },
+      { value: 'bosque_maldito', label: 'Bosque maldito' },
+      { value: 'casa_abandonada', label: 'Casa abandonada' },
+      { value: 'entidad', label: 'Entidad' },
+      { value: 'monstruo', label: 'Monstruo' },
+      { value: 'psicologico', label: 'Psicologico' },
+      { value: 'sensorial', label: 'Sensorial' },
+      { value: 'rural', label: 'Rural' },
+      { value: 'infancia_recuerdo', label: 'Recuerdo de infancia' },
+      { value: 'carretera', label: 'Carretera' },
+      { value: 'colegio', label: 'Colegio' }
     ]
   },
   {
@@ -106,10 +120,11 @@ export const contentOptions = [
 ];
 
 export const contentDurations = [
-  { value: 'short', label: 'Corto (1-3 min)' },
-  { value: 'short_plus', label: 'Corto extendido (3-5 min)' },
-  { value: 'medium', label: 'Medio (5-10 min)', requiresPro: true },
-  { value: 'long', label: 'Largo (15+ min)', requiresPro: true }
+  { value: 'one_min', label: '1 min', minutes: 1, targetCharacters: 1000 },
+  { value: 'two_min', label: '2 min', minutes: 2, targetCharacters: 2000 },
+  { value: 'four_min', label: '4 min', minutes: 4, targetCharacters: 4000 },
+  { value: 'seven_min', label: '7 min', minutes: 7, targetCharacters: 7000, requiresPro: true },
+  { value: 'ten_min', label: '10 min', minutes: 10, targetCharacters: 10000, requiresPro: true }
 ];
 
 export const creatorRoles = [
