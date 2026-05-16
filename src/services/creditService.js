@@ -292,10 +292,10 @@ export async function consumeCredits(userId, featureOrAmount, feature = null, de
     // Llamar función SQL que maneja la lógica de consumo
     console.log('🔍 Llamando a RPC consume_credits con:', { userId, featureId });
     
-    // 💡 CORRECCIÓN 1: El parámetro se llama 'p_feature_id', no 'p_feature'
+    // La instancia actual de Supabase expone consume_credits(p_feature_id, p_user_id).
     const { data, error } = await supabase.rpc('consume_credits', {
       p_user_id: userId,
-      p_feature: featureId
+      p_feature_id: featureId
     });
 
     console.log('📡 Respuesta RPC:', { data, error });

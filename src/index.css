@@ -132,6 +132,28 @@ body {
   display: none;
 }
 
+.creo-fast-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  will-change: scroll-position;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+
+.creo-readable-text {
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-rendering: optimizeSpeed;
+}
+
+.creo-paint-isolated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+
 /* === ANIMACIONES PERSONALIZADAS (DE TU CÓDIGO) === */
 .animate-float {
   animation: float 6s ease-in-out infinite;

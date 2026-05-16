@@ -25,7 +25,6 @@ const promptBuilderDefaults = {
   terrorType: 'psicologico',
   sourceType: 'relato de un oyente',
   protagonists: '3',
-  duration: '10',
   narrativeYear: '1998',
   channelName: '',
   setting: 'casa aislada',
@@ -35,28 +34,42 @@ const promptBuilderDefaults = {
   extraDetails: ''
 };
 
-const durationCharacters = {
-  1: 1000,
-  2: 2000,
-  4: 4000,
-  7: 7000,
-  10: 10000
-};
-
 const optionSets = {
   genre: [
     { value: 'terror', label: 'Terror' },
     { value: 'true crime', label: 'True Crime' },
     { value: 'ciencia ficcion', label: 'Ciencia Ficcion' }
   ],
-  terrorType: [
-    { value: 'psicologico', label: 'Psicologico' },
-    { value: 'paranormal', label: 'Paranormal' },
-    { value: 'sensorial', label: 'Sensorial' },
-    { value: 'bosque maldito', label: 'Bosque' },
-    { value: 'casa abandonada', label: 'Casa' },
-    { value: 'entidad', label: 'Entidad' }
-  ],
+  subgenreByGenre: {
+    terror: [
+      { value: 'psicologico', label: 'Psicologico' },
+      { value: 'paranormal', label: 'Paranormal' },
+      { value: 'sensorial', label: 'Sensorial' },
+      { value: 'bosque maldito', label: 'Bosque' },
+      { value: 'casa abandonada', label: 'Casa' },
+      { value: 'entidad', label: 'Entidad' },
+      { value: 'creepypasta', label: 'Creepypasta' },
+      { value: 'horror rural', label: 'Horror rural' }
+    ],
+    'true crime': [
+      { value: 'desaparicion', label: 'Desaparicion' },
+      { value: 'caso frio', label: 'Caso frio' },
+      { value: 'investigacion policial', label: 'Investigacion' },
+      { value: 'stalker', label: 'Stalker' },
+      { value: 'culto', label: 'Culto' },
+      { value: 'internet oscuro', label: 'Internet oscuro' },
+      { value: 'testimonio familiar', label: 'Testimonio' },
+      { value: 'cronologia sobria', label: 'Cronologia' }
+    ],
+    'ciencia ficcion': [
+      { value: 'distopia', label: 'Distopia' },
+      { value: 'experimento fallido', label: 'Experimento' },
+      { value: 'viaje temporal', label: 'Tiempo' },
+      { value: 'inteligencia artificial', label: 'IA' },
+      { value: 'primer contacto', label: 'Contacto' },
+      { value: 'post apocaliptico', label: 'Apocalipsis' }
+    ]
+  },
   sourceType: [
     { value: 'relato de un oyente', label: 'Oyente' },
     { value: 'carta de un seguidor', label: 'Carta' },
@@ -64,7 +77,6 @@ const optionSets = {
     { value: 'caso contado por un familiar', label: 'Familiar' }
   ],
   protagonists: ['1', '2', '3', '4', '5'],
-  duration: ['1', '2', '4', '7', '10'],
   setting: [
     { value: 'casa aislada', label: 'Casa aislada' },
     { value: 'bosque rural', label: 'Bosque rural' },
@@ -88,8 +100,15 @@ const optionSets = {
 
 const yamlQuote = (value) => `"${String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 
+const getSubgenreOptions = (genre) => optionSets.subgenreByGenre[genre] || optionSets.subgenreByGenre.terror;
+
+const getSubgenreLabel = (genre) => {
+  if (genre === 'true crime') return 'Tipo de caso o enfoque';
+  if (genre === 'ciencia ficcion') return 'Tipo de ciencia ficcion o enfoque';
+  return 'Tipo de terror o enfoque';
+};
+
 const buildAdvancedPromptYaml = (answers) => {
-  const characters = durationCharacters[answers.duration] || 4000;
   const channelInstruction = answers.channelName
     ? `Usa exactamente el canal ${answers.channelName}. Mencionalo una sola vez despues del primer hook y agrega un CTA atmosferico al final, sin sonar a anuncio.`
     : 'No menciones nombre de canal y no agregues CTA de suscripcion.';
@@ -101,9 +120,7 @@ const buildAdvancedPromptYaml = (answers) => {
   objetivo: "Crear un prompt avanzado para generar un guion de YouTube listo para IA de voz."
   parametros:
     genero: ${yamlQuote(answers.genre)}
-    subgenero: ${yamlQuote(answers.terrorType)}
-    duracion_minutos: ${Number(answers.duration)}
-    caracteres_objetivo: ${characters}
+    enfoque: ${yamlQuote(answers.terrorType)}
     ano_narracion: ${yamlQuote(answers.narrativeYear || 'auto')}
     origen_del_relato: ${yamlQuote(answers.sourceType)}
     protagonistas: ${Number(answers.protagonists)}
@@ -114,6 +131,7 @@ const buildAdvancedPromptYaml = (answers) => {
     canal: ${yamlQuote(answers.channelName || '')}
   instrucciones:
     - "Genera solo texto limpio de narracion, sin YAML, sin markdown y sin etiquetas entre corchetes."
+    - "La duracion y cantidad de caracteres las define el panel principal del generador; no inventes otra duracion."
     - "El primer enunciado debe ser un hook fuerte de 2 a 5 segundos con amenaza, contradiccion, peligro o anomalia concreta."
     - ${yamlQuote(channelInstruction)}
     - ${yamlQuote(narrativeFrameInstruction)}
@@ -128,8 +146,8 @@ const buildAdvancedPromptYaml = (answers) => {
     - "Cierra con un eco emocional y un loop mental memorable: frase, numero, objeto, sonido o imagen que quede dando vueltas."
     - "Si hay canal, el CTA final debe ser una frase natural de narrador; evita ordenes secas como suscribete y activa la campana."
   prompt_final: |-
-    Escribe un guion de ${answers.genre} para YouTube de aproximadamente ${characters} caracteres.
-    El subgenero es ${answers.terrorType}. El relato debe sentirse como ${answers.sourceType}.
+    Escribe un guion de ${answers.genre} para YouTube respetando la duracion elegida en el panel principal.
+    El enfoque es ${answers.terrorType}. El relato debe sentirse como ${answers.sourceType}.
     La historia ocurre en ${answers.narrativeYear || 'un ano coherente elegido por ti'} y debe sentirse de esa epoca por objetos, lenguaje, tecnologia y ambiente.
     Hay ${answers.protagonists} protagonista(s) principales y el escenario central es ${answers.setting}.
     Quiero un tono ${answers.sensoryLevel}, con realismo humano controlado: dudas, pequenos detalles cotidianos, dialogos imperfectos y alguna percepcion dudosa.
@@ -250,6 +268,18 @@ const AIConciergeBubbleV2 = () => {
     }
   }, [promptBuilder]);
 
+  const currentPromptSubgenres = useMemo(
+    () => getSubgenreOptions(promptBuilder.genre),
+    [promptBuilder.genre]
+  );
+
+  useEffect(() => {
+    const valid = currentPromptSubgenres.some((option) => option.value === promptBuilder.terrorType);
+    if (!valid && currentPromptSubgenres[0]) {
+      setPromptBuilder((prev) => ({ ...prev, terrorType: currentPromptSubgenres[0].value }));
+    }
+  }, [currentPromptSubgenres, promptBuilder.terrorType]);
+
   const updatePromptBuilder = (field, value) => {
     setPromptBuilder((prev) => ({ ...prev, [field]: value }));
   };
@@ -266,7 +296,7 @@ const AIConciergeBubbleV2 = () => {
           topic: `Prompt ${promptBuilder.genre} - ${promptBuilder.terrorType}`,
           theme: promptBuilder.genre,
           style: promptBuilder.terrorType,
-          duration: `${promptBuilder.duration}_min`,
+          duration: 'main_panel',
           narrativeYear: promptBuilder.narrativeYear,
           platform: 'youtube',
           content: yaml,
@@ -938,7 +968,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             data-chat-modal
-            className="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[420px] w-[calc(100%-2rem)] h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-2xl shadow-purple-500/40 border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
+            className="creo-paint-isolated fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6 sm:w-[420px] w-[calc(100%-2rem)] h-[70vh] sm:h-[650px] max-h-[calc(100vh-120px)] bg-gray-900 rounded-3xl shadow-xl border-2 border-purple-500/50 flex flex-col overflow-hidden z-50"
             style={{ 
               willChange: 'auto',
               transform: 'translateZ(0)',
@@ -1017,7 +1047,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50">
+            <div className="creo-fast-scroll flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800/50">
               <div className="rounded-2xl border border-purple-500/30 bg-gray-900/70 p-4">
                 <p className="text-sm font-semibold text-white">Construye un prompt avanzado</p>
                 <p className="mt-1 text-xs text-gray-400">
@@ -1034,9 +1064,9 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                 />
 
                 <PromptChoiceGroup
-                  label="Tipo de terror o enfoque"
+                  label={getSubgenreLabel(promptBuilder.genre)}
                   value={promptBuilder.terrorType}
-                  options={optionSets.terrorType}
+                  options={currentPromptSubgenres}
                   onChange={(value) => updatePromptBuilder('terrorType', value)}
                 />
 
@@ -1047,19 +1077,12 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                   onChange={(value) => updatePromptBuilder('sourceType', value)}
                 />
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <PromptChoiceGroup
                     label="Personas"
                     value={promptBuilder.protagonists}
                     options={optionSets.protagonists}
                     onChange={(value) => updatePromptBuilder('protagonists', value)}
-                    compact
-                  />
-                  <PromptChoiceGroup
-                    label="Minutos"
-                    value={promptBuilder.duration}
-                    options={optionSets.duration}
-                    onChange={(value) => updatePromptBuilder('duration', value)}
                     compact
                   />
                 </div>
@@ -1150,7 +1173,7 @@ IMPORTANTE: Tu trabajo NO es dar asesoramiento largo, sino LLEVAR AL USUARIO A U
                       </button>
                     </div>
                   </div>
-                  <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-black/40 p-3 text-xs leading-relaxed text-gray-100">
+                  <pre className="creo-readable-text whitespace-pre-wrap rounded-xl bg-black/40 p-3 text-xs leading-relaxed text-gray-100">
                     {generatedPromptYaml}
                   </pre>
                 </div>

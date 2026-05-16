@@ -77,7 +77,7 @@ export async function grantWelcomeBonus(userId) {
       userId,
       'bonus',
       WELCOME_BONUS_CREDITS,
-      'welcome_bonus',
+      'bonus',
       'Bienvenida - 50 créditos gratis',
       null
     );
@@ -181,7 +181,7 @@ export async function grantEmailVerificationBonus(userId) {
       userId,
       'bonus',
       EMAIL_VERIFICATION_BONUS,
-      'email_verification_bonus',
+      'bonus',
       'Verificación de email - 150 créditos adicionales',
       null
     );
@@ -240,7 +240,7 @@ export async function grantProfileCompleteBonus(userId) {
       userId,
       'bonus',
       PROFILE_COMPLETE_BONUS,
-      'profile_complete_bonus',
+      'bonus',
       'Perfil completo - 50 créditos',
       null
     );
@@ -300,7 +300,7 @@ export async function grantFirstContentBonus(userId, contentType = null) {
       userId,
       'bonus',
       FIRST_CONTENT_BONUS,
-      'first_content_bonus',
+      'bonus',
       'Primer contenido creado - 25 créditos',
       null
     );
@@ -360,7 +360,7 @@ export async function grantDay7Bonus(userId) {
       userId,
       'bonus',
       DAY_7_BONUS,
-      'day_7_bonus',
+      'bonus',
       '🎉 Semana completa - 100 créditos de aniversario',
       null
     );
@@ -394,36 +394,38 @@ export async function grantDay7Bonus(userId) {
  */
 export async function getDaysSinceSignup(userId) {
   try {
-    const { data: user } = await supabase.auth.admin.getUserById(userId);
-    if (!user || !user.user.created_at) return 0;
-    
-    const signupDate = new Date(user.user.created_at);
-    const now = new Date();
-    const diffTime = Math.abs(now - signupDate);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-  } catch (error) {
-    // Fallback: usar fecha de creación del perfil
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (profile && profile.created_at) {
-        const signupDate = new Date(profile.created_at);
-        const now = new Date();
-        const diffTime = Math.abs(now - signupDate);
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-      }
-    } catch (fallbackError) {
-      console.error('Error getting days since signup:', error);
+    const { data } = await supabase.auth.getUser();
+    const currentUser = data?.user;
+
+    if (currentUser?.id === userId && currentUser.created_at) {
+      const signupDate = new Date(currentUser.created_at);
+      const now = new Date();
+      const diffTime = Math.abs(now - signupDate);
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     }
-    return 0;
+  } catch (error) {
+    console.warn('No se pudo obtener el usuario actual para calcular dias desde registro:', error);
   }
+
+  // Fallback: usar fecha de creación del perfil. Esto sí es seguro desde cliente con RLS.
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('created_at')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profile?.created_at) {
+      const signupDate = new Date(profile.created_at);
+      const now = new Date();
+      const diffTime = Math.abs(now - signupDate);
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+  } catch (fallbackError) {
+    console.warn('No se pudo calcular dias desde profiles:', fallbackError);
+  }
+
+  return 0;
 }
 
 /**

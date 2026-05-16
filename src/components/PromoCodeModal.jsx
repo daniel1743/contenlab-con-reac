@@ -25,6 +25,19 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 
+const PROMO_REDEEM_TIMEOUT_MS = 15000;
+
+const withTimeout = (promise, timeoutMs = PROMO_REDEEM_TIMEOUT_MS) => {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error('La validacion tardo demasiado. Revisa tu conexion o intenta de nuevo.'));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+};
+
 export default function PromoCodeModal({ isOpen, onClose, userId, onSuccess }) {
   const [promoCode, setPromoCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -56,18 +69,23 @@ export default function PromoCodeModal({ isOpen, onClose, userId, onSuccess }) {
     setResult(null);
 
     try {
-      // Llamar a la función RPC de Supabase
-      const { data, error } = await supabase.rpc('redeem_promo_code', {
-        p_user_id: userId,
-        p_code: promoCode.trim().toUpperCase(),
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('redeem_promo_code', {
+          p_user_id: userId,
+          p_code: promoCode.trim().toUpperCase(),
+        })
+      );
 
       if (error) {
         throw error;
       }
 
       // data es un array con un objeto: [{ success, message, credits_granted }]
-      const response = data[0];
+      const response = Array.isArray(data) ? data[0] : data;
+
+      if (!response) {
+        throw new Error('Supabase no devolvio respuesta al validar el codigo.');
+      }
 
       setResult({
         success: response.success,
@@ -108,8 +126,8 @@ export default function PromoCodeModal({ isOpen, onClose, userId, onSuccess }) {
       });
 
       toast({
-        title: 'Error',
-        description: 'Ocurrió un error al intentar canjear el código',
+        title: 'No se pudo validar',
+        description: error.message || 'Ocurrio un error al intentar canjear el codigo',
         variant: 'destructive',
       });
     } finally {

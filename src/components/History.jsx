@@ -78,6 +78,9 @@ const getTypeLabel = (type) => {
     'prompt-yaml': 'Prompt',
     script: 'Guion',
     'viral-script': 'Guion',
+    viral_script: 'Guion',
+    shorts_script: 'Short',
+    youtube_creative_research: 'Investigacion YouTube',
     hashtags: 'Hashtags',
     keywords: 'Keywords',
     analysis: 'Analisis',
@@ -90,8 +93,10 @@ const getTypeLabel = (type) => {
 const isPromptLikeText = (value) => {
   const text = String(value || '').trim().toLowerCase();
   return text.startsWith('prompt_creovision:') ||
+    text.startsWith('quiero un relato') ||
     (text.includes('prompt_creovision:') && text.includes('prompt_final:')) ||
-    (text.includes('objetivo:') && text.includes('parametros:') && text.includes('instrucciones:'));
+    (text.includes('objetivo:') && text.includes('parametros:') && text.includes('instrucciones:')) ||
+    (text.includes('reglas narrativas:') && text.includes('objetivo:'));
 };
 
 const isPromptItem = (item) => {
@@ -102,16 +107,98 @@ const isPromptItem = (item) => {
 
 const isGeneratedStoryItem = (item) => !isPromptItem(item);
 
-const getDisplayTitle = (item) => {
-  const topic = String(item?.topic || '').trim();
-  if (topic && !isPromptLikeText(topic)) return topic;
+const getHistoryType = (item) => String(item?.content_type || '').toLowerCase();
 
+const isShortsItem = (item) => ['shorts_script', 'shorts-script', 'shorts_package', 'shorts-package'].includes(getHistoryType(item));
+
+const isYouTubeResearchItem = (item) => {
+  const type = getHistoryType(item);
+  return ['youtube_creative_research', 'youtube-creative-research', 'youtube_research', 'creative_research'].includes(type) ||
+    (item?.theme === 'research' && item?.style === 'youtube_strategy');
+};
+
+const isLongScriptItem = (item) => isGeneratedStoryItem(item) && !isShortsItem(item) && !isYouTubeResearchItem(item);
+
+const historySectionConfig = {
+  long_scripts: {
+    label: 'Guiones largos',
+    emptyTitle: 'Aun no hay guiones largos',
+    emptyDescription: 'Los guiones virales largos que generes apareceran en esta area.'
+  },
+  shorts: {
+    label: 'Shorts',
+    emptyTitle: 'Aun no hay shorts',
+    emptyDescription: 'Los guiones cortos para Shorts, TikTok o Reels apareceran separados aqui.'
+  },
+  youtube_research: {
+    label: 'Investigaciones YouTube',
+    emptyTitle: 'Aun no hay investigaciones de YouTube',
+    emptyDescription: 'Cuando uses el investigador creativo de YouTube, sus resultados quedaran en esta area.'
+  },
+  prompts: {
+    label: 'Prompts / guiones base',
+    emptyTitle: 'Aun no hay prompts guardados',
+    emptyDescription: 'Los prompts y bases de guion apareceran aqui automaticamente.'
+  }
+};
+
+const getItemsByHistorySection = (items, section) => {
+  if (section === 'prompts') return items.filter(isPromptItem);
+  if (section === 'shorts') return items.filter(isShortsItem);
+  if (section === 'youtube_research') return items.filter(isYouTubeResearchItem);
+  return items.filter(isLongScriptItem);
+};
+
+const extractStoryStartFromMixedText = (text) => {
+  const value = String(text || '').trim();
+  if (!value || value.length < 700) return value;
+
+  const lower = value.toLowerCase();
+  const looksMixedPrompt = lower.startsWith('quiero un relato') ||
+    lower.startsWith('prompt_creovision:') ||
+    lower.includes('reglas narrativas:') ||
+    lower.includes('prompt_final:');
+
+  if (!looksMixedPrompt) return value;
+
+  const welcomeIndex = lower.indexOf('bienvenidos a');
+  if (welcomeIndex > 250) {
+    const beforeWelcome = value.slice(Math.max(0, welcomeIndex - 340), welcomeIndex).trim();
+    const sentenceMatches = beforeWelcome.match(/(?:^|[\n.!?]\s+)([^.!?\n]{25,220}[.!?])/g);
+    const hook = sentenceMatches?.[sentenceMatches.length - 1]?.replace(/^[\n.!?\s]+/, '').trim();
+    return `${hook ? `${hook}\n\n` : ''}${value.slice(welcomeIndex).trim()}`;
+  }
+
+  const marker = value.slice(500).search(/\b(Nunca|Jamas|Jamás|No debi|No debí|Me llamo|Fue en|Eran las|La primera noche)\b/);
+  if (marker >= 0) {
+    return value.slice(500 + marker).trim();
+  }
+
+  return value;
+};
+
+const getContentTitleCandidate = (item) => {
   const clean = cleanScriptForVoice(item?.content || '');
-  const firstLine = clean
+  return clean
     .split(/\n+/)
     .map((line) => line.trim())
-    .find((line) => line && !isPromptLikeText(line));
+    .find((line) => line && !isPromptLikeText(line) && line.length > 18);
+};
 
+const getDisplayTitle = (item) => {
+  const topic = String(item?.topic || '').trim();
+  const topicLooksInternal = isPromptLikeText(topic) || topic.length > 140;
+
+  if (isGeneratedStoryItem(item)) {
+    const contentTitle = getContentTitleCandidate(item);
+    if (contentTitle) return contentTitle.replace(/\s+/g, ' ').slice(0, 110);
+    if (topic && !topicLooksInternal) return topic;
+    return 'Historia generada';
+  }
+
+  if (topic && !topicLooksInternal) return topic;
+
+  const firstLine = getContentTitleCandidate(item);
   if (firstLine) {
     return firstLine.replace(/\s+/g, ' ').slice(0, 92);
   }
@@ -119,21 +206,64 @@ const getDisplayTitle = (item) => {
   return isPromptItem(item) ? 'Prompt avanzado CreoVision' : 'Historia generada';
 };
 
-const getPreview = (content) => {
-  if (!content) return 'Sin contenido disponible';
-  return cleanScriptForVoice(content).replace(/\s+/g, ' ').trim().slice(0, 220);
+const getItemPreview = (item) => {
+  if (!item?.content) return 'Sin contenido disponible';
+  return getReadableContent(item).replace(/\s+/g, ' ').trim().slice(0, 220);
 };
 
 const cleanScriptForVoice = (content) => {
   const text = String(content || '').trim();
   const yamlMatch = text.match(/^voice_script:\s*\|\s*\n([\s\S]*)$/i);
-  return (yamlMatch ? yamlMatch[1] : text)
+  return extractStoryStartFromMixedText(yamlMatch ? yamlMatch[1] : text)
     .replace(/^\s{2}/gm, '')
     .replace(/\[(?:pausa breve|pausa|pausa larga)\]/gi, '...')
     .replace(/\.{4,}/g, '...')
     .replace(/[ \t]+\n/g, '\n')
     .trim();
 };
+
+const tryParseHistoryJson = (content) => {
+  if (!content || typeof content !== 'string') return null;
+  try {
+    const parsed = JSON.parse(content);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const formatBullets = (items) => (Array.isArray(items) && items.length
+  ? items.map((item) => `- ${typeof item === 'string' ? item : JSON.stringify(item)}`).join('\n')
+  : '');
+
+const formatYouTubeResearchForDisplay = (item) => {
+  const parsed = tryParseHistoryJson(item?.content);
+  if (!parsed) return cleanScriptForVoice(item?.content);
+
+  const analysis = parsed.analysis || parsed;
+  const newIdeas = Array.isArray(analysis.newIdeas) ? analysis.newIdeas : [];
+  const breakdowns = Array.isArray(analysis.videoBreakdowns) ? analysis.videoBreakdowns : [];
+  const videos = Array.isArray(parsed.videos) ? parsed.videos : [];
+  const recommended = analysis.recommendedNextVideo || {};
+
+  return [
+    `Tematica: ${parsed.topic || item?.topic || 'Sin titulo'}`,
+    analysis.executiveSummary ? `Resumen ejecutivo:\n${analysis.executiveSummary}` : '',
+    formatBullets(analysis.viralPatterns) ? `Patrones virales:\n${formatBullets(analysis.viralPatterns)}` : '',
+    formatBullets(analysis.nonViralPatterns) ? `Patrones buenos no virales:\n${formatBullets(analysis.nonViralPatterns)}` : '',
+    formatBullets(analysis.avoidMistakes) ? `Errores a evitar:\n${formatBullets(analysis.avoidMistakes)}` : '',
+    formatBullets(analysis.copyStrategically) ? `Copiar estrategicamente sin clonar:\n${formatBullets(analysis.copyStrategically)}` : '',
+    newIdeas.length ? `Ideas nuevas:\n${newIdeas.map((idea) => `- ${idea.title || 'Idea'}: ${idea.hook || idea.angle || idea.whyItCanWork || ''}`).join('\n')}` : '',
+    recommended.title ? `Proximo video recomendado:\n${recommended.title}\n${recommended.openingHook || ''}` : '',
+    formatBullets(recommended.retentionRules) ? `Reglas de retencion:\n${formatBullets(recommended.retentionRules)}` : '',
+    breakdowns.length ? `Lectura por video:\n${breakdowns.slice(0, 10).map((video) => `- ${video.bestHook || video.promise || video.videoId}: ${video.whyItPerformed || video.audienceReaction || ''}`).join('\n')}` : '',
+    videos.length ? `Videos analizados:\n${videos.slice(0, 10).map((video) => `- ${video.title} (${video.group || 'sin grupo'})`).join('\n')}` : ''
+  ].filter(Boolean).join('\n\n');
+};
+
+const getReadableContent = (item) => isYouTubeResearchItem(item)
+  ? formatYouTubeResearchForDisplay(item)
+  : cleanScriptForVoice(item?.content);
 
 const getFeedbackKey = (userId) => `${STORY_FEEDBACK_KEY_PREFIX}:${userId || 'anon'}`;
 
@@ -180,13 +310,17 @@ const extractKeywords = (content, limit = 10) => {
 
 const buildSeoSuggestions = (item) => {
   const content = cleanScriptForVoice(item?.content);
-  const topic = item?.topic || 'esta historia';
+  const topic = getDisplayTitle(item);
   const year = item?.narrative_year || item?.metadata?.narrativeYear || '';
   const keywords = extractKeywords(content, 10);
   const hasHouse = /casa|habitacion|puerta|pasillo|espejo/i.test(content);
   const hasForest = /bosque|arbol|sendero|camino/i.test(content);
   const anchor = hasHouse ? 'la casa' : hasForest ? 'el bosque' : topic;
   const yearSuffix = year ? ` (${year})` : '';
+  const descriptionOpening = year
+    ? `En ${year}, una decision familiar termino abriendo una historia que nadie quiso contar completa.`
+    : 'Una decision aparentemente normal termino abriendo una historia que nadie quiso contar completa.';
+  const descriptionKeywords = keywords.slice(0, 6).join(', ');
 
   return {
     titles: [
@@ -197,7 +331,7 @@ const buildSeoSuggestions = (item) => {
       `La ultima noche en ${anchor}: una historia que no cierra`,
       `Algo quedo esperando en ${anchor}${yearSuffix}`
     ],
-    description: `Una narracion de ${item?.theme || 'misterio'} basada en ${topic}. Un relato contado con tono inmersivo, detalles cotidianos y una amenaza que aparece poco a poco. Palabras clave: ${keywords.join(', ')}.`,
+    description: `${descriptionOpening} Este relato llega como testimonio de una mudanza, un pueblo pequeno y una presencia que parecia conocer a la familia antes de que cruzaran la puerta. Escuchalo hasta el final y deja tu teoria: ¿fue una advertencia, una trampa o algo que ya estaba esperando?${descriptionKeywords ? `\n\nTemas: ${descriptionKeywords}.` : ''}`,
     keywords
   };
 };
@@ -231,7 +365,7 @@ const History = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
-  const [historySection, setHistorySection] = useState('stories');
+  const [historySection, setHistorySection] = useState('long_scripts');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [showRegeneratePanel, setShowRegeneratePanel] = useState(false);
@@ -263,18 +397,14 @@ const History = () => {
   }, [user?.id]);
 
   const availableTypes = useMemo(() => {
-    const sourceItems = historySection === 'prompts'
-      ? items.filter(isPromptItem)
-      : items.filter(isGeneratedStoryItem);
+    const sourceItems = getItemsByHistorySection(items, historySection);
     const types = Array.from(new Set(sourceItems.map((item) => item.content_type).filter(Boolean)));
     return ['all', ...types];
   }, [items, historySection]);
 
   const filteredItems = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    const sourceItems = historySection === 'prompts'
-      ? items.filter(isPromptItem)
-      : items.filter(isGeneratedStoryItem);
+    const sourceItems = getItemsByHistorySection(items, historySection);
 
     return sourceItems.filter((item) => {
       const matchesType = filterType === 'all' || item.content_type === filterType;
@@ -294,12 +424,40 @@ const History = () => {
     selectedItem ? buildSeoSuggestions(selectedItem) : null
   ), [selectedItem]);
 
+  const selectedCleanContent = useMemo(() => (
+    selectedItem ? getReadableContent(selectedItem) : ''
+  ), [selectedItem]);
+
   const selectedFeedbackOptions = useMemo(() => (
     selectedItem ? getFeedbackOptions(selectedItem) : []
   ), [selectedItem]);
 
-  const storyItemsCount = useMemo(() => items.filter(isGeneratedStoryItem).length, [items]);
+  const longScriptItemsCount = useMemo(() => items.filter(isLongScriptItem).length, [items]);
+  const shortsItemsCount = useMemo(() => items.filter(isShortsItem).length, [items]);
+  const youtubeResearchItemsCount = useMemo(() => items.filter(isYouTubeResearchItem).length, [items]);
   const promptItemsCount = useMemo(() => items.filter(isPromptItem).length, [items]);
+  const activeSectionConfig = historySectionConfig[historySection] || historySectionConfig.long_scripts;
+  const selectedIsLongScript = selectedItem ? isLongScriptItem(selectedItem) : false;
+
+  useEffect(() => {
+    if (!selectedItem || typeof document === 'undefined') return undefined;
+
+    const { body, documentElement } = document;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyPaddingRight = body.style.paddingRight;
+    const previousHtmlOverscroll = documentElement.style.overscrollBehavior;
+    const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
+
+    body.style.overflow = 'hidden';
+    body.style.paddingRight = scrollbarWidth > 0 ? `${scrollbarWidth}px` : previousBodyPaddingRight;
+    documentElement.style.overscrollBehavior = 'contain';
+
+    return () => {
+      body.style.overflow = previousBodyOverflow;
+      body.style.paddingRight = previousBodyPaddingRight;
+      documentElement.style.overscrollBehavior = previousHtmlOverscroll;
+    };
+  }, [selectedItem]);
 
   const openItem = (item) => {
     setSelectedItem(item);
@@ -310,13 +468,13 @@ const History = () => {
   };
 
   const copyContent = async (item) => {
-    await navigator.clipboard.writeText(cleanScriptForVoice(item.content || ''));
+    await navigator.clipboard.writeText(getReadableContent(item));
     toast({ title: 'Copiado', description: 'Contenido copiado al portapapeles.' });
   };
 
   const downloadContent = (item) => {
     const extension = 'txt';
-    const blob = new Blob([cleanScriptForVoice(item.content || '')], { type: 'text/plain' });
+    const blob = new Blob([getReadableContent(item)], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -471,7 +629,7 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="glass-effect border-purple-500/20">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
@@ -484,9 +642,9 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
           <Card className="glass-effect border-purple-500/20">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Guiones</p>
+                <p className="text-sm text-gray-400">Guiones largos</p>
                 <p className="text-3xl font-bold text-white">
-                  {storyItemsCount}
+                  {longScriptItemsCount}
                 </p>
               </div>
               <FileText className="w-10 h-10 text-green-400" />
@@ -495,12 +653,23 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
           <Card className="glass-effect border-purple-500/20">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Respaldo local</p>
+                <p className="text-sm text-gray-400">Shorts</p>
                 <p className="text-3xl font-bold text-white">
-                  {items.filter((item) => item.source === 'local' && !item.synced).length}
+                  {shortsItemsCount}
                 </p>
               </div>
-              <Download className="w-10 h-10 text-blue-400" />
+              <Sparkles className="w-10 h-10 text-fuchsia-400" />
+            </CardContent>
+          </Card>
+          <Card className="glass-effect border-purple-500/20">
+            <CardContent className="pt-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Investigaciones YouTube</p>
+                <p className="text-3xl font-bold text-white">
+                  {youtubeResearchItemsCount}
+                </p>
+              </div>
+              <Search className="w-10 h-10 text-cyan-400" />
             </CardContent>
           </Card>
         </div>
@@ -510,15 +679,39 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
             <div className="mb-4 flex flex-wrap gap-2">
               <Button
                 type="button"
-                variant={historySection === 'stories' ? 'default' : 'outline'}
+                variant={historySection === 'long_scripts' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => {
-                  setHistorySection('stories');
+                  setHistorySection('long_scripts');
                   setFilterType('all');
                 }}
-                className={historySection === 'stories' ? 'gradient-primary' : 'border-purple-500/20 hover:bg-purple-500/10'}
+                className={historySection === 'long_scripts' ? 'gradient-primary' : 'border-purple-500/20 hover:bg-purple-500/10'}
               >
-                Historias generadas ({storyItemsCount})
+                Guiones largos ({longScriptItemsCount})
+              </Button>
+              <Button
+                type="button"
+                variant={historySection === 'shorts' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setHistorySection('shorts');
+                  setFilterType('all');
+                }}
+                className={historySection === 'shorts' ? 'gradient-primary' : 'border-purple-500/20 hover:bg-purple-500/10'}
+              >
+                Shorts ({shortsItemsCount})
+              </Button>
+              <Button
+                type="button"
+                variant={historySection === 'youtube_research' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setHistorySection('youtube_research');
+                  setFilterType('all');
+                }}
+                className={historySection === 'youtube_research' ? 'gradient-primary' : 'border-purple-500/20 hover:bg-purple-500/10'}
+              >
+                Investigaciones YouTube ({youtubeResearchItemsCount})
               </Button>
               <Button
                 type="button"
@@ -579,9 +772,9 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
           <Card className="glass-effect border-purple-500/20">
             <CardContent className="p-10 text-center">
               <HistoryIcon className="w-14 h-14 text-purple-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-white mb-2">Aun no hay historial</h2>
+              <h2 className="text-xl font-semibold text-white mb-2">{activeSectionConfig.emptyTitle}</h2>
               <p className="text-gray-400">
-                Cuando generes guiones o contenido, apareceran aqui automaticamente.
+                {activeSectionConfig.emptyDescription}
               </p>
             </CardContent>
           </Card>
@@ -625,7 +818,7 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
                         </div>
 
                         <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 break-words">
-                          {getPreview(item.content)}
+                          {getItemPreview(item)}
                           {item.content?.length > 220 ? '...' : ''}
                         </p>
                       </div>
@@ -677,13 +870,15 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
         )}
 
         {selectedItem && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <Card className="w-full max-w-5xl max-h-[88vh] overflow-hidden bg-gray-950 border-purple-500/30">
-              <CardHeader className="border-b border-purple-500/20">
+          <div className="fixed inset-0 z-[80] bg-black/80 flex items-center justify-center p-4 overscroll-contain">
+            <Card className="creo-paint-isolated w-full max-w-5xl h-[88vh] max-h-[88vh] overflow-hidden bg-gray-950 border-purple-500/30 flex flex-col shadow-xl">
+              <CardHeader className="max-h-[128px] shrink-0 overflow-hidden border-b border-purple-500/20 p-4">
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-white break-words">{getDisplayTitle(selectedItem)}</CardTitle>
-                    <CardDescription>
+                  <div className="min-w-0">
+                    <CardTitle className="line-clamp-2 text-lg leading-tight text-white break-words">
+                      {getDisplayTitle(selectedItem)}
+                    </CardTitle>
+                    <CardDescription className="mt-1 text-xs">
                       {isPromptItem(selectedItem) ? 'Prompt' : getTypeLabel(selectedItem.content_type)} - {formatDate(selectedItem.created_at)}
                     </CardDescription>
                   </div>
@@ -701,8 +896,8 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="p-4 flex gap-2 flex-wrap border-b border-purple-500/20">
+              <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
+                <div className="shrink-0 p-3 flex gap-2 flex-wrap border-b border-purple-500/20">
                   <Button size="sm" onClick={() => copyContent(selectedItem)} className="gradient-primary">
                     <Copy className="w-4 h-4 mr-2" />
                     Copiar completo
@@ -711,7 +906,7 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
                     <Download className="w-4 h-4 mr-2" />
                     Descargar
                   </Button>
-                  {isGeneratedStoryItem(selectedItem) && (
+                  {selectedIsLongScript && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -723,7 +918,7 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
                     </Button>
                   )}
                 </div>
-                <div className="max-h-[64vh] overflow-auto bg-black/30">
+                <div className="creo-fast-scroll flex-1 min-h-0 overflow-y-auto bg-black/30">
                   {showRegeneratePanel && (
                     <div className="m-4 rounded-xl border border-purple-500/30 bg-gray-900/80 p-4">
                       <div className="flex items-start gap-3">
@@ -798,11 +993,23 @@ ${cleanScriptForVoice(selectedItem.content).slice(0, 3500)}`;
                     </div>
                   )}
 
-                  <pre className="p-6 whitespace-pre-wrap text-sm text-gray-100 font-mono leading-relaxed">
-                    {cleanScriptForVoice(selectedItem.content)}
-                  </pre>
+                  <div className="creo-readable-text p-6 text-[15px] leading-8 text-gray-100">
+                    {selectedCleanContent
+                      ? selectedCleanContent
+                        .split(/\n{2,}/)
+                        .map((paragraph, index) => (
+                          <p key={`${index}-${paragraph.slice(0, 24)}`} className="mb-6 whitespace-pre-wrap break-words font-mono">
+                            {paragraph.trim()}
+                          </p>
+                        ))
+                      : (
+                        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                          No se encontro relato limpio en este registro. Prueba copiar o generar una nueva version.
+                        </p>
+                      )}
+                  </div>
 
-                  {selectedSeo && isGeneratedStoryItem(selectedItem) && (
+                  {selectedSeo && selectedIsLongScript && (
                     <div className="border-t border-purple-500/20 bg-gray-950/80 p-6 space-y-5">
                       <section>
                         <h3 className="text-lg font-bold text-white">Sugerencias de titulos SEO</h3>

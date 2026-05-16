@@ -52,6 +52,22 @@ const AdminNotifications = lazy(() => import('@/components/admin/AdminNotificati
 const SupportTickets = lazy(() => import('@/components/admin/SupportTickets'));
 const SupportTicketModal = lazy(() => import('@/components/SupportTicketModal'));
 
+const LAST_APP_ROUTE_KEY = 'creovision_last_app_route_v1';
+const RESTORABLE_ROUTES = new Set([
+  '/dashboard',
+  '/tools',
+  '/calendar',
+  '/library',
+  '/settings',
+  '/badges',
+  '/history',
+  '/profile',
+  '/notifications',
+  '/tendencias',
+  '/mi-perfil',
+  '/creo-strategy'
+]);
+
 function App() {
   const { session, loading, user } = useAuth();
   const navigate = useNavigate();
@@ -79,8 +95,16 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated || loading || typeof window === 'undefined') return;
+
+    if (RESTORABLE_ROUTES.has(location.pathname)) {
+      window.localStorage.setItem(LAST_APP_ROUTE_KEY, location.pathname);
+    }
+  }, [isAuthenticated, loading, location.pathname]);
+
+  useEffect(() => {
     if (isAuthenticated && !loading) {
-      // 🚀 REDIRECT AUTOMÁTICO: Si está autenticado y en landing, redirigir SIEMPRE
+      // Redirigir desde landing a la ultima pagina de trabajo, no siempre al home/perfil.
       if (location.pathname === '/') {
         // Limpiar cache de landing para usuarios autenticados
         if (typeof window !== 'undefined' && 'caches' in window) {
@@ -95,7 +119,11 @@ function App() {
 
         // ONBOARDING DESHABILITADO TEMPORALMENTE: entrar directo sin pedir datos.
         localStorage.setItem('onboardingCompleted', 'true');
-        navigate('/mi-perfil', { replace: true });
+        const lastRoute = typeof window !== 'undefined'
+          ? window.localStorage.getItem(LAST_APP_ROUTE_KEY)
+          : null;
+        const targetRoute = RESTORABLE_ROUTES.has(lastRoute) ? lastRoute : '/mi-perfil';
+        navigate(targetRoute, { replace: true });
       }
     }
   }, [isAuthenticated, loading, location.pathname, navigate]);

@@ -70,15 +70,17 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 // 🎨 NUEVOS COMPONENTES PROFESIONALES
-import { toolCategories, getSortedCategories } from '@/config/toolsConfig';
+import { getSortedCategories } from '@/config/toolsConfig';
 import CategorySection from '@/components/CategorySection';
 import SEOCoachModal from '@/components/seo/SEOCoachModal';
 import ViralScriptGeneratorModal from '@/components/content/ViralScriptGeneratorModal';
+import ShortsScriptGeneratorModal from '@/components/content/ShortsScriptGeneratorModal';
 import ViralTitlesModal from '@/components/content/ViralTitlesModal';
 import SEODescriptionsModal from '@/components/content/SEODescriptionsModal';
 import VideoIdeasModal from '@/components/content/VideoIdeasModal';
 import VideoAnalysisModal from '@/components/analysis/VideoAnalysisModal';
 import TrendSearchModal from '@/components/analysis/TrendSearchModal';
+import YouTubeCreativeResearchModal from '@/components/analysis/YouTubeCreativeResearchModal';
 import CompetitorAnalysisModal from '@/components/analysis/CompetitorAnalysisModal';
 import WeeklyTrendsModal from '@/components/analysis/WeeklyTrendsModal';
 import ThreadComposerModal from '@/components/social/ThreadComposerModal';
@@ -328,7 +330,23 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
   const [seoCoachContext, setSeoCoachContext] = useState(null);
 
   // 🎬 ESTADO PARA GENERADOR DE GUIONES VIRALES
-  const [showViralScriptModal, setShowViralScriptModal] = useState(false);
+  const [showViralScriptModal, setShowViralScriptModal] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('creovision_viral_script_modal_open_v1') === 'true';
+  });
+
+  const [showShortsScriptModal, setShowShortsScriptModal] = useState(false);
+
+  const handleViralScriptModalChange = useCallback((nextOpen) => {
+    setShowViralScriptModal(nextOpen);
+    if (typeof window === 'undefined') return;
+
+    if (nextOpen) {
+      window.localStorage.setItem('creovision_viral_script_modal_open_v1', 'true');
+    } else {
+      window.localStorage.removeItem('creovision_viral_script_modal_open_v1');
+    }
+  }, []);
 
   // 📝 ESTADO PARA GENERADOR DE TÍTULOS VIRALES
   const [showViralTitlesModal, setShowViralTitlesModal] = useState(false);
@@ -344,6 +362,8 @@ const Tools = ({ onSectionChange, onAuthClick, onSubscriptionClick, isDemoUser =
 
   // 🔥 ESTADO PARA BÚSQUEDA DE TENDENCIAS
   const [showTrendSearchModal, setShowTrendSearchModal] = useState(false);
+
+  const [showYouTubeCreativeResearchModal, setShowYouTubeCreativeResearchModal] = useState(false);
 
   // 👥 ESTADO PARA ANÁLISIS DE COMPETENCIA
   const [showCompetitorAnalysisModal, setShowCompetitorAnalysisModal] = useState(false);
@@ -1525,6 +1545,38 @@ const handleCopy = useCallback(() => {
   // ⚠️ Array tools eliminado - ahora se usa toolsConfig.js
 
   const currentStyles = contentOptions.find(option => option.value === selectedTheme)?.styles || [];
+  const visibleToolCategories = useMemo(() => {
+    const primaryOrder = ['viral-script', 'shorts-script', 'youtube-creative-research'];
+    const primaryIds = new Set(primaryOrder);
+    const sortedCategories = getSortedCategories();
+    const contentCategory = sortedCategories.find((category) => category.id === 'content-creation');
+    const primaryTools = primaryOrder
+      .map((id) => sortedCategories.flatMap((category) => category.tools).find((tool) => tool.id === id))
+      .filter(Boolean);
+    const extraTools = sortedCategories.flatMap((category) =>
+      category.tools.filter((tool) => !primaryIds.has(tool.id))
+    );
+
+    return [
+      {
+        ...(contentCategory || {}),
+        name: 'Guiones',
+        description: 'Generadores principales para video largo, Shorts e investigacion creativa',
+        tools: primaryTools,
+        defaultExpanded: true
+      },
+      {
+        id: 'extra-options',
+        name: 'Opciones extra',
+        description: 'Tarjetas secundarias agrupadas para mantener el centro creativo limpio',
+        color: 'from-slate-500 to-gray-600',
+        icon: Cog6ToothIcon,
+        order: 2,
+        tools: extraTools,
+        defaultExpanded: false
+      }
+    ];
+  }, []);
 
   // 🆕 DATOS DE GRÁFICO CON YOUTUBE API (Tendencias por día)
   const views = realTrendData?.views || [4200, 5800, 7300, 6100, 8900, 5400, 3800];
@@ -1604,7 +1656,8 @@ const handleCopy = useCallback(() => {
       'personality-setup': () => setShowPersonalityModal(true),
 
       // CREACIÓN DE CONTENIDO
-      'viral-script': () => setShowViralScriptModal(true),
+      'viral-script': () => handleViralScriptModalChange(true),
+      'shorts-script': () => setShowShortsScriptModal(true),
       'viral-titles': () => setShowViralTitlesModal(true),
       'seo-descriptions': () => setShowSEODescriptionsModal(true),
       'video-ideas': () => setShowVideoIdeasModal(true),
@@ -1622,6 +1675,7 @@ const handleCopy = useCallback(() => {
       // ANÁLISIS Y ESTRATEGIA
       'trend-analyzer': () => setShowTrendModal(true),
       'trend-search': () => setShowTrendSearchModal(true),
+      'youtube-creative-research': () => setShowYouTubeCreativeResearchModal(true),
       'competitor-analysis': () => setShowCompetitorAnalysisModal(true),
       'weekly-trends': () => setShowWeeklyTrendsModal(true),
       'audience-analysis': () => setShowAudienceAnalysisModal(true),
@@ -1650,7 +1704,7 @@ const handleCopy = useCallback(() => {
     };
 
     return actionMap[tool.id] || (() => console.warn(`No action defined for tool: ${tool.id}`));
-  }, []);
+  }, [handleViralScriptModalChange]);
 
   return (
     <div className="space-y-8 pb-32">
@@ -1664,7 +1718,7 @@ const handleCopy = useCallback(() => {
 
       {/* 🎨 Categorías de herramientas profesionales */}
       <div className="space-y-8">
-        {getSortedCategories().map(category => (
+        {visibleToolCategories.map(category => (
           <CategorySection
             key={category.id}
             category={category}
@@ -1674,7 +1728,7 @@ const handleCopy = useCallback(() => {
               const action = getToolAction(tool);
               action();
             }}
-            defaultExpanded={true}
+            defaultExpanded={category.defaultExpanded ?? true}
           />
         ))}
       </div>
@@ -3380,7 +3434,15 @@ const handleCopy = useCallback(() => {
       {showViralScriptModal && (
         <ViralScriptGeneratorModal
           open={showViralScriptModal}
-          onOpenChange={setShowViralScriptModal}
+          onOpenChange={handleViralScriptModalChange}
+          userPersonality={creatorPersonality}
+        />
+      )}
+
+      {showShortsScriptModal && (
+        <ShortsScriptGeneratorModal
+          open={showShortsScriptModal}
+          onOpenChange={setShowShortsScriptModal}
           userPersonality={creatorPersonality}
         />
       )}
@@ -3422,6 +3484,13 @@ const handleCopy = useCallback(() => {
         <TrendSearchModal
           open={showTrendSearchModal}
           onOpenChange={setShowTrendSearchModal}
+        />
+      )}
+
+      {showYouTubeCreativeResearchModal && (
+        <YouTubeCreativeResearchModal
+          open={showYouTubeCreativeResearchModal}
+          onOpenChange={setShowYouTubeCreativeResearchModal}
         />
       )}
 

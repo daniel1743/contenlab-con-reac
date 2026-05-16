@@ -2,6 +2,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 
 const STORAGE_PREFIX = 'creovision_generated_history_v1';
 const MAX_LOCAL_ITEMS = 100;
+let remoteHistoryUnavailable = false;
 
 const getStorageKey = (userId) => `${STORAGE_PREFIX}:${userId || 'anonymous'}`;
 
@@ -41,7 +42,7 @@ const normalizeOutput = (value) => {
   if (!value) return '';
   if (typeof value === 'string') return value;
   if (typeof value === 'object') {
-    return value.yaml || value.content || value.output || value.text || JSON.stringify(value, null, 2);
+    return value.content || value.output || value.text || value.voice_script || value.yaml || JSON.stringify(value, null, 2);
   }
   return String(value);
 };
@@ -135,13 +136,16 @@ const normalizeSupabaseRow = (row) => {
 };
 
 const tryInsertHistory = async (item) => {
+  if (remoteHistoryUnavailable) {
+    throw new Error('Remote generated_content history table is unavailable');
+  }
+
   const contentDataPayload = {
     user_id: item.user_id,
     content_type: item.content_type || 'script',
     topic: item.topic,
     platform: item.platform || 'youtube',
     content_data: {
-      yaml: item.content,
       content: item.content,
       metadata: item.metadata,
       local_id: item.local_id
@@ -158,6 +162,10 @@ const tryInsertHistory = async (item) => {
     .single();
 
   if (!response.error) return response.data;
+  if (response.error.code === 'PGRST205') {
+    remoteHistoryUnavailable = true;
+    throw response.error;
+  }
 
   const generatedOutputPayload = {
     user_id: item.user_id,
@@ -165,7 +173,6 @@ const tryInsertHistory = async (item) => {
     input_prompt: item.topic,
     input_metadata: item.metadata,
     generated_output: {
-      yaml: item.content,
       content: item.content
     },
     api_used: 'deepseek',
@@ -179,6 +186,10 @@ const tryInsertHistory = async (item) => {
     .single();
 
   if (!response.error) return response.data;
+  if (response.error.code === 'PGRST205') {
+    remoteHistoryUnavailable = true;
+    throw response.error;
+  }
 
   const legacyPayload = {
     user_id: item.user_id,
@@ -195,6 +206,9 @@ const tryInsertHistory = async (item) => {
     .single();
 
   if (response.error) {
+    if (response.error.code === 'PGRST205') {
+      remoteHistoryUnavailable = true;
+    }
     throw response.error;
   }
 
@@ -207,6 +221,15 @@ export const saveGeneratedContentHistory = async (params) => {
 
   if (!params.userId) {
     return { success: true, item, localOnly: true };
+  }
+
+  if (remoteHistoryUnavailable) {
+    return {
+      success: true,
+      item,
+      localOnly: true,
+      warning: 'Remote generated_content history table is unavailable'
+    };
   }
 
   try {
@@ -225,7 +248,7 @@ export const getGeneratedContentHistory = async (userId) => {
   const localItems = readLocalItems(userId);
   let remoteItems = [];
 
-  if (userId) {
+  if (userId && !remoteHistoryUnavailable) {
     try {
       const { data, error } = await supabase
         .from('generated_content')
@@ -237,6 +260,9 @@ export const getGeneratedContentHistory = async (userId) => {
       if (error) throw error;
       remoteItems = (data || []).map(normalizeSupabaseRow);
     } catch (error) {
+      if (error.code === 'PGRST205') {
+        remoteHistoryUnavailable = true;
+      }
       console.warn('No se pudo cargar historial desde Supabase:', error.message || error);
     }
   }
@@ -266,7 +292,13 @@ export const deleteGeneratedContentHistoryItem = async (userId, item) => {
       .eq('id', remoteId)
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST205') {
+        remoteHistoryUnavailable = true;
+        return true;
+      }
+      throw error;
+    }
   }
 
   return true;

@@ -16,6 +16,7 @@ import {
   HashtagIcon,
   LightBulbIcon,
   SparklesIcon,
+  DevicePhoneMobileIcon,
 
   // ANÁLISIS Y ESTRATEGIA
   ChartBarIcon,
@@ -90,6 +91,18 @@ export const toolCategories = [
         estimatedTime: '2 min',
         badges: [TOOL_BADGES.POPULAR],
         action: 'setShowScriptModal',
+        requiresPersonality: true,
+        isActive: true
+      },
+      {
+        id: 'shorts-script',
+        title: 'Generador de Guiones Short',
+        description: 'Crea lotes independientes para Shorts, TikTok y Reels',
+        icon: DevicePhoneMobileIcon,
+        creditCost: CREDIT_COSTS.VIRAL_SCRIPT_BASIC,
+        estimatedTime: '2 min',
+        badges: [TOOL_BADGES.NEW],
+        action: 'setShowShortsScriptModal',
         requiresPersonality: true,
         isActive: true
       },
@@ -197,6 +210,18 @@ export const toolCategories = [
         estimatedTime: '1 min',
         badges: [],
         action: 'setShowTrendSearchModal',
+        requiresPersonality: false,
+        isActive: true
+      },
+      {
+        id: 'youtube-creative-research',
+        title: 'Investigador Creativo YouTube',
+        description: 'Compara 5 videos virales contra 5 buenos y extrae estrategia',
+        icon: MagnifyingGlassIcon,
+        creditCost: CREDIT_COSTS.TREND_ANALYSIS,
+        estimatedTime: '3 min',
+        badges: [TOOL_BADGES.NEW],
+        action: 'setShowYouTubeCreativeResearchModal',
         requiresPersonality: false,
         isActive: true
       },

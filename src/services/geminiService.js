@@ -1,18 +1,50 @@
 import { generateContent as deepseekGenerate } from '@/services/ai/deepseekService';
 import { withAiModelCache } from '@/services/aiModelCacheService';
+import {
+  HORROR_EXCELLENCE_SCORE,
+  HORROR_QUALITY_MIN_SCORE,
+  buildHorrorCriticPrompt,
+  buildHorrorOralPolishPrompt,
+  buildHorrorParameterCompliancePrompt,
+  buildHorrorRewritePrompt,
+  buildHorrorSemanticJudgePrompt,
+  buildHorrorScriptPrompt,
+  buildHorrorStructurePrompt
+} from '@/ai/prompts/horrorMasterPrompt';
+import { validateHorrorScript } from '@/ai/validators/horrorQualityValidator';
+import { compareHorrorVersions, evaluateHorrorImpact } from '@/ai/validators/horrorImpactEvaluator';
+import { validateUserParameterCompliance } from '@/ai/validators/userParameterComplianceValidator';
+import { evaluateHorrorProfessionalReadiness } from '@/ai/validators/horrorProfessionalEvaluator';
+import { evaluateHorrorDiversityGuard } from '@/ai/validators/horrorDiversityGuard';
+import { evaluateHorrorCompetitiveness } from '@/ai/validators/horrorCompetitivenessEvaluator';
+import { evaluateHorrorDomesticAftermath } from '@/ai/validators/horrorDomesticAftermathEvaluator';
+import { evaluateHorrorPersonalPayoff } from '@/ai/validators/horrorPersonalPayoffEvaluator';
+import { buildHorrorNarrativeBlueprint, formatHorrorNarrativeBlueprint } from '@/ai/intent/horrorNarrativeBlueprint';
+import { buildHorrorMemoryContext, getHorrorNarrativeMemoryForAccount } from '@/ai/memory/horrorNarrativeMemory';
+import { deriveHorrorLearnedPreferences } from '@/ai/memory/horrorLearnedPreferences';
+import { buildHorrorBeatTimeline, evaluateHorrorBeatTimeline, formatHorrorBeatTimeline } from '@/ai/planning/horrorBeatTimeline';
+import { stripJsonCodeFences } from '@/utils/jsonUtils';
+import {
+  OPENAI_PREMIUM_POLISH_MODEL,
+  isOpenAiPremiumPolishConfigured,
+  polishHorrorScriptWithOpenAI
+} from '@/services/ai/openaiPremiumPolishService';
 
 // Configuración del proveedor
 const GEMINI_PROVIDER_CODE = 'creovision-gp5';
 const GEMINI_MODEL_ID = 'deepseek-chat'; // Modelo usado (DeepSeek/Qwen wrapper)
+const DEFAULT_HORROR_CHANNEL_NAME = 'Expedientes Hades';
+const PREMIUM_POLISH_MIN_SCORE = 88;
 
 // Función base para generar contenido usando DeepSeek/Qwen
-const generateContent = async (prompt, systemPrompt = null) => {
+const generateContent = async (prompt, systemPrompt = null, options = {}) => {
   try {
     console.log('🤖 CreoVision AI GP-5 está procesando tu solicitud...');
 
     const text = await deepseekGenerate(prompt, {
       temperature: 0.7,
-      maxTokens: 6000,
+      maxTokens: options.maxTokens || 6000,
+      timeoutMs: options.timeoutMs,
       systemPrompt: systemPrompt || 'Eres un experto creador de contenido viral para redes sociales en español.'
     });
 
@@ -26,8 +58,115 @@ const generateContent = async (prompt, systemPrompt = null) => {
 
 // 1. Generar contenido viral completo con análisis estratégico profesional
 export const generateViralScript = async (theme, style, duration, topic, creatorPersonality = null, generationOptions = {}) => {
-  const { narrativeYear = '', channelName = '' } = generationOptions;
-  const effectiveChannelName = (channelName || creatorPersonality?.channelName || '').trim();
+  const {
+    narrativeYear = '',
+    channelName = '',
+    creativeDirectives = '',
+    creoIntent = null,
+    scenario = '',
+    intensity = '',
+    endingType = '',
+    detailsExtra = '',
+    originPreference = 'auto',
+    userId = null,
+    generationMode = 'pro'
+  } = generationOptions;
+  const effectiveChannelName = (channelName || creatorPersonality?.channelName || (theme === 'terror' ? DEFAULT_HORROR_CHANNEL_NAME : '')).trim();
+  const normalizedGenerationMode = ['rapido', 'pro', 'obsesivo'].includes(generationMode) ? generationMode : 'pro';
+  const originEngine = creoIntent?.originEngine || null;
+  const religionModeRules = theme === 'religion' ? `
+═══════════════════════════════════════════════════════════════
+PPLAI_RELIGION_CRITICAL_V1
+Religion Under Human Judgment Engine
+═══════════════════════════════════════════════════════════════
+
+Identidad:
+- Pipeline independiente, separado de terror, true crime y ciencia ficcion.
+- El objetivo NO es atacar creyentes.
+- El objetivo es someter relatos, profecias y doctrinas al juicio humano.
+
+Objetivo principal:
+- Generar contenido extremadamente viral.
+- Provocar conflicto moral inmediato.
+- Cuestionar relatos religiosos desde justicia humana.
+- Crear incomodidad psicologica y filosofica.
+- Maximizar comentarios, retencion y debates.
+
+Perspectiva obligatoria:
+- Justicia humana.
+- Raciocinio.
+- Empatia.
+- Moral moderna.
+- Contradiccion etica.
+
+Tono:
+- Acido, frontal, inteligente, incomodo, emocional, filosofico y acusatorio.
+
+Prohibiciones absolutas:
+- Atacar personas creyentes.
+- Insultar religiones directamente.
+- Sonar como sermon.
+- Sonar neutral.
+- Explicar demasiado contexto biblico.
+- Usar intros lentas.
+- Empezar con "hoy hablaremos".
+- Parecer documental educativo.
+- Repetir hooks o estructura emocional.
+- Repetir la misma contradiccion moral.
+- Usar lenguaje reverente.
+- Justificar violencia divina automaticamente.
+
+Regla hook no negociable:
+- Duracion maxima: 3 segundos.
+- Debe contener acusacion moral, contradiccion, imagen mental, pregunta imposible o golpe psicologico.
+- Prohibidos contexto, saludos, introducciones, explicaciones y setup lento.
+- Ejemplos de fuerza: "Si esto fue justicia, por que murieron ninos?", "Amor divino o chantaje eterno?", "Si obedeces por miedo, eso no es fe."
+
+Motor psicologico:
+- Prioriza indignacion, incomodidad, culpa, miedo existencial, paranoia, impotencia, abandono, injusticia y confusion moral.
+- Usa gatillos virales cuando encajen: ninos sufriendo, castigo colectivo, obediencia por miedo, amenazas divinas, silencio divino, culpa heredada, inocentes castigados, destruccion masiva, fe vs terror, juicio sin defensa y dolor como prueba.
+
+Anti repeticion:
+- Cambia estructura emocional, ritmo, tipo de pregunta moral, tipo de cierre, intensidad y enfoque filosofico.
+- Rota estilos: acusacion directa, paradoja moral, trauma humano, juicio filosofico, manipulacion por miedo, abandono divino, profecia como terror, critica al castigo, contradiccion etica y justicia vs poder.
+
+Estructura interna:
+1. Hook 0-3s: detener scroll, provocar conflicto y abrir herida moral.
+2. Golpe 1: presentar el relato y mostrar el horror sin adorno.
+3. Golpe 2: introducir contradiccion humana y destruir justificacion automatica.
+4. Golpe 3: aumentar incomodidad y volver personal el conflicto.
+5. Cierre: frase memorable, eco psicologico, veredicto moral o pregunta incomoda.
+
+Retencion:
+- Cada 7 segundos introduce nueva anomalia, aumenta conflicto, inserta imagen mental o agrega golpe filosofico.
+- Usa frases cortas, lenguaje visual, palabras fuertes y ritmo agresivo.
+
+Lenguaje visual:
+- Usa imagenes como cielos rojos, multitudes huyendo, ninos confundidos, agua sangrienta, fuego cayendo, ciudades vacias, personas orando con miedo y silencio despues del caos cuando encajen.
+
+Frases objetivo:
+- "Eso no parece justicia."
+- "Eso parece miedo."
+- "Eso parece exterminio."
+- "Eso parece poder absoluto."
+- "La fe basada en terror no es fe."
+- "El problema no es el fin del mundo."
+- "El problema es quien decide quien merece vivir."
+
+Regla final:
+- Cada pieza debe sentirse como una acusacion moral imposible de ignorar.
+` : '';
+  const effectiveCreativeDirectives = [
+    creativeDirectives,
+    theme === 'terror' && originEngine?.selectedOrigin ? [
+      `Motor origen del expediente: ${originEngine.selectedOriginLabel || originEngine.selectedOrigin}.`,
+      `Directiva de origen: ${originEngine.directive}.`,
+      'Regla intro Hades: primero anomalia o hook perturbador, despues origen del expediente, despues marca integrada si no corta la tension.',
+      'No usar siempre "Bienvenidos a". La marca nunca debe interrumpir el miedo.',
+      'Regla cierre YouTube: el final debe revelar una herida, culpa, responsabilidad indirecta, recuerdo reprimido o verdad familiar que cambie el significado del relato.'
+    ].join('\n') : '',
+    religionModeRules
+  ].filter(Boolean).join('\n\n');
 
   // 🎯 DEFINIR ROL PROFESIONAL SEGÚN LA TEMÁTICA
   const systemRolesByTheme = {
@@ -90,6 +229,18 @@ export const generateViralScript = async (theme, style, duration, topic, creator
       expertise: 'CREAR MUNDOS ESPECULATIVOS CON BASE CIENTÍFICA SÓLIDA',
       contentRule: 'Tu guion debe balancear imaginación con plausibilidad científica. Evita violar leyes físicas sin explicación y enfócate en "qué pasaría si" creíble.',
       approach: 'Ficción basada en ciencia, no magia disfrazada'
+    },
+    suspenso: {
+      role: 'Guionista de Suspenso especializado en tensión progresiva',
+      expertise: 'CREAR INTRIGA, PRESIÓN EMOCIONAL Y REVELACIONES DOSIFICADAS',
+      contentRule: 'Tu guion debe construir incertidumbre con pistas concretas, decisiones humanas y consecuencias claras. Evita explicar el misterio demasiado pronto.',
+      approach: 'Suspenso sostenido por causa, consecuencia y revelaciones medidas'
+    },
+    religion: {
+      role: 'Crítico moral de relatos religiosos con enfoque en justicia humana y raciocinio',
+      expertise: 'CONVERTIR RELATOS, PROFECIAS Y CASTIGOS RELIGIOSOS EN CRITICA ACIDA DE ALTO IMPACTO',
+      contentRule: 'Tu guion debe denunciar contradicciones, crueldad, castigos colectivos y obediencia ciega sin predicar, sin justificar violencia y sin atacar creyentes comunes.',
+      approach: 'Critica doctrina, relato e institucion con lenguaje frontal, moralmente claro e inteligente'
     }
   };
 
@@ -134,30 +285,100 @@ export const generateViralScript = async (theme, style, duration, topic, creator
     one_min: 1,
     two_min: 2,
     four_min: 4,
+    five_min: 5,
     seven_min: 7,
     ten_min: 10,
     short: 1,
     medium: 4,
     long: 10
   };
-  const totalMinutes = durationMap[duration] || 4;
-  const targetCharacters = Math.min(totalMinutes * 1000, 10000);
-  const cleanVoiceOutput = (value) => {
+  const resolveDurationMinutes = (value) => {
+    if (Number.isFinite(Number(value)) && Number(value) > 0) {
+      return Number(value);
+    }
+
+    if (durationMap[value]) {
+      return durationMap[value];
+    }
+
+    const normalized = String(value || '').toLowerCase().trim();
+    const numericMatch = normalized.match(/(\d+(?:[.,]\d+)?)/);
+    if (numericMatch) {
+      const parsed = Number(numericMatch[1].replace(',', '.'));
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return /seg|sec|second/.test(normalized) ? Math.max(parsed / 60, 0.5) : parsed;
+      }
+    }
+
+    return 4;
+  };
+  const totalMinutes = resolveDurationMinutes(duration);
+  const targetCharacters = Math.min(Math.round(totalMinutes * 1000), 10000);
+  const extractYamlBlock = (source, key) => {
+    const pattern = new RegExp(`(?:^|\\n)${key}:\\s*\\|\\s*\\n([\\s\\S]*?)(?=\\n[a-zA-Z_][\\w-]*:\\s*(?:\\||>|["']|$)|$)`, 'i');
+    const match = String(source || '').match(pattern);
+    return match?.[1]
+      ? match[1].replace(/^\s{2}/gm, '').trim()
+      : '';
+  };
+  const normalizeVoiceText = (value) => String(value || '')
+    .replace(/^\s{2}/gm, '')
+    .replace(/\[(?:pausa breve|pausa|pausa larga)\]/gi, '...')
+    .replace(/\.{4,}/g, '...')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+  const extractVoicePayload = (value) => {
     const cleaned = String(value || '')
       .trim()
       .replace(/^```(?:yaml|yml|json|text|txt)?\s*/i, '')
       .replace(/\s*```$/i, '')
       .trim();
 
-    const yamlMatch = cleaned.match(/^voice_script:\s*\|\s*\n([\s\S]*)$/i);
-    const body = yamlMatch ? yamlMatch[1] : cleaned;
+    const voiceScript = extractYamlBlock(cleaned, 'voice_script');
+    const ctaCierre = extractYamlBlock(cleaned, 'cta_cierre');
 
-    return body
-      .replace(/^\s{2}/gm, '')
-      .replace(/\[(?:pausa breve|pausa|pausa larga)\]/gi, '...')
-      .replace(/\.{4,}/g, '...')
-      .replace(/[ \t]+\n/g, '\n')
-      .trim();
+    return {
+      voiceScript: normalizeVoiceText(voiceScript || cleaned),
+      ctaCierre: normalizeVoiceText(ctaCierre)
+    };
+  };
+  const cleanVoiceOutput = (value) => extractVoicePayload(value).voiceScript;
+  const normalizeForGuard = (value) => String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const hasStrongFinalImage = (value) => /(puerta|pasillo|ventana|espejo|foto|cinta|radio|cassette|llave|numero|respiracion|mano|rostro|silueta|grabacion|nombre|ojos|parpade|lluvia|tuberias|zumbido)/.test(normalizeForGuard(value));
+  const shouldSuppressCtaCierre = (script, ctaCierre) => {
+    if (!ctaCierre) return false;
+    const paragraphs = String(script || '').split(/\n{2,}/).map((item) => item.trim()).filter(Boolean);
+    const finalParagraph = paragraphs[paragraphs.length - 1] || '';
+    const ctaText = normalizeForGuard(ctaCierre);
+    const ctaFeelsCommercial = /(suscrib|campana|like|coment|teoria|dejarla abajo|seguiremos leyendo|canal|expedientes hades)/.test(ctaText);
+    return ctaFeelsCommercial && hasStrongFinalImage(finalParagraph);
+  };
+  const normalizeChannelNameCasing = (value) => {
+    if (!effectiveChannelName) return value;
+    const escaped = effectiveChannelName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return String(value || '').replace(new RegExp(escaped, 'gi'), effectiveChannelName);
+  };
+  const parseJsonObject = (value) => {
+    try {
+      const cleaned = String(value || '')
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      const jsonText = cleaned.match(/\{[\s\S]*\}/)?.[0] || cleaned;
+      return JSON.parse(jsonText);
+    } catch {
+      return null;
+    }
+  };
+  const criticRequestsRewrite = (value) => {
+    const parsed = parseJsonObject(value);
+    if (parsed && typeof parsed.reescritura_necesaria === 'boolean') {
+      return parsed.reescritura_necesaria;
+    }
+    return /reescritura_necesaria["']?\s*[:=]\s*(si|true)/i.test(String(value || ''));
   };
   const humanRealismRules = `
 ═══════════════════════════════════════════════════════════════
@@ -192,6 +413,17 @@ Ritmo organico:
 - Usa "..." con moderacion; maximo 18 veces en todo el guion.
 - Inserta microtension organica cada 500 a 900 caracteres: una duda, detalle contradictorio, objeto cambiado de lugar, sonido incomodo, llamada, recuerdo cortado o frase que el narrador no termina.
 - No uses siempre formulas como "pero eso no fue lo peor". Pueden aparecer una vez, no como muletilla.
+- No permitas que un solo motivo cargue el relato completo. Si aparece radio, frio, estatica, lluvia, sotano, espejo o puerta, cada regreso debe cambiar una relacion, una decision o una consecuencia.
+- Evita relatos que puedan resumirse como "el mismo objeto/sonido se repite hasta el final". Eso parece salida generica y no producto premium.
+
+Microexperiencia humana:
+- El terror debe interrumpir rutinas normales: cepillarse, abrir un grifo, preparar cafe, tapar a un hijo, lavar platos, revisar una puerta, bajar escaleras, buscar una llave o llamar a alguien.
+- Cada anomalia importante debe incluir accion cotidiana, interrupcion, reaccion fisica, respuesta humana imperfecta y consecuencia en la rutina.
+- Prioriza reacciones pequenas: apoyar la mano en el lavamanos, contener arcadas, quedarse sin responder, apretar una llave, mirar un pasillo, apagar una radio, dejar de usar un cuarto.
+- Muestra deterioro emocional con dialogos y acciones, no con explicaciones largas. Una respuesta vacia como "que quieres que haga" puede ser mas fuerte que decir "estaba poseido".
+- Evita convertirlo en poesia oscura o monologo emocional. La emocion debe verse en comportamiento, cuerpo, silencio y decisiones.
+- Si introduces familia, pareja, hijos, madre o padre en el primer tercio, ese vinculo debe llegar al tramo final. No uses a la familia solo como decorado inicial.
+- El deterioro familiar debe verse: alguien no mira, no responde, no consuela, empaca sin despedirse, olvida una voz, miente o deja a otro solo.
 
 Memoria subjetiva:
 - El narrador puede dudar de una hora, un color o una frase exacta.
@@ -210,11 +442,20 @@ Climax:
 - Aumenta el peligro percibido antes del cierre: alguien puede perder algo, quedar marcado, desaparecer, mentir o descubrir que ya estaba involucrado.
 - Para terror, si el relato se siente suave, sube riesgo directo, cercania fisica, perdida de control o amenaza sobre alguien vulnerable sin usar gore.
 
+Dramatismo controlado:
+- El protagonista debe perder algo concreto o quedar a punto de perderlo: nombre, memoria, familia, casa, culpa expuesta, identidad, una persona, una prueba o una version de si mismo.
+- Debe haber una verdad emocional oculta. El misterio no puede ser solo "que paso"; debe tocar identidad, familia, culpa, memoria, deuda, abandono, mentira o negacion.
+- El objeto, sonido, archivo o fenomeno central debe afectar al protagonista en algo personal. No basta con que asuste; debe revelar una herida.
+- El climax debe revelar no solo que ocurrio, sino que significa para el protagonista: que perdio, que nego, que hizo, que olvido o que ya no puede recuperar.
+- El final debe ser entendible en una frase humana sin cerrar todos los cabos.
+- Conserva misterio residual, teoria y rewatch. No conviertas el relato en explicacion completa, diagnostico psicologico generico ni cliche de "todo estaba en su mente" salvo que el usuario lo pida.
+
 Control de calidad invisible:
 - Revisa internamente si el guion suena humano, creible y útil para YouTube.
 - Si una frase suena generica, reemplazala por una accion concreta o un detalle cotidiano.
 - Si un simbolo aparece demasiadas veces, reduce su presencia.
-- Antes de entregar, verifica que el resultado no parezca "humano pero poco viral": hook fuerte, microtension, climax, loop final y CTA atmosferico si aplica.
+- Antes de entregar, preguntate si el resultado supera una respuesta gratis promedio de ChatGPT/Gemini. Si no, reescribe con mas escenas domesticas, progresion humana, variedad de motivos y payoff concreto.
+- Antes de entregar, verifica que el resultado no parezca "humano pero poco viral": hook fuerte, microtension, conflicto dramatico claro, perdida concreta, climax con significado personal, loop final y CTA atmosferico si aplica.
 `;
 
   const prompt = `
@@ -243,6 +484,15 @@ DATOS DEL PROYECTO
 - Tema específico: ${topic}
 - Año de la narración: ${narrativeYear || 'No especificado. Elige un año coherente con la idea y mantenlo consistente.'}
 - Nombre del canal: ${effectiveChannelName || 'No especificado. No menciones nombre de canal.'}
+- Brief creativo normalizado por Creo:
+${effectiveCreativeDirectives || 'No especificado. Mantener narrativa clara, humana y coherente.'}
+
+Jerarquia de cumplimiento:
+1. Duracion, extension objetivo, tema, ano, canal y brief creativo normalizado.
+2. Formato limpio para IA de voz, sin notas ni estructura visible.
+3. Calidad narrativa: hook, tension, traicion, quiebre, clip viral y final memorable.
+
+Si una exigencia narrativa compite con la duracion o el brief normalizado, comprime escenas existentes. No ignores ni reemplaces la intencion creativa validada.
 
 ═══════════════════════════════════════════════════════════════
 REGLAS INTERNAS DE GENERACION
@@ -250,8 +500,8 @@ REGLAS INTERNAS DE GENERACION
 
 Genera un solo entregable final.
 El entregable es exclusivamente texto limpio de narracion para IA de voz.
-No entregues YAML.
-No escribas voice_script.
+No entregues YAML salvo cuando debas separar el cierre de canal.
+No escribas voice_script salvo en el formato tecnico permitido abajo para separar relato y cierre.
 No entregues metadata, retention_plan, production_notes, packaging, quality_check, titulos, subtitulos, notas, analisis ni sugerencias.
 No expliques lo que hiciste.
 No uses markdown ni bloques de codigo.
@@ -267,8 +517,11 @@ La arquitectura de retencion debe aplicarse dentro de la narracion, no como list
 Entrada de canal y CTA:
 - El primer enunciado debe ser un hook fuerte. No lo sacrifiques por saludar.
 - Si hay nombre de canal, usa exactamente "${effectiveChannelName || '[nombre del canal]'}". Nunca inventes otro nombre de canal.
-- Si hay nombre de canal, mencionalo una sola vez despues del primer hook, de forma natural.
-- Formato recomendado si encaja: "Bienvenidos a ${effectiveChannelName || '[nombre del canal]'}... esta noche tenemos un relato que nos escribio un oyente..." o una variante equivalente.
+- Si hay nombre de canal, mencionalo maximo una vez despues del primer golpe narrativo, de forma natural.
+- No uses siempre "Bienvenidos a ${effectiveChannelName || '[nombre del canal]'}". Variar es obligatorio.
+- Orden recomendado: anomalia concreta, origen del expediente, marca Hades integrada.
+- La marca puede aparecer como "Esto es ${effectiveChannelName || '[nombre del canal]'}", "el archivo llego a ${effectiveChannelName || '[nombre del canal]'}" o quedar fuera del cuerpo si rompe el miedo.
+- Formato recomendado solo si encaja: una variante de archivo/caso encontrado, no saludo repetido.
 - Si el tema parece testimonio de terror, puedes presentar el caso como carta, relato, experiencia de un oyente, seguidor o suscriptor.
 - Si el tema es true crime, usa entrada sobria: "esta noche revisamos un caso..." sin explotar el dolor de victimas.
 - Debe existir separacion clara entre voz del narrador del canal y relato principal, pero sin encabezados ni etiquetas.
@@ -279,62 +532,766 @@ Entrada de canal y CTA:
 - Si hay nombre de canal, incluye un CTA breve despues del eco emocional, como epilogo atmosferico, no como venta.
 - No uses un cierre seco tipo "suscribete y activa la campana". Integralo con el tono: "Si este relato te dejo una teoria, puedes dejarla abajo; en ${effectiveChannelName || '[nombre del canal]'} seguiremos leyendo los casos que nadie quiere contar de noche."
 - El CTA debe sonar de narrador de canal, no de anuncio: maximo 1 frase breve.
+- Si el final visual del testimonio es mas perturbador que cualquier CTA, termina ahi. No fuerces cierre de canal si debilita el ultimo golpe.
+- Si incluyes cierre/CTA de canal, NO lo pegues al relato principal. Separalo en un campo YAML llamado cta_cierre para que la narracion limpia no quede truncada ni debilitada.
 
 ═══════════════════════════════════════════════════════════════
 FORMATO DE SALIDA OBLIGATORIO
 ═══════════════════════════════════════════════════════════════
 
-Devuelve SOLO el texto final de la narracion.
-No agregues ninguna clave antes del texto.
-No agregues texto antes ni despues.
-La primera linea debe ser la primera frase del guion.
+Si no hay cierre/CTA de canal, devuelve SOLO el texto final de la narracion.
+Si hay cierre/CTA de canal, devuelve SOLO este YAML, sin markdown:
+voice_script: |
+  [relato principal limpio, terminando en su golpe final]
+cta_cierre: |
+  [cierre atmosferico del canal, maximo 1 frase; vacio si debilita el final]
+
+Regla critica:
+- voice_script debe contener solo narracion limpia para IA de voz.
+- cta_cierre debe quedar separado del relato.
+- No agregues ninguna otra clave.
+- Si usas texto plano sin YAML, la primera linea debe ser la primera frase del guion.
 
 ${humanRealismRules}
+
+${religionModeRules}
 
 Reglas críticas para el guion:
 - Debe ser texto narrativo corrido, no esquema.
 - Debe sonar humano, no literario artificial.
 - Debe fusionar estructura fuerte, humanizacion creible y retencion viral. No permitas que una capa destruya la otra.
+- Integra el brief creativo normalizado dentro de escenas, decisiones, objetos y conflictos. No lo escribas como lista visible.
 - Si el contenido es historia, testimonio, carta o relato de oyente, debe tener marco de canal: presentador abre, protagonista narra, presentador cierra. Hazlo con parrafos naturales, no con titulos.
 - La primera frase debe detener el scroll por amenaza, contradiccion o anomalia; no basta con una frase bonita.
 - Para terror evita explicar demasiado. El miedo debe salir de detalles concretos.
 - Para true crime evita morbo explícito; usa precisión, contexto y respeto.
+- Para religion, aplica religion_mode por encima del tono narrativo general: no devocional, no predica, no justificacion, no introduccion lenta; abre con acusacion moral y cierra con sentencia incomoda.
 - El año indicado debe sentirse en objetos, lenguaje, tecnología y ambiente.
+- La duracion solicitada debe sentirse proporcional al texto: no agregues subtramas para cumplir reglas de terror; fusiona golpes narrativos si el formato es corto.
 - Aplica la arquitectura viral: hook inmediato, brecha de curiosidad, apuestas, anomalías crecientes, punto de no retorno y eco emocional.
 - Mantén terror incomodo: cada escena debe aumentar peligro percibido, duda o cercania con la amenaza.
+- La traicion debe cambiar la lectura inicial del espectador mediante evidencia concreta, no mediante una explicacion suelta.
+- El quiebre debe incluir imposibilidad verificable: el protagonista intenta evitar, negar o cambiar algo, pero el objeto ya lo habia anunciado, grabado o escrito.
 - Para YouTube, conserva claridad de causa y efecto aunque existan dudas subjetivas. El espectador debe poder seguir la historia sin confundirse.
+- El conflicto dramatico debe poder resumirse en una frase: que quiere negar, salvar o probar el protagonista y que se lo impide.
+- El misterio debe afectar identidad, familia, culpa o memoria. Si solo afecta el ambiente, sube la consecuencia personal.
+- El climax debe revelar el significado humano de la amenaza, no solo la mecanica del fenomeno.
+- Regla obligatoria de revelacion final: el ultimo tercio debe incluir culpa personal, recuerdo reprimido, responsabilidad indirecta o verdad familiar ocultada.
+- El final debe cambiar el significado de toda la historia; prohibidos finales solo atmosfericos, frases bonitas sin revelacion o cierres ambiguos sin golpe emocional.
+- El cierre debe dejar material para comentarios: una teoria posible, una culpa discutible, una decision irreversible o una consecuencia actual.
+- El final debe ser comprensible emocionalmente sin explicar el origen completo.
 - Cada 60 a 90 segundos debe existir una razon narrativa para seguir escuchando, pero no la marques como tecnica.
 - El final debe dejar una frase-memoria concreta, no solo una reflexion triste.
 - Antes de responder, revisa internamente credibilidad, continuidad, consistencia del año y naturalidad, pero no muestres esa revision.
 - Evita estas frases y palabras: penumbra, susurros, escalofrio recorrio mi espalda, algo no estaba bien, presencia maligna, entidad maligna, una sombra oscura, senti que me observaban.
 `;
 
+  const runHorrorNarrativePipeline = async () => {
+    const pipelineStartedAt = Date.now();
+    let latestCtaCierre = '';
+    const scriptMaxTokens = Math.min(6000, Math.max(1400, Math.ceil(targetCharacters / 1.8)));
+    const runLayer = async (label, layerPrompt, layerOptions = {}) => {
+      const startedAt = Date.now();
+      console.log(`[HorrorPipeline] Iniciando capa: ${label}`);
+      const output = await generateContent(layerPrompt, null, layerOptions);
+      console.log(`[HorrorPipeline] Capa ${label} completada en ${Math.round((Date.now() - startedAt) / 1000)}s`);
+      const payload = extractVoicePayload(output);
+      if (payload.ctaCierre) {
+        latestCtaCierre = normalizeChannelNameCasing(payload.ctaCierre);
+      }
+      return normalizeChannelNameCasing(payload.voiceScript);
+    };
+
+    const memoryRecords = await getHorrorNarrativeMemoryForAccount(userId);
+    const learnedPreferences = deriveHorrorLearnedPreferences(memoryRecords);
+    const memoryContext = buildHorrorMemoryContext(memoryRecords);
+    const narrativeBlueprint = buildHorrorNarrativeBlueprint({
+      theme,
+      style,
+      topic,
+      narrativeYear,
+      channelName: effectiveChannelName,
+      creativeDirectives: effectiveCreativeDirectives,
+      learnedPreferences
+    });
+    const narrativeBlueprintText = formatHorrorNarrativeBlueprint(narrativeBlueprint);
+    const beatTimeline = buildHorrorBeatTimeline({
+      durationMinutes: totalMinutes,
+      targetCharacters,
+      style,
+      topic,
+      narrativeBlueprint
+    });
+    const beatTimelineText = formatHorrorBeatTimeline(beatTimeline);
+    const structurePrompt = buildHorrorStructurePrompt({
+      theme,
+      style,
+      duration: `${totalMinutes} minuto(s)`,
+      targetCharacters,
+      topic,
+      narrativeYear,
+      channelName: effectiveChannelName,
+      creativeDirectives: effectiveCreativeDirectives,
+      narrativeBlueprint: narrativeBlueprintText,
+      memoryContext,
+      beatTimeline: beatTimelineText
+    });
+    const structure = await runLayer('arquitecto', structurePrompt, {
+      maxTokens: 1600,
+      timeoutMs: 45000
+    });
+
+    const firstDraftPrompt = buildHorrorScriptPrompt({
+      basePrompt: prompt,
+      structure,
+      narrativeBlueprint: narrativeBlueprintText,
+      beatTimeline: beatTimelineText
+    });
+    const firstDraft = await runLayer('escritor', firstDraftPrompt, {
+      maxTokens: scriptMaxTokens,
+      timeoutMs: 90000
+    });
+    const firstValidation = validateHorrorScript(firstDraft);
+    const firstImpact = evaluateHorrorImpact(firstDraft);
+    const firstCompetitiveness = evaluateHorrorCompetitiveness(firstDraft);
+    const firstDomesticAftermath = evaluateHorrorDomesticAftermath(firstDraft);
+    const firstPersonalPayoff = evaluateHorrorPersonalPayoff(firstDraft);
+    const firstCompliance = validateUserParameterCompliance(firstDraft, {
+      theme,
+      style,
+      topic,
+      targetCharacters,
+      narrativeYear,
+      creativeDirectives: effectiveCreativeDirectives,
+      narrativeBlueprint
+    });
+    const firstDraftReady = firstValidation.score >= HORROR_EXCELLENCE_SCORE &&
+      firstImpact.passed &&
+      firstCompliance.passed &&
+      firstCompetitiveness.passed &&
+      firstDomesticAftermath.passed &&
+      firstPersonalPayoff.passed;
+
+    const evaluateCandidate = (label, script, criticNotes = '') => ({
+      label,
+      script,
+      quality: validateHorrorScript(script),
+      impact: evaluateHorrorImpact(script),
+      compliance: validateUserParameterCompliance(script, {
+        theme,
+        style,
+        topic,
+        targetCharacters,
+        narrativeYear,
+        creativeDirectives: effectiveCreativeDirectives,
+        narrativeBlueprint
+      }),
+      competitiveness: evaluateHorrorCompetitiveness(script),
+      domesticAftermath: evaluateHorrorDomesticAftermath(script),
+      personalPayoff: evaluateHorrorPersonalPayoff(script),
+      diversity: evaluateHorrorDiversityGuard(script, memoryRecords),
+      beatTimeline: evaluateHorrorBeatTimeline(script, beatTimeline),
+      criticNotes
+    });
+
+    let criticNotes = '';
+    let needsRewrite = false;
+    let finalCandidate = null;
+    let finalValidation = null;
+    let finalImpact = null;
+    let finalCompliance = null;
+    let complianceCandidate = null;
+    let competitivenessCandidate = null;
+    let payoffAftermathCandidate = null;
+    let complianceValidation = null;
+    let complianceImpact = null;
+    let complianceCompliance = null;
+    let structuredCritic = null;
+    let diversityGuard = null;
+    let semanticJudge = null;
+    const executedLayers = ['memoria', 'narrative_blueprint', 'arquitecto', 'escritor'];
+
+    const candidates = [
+      {
+        label: 'draft',
+        script: firstDraft,
+        quality: firstValidation,
+        impact: firstImpact,
+        compliance: firstCompliance,
+        competitiveness: firstCompetitiveness,
+        domesticAftermath: firstDomesticAftermath,
+        personalPayoff: firstPersonalPayoff,
+        diversity: evaluateHorrorDiversityGuard(firstDraft, memoryRecords),
+        beatTimeline: evaluateHorrorBeatTimeline(firstDraft, beatTimeline),
+        criticNotes
+      }
+    ];
+
+    if (normalizedGenerationMode !== 'rapido') {
+      const criticPrompt = buildHorrorCriticPrompt({
+        script: firstDraft,
+        validation: firstValidation,
+        structure
+      });
+      criticNotes = await runLayer('critico', criticPrompt, {
+        maxTokens: 1100,
+        timeoutMs: 35000
+      });
+      structuredCritic = parseJsonObject(criticNotes);
+      executedLayers.push('critico_rewriter');
+
+      needsRewrite = (
+        !firstDraftReady ||
+        firstValidation.score < HORROR_QUALITY_MIN_SCORE ||
+        firstImpact.score < 78 ||
+        firstCompetitiveness.score < 75 ||
+        firstDomesticAftermath.score < 72 ||
+        firstPersonalPayoff.score < 72 ||
+        !firstCompliance.passed ||
+        criticRequestsRewrite(criticNotes)
+      );
+
+      const finalizerPrompt = needsRewrite
+        ? buildHorrorRewritePrompt({
+            originalScript: firstDraft,
+            validation: firstValidation,
+            structure,
+            basePrompt: prompt,
+            criticNotes,
+            narrativeBlueprint: narrativeBlueprintText
+          })
+        : buildHorrorOralPolishPrompt({
+            script: firstDraft,
+            targetCharacters,
+            channelName: effectiveChannelName
+          });
+      finalCandidate = await runLayer(needsRewrite ? 'reescritor_final' : 'pulidor_oral', finalizerPrompt, {
+        maxTokens: scriptMaxTokens,
+        timeoutMs: 80000
+      });
+      const finalEvaluated = evaluateCandidate(needsRewrite ? 'rewrite_final' : 'polished_final', finalCandidate);
+      finalValidation = finalEvaluated.quality;
+      finalImpact = finalEvaluated.impact;
+      finalCompliance = finalEvaluated.compliance;
+      candidates.push(finalEvaluated);
+      executedLayers.push(needsRewrite ? 'reescritor_final' : 'pulidor_oral');
+    }
+
+    const chooseBestCandidate = (items) => {
+      const compliant = items.filter((item) => item.compliance?.passed);
+      const pool = compliant.length ? compliant : items;
+      const baseBest = compareHorrorVersions(pool.map((item) => ({
+        label: item.label,
+        script: item.script,
+        quality: item.quality,
+        impact: item.impact,
+        criticNotes: item.criticNotes
+      })));
+
+      const ranked = pool
+        .map((item) => ({
+          item,
+          score:
+            ((item.quality?.score || 0) * 0.32) +
+            ((item.impact?.score || 0) * 0.24) +
+            ((item.compliance?.score || 0) * 0.26) +
+            ((item.competitiveness?.score || 0) * 0.08) +
+            ((item.domesticAftermath?.score || 0) * 0.07) +
+            ((item.personalPayoff?.score || 0) * 0.09) +
+            ((item.diversity?.score || 100) * 0.1) +
+            ((item.beatTimeline?.score || 85) * 0.06) +
+            (item.label === baseBest?.label && item.script === baseBest?.script ? 4 : 0)
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      return ranked[0]?.item || pool[0];
+    };
+
+    let selectedCandidate = chooseBestCandidate(candidates);
+    const complianceRewriteRequired = !selectedCandidate.compliance?.passed ||
+      (normalizedGenerationMode === 'obsesivo' && (selectedCandidate.compliance?.score || 0) < 95);
+
+    if (complianceRewriteRequired) {
+      const compliancePrompt = buildHorrorParameterCompliancePrompt({
+        script: selectedCandidate.script,
+        compliance: selectedCandidate.compliance,
+        basePrompt: prompt,
+        structure,
+        theme,
+        style,
+        topic,
+        duration: `${totalMinutes} minuto(s)`,
+        targetCharacters,
+        narrativeYear,
+        channelName: effectiveChannelName,
+        creativeDirectives: effectiveCreativeDirectives,
+        narrativeBlueprint: narrativeBlueprintText
+      });
+      complianceCandidate = await runLayer('compliance_rewrite', compliancePrompt, {
+        maxTokens: scriptMaxTokens,
+        timeoutMs: normalizedGenerationMode === 'rapido' ? 70000 : 90000
+      });
+      const complianceEvaluated = evaluateCandidate('compliance_rewrite', complianceCandidate);
+      complianceValidation = complianceEvaluated.quality;
+      complianceImpact = complianceEvaluated.impact;
+      complianceCompliance = complianceEvaluated.compliance;
+      candidates.push(complianceEvaluated);
+      executedLayers.push('compliance_rewrite');
+      selectedCandidate = chooseBestCandidate(candidates);
+    }
+
+    const competitivenessRewriteRequired = (selectedCandidate.competitiveness?.score || 0) < 75;
+    if (competitivenessRewriteRequired) {
+      const competitivenessPrompt = buildHorrorRewritePrompt({
+        originalScript: selectedCandidate.script,
+        validation: selectedCandidate.quality,
+        structure,
+        basePrompt: prompt,
+        criticNotes: [
+          'CONTROL DE COMPETITIVIDAD YOUTUBE:',
+          ...(selectedCandidate.competitiveness?.observations || []),
+          'Reescribe para superar una salida gratis promedio: reduce motivos sobreusados, sostén el vinculo humano hasta el final, agrega rutinas domesticas interrumpidas con reaccion fisica y payoff concreto.'
+        ].join('\n'),
+        narrativeBlueprint: narrativeBlueprintText
+      });
+      competitivenessCandidate = await runLayer('competitividad_rewrite', competitivenessPrompt, {
+        maxTokens: scriptMaxTokens,
+        timeoutMs: normalizedGenerationMode === 'rapido' ? 70000 : 90000
+      });
+      const competitivenessEvaluated = evaluateCandidate('competitividad_rewrite', competitivenessCandidate);
+      candidates.push(competitivenessEvaluated);
+      executedLayers.push('competitividad_rewrite');
+      selectedCandidate = chooseBestCandidate(candidates);
+    }
+
+    const payoffAftermathRewriteRequired = (selectedCandidate.domesticAftermath?.score || 0) < 72 ||
+      (selectedCandidate.personalPayoff?.score || 0) < 72;
+    if (payoffAftermathRewriteRequired) {
+      const payoffAftermathPrompt = buildHorrorRewritePrompt({
+        originalScript: selectedCandidate.script,
+        validation: selectedCandidate.quality,
+        structure,
+        basePrompt: prompt,
+        criticNotes: [
+          'CONTROL DE SECUELA DOMESTICA Y PAYOFF PERSONAL:',
+          ...(selectedCandidate.domesticAftermath?.observations || []),
+          ...(selectedCandidate.personalPayoff?.observations || []),
+          'Reescribe sin cambiar el tema: el golpe principal debe alterar una rutina, espacio u objeto domestico, y el simbolo central debe probar una culpa, memoria, identidad, familia, deuda, abandono o mentira del protagonista.'
+        ].join('\n'),
+        narrativeBlueprint: narrativeBlueprintText
+      });
+      payoffAftermathCandidate = await runLayer('payoff_secuela_rewrite', payoffAftermathPrompt, {
+        maxTokens: scriptMaxTokens,
+        timeoutMs: normalizedGenerationMode === 'rapido' ? 70000 : 90000
+      });
+      const payoffAftermathEvaluated = evaluateCandidate('payoff_secuela_rewrite', payoffAftermathCandidate);
+      candidates.push(payoffAftermathEvaluated);
+      executedLayers.push('payoff_secuela_rewrite');
+      selectedCandidate = chooseBestCandidate(candidates);
+    }
+
+    diversityGuard = evaluateHorrorDiversityGuard(selectedCandidate.script, memoryRecords);
+    let beatTimelineEvaluation = evaluateHorrorBeatTimeline(selectedCandidate.script, beatTimeline);
+    executedLayers.push('anti_overfitting');
+    executedLayers.push('beat_timeline_validator');
+
+    if (normalizedGenerationMode !== 'rapido') {
+      try {
+        const semanticJudgePrompt = buildHorrorSemanticJudgePrompt({
+          script: selectedCandidate.script,
+          compliance: selectedCandidate.compliance,
+          narrativeBlueprint: narrativeBlueprintText,
+          diversityGuard
+        });
+        const semanticJudgeRaw = await runLayer('juez_emocional_semantico', semanticJudgePrompt, {
+          maxTokens: 900,
+          timeoutMs: 35000
+        });
+        semanticJudge = parseJsonObject(semanticJudgeRaw);
+        executedLayers.push('juez_emocional_semantico');
+      } catch (error) {
+        console.warn('[HorrorPipeline] Juez emocional semantico omitido:', error.message || error);
+      }
+    }
+
+    let finalCtaCierre = shouldSuppressCtaCierre(selectedCandidate.script, latestCtaCierre)
+      ? ''
+      : latestCtaCierre;
+
+    let finalScore = evaluateHorrorProfessionalReadiness({
+      script: selectedCandidate.script,
+      quality: selectedCandidate.quality,
+      impact: selectedCandidate.impact,
+      compliance: selectedCandidate.compliance,
+      competitiveness: selectedCandidate.competitiveness,
+      semanticJudge,
+      diversityGuard,
+      beatTimeline: beatTimelineEvaluation,
+      context: {
+        theme,
+        style,
+        topic,
+        targetCharacters,
+        narrativeYear,
+        creativeDirectives: effectiveCreativeDirectives,
+        generationMode: normalizedGenerationMode,
+        channelName: effectiveChannelName,
+        ctaCierre: finalCtaCierre,
+        narrativeBlueprint,
+        beatTimeline,
+        learnedPreferences
+      }
+    });
+
+    let premiumPolish = null;
+    const premiumPolishConfigured = isOpenAiPremiumPolishConfigured();
+    const premiumPolishRequired = premiumPolishConfigured && normalizedGenerationMode !== 'rapido';
+
+    if (premiumPolishRequired) {
+      try {
+        console.log('[HorrorPipeline] Iniciando capa: openai_premium_polish');
+        executedLayers.push('openai_premium_polish_attempt');
+        const baseCandidateBeforePremium = selectedCandidate;
+        const baseFinalScoreBeforePremium = finalScore;
+        const polishedScript = await polishHorrorScriptWithOpenAI({
+          script: selectedCandidate.script,
+          quality: selectedCandidate.quality,
+          impact: selectedCandidate.impact,
+          compliance: selectedCandidate.compliance,
+          finalScore,
+          context: {
+            theme,
+            style,
+            topic,
+            targetCharacters,
+            narrativeYear,
+            channelName: effectiveChannelName,
+            creativeDirectives: effectiveCreativeDirectives,
+            generationMode: normalizedGenerationMode
+          }
+        });
+        const premiumEvaluated = evaluateCandidate('openai_premium_polish', polishedScript);
+        const premiumDiversityGuard = evaluateHorrorDiversityGuard(polishedScript, memoryRecords);
+        const premiumBeatTimelineEvaluation = evaluateHorrorBeatTimeline(polishedScript, beatTimeline);
+        const premiumCtaCierre = shouldSuppressCtaCierre(polishedScript, finalCtaCierre)
+          ? ''
+          : finalCtaCierre;
+        const premiumFinalScore = evaluateHorrorProfessionalReadiness({
+          script: polishedScript,
+          quality: premiumEvaluated.quality,
+          impact: premiumEvaluated.impact,
+          compliance: premiumEvaluated.compliance,
+          competitiveness: premiumEvaluated.competitiveness,
+          semanticJudge,
+          diversityGuard: premiumDiversityGuard,
+          beatTimeline: premiumBeatTimelineEvaluation,
+          context: {
+            theme,
+            style,
+            topic,
+            targetCharacters,
+            narrativeYear,
+            creativeDirectives: effectiveCreativeDirectives,
+            generationMode: normalizedGenerationMode,
+            channelName: effectiveChannelName,
+            ctaCierre: premiumCtaCierre,
+            narrativeBlueprint,
+            beatTimeline,
+            learnedPreferences
+          }
+        });
+
+        candidates.push(premiumEvaluated);
+        const buildVariantLabels = ({ candidate, score, source }) => {
+          const labels = [];
+          if ((candidate?.impact?.score || 0) >= 82) labels.push('mayor impacto emocional');
+          if ((candidate?.quality?.score || 0) >= 88) labels.push('mejor atmosfera');
+          if ((candidate?.compliance?.score || 0) >= 92) labels.push('identidad preservada');
+          if ((score?.retencion_youtube || 0) >= 88) labels.push('mejor retencion');
+          if ((score?.competitividad_youtube || 0) >= 82) labels.push('mas competitivo para YouTube');
+          if (source === 'openai') labels.push('mas limpio y cinematografico');
+          if (source === 'deepseek') labels.push('mas organico y atmosferico');
+          return Array.from(new Set(labels)).slice(0, 4);
+        };
+
+        premiumPolish = {
+          model: OPENAI_PREMIUM_POLISH_MODEL,
+          attempted: true,
+          accepted: false,
+          previousScore: baseFinalScoreBeforePremium.score_final || 0,
+          polishedScore: premiumFinalScore.score_final || 0,
+          previousDecision: baseFinalScoreBeforePremium.decision,
+          polishedDecision: premiumFinalScore.decision,
+          observations: premiumFinalScore.observaciones || [],
+          recommended: {
+            name: 'Version recomendada',
+            model: 'DeepSeek + capas emocionales',
+            score: baseFinalScoreBeforePremium.score_final || 0,
+            decision: baseFinalScoreBeforePremium.decision,
+            labels: buildVariantLabels({
+              candidate: baseCandidateBeforePremium,
+              score: baseFinalScoreBeforePremium,
+              source: 'deepseek'
+            })
+          },
+          alternative: {
+            name: 'Version alternativa',
+            model: OPENAI_PREMIUM_POLISH_MODEL,
+            source: 'openai_premium_polish',
+            score: premiumFinalScore.score_final || 0,
+            decision: premiumFinalScore.decision,
+            script: polishedScript,
+            labels: buildVariantLabels({
+              candidate: premiumEvaluated,
+              score: premiumFinalScore,
+              source: 'openai'
+            }),
+            observations: (premiumFinalScore.observaciones || []).slice(0, 4)
+          }
+        };
+
+        const premiumAcceptable = premiumEvaluated.compliance?.passed &&
+          (premiumFinalScore.score_final || 0) >= ((baseFinalScoreBeforePremium.score_final || 0) - 2) &&
+          (premiumEvaluated.quality?.score || 0) >= ((selectedCandidate.quality?.score || 0) - 4) &&
+          (premiumEvaluated.impact?.score || 0) >= ((selectedCandidate.impact?.score || 0) - 4) &&
+          (premiumFinalScore.riesgo_de_fallo || 100) <= Math.max(78, (baseFinalScoreBeforePremium.riesgo_de_fallo || 100) + 5);
+
+        if (premiumAcceptable) {
+          selectedCandidate = premiumEvaluated;
+          diversityGuard = premiumDiversityGuard;
+          beatTimelineEvaluation = premiumBeatTimelineEvaluation;
+          finalCtaCierre = premiumCtaCierre;
+          finalScore = premiumFinalScore;
+          premiumPolish.accepted = true;
+          premiumPolish.recommended = {
+            name: 'Version recomendada',
+            model: OPENAI_PREMIUM_POLISH_MODEL,
+            score: premiumFinalScore.score_final || 0,
+            decision: premiumFinalScore.decision,
+            labels: buildVariantLabels({
+              candidate: premiumEvaluated,
+              score: premiumFinalScore,
+              source: 'openai'
+            })
+          };
+          premiumPolish.alternative = {
+            name: 'Version base alternativa',
+            model: 'DeepSeek + capas emocionales',
+            source: 'deepseek_pipeline',
+            score: baseFinalScoreBeforePremium.score_final || 0,
+            decision: baseFinalScoreBeforePremium.decision,
+            script: baseCandidateBeforePremium.script,
+            labels: buildVariantLabels({
+              candidate: baseCandidateBeforePremium,
+              score: baseFinalScoreBeforePremium,
+              source: 'deepseek'
+            }),
+            observations: (baseFinalScoreBeforePremium.observaciones || []).slice(0, 4)
+          };
+          console.log(`[HorrorPipeline] Capa openai_premium_polish aceptada. Score ${premiumPolish.previousScore} -> ${premiumPolish.polishedScore}`);
+          executedLayers.push('openai_premium_polish_accepted');
+        } else {
+          console.log(`[HorrorPipeline] Capa openai_premium_polish rechazada por control de calidad. Score ${premiumPolish.previousScore} -> ${premiumPolish.polishedScore}`);
+          executedLayers.push('openai_premium_polish_rejected');
+        }
+      } catch (error) {
+        premiumPolish = {
+          model: OPENAI_PREMIUM_POLISH_MODEL,
+          attempted: true,
+          accepted: false,
+          error: error.message || String(error)
+        };
+        console.error('[HorrorPipeline] Pulido premium OpenAI falló:', error.message || error);
+        executedLayers.push('openai_premium_polish_failed');
+      }
+    } else if (normalizedGenerationMode !== 'rapido') {
+      premiumPolish = {
+        model: OPENAI_PREMIUM_POLISH_MODEL,
+        attempted: false,
+        configured: premiumPolishConfigured,
+        reason: premiumPolishConfigured ? 'modo_rapido' : 'openai_no_configurado'
+      };
+      console.log(`[HorrorPipeline] Capa openai_premium_polish no ejecutada: ${premiumPolish.reason}`);
+    }
+
+    return {
+      raw: selectedCandidate.script,
+      quality: selectedCandidate.quality,
+      impact: selectedCandidate.impact,
+      compliance: selectedCandidate.compliance,
+      finalScore,
+      previousQuality: needsRewrite ? firstValidation : null,
+      draftQuality: firstValidation,
+      rewrittenQuality: finalValidation,
+      complianceQuality: complianceValidation,
+      draftImpact: firstImpact,
+      rewrittenImpact: finalImpact,
+      complianceImpact,
+      polishedQuality: needsRewrite ? null : finalValidation,
+      polishedImpact: needsRewrite ? null : finalImpact,
+      selectedVersion: selectedCandidate.label,
+      comparisonScore: finalScore.score_final,
+      structure,
+      narrativeBlueprint,
+      beatTimeline,
+      learnedPreferences,
+      criticNotes,
+      structuredCritic,
+      semanticJudge,
+      diversityGuard,
+      beatTimelineEvaluation,
+      premiumPolish,
+      originEngine,
+      originPreference,
+      ctaCierre: finalCtaCierre,
+      regenerated: needsRewrite,
+      complianceRegenerated: Boolean(complianceCandidate),
+      competitivenessRegenerated: Boolean(competitivenessCandidate),
+      payoffAftermathRegenerated: Boolean(payoffAftermathCandidate),
+      complianceRewritePassed: Boolean(complianceCompliance?.passed),
+      polished: normalizedGenerationMode !== 'rapido' && !needsRewrite,
+      memoryContext,
+      elapsedMs: Date.now() - pipelineStartedAt,
+      generationMode: normalizedGenerationMode,
+      candidates: candidates.map((item) => ({
+        label: item.label,
+        qualityScore: item.quality?.score || 0,
+        impactScore: item.impact?.score || 0,
+        complianceScore: item.compliance?.score || 0,
+        competitivenessScore: item.competitiveness?.score || 0,
+        domesticAftermathScore: item.domesticAftermath?.score || 0,
+        personalPayoffScore: item.personalPayoff?.score || 0,
+        diversityScore: item.diversity?.score || 0,
+        beatTimelineScore: item.beatTimeline?.score || 0,
+        compliancePassed: Boolean(item.compliance?.passed)
+      })),
+      layers: [...executedLayers, 'score_final', 'validadores_locales']
+    };
+  };
+
   const { data } = await withAiModelCache({
     topic: topic || 'general',
     providerCode: GEMINI_PROVIDER_CODE,
     modelVersion: GEMINI_MODEL_ID,
     requestPayload: {
-      type: 'viral_script_voice_clean_v7',
+      type: theme === 'terror'
+        ? 'viral_script_horror_pipeline_9_8_payoff_aftermath_openai_premium_creo_v21_origin_payoff'
+        : theme === 'religion'
+          ? 'viral_script_religion_critical_pplai_v1'
+          : 'viral_script_voice_clean_creo_v8',
       topic,
       theme,
       style,
       duration,
       narrativeYear,
       channelName: effectiveChannelName,
+      creativeDirectives: effectiveCreativeDirectives,
+      creoIntentVersion: creoIntent?.version || 'none',
+      creoIntent,
+      scenario,
+      intensity,
+      endingType,
+      originPreference,
+      originEngine,
+      detailsExtra,
+      narrativeBlueprintVersion: 'horror_narrative_blueprint_v1',
+      learnedPreferencesVersion: 'horror_learned_preferences_v1',
+      antiOverfittingVersion: 'horror_diversity_guard_v1',
+      semanticJudgeVersion: 'horror_semantic_judge_v1',
+      beatTimelineVersion: 'horror_beat_timeline_v1',
+      domesticAftermathVersion: 'horror_domestic_aftermath_v1',
+      personalPayoffVersion: 'horror_personal_payoff_v1',
+      premiumPolishVersion: 'openai_gpt_5_4_mini_premium_polish_v1',
+      premiumPolishConfigured: isOpenAiPremiumPolishConfigured(),
+      premiumPolishModel: OPENAI_PREMIUM_POLISH_MODEL,
+      religionCriticalPipelineVersion: theme === 'religion' ? 'PPLAI_RELIGION_CRITICAL_V1' : null,
+      userId,
+      generationMode: normalizedGenerationMode,
       targetCharacters
     },
     metadata: {
-      promptType: 'viral_script_voice_clean_v7'
+      promptType: theme === 'terror'
+        ? 'viral_script_horror_pipeline_9_8_payoff_aftermath_openai_premium_creo_v21_origin_payoff'
+        : theme === 'religion'
+          ? 'viral_script_religion_critical_pplai_v1'
+          : 'viral_script_voice_clean_creo_v8'
     },
     ttlHours: 18,
     fetchFreshData: async () => {
+      if (theme === 'terror') {
+        return runHorrorNarrativePipeline();
+      }
+
       const raw = await generateContent(prompt);
-      return { raw: cleanVoiceOutput(raw) };
+      const payload = extractVoicePayload(raw);
+      const voiceScript = normalizeChannelNameCasing(payload.voiceScript);
+      const ctaCierre = normalizeChannelNameCasing(payload.ctaCierre || '');
+      return {
+        raw: voiceScript,
+        ctaCierre: shouldSuppressCtaCierre(voiceScript, ctaCierre) ? null : ctaCierre || null,
+        quality: null,
+        regenerated: false
+      };
     }
   });
 
+  generateViralScript.lastQualityReport = data?.quality || null;
+  generateViralScript.lastImpactReport = data?.impact || null;
+  generateViralScript.lastComplianceReport = data?.compliance || null;
+  generateViralScript.lastFinalScore = data?.finalScore || null;
+  generateViralScript.lastGenerationMeta = {
+    generationMode: data?.generationMode || normalizedGenerationMode,
+    regenerated: Boolean(data?.regenerated),
+    complianceRegenerated: Boolean(data?.complianceRegenerated),
+    competitivenessRegenerated: Boolean(data?.competitivenessRegenerated),
+    payoffAftermathRegenerated: Boolean(data?.payoffAftermathRegenerated),
+    complianceRewritePassed: Boolean(data?.complianceRewritePassed),
+    previousQuality: data?.previousQuality || null,
+    draftQuality: data?.draftQuality || null,
+    rewrittenQuality: data?.rewrittenQuality || null,
+    complianceQuality: data?.complianceQuality || null,
+    draftImpact: data?.draftImpact || null,
+    rewrittenImpact: data?.rewrittenImpact || null,
+    complianceImpact: data?.complianceImpact || null,
+    polishedQuality: data?.polishedQuality || null,
+    polishedImpact: data?.polishedImpact || null,
+    selectedVersion: data?.selectedVersion || null,
+    comparisonScore: data?.comparisonScore || null,
+    finalScore: data?.finalScore || null,
+    creoIntent,
+    scenario,
+    intensity,
+    endingType,
+    originPreference,
+    originEngine: data?.originEngine || originEngine || null,
+    detailsExtra,
+    narrativeBlueprint: data?.narrativeBlueprint || null,
+    learnedPreferences: data?.learnedPreferences || null,
+    structure: data?.structure || null,
+    criticNotes: data?.criticNotes || null,
+    structuredCritic: data?.structuredCritic || null,
+    semanticJudge: data?.semanticJudge || null,
+    diversityGuard: data?.diversityGuard || null,
+    premiumPolish: data?.premiumPolish || null,
+    beatTimeline: data?.beatTimeline || null,
+    beatTimelineEvaluation: data?.beatTimelineEvaluation || null,
+    compliance: data?.compliance || null,
+    ctaCierre: data?.ctaCierre || null,
+    polished: Boolean(data?.polished),
+    memoryContext: data?.memoryContext || null,
+    elapsedMs: data?.elapsedMs || null,
+    candidates: data?.candidates || null,
+    layers: data?.layers || null
+  };
+
   return cleanVoiceOutput(data?.raw || '');
 };
+
+generateViralScript.lastQualityReport = null;
+generateViralScript.lastImpactReport = null;
+generateViralScript.lastComplianceReport = null;
+generateViralScript.lastFinalScore = null;
+generateViralScript.lastGenerationMeta = null;
 
 export const generateExpertAdvisoryInsights = async (topic, context = {}) => {
   const prompt = `

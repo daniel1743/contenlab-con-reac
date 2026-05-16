@@ -2,6 +2,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 
 const TABLE_NAME = 'ai_model_cache';
 const DEFAULT_TTL_HOURS = 24;
+let cacheWritesDisabled = false;
 
 const toISODate = (date) => new Date(date).toISOString();
 
@@ -89,6 +90,8 @@ const saveCacheRecord = async ({
   metadata,
   ttlHours
 }) => {
+  if (cacheWritesDisabled) return;
+
   const now = Date.now();
   const payload = {
     topic: topic || 'general',
@@ -109,7 +112,13 @@ const saveCacheRecord = async ({
     .upsert(payload, { onConflict: 'provider_code,request_hash' });
 
   if (error) {
-    console.error('[aiModelCache] Error saving cache record:', error);
+    if (error.code === '42501') {
+      cacheWritesDisabled = true;
+      console.warn('[aiModelCache] Cache writes disabled by Supabase RLS. Generation will continue without remote cache.');
+      return;
+    }
+
+    console.warn('[aiModelCache] Error saving cache record:', error);
   }
 };
 

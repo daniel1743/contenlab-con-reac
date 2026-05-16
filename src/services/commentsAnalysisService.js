@@ -101,6 +101,10 @@ async function fetchVideoComments(videoId, maxResults) {
   }
 }
 
+export async function fetchTopVideoComments(videoId, maxResults = 25) {
+  return fetchVideoComments(videoId, maxResults);
+}
+
 /**
  * Analizar comentarios con IA (Gemini)
  */

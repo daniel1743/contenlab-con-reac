@@ -21,6 +21,26 @@ const QWEN_MODEL = 'qwen-turbo';
 
 const MAX_TOKENS = 6000;
 const TEMPERATURE = 0.7;
+const DEFAULT_TIMEOUT_MS = 90000;
+
+const fetchWithTimeout = async (url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`AI request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
 
 // ===== VERIFICAR SI ESTÁ CONFIGURADO =====
 const isConfigured = () => {
@@ -34,13 +54,14 @@ const isConfigured = () => {
  */
 export const generateContent = async (prompt, options = {}) => {
   const systemPrompt = options.systemPrompt || 'Eres un experto creador de contenido viral para redes sociales en español.';
+  const timeoutMs = Number.isFinite(Number(options.timeoutMs)) ? Number(options.timeoutMs) : DEFAULT_TIMEOUT_MS;
 
   // Intentar con DeepSeek primero
   if (isConfigured()) {
     try {
       console.log('💎 Llamando a DeepSeek API...');
 
-      const response = await fetch(`${DEEPSEEK_BASE_URL}/v1/chat/completions`, {
+      const response = await fetchWithTimeout(`${DEEPSEEK_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +77,7 @@ export const generateContent = async (prompt, options = {}) => {
           temperature: options.temperature || TEMPERATURE,
           stream: false
         })
-      });
+      }, timeoutMs);
 
       // ==========================================================
       // ✅ ¡AQUÍ ESTÁ LA CORRECCIÓN! ✅
@@ -89,7 +110,7 @@ export const generateContent = async (prompt, options = {}) => {
     try {
       console.log('🌟 Llamando a Qwen API (fallback)...');
 
-      const response = await fetch(`${QWEN_BASE_URL}/chat/completions`, {
+      const response = await fetchWithTimeout(`${QWEN_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +125,7 @@ export const generateContent = async (prompt, options = {}) => {
           max_tokens: options.maxTokens || MAX_TOKENS,
           temperature: options.temperature || TEMPERATURE
         })
-      });
+      }, timeoutMs);
 
       // ==========================================================
       // ✅ APLICANDO LA MISMA CORRECCIÓN A QWEN (prevención)
